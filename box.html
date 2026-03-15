@@ -530,7 +530,16 @@
 
         function buildChunkMesh(cx, cz) {
             const key = getChunkKey(cx, cz); const chunk = activeChunks.get(key); if (!chunk) return;
-            if (chunk.group) { scene.remove(chunk.group); chunk.group.children.forEach(c => { if(c.dispose) c.dispose(); }); }
+            if (chunk.group) { 
+                scene.remove(chunk.group); 
+                chunk.group.children.forEach(c => { 
+                    if(c.geometry) c.geometry.dispose(); 
+                    if(c.material) {
+                        if(Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                        else c.material.dispose();
+                    }
+                }); 
+            }
 
             const group = new THREE.Group(); group.position.set(cx * CONFIG.chunkSize, 0, cz * CONFIG.chunkSize);
             const counts = {}; for(let i=1; i<=12; i++) counts[i] = 0;
