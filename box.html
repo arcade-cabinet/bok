@@ -704,7 +704,7 @@
             const target = getLookingAt(); if (!target.prev) return;
             const slot = STATE.hotbar[STATE.activeSlot]; if (!slot || slot.type !== 'block') return; 
             const bName = BLOCKS[slot.id].name.toLowerCase();
-            if ((bName === 'planks' || bName === 'torch' || bName === 'stonebricks' || bName === 'glass') && (STATE.inventory[bName] || STATE.inventory['torches'] || 0) <= 0) return;
+            if ((bName === 'planks' || bName === 'torch' || bName === 'stonebricks' || bName === 'glass') && ((STATE.inventory[bName] || 0) <= 0 || (bName === 'torch' && (STATE.inventory['torches'] || 0) <= 0))) return;
             
             if (bName === 'planks') STATE.inventory.planks--;
             if (bName === 'torch') STATE.inventory.torches--;
