@@ -557,22 +557,15 @@
 
         function buildChunkMesh(cx, cz) {
             const key = getChunkKey(cx, cz); const chunk = activeChunks.get(key); if (!chunk) return;
-            if (chunk.group) { 
-                chunk.group.traverse(object => {
-                    if (object.geometry) {
-                        object.geometry.dispose();
+            if (chunk.group) {
+                chunk.group.traverse(obj => {
+                    if (obj.geometry && typeof obj.geometry.dispose === 'function') obj.geometry.dispose();
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) obj.material.forEach(m => { if (m && typeof m.dispose === 'function') m.dispose(); });
+                        else if (typeof obj.material.dispose === 'function') obj.material.dispose();
                     }
                 });
-                scene.remove(chunk.group); 
-            }
-                scene.remove(chunk.group); 
-                chunk.group.children.forEach(c => { 
-                    if(c.geometry) c.geometry.dispose(); 
-                    if(c.material) {
-                        if(Array.isArray(c.material)) c.material.forEach(m => m.dispose());
-                        else c.material.dispose();
-                    }
-                }); 
+                scene.remove(chunk.group);
             }
 
             const group = new THREE.Group(); group.position.set(cx * CONFIG.chunkSize, 0, cz * CONFIG.chunkSize);
@@ -955,7 +948,7 @@
             // Only include state that affects the hotbar rendering.
             return JSON.stringify({
                 hotbar: STATE.hotbar,
-                activeSlot: STATE.activeHotbarSlot,
+                activeSlot: STATE.activeSlot,
                 inventory: {
                     wood: STATE.inventory.wood,
                     stone: STATE.inventory.stone,
@@ -994,19 +987,19 @@
             document.getElementById('inventory-list').innerHTML = invHTML || "<i>Inventory Empty</i>";
 
             document.getElementById('craft-planks').disabled = STATE.inventory.wood < 1;
-
-            const newHotbarSignature = computeHotbarSignature();
-            if (newHotbarSignature !== lastHotbarSignature) {
-                lastHotbarSignature = newHotbarSignature;
-                updateHotbarUI();
-            }
+            document.getElementById('craft-torch').disabled = STATE.inventory.wood < 1;
             document.getElementById('craft-bricks').disabled = STATE.inventory.stone < 4;
             document.getElementById('craft-glass').disabled = STATE.inventory.sand < 1;
             document.getElementById('craft-wood-axe').disabled = STATE.inventory.wood < 3;
             document.getElementById('craft-wood-pick').disabled = STATE.inventory.wood < 5;
             document.getElementById('craft-stone-pick').disabled = STATE.inventory.stone < 5;
             document.getElementById('craft-sword').disabled = STATE.inventory.wood < 2 || STATE.inventory.stone < 3;
-            updateHotbarUI();
+
+            const newHotbarSignature = computeHotbarSignature();
+            if (newHotbarSignature !== lastHotbarSignature) {
+                lastHotbarSignature = newHotbarSignature;
+                updateHotbarUI();
+            }
         }
 
         // Crafting Actions
