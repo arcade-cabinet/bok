@@ -827,8 +827,7 @@
         function addToHotbar(id, type) {
             let placed = false;
             for(let i=0; i<5; i++) { if(!STATE.hotbar[i]) { STATE.hotbar[i] = {id, type}; placed = true; break; } }
-            if(!placed && STATE.hotbar.length < 5) STATE.hotbar.push({id, type});
-            else if (!placed) STATE.hotbar[STATE.activeSlot] = {id, type};
+            if (!placed) STATE.hotbar[STATE.activeSlot] = {id, type};
             updateHotbarUI();
         }
 
