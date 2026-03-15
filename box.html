@@ -867,6 +867,27 @@
             }
             rebuildViewModel();
         }
+        let lastHotbarSignature = null;
+
+        function computeHotbarSignature() {
+            // Only include state that affects the hotbar rendering.
+            return JSON.stringify({
+                hotbar: STATE.hotbar,
+                activeSlot: STATE.activeHotbarSlot,
+                inventory: {
+                    wood: STATE.inventory.wood,
+                    stone: STATE.inventory.stone,
+                    sand: STATE.inventory.sand,
+                    planks: STATE.inventory.planks,
+                    bricks: STATE.inventory.bricks,
+                    glass: STATE.inventory.glass,
+                    torch: STATE.inventory.torch,
+                    sword: STATE.inventory.sword,
+                    pick: STATE.inventory.pick
+                }
+            });
+        }
+
 
         function toggleCrafting() {
             const menu = document.getElementById('crafting-menu');
@@ -891,7 +912,12 @@
             document.getElementById('inventory-list').innerHTML = invHTML || "<i>Inventory Empty</i>";
 
             document.getElementById('craft-planks').disabled = STATE.inventory.wood < 1;
-            document.getElementById('craft-torch').disabled = STATE.inventory.wood < 1;
+
+            const newHotbarSignature = computeHotbarSignature();
+            if (newHotbarSignature !== lastHotbarSignature) {
+                lastHotbarSignature = newHotbarSignature;
+                updateHotbarUI();
+            }
             document.getElementById('craft-bricks').disabled = STATE.inventory.stone < 4;
             document.getElementById('craft-glass').disabled = STATE.inventory.sand < 1;
             document.getElementById('craft-wood-axe').disabled = STATE.inventory.wood < 3;
