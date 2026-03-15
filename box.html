@@ -945,20 +945,14 @@
         let lastHotbarSignature = null;
 
         function computeHotbarSignature() {
-            // Only include state that affects the hotbar rendering.
             return JSON.stringify({
                 hotbar: STATE.hotbar,
                 activeSlot: STATE.activeSlot,
                 inventory: {
-                    wood: STATE.inventory.wood,
-                    stone: STATE.inventory.stone,
-                    sand: STATE.inventory.sand,
                     planks: STATE.inventory.planks,
-                    bricks: STATE.inventory.bricks,
+                    stonebricks: STATE.inventory.stonebricks,
                     glass: STATE.inventory.glass,
-                    torch: STATE.inventory.torch,
-                    sword: STATE.inventory.sword,
-                    pick: STATE.inventory.pick
+                    torches: STATE.inventory.torches
                 }
             });
         }
