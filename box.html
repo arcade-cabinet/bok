@@ -830,8 +830,28 @@
             }
         });
 
-        document.addEventListener('mousedown', (e) => { if (document.pointerLockElement === document.body) { if (e.button === 0) STATE.mining.active = true; if (e.button === 2) placeBlock(); } });
-        document.addEventListener('mouseup', (e) => { if (e.button === 0) STATE.mining.active = false; });
+        document.addEventListener('mousedown', (e) => {
+            if (document.pointerLockElement === document.body) {
+                if (e.button === 0) {
+                    STATE.mining.active = true;
+                } else if (e.button === 2) {
+                    // Suppress the browser's context menu when using right-click in-game
+                    e.preventDefault();
+                    placeBlock();
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button === 0) STATE.mining.active = false;
+        });
+
+        // Prevent the browser context menu while pointer lock is active
+        document.addEventListener('contextmenu', (e) => {
+            if (document.pointerLockElement === document.body) {
+                e.preventDefault();
+            }
+        });
 
         let joyActive = false, joyStart = {x:0, y:0}, joyCurrent = {x:0, y:0};
         if (CONFIG.isMobile) {
