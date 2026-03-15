@@ -153,16 +153,16 @@
         <div id="inventory-list" style="margin-bottom: 20px; font-size: 13px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; color: #ccc;"></div>
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
-                <button id="craft-planks" class="craft-btn">Wood Planks x4 <span class="cost-badge">1 Wood</span></button>
-                <button id="craft-torch" class="craft-btn">Torches x4 <span class="cost-badge">1 Wood</span></button>
-                <button id="craft-bricks" class="craft-btn">Stone Bricks x4 <span class="cost-badge">4 Stone</span></button>
-                <button id="craft-glass" class="craft-btn">Mystic Glass x1 <span class="cost-badge">1 Sand</span></button>
+                <button type="button" id="craft-planks" class="craft-btn">Wood Planks x4 <span class="cost-badge">1 Wood</span></button>
+                <button type="button" id="craft-torch" class="craft-btn">Torches x4 <span class="cost-badge">1 Wood</span></button>
+                <button type="button" id="craft-bricks" class="craft-btn">Stone Bricks x4 <span class="cost-badge">4 Stone</span></button>
+                <button type="button" id="craft-glass" class="craft-btn">Mystic Glass x1 <span class="cost-badge">1 Sand</span></button>
             </div>
             <div style="flex: 1;">
-                <button id="craft-wood-axe" class="craft-btn">Wooden Axe <span class="cost-badge">3 Wood</span></button>
-                <button id="craft-wood-pick" class="craft-btn">Wooden Pickaxe <span class="cost-badge">5 Wood</span></button>
-                <button id="craft-stone-pick" class="craft-btn">Stone Pickaxe <span class="cost-badge">5 Stone</span></button>
-                <button id="craft-sword" class="craft-btn">Stone Sword <span class="cost-badge">2 Wood, 3 Stone</span></button>
+                <button type="button" id="craft-wood-axe" class="craft-btn">Wooden Axe <span class="cost-badge">3 Wood</span></button>
+                <button type="button" id="craft-wood-pick" class="craft-btn">Wooden Pickaxe <span class="cost-badge">5 Wood</span></button>
+                <button type="button" id="craft-stone-pick" class="craft-btn">Stone Pickaxe <span class="cost-badge">5 Stone</span></button>
+                <button type="button" id="craft-sword" class="craft-btn">Stone Sword <span class="cost-badge">2 Wood, 3 Stone</span></button>
             </div>
         </div>
         <p style="text-align: center; margin-top: 15px; font-size: 11px; color: #666;">Press [E] to close</p>
@@ -182,7 +182,7 @@
         <h1>VOXEL REALMS:<br>EXPANDED</h1>
         <p style="color: #bbb; max-width: 500px;">New blocks: Sand, Snow, Stone Bricks, Mystic Glass. Explore safe spawn shrines and dive into the boundless world.</p>
         <div class="seed-container">
-            <input type="text" id="seed-input" spellcheck="false" autocomplete="off" aria-label="World seed">
+            <input type="text" id="seed-input" spellcheck="false" autocomplete="off" aria-label="Seed value">
             <button onclick="document.getElementById('seed-input').value = generateRandomSeedString();" style="padding: 6px 12px; background: rgba(255,255,255,0.1); border:none; color:white; border-radius:4px; cursor:pointer; font-weight: bold;">REROLL</button>
         </div>
         <button class="play-btn" id="start-btn">AWAKEN</button>
@@ -945,10 +945,14 @@
         let lastHotbarSignature = null;
 
         function computeHotbarSignature() {
+            // Only include state that affects the hotbar rendering.
             return JSON.stringify({
                 hotbar: STATE.hotbar,
                 activeSlot: STATE.activeSlot,
                 inventory: {
+                    wood: STATE.inventory.wood,
+                    stone: STATE.inventory.stone,
+                    sand: STATE.inventory.sand,
                     planks: STATE.inventory.planks,
                     stonebricks: STATE.inventory.stonebricks,
                     glass: STATE.inventory.glass,
