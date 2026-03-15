@@ -597,7 +597,30 @@
                 for (let [key, chunk] of activeChunks.entries()) {
                     let [cx, cz] = key.split(',').map(Number);
                     if (Math.abs(cx - pCx) > R || Math.abs(cz - pCz) > R) {
-                        if (chunk.group) { scene.remove(chunk.group); chunk.group.children.forEach(c => { if(c.dispose) c.dispose(); }); chunk.group = null; }
+                        if (chunk.group) {
+                            // Properly dispose of geometries and materials to free GPU memory
+                            chunk.group.traverse(function (obj) {
+                                // Dispose renderable objects' resources
+                                if (obj.isMesh || obj.isInstancedMesh || obj.isLine || obj.isPoints || obj.isSprite) {
+                                    if (obj.geometry && typeof obj.geometry.dispose === 'function') {
+                                        obj.geometry.dispose();
+                                    }
+                                    if (obj.material) {
+                                        if (Array.isArray(obj.material)) {
+                                            obj.material.forEach(function (m) {
+                                                if (m && typeof m.dispose === 'function') {
+                                                    m.dispose();
+                                                }
+                                            });
+                                        } else if (typeof obj.material.dispose === 'function') {
+                                            obj.material.dispose();
+                                        }
+                                    }
+                                }
+                            });
+                            scene.remove(chunk.group);
+                            chunk.group = null;
+                        }
                     }
                 }
             }
