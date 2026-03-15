@@ -997,7 +997,7 @@
             const isMoving = length > 0 && player.onGround; 
             if (isMoving && keys.shift) {
                 let floorBlock = getVoxel(Math.floor(cameraRig.position.x), Math.floor(cameraRig.position.y - 1.6), Math.floor(cameraRig.position.z));
-                if (floorBlock > 0 && Math.random() < 0.2) spawnParticles(cameraRig.position.x, cameraRig.position.y - 1.5, cameraRig.position.z, BLOCKS[floorBlock].color, 1);
+                if (floorBlock > 0 && BLOCKS[floorBlock] && Math.random() < 0.2) spawnParticles(cameraRig.position.x, cameraRig.position.y - 1.5, cameraRig.position.z, BLOCKS[floorBlock].color, 1);
             }
 
             const target = getLookingAt();
