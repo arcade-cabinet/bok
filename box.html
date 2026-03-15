@@ -335,7 +335,10 @@
                 sCtx.fillStyle = BLOCKS[2].color; sCtx.fillRect(0,0,size,size); sCtx.fillStyle = def.color; sCtx.fillRect(0,0,size, size*(blockId===1?0.25:0.4)); 
                 const sideAlbedo = new THREE.CanvasTexture(sCtx.canvas); sideAlbedo.magFilter = THREE.NearestFilter;
                 const sideMat = new THREE.MeshStandardMaterial({...matProps, map: sideAlbedo});
-                const botMat = new THREE.MeshStandardMaterial({...matProps, map: new THREE.CanvasTexture(document.createElement('canvas'))}); // Dirt bottom
+                const botCtx = document.createElement('canvas').getContext('2d'); botCtx.canvas.width = botCtx.canvas.height = size;
+                botCtx.fillStyle = BLOCKS[2].color; botCtx.fillRect(0,0,size,size);
+                const botAlbedo = new THREE.CanvasTexture(botCtx.canvas); botAlbedo.magFilter = THREE.NearestFilter;
+                const botMat = new THREE.MeshStandardMaterial({...matProps, map: botAlbedo}); // Dirt bottom
                 return [sideMat, sideMat, mat, botMat, sideMat, sideMat];
             }
             return mat;
