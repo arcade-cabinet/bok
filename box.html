@@ -204,7 +204,7 @@
         // ==========================================
         const adjectives = ["Brave", "Dark", "Frosty", "Crimson", "Silent", "Lost", "Ancient", "Wandering", "Golden", "Mystic", "Shattered", "Ethereal", "Fierce", "Radiant", "Shadowy", "Wild"];
         const nouns = ["Fox", "Mountain", "River", "Valley", "Keep", "Shadow", "Crown", "Stone", "Forest", "Wolf", "Realm", "Abyss", "Spire", "Oak", "Crystal"];
-        window.generateRandomSeedString = () => {
+        const generateRandomSeedString = () => {
             let a1 = adjectives[Math.floor(Math.random() * adjectives.length)], a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
             while(a1 === a2) a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
             return `${a1} ${a2} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
@@ -212,7 +212,7 @@
         document.getElementById('seed-input').value = generateRandomSeedString();
 
         function xmur3(str) {
-            for(var i = 0, h = 1779033703 ^ str.length; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+            for(let i = 0, h = 1779033703 ^ str.length; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
             return function() { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; }
         }
         function sfc32(a, b, c, d) {
