@@ -517,7 +517,7 @@
                                     for(let ly=3; ly<=5; ly++) {
                                         if (Math.abs(tlx)===2 && Math.abs(tlz)===2 && ly===5) continue; 
                                         let lidx = (lx+tlx) + (lz+tlz) * CONFIG.chunkSize + (h+ly) * CONFIG.chunkSize * CONFIG.chunkSize;
-                                        if (data[lidx] === 0) data[lidx] = 5;
+                                        if (lx+tlx >= 0 && lx+tlx < CONFIG.chunkSize && lz+tlz >= 0 && lz+tlz < CONFIG.chunkSize && data[lidx] === 0) data[lidx] = 5;
                                     }
                                 }
                             }
