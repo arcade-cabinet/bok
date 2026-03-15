@@ -472,6 +472,29 @@
         function getChunkKey(cx, cz) { return `${cx},${cz}`; }
         function globalToChunk(x, z) { let cx = Math.floor(x / CONFIG.chunkSize), cz = Math.floor(z / CONFIG.chunkSize); return { cx, cz, lx: x - cx * CONFIG.chunkSize, lz: z - cz * CONFIG.chunkSize }; }
 
+        // Track chunks that need their meshes rebuilt; batch rebuilds once per frame.
+        const pendingChunkRebuilds = new Set();
+        let chunkRebuildScheduled = false;
+
+        function scheduleChunkRebuild(cx, cz) {
+            const key = getChunkKey(cx, cz);
+            pendingChunkRebuilds.add(key);
+
+            if (chunkRebuildScheduled) return;
+            chunkRebuildScheduled = true;
+
+            requestAnimationFrame(() => {
+                pendingChunkRebuilds.forEach(chunkKey => {
+                    const parts = chunkKey.split(',');
+                    const rcx = parseInt(parts[0], 10);
+                    const rcz = parseInt(parts[1], 10);
+                    buildChunkMesh(rcx, rcz);
+                });
+                pendingChunkRebuilds.clear();
+                chunkRebuildScheduled = false;
+            });
+        }
+
         function getVoxel(x, y, z) {
             if (y < 0 || y >= CONFIG.worldHeight) return 0;
             const { cx, cz, lx, lz } = globalToChunk(x, z);
@@ -486,7 +509,8 @@
             const chunk = activeChunks.get(getChunkKey(cx, cz));
             if (!chunk) return;
             chunk.data[lx + lz * CONFIG.chunkSize + y * CONFIG.chunkSize * CONFIG.chunkSize] = val;
-            buildChunkMesh(cx, cz);
+            // Defer and batch chunk mesh rebuilds to at most once per frame per chunk.
+            scheduleChunkRebuild(cx, cz);
         }
 
         function generateChunkData(cx, cz) {
