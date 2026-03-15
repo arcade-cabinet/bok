@@ -770,12 +770,19 @@
             const target = getLookingAt(); if (!target.prev) return;
             const slot = STATE.hotbar[STATE.activeSlot]; if (!slot || slot.type !== 'block') return; 
             const bName = BLOCKS[slot.id].name.toLowerCase();
-            if ((bName === 'planks' || bName === 'torch' || bName === 'stonebricks' || bName === 'glass') && ((STATE.inventory[bName] || 0) <= 0 || (bName === 'torch' && (STATE.inventory['torches'] || 0) <= 0))) return;
+            let available = Infinity;
+            if (bName === 'planks') available = STATE.inventory.planks || 0;
+            if (bName === 'torch') available = STATE.inventory.torches || 0;
+            if (bName === 'stonebricks') available = STATE.inventory.stonebricks || 0;
+            if (bName === 'glass') available = STATE.inventory.glass || 0;
+            if (bName === 'planks' || bName === 'torch' || bName === 'stonebricks' || bName === 'glass') {
+                if (available <= 0) return;
+            }
             
-            if (bName === 'planks') STATE.inventory.planks--;
-            if (bName === 'torch') STATE.inventory.torches--;
-            if (bName === 'stonebricks') STATE.inventory.stonebricks--;
-            if (bName === 'glass') STATE.inventory.glass--;
+            if (bName === 'planks' && STATE.inventory.planks > 0) STATE.inventory.planks--;
+            if (bName === 'torch' && STATE.inventory.torches > 0) STATE.inventory.torches--;
+            if (bName === 'stonebricks' && STATE.inventory.stonebricks > 0) STATE.inventory.stonebricks--;
+            if (bName === 'glass' && STATE.inventory.glass > 0) STATE.inventory.glass--;
 
             const pX = target.prev.x, pY = target.prev.y, pZ = target.prev.z;
             if (pX === Math.floor(cameraRig.position.x) && pZ === Math.floor(cameraRig.position.z) && (pY === Math.floor(cameraRig.position.y) || pY === Math.floor(cameraRig.position.y - 1))) return;
