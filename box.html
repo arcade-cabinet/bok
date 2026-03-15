@@ -499,7 +499,7 @@
             if (y < 0 || y >= CONFIG.worldHeight) return 0;
             const { cx, cz, lx, lz } = globalToChunk(x, z);
             const chunk = activeChunks.get(getChunkKey(cx, cz));
-            if (!chunk) return 3; 
+            if (!chunk) return 0; 
             return chunk.data[lx + lz * CONFIG.chunkSize + y * CONFIG.chunkSize * CONFIG.chunkSize];
         }
 
