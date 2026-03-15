@@ -531,6 +531,13 @@
         function buildChunkMesh(cx, cz) {
             const key = getChunkKey(cx, cz); const chunk = activeChunks.get(key); if (!chunk) return;
             if (chunk.group) { 
+                chunk.group.traverse(object => {
+                    if (object.geometry) {
+                        object.geometry.dispose();
+                    }
+                });
+                scene.remove(chunk.group); 
+            }
                 scene.remove(chunk.group); 
                 chunk.group.children.forEach(c => { 
                     if(c.geometry) c.geometry.dispose(); 
