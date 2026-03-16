@@ -20,20 +20,20 @@ export async function initDatabase(): Promise<void> {
 	initPromise = (async () => {
 		if (initialized) return;
 
-	// Register jeep-sqlite web component for browser platform
-	if (Capacitor.getPlatform() === "web") {
-		jeepSqliteElements(window);
-		const jeepEl = document.createElement("jeep-sqlite");
-		document.body.appendChild(jeepEl);
-		await customElements.whenDefined("jeep-sqlite");
-		await (jeepEl as unknown as JeepSqliteElement).initWebStore();
-	}
+		// Register jeep-sqlite web component for browser platform
+		if (Capacitor.getPlatform() === "web") {
+			jeepSqliteElements(window);
+			const jeepEl = document.createElement("jeep-sqlite");
+			document.body.appendChild(jeepEl);
+			await customElements.whenDefined("jeep-sqlite");
+			await (jeepEl as unknown as JeepSqliteElement).initWebStore();
+		}
 
-	sqlite = new SQLiteConnection(CapacitorSQLite);
-	db = await sqlite.createConnection(DB_NAME, false, "no-encryption", 1, false);
-	await db.open();
+		sqlite = new SQLiteConnection(CapacitorSQLite);
+		db = await sqlite.createConnection(DB_NAME, false, "no-encryption", 1, false);
+		await db.open();
 
-	await db.execute(`
+		await db.execute(`
 		CREATE TABLE IF NOT EXISTS save_slots (
 			id INTEGER PRIMARY KEY,
 			seed TEXT NOT NULL,

@@ -106,17 +106,17 @@ src/
 ## Build & Dev
 
 ```bash
-npm install          # Install dependencies
-npm run dev          # Vite dev server
-npm run build        # tsc -b && vite build
-npm run typecheck    # tsc -b --dry (type check only)
-npm run lint         # biome check .
-npm run lint:fix     # biome check --write .
+pnpm install          # Install dependencies
+pnpm dev              # Vite dev server
+pnpm build            # tsc -b && vite build
+pnpm typecheck        # tsc -b --dry (type check only)
+pnpm lint             # biome check .
+pnpm lint:fix         # biome check --write .
 ```
 
 ## CI/CD
 
 - **CI** (`ci.yml`): Runs on PRs to main — typecheck, lint, build
-- **CD** (`cd.yml`): Runs on push to main — build + deploy to GitHub Pages
-- **Dependabot**: Weekly npm + GitHub Actions updates
+- **CD** (`cd.yml`): Runs on push to main — typecheck, lint, build + deploy to GitHub Pages
+- **Dependabot**: Weekly pnpm + GitHub Actions updates
 - **Automerge**: Minor/patch dependabot PRs auto-squash-merge

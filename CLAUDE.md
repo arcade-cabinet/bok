@@ -6,10 +6,10 @@ Read [AGENTS.md](AGENTS.md) for all project context, architecture rules, and des
 
 - **What is Bok?** A mobile-first 4X voxel survival game rooted in Swedish folklore. "Bok" = book + beech tree + rune-carving. The world is a living saga. Building-block aesthetic, Scandinavian landscape, Nordic creatures.
 - **Stack**: Jolly Pixel + Koota ECS + React + Three.js + Capacitor SQLite
-- **Lint/Format**: `npx biome check --write .` (tabs, double quotes, semicolons)
-- **Type check**: `npx tsc -b`
-- **Dev**: `npm run dev`
-- **Build**: `npm run build`
+- **Lint/Format**: `pnpm biome check --write .` (tabs, double quotes, semicolons)
+- **Type check**: `pnpm tsc -b`
+- **Dev**: `pnpm dev`
+- **Build**: `pnpm build`
 
 ## Key Docs
 
@@ -30,5 +30,5 @@ Read [AGENTS.md](AGENTS.md) for all project context, architecture rules, and des
 2. **ECS owns state** — rendering reads from Koota, never owns game state
 3. **Building-block creatures from Swedish folklore** — Mörker, Vittra, Lindormar, etc. Multi-part, procedurally animated
 4. **Side-effect pattern** — ECS systems never import Three.js; use callbacks
-5. **Run `biome check --write .` and `tsc -b` before committing**
+5. **Run `pnpm biome check --write .` and `pnpm tsc -b` before committing**
 6. **Read the relevant docs/ files before making changes in that domain**

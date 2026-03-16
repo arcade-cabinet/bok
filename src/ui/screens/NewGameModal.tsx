@@ -3,7 +3,7 @@
  * Adjective-Adjective-Noun seed format with shuffle button.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { generateRandomSeedString } from "../../world/noise.ts";
 
 interface NewGameModalProps {
@@ -22,10 +22,28 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 		if (seed.trim()) onStart(seed.trim());
 	}, [onStart, seed]);
 
+	// Close on Escape key
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [onClose]);
+
 	return (
 		<div
 			className="absolute inset-0 z-60 flex items-center justify-center"
 			style={{ background: "rgba(5,5,16,0.85)", backdropFilter: "blur(6px)" }}
+			onClick={(e) => {
+				if (e.target === e.currentTarget) onClose();
+			}}
+			onKeyDown={(e) => {
+				if (e.key === "Escape") onClose();
+			}}
+			role="dialog"
+			aria-modal="true"
+			aria-label="New Game"
 		>
 			<div
 				className="glass-panel p-8 w-full max-w-md mx-4 flex flex-col items-center gap-6"

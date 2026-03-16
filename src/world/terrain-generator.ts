@@ -12,7 +12,6 @@ const WATER_LEVEL = 10;
 
 export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: number, cz: number): void {
 	const entries: VoxelSetOptions[] = [];
-	const entryIndex = new Map<string, number>();
 
 	for (let lx = 0; lx < CHUNK_SIZE; lx++) {
 		for (let lz = 0; lz < CHUNK_SIZE; lz++) {
@@ -47,18 +46,9 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 					blockId = BlockId.Stone;
 				} else if (y > h && y <= WATER_LEVEL) {
 					blockId = BlockId.Water;
-					if (h === y - 1 && surfaceBlock === BlockId.Grass) {
-						const surfKey = `${gx},${h},${gz}`;
-						const surfIdx = entryIndex.get(surfKey);
-						if (surfIdx !== undefined && entries[surfIdx].blockId === BlockId.Grass) {
-							entries[surfIdx] = { ...entries[surfIdx], blockId: BlockId.Dirt };
-						}
-					}
 				}
 
 				if (blockId !== 0) {
-					const key = `${gx},${y},${gz}`;
-					entryIndex.set(key, entries.length);
 					entries.push({
 						position: { x: gx, y, z: gz },
 						blockId,

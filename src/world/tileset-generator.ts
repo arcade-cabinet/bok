@@ -23,7 +23,7 @@ function mulberry32(seed: number): () => number {
 	};
 }
 
-let rng: () => number = Math.random;
+let rng: () => number = mulberry32(42);
 
 interface TileDef {
 	col: number;

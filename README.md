@@ -12,8 +12,8 @@
 The game runs as a static site — no server needed.
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:5173` in a browser. Click to enter. WASD to move, mouse to look, left-click to mine, right-click to place, E for crafting, 1-5 for hotbar, Shift to sprint, Space to jump.
@@ -23,8 +23,8 @@ On mobile, touch controls appear automatically — left joystick for movement, r
 ## Build & Deploy
 
 ```bash
-npm run build     # TypeScript check + Vite production build
-npm run preview   # Preview the production build locally
+pnpm build     # TypeScript check + Vite production build
+pnpm preview   # Preview the production build locally
 ```
 
 Deployed automatically to GitHub Pages on push to `main` via the CD workflow.
