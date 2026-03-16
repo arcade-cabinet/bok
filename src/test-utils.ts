@@ -5,6 +5,7 @@ import {
 	AiType,
 	AnimState,
 	BehaviorState,
+	CookingState,
 	CreatureAI,
 	CreatureAnimation,
 	CreatureHealth,
@@ -57,6 +58,8 @@ export interface PlayerOverrides {
 		damageFlash: number;
 		shakeX: number;
 		shakeY: number;
+		hungerSlowed: boolean;
+		wantsEat: boolean;
 	}>;
 	position?: Partial<{ x: number; y: number; z: number }>;
 	velocity?: Partial<{ x: number; y: number; z: number }>;
@@ -92,6 +95,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		Inventory(),
 		Hotbar(),
 		QuestProgress(),
+		CookingState(),
 	);
 }
 

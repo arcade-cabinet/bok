@@ -2,7 +2,7 @@
  * Input handler — captures keyboard and mouse input and writes to Koota ECS traits.
  */
 
-import { Hotbar, MiningState, MoveInput, PlayerTag, Rotation, ToolSwing } from "../ecs/traits/index.ts";
+import { Hotbar, MiningState, MoveInput, PlayerState, PlayerTag, Rotation, ToolSwing } from "../ecs/traits/index.ts";
 import { kootaWorld, placeBlock } from "./game.ts";
 
 const keys: Record<string, boolean> = {};
@@ -31,6 +31,12 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 		if (e.key >= "1" && e.key <= "5") {
 			kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
 				hotbar.activeSlot = parseInt(e.key, 10) - 1;
+			});
+		}
+
+		if (e.code === "KeyF") {
+			kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
+				state.wantsEat = true;
 			});
 		}
 	};

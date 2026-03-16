@@ -1,5 +1,6 @@
 import type { InventoryData } from "../../ecs/inventory.ts";
 import { getItemCount } from "../../ecs/inventory.ts";
+import { getMaxDurability } from "../../ecs/systems/tool-durability.ts";
 import type { HotbarSlot } from "../../ecs/traits/index.ts";
 import { BLOCKS, BlockId, ITEMS } from "../../world/blocks.ts";
 
@@ -45,11 +46,41 @@ export function HotbarDisplay({ slots, activeSlot, inventory, onSlotClick }: Hot
 								{getBlockQty(slot, inventory)}
 							</span>
 						)}
+						{slot && slot.type === "item" && slot.durability !== undefined && (
+							<DurabilityBar itemId={slot.id} durability={slot.durability} />
+						)}
 					</button>
 				);
 			})}
 		</div>
 	);
+}
+
+function DurabilityBar({ itemId, durability }: { itemId: number; durability: number }) {
+	const max = getMaxDurability(itemId) ?? 1;
+	const pct = Math.max(0, Math.min(1, durability / max));
+	return (
+		<div
+			className="absolute bottom-0.5 left-1 right-1 h-1 rounded-full overflow-hidden"
+			style={{ background: "rgba(0,0,0,0.5)" }}
+			data-testid="durability-bar"
+		>
+			<div
+				className="h-full rounded-full"
+				style={{
+					width: `${pct * 100}%`,
+					background: getDurabilityColor(pct),
+				}}
+				data-testid="durability-fill"
+			/>
+		</div>
+	);
+}
+
+function getDurabilityColor(pct: number): string {
+	if (pct > 0.5) return "#4ade80"; // green
+	if (pct > 0.2) return "#facc15"; // yellow
+	return "#ef4444"; // red
 }
 
 function getSlotBackground(slot: HotbarSlot): string {

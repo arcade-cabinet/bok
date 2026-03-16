@@ -27,7 +27,7 @@ describe("survivalSystem", () => {
 		expect(entity.get(Hunger).current).toBe(0);
 	});
 
-	it("drains health when hunger is zero", () => {
+	it("drains health when hunger is zero at critical rate", () => {
 		const world = createTestWorld();
 		const entity = spawnPlayer(world, {
 			hunger: { current: 0 },
@@ -36,7 +36,8 @@ describe("survivalSystem", () => {
 
 		survivalSystem(world, 2);
 
-		expect(entity.get(Health).current).toBe(48);
+		// 0% hunger triggers HUNGER_HEALTH_DRAIN_RATE (2 HP/sec) × 2s = 4 HP
+		expect(entity.get(Health).current).toBe(46);
 	});
 
 	it("does not drain health when hunger is positive", () => {
@@ -136,5 +137,66 @@ describe("survivalSystem", () => {
 		survivalSystem(world, 1);
 
 		expect(entity.get(PlayerState).isDead).toBe(true);
+	});
+
+	// ─── Hunger Effect Thresholds ───
+
+	it("sets hungerSlowed when hunger is below 20%", () => {
+		const world = createTestWorld();
+		const entity = spawnPlayer(world, {
+			hunger: { current: 15, max: 100, decayRate: 0 },
+		});
+
+		survivalSystem(world, 0);
+
+		expect(entity.get(PlayerState).hungerSlowed).toBe(true);
+	});
+
+	it("does not set hungerSlowed when hunger is above 20%", () => {
+		const world = createTestWorld();
+		const entity = spawnPlayer(world, {
+			hunger: { current: 25, max: 100, decayRate: 0 },
+		});
+
+		survivalSystem(world, 0);
+
+		expect(entity.get(PlayerState).hungerSlowed).toBe(false);
+	});
+
+	it("does not set hungerSlowed at exactly 0 hunger", () => {
+		const world = createTestWorld();
+		const entity = spawnPlayer(world, {
+			hunger: { current: 0, max: 100, decayRate: 0 },
+		});
+
+		survivalSystem(world, 0);
+
+		// At 0% hunger the player is dying, not just slowed
+		expect(entity.get(PlayerState).hungerSlowed).toBe(false);
+	});
+
+	it("drains health faster when hunger is below 10%", () => {
+		const world = createTestWorld();
+		const entity = spawnPlayer(world, {
+			hunger: { current: 5, max: 100, decayRate: 0 },
+			health: { current: 100 },
+		});
+
+		survivalSystem(world, 1);
+
+		// HUNGER_HEALTH_DRAIN_RATE = 2 HP/sec
+		expect(entity.get(Health).current).toBe(98);
+	});
+
+	it("does not drain health when hunger is between 10% and 20%", () => {
+		const world = createTestWorld();
+		const entity = spawnPlayer(world, {
+			hunger: { current: 15, max: 100, decayRate: 0 },
+			health: { current: 100 },
+		});
+
+		survivalSystem(world, 1);
+
+		expect(entity.get(Health).current).toBe(100);
 	});
 });

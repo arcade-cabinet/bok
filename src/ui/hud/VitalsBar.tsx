@@ -2,9 +2,10 @@ interface VitalsBarProps {
 	health: number;
 	hunger: number;
 	stamina: number;
+	hungerSlowed?: boolean;
 }
 
-export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
+export function VitalsBar({ health, hunger, stamina, hungerSlowed = false }: VitalsBarProps) {
 	return (
 		<div className="flex flex-col items-center gap-2 mb-3">
 			{/* Health & Hunger */}
@@ -18,12 +19,14 @@ export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
 						}}
 					/>
 				</div>
-				<div className="w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg">
+				<div className="relative w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg">
 					<div
-						className="h-full transition-[width] duration-200 rounded-full"
+						className={`h-full transition-[width] duration-200 rounded-full ${hungerSlowed ? "animate-pulse" : ""}`}
 						style={{
 							width: `${Math.max(0, Math.min(100, hunger))}%`,
-							background: "linear-gradient(90deg, #ef6c00, #ffa726)",
+							background: hungerSlowed
+								? "linear-gradient(90deg, #bf360c, #ff6e40)"
+								: "linear-gradient(90deg, #ef6c00, #ffa726)",
 						}}
 					/>
 				</div>
@@ -38,6 +41,16 @@ export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
 					}}
 				/>
 			</div>
+			{/* Slow movement indicator */}
+			{hungerSlowed && (
+				<div
+					className="text-xs font-bold text-orange-300 animate-pulse"
+					style={{ textShadow: "1px 1px 2px #000" }}
+					aria-live="polite"
+				>
+					Hungry — movement slowed
+				</div>
+			)}
 		</div>
 	);
 }

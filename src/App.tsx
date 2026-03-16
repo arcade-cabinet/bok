@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
+import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
 	Health,
@@ -69,6 +70,7 @@ export default function App() {
 		health: 100,
 		hunger: 100,
 		stamina: 100,
+		hungerSlowed: false,
 		inventory: { items: {}, capacity: 256 } as InventoryData,
 		hotbarSlots: [null, null, null, null, null] as (HotbarSlot | null)[],
 		activeSlot: 0,
@@ -118,6 +120,7 @@ export default function App() {
 						health: health.current,
 						hunger: hunger.current,
 						stamina: stamina.current,
+						hungerSlowed: state.hungerSlowed,
 						inventory: { items: { ...inv.items }, capacity: inv.capacity },
 						hotbarSlots: [...hotbar.slots],
 						activeSlot: hotbar.activeSlot,
@@ -306,7 +309,7 @@ export default function App() {
 			const newSlot: HotbarSlot =
 				recipe.result.type === "block"
 					? { id: recipe.result.id as BlockIdValue, type: "block" }
-					: { id: recipe.result.id, type: "item" };
+					: { id: recipe.result.id, type: "item", durability: getMaxDurability(recipe.result.id) };
 			const emptySlot = hotbar.slots.indexOf(null);
 			if (emptySlot >= 0) {
 				hotbar.slots[emptySlot] = newSlot;
@@ -317,8 +320,13 @@ export default function App() {
 	}, []);
 
 	const handleSlotClick = useCallback((index: number) => {
-		kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
-			hotbar.activeSlot = index;
+		kootaWorld.query(PlayerTag, Hotbar, PlayerState).updateEach(([hotbar, state]) => {
+			if (hotbar.activeSlot === index) {
+				// Tapping the already-active slot triggers eat
+				state.wantsEat = true;
+			} else {
+				hotbar.activeSlot = index;
+			}
 		});
 	}, []);
 
@@ -353,7 +361,12 @@ export default function App() {
 						</div>
 
 						<div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
-							<VitalsBar health={hudState.health} hunger={hudState.hunger} stamina={hudState.stamina} />
+							<VitalsBar
+								health={hudState.health}
+								hunger={hudState.hunger}
+								stamina={hudState.stamina}
+								hungerSlowed={hudState.hungerSlowed}
+							/>
 							<HotbarDisplay
 								slots={hudState.hotbarSlots}
 								activeSlot={hudState.activeSlot}

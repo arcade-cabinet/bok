@@ -18,7 +18,9 @@ import * as THREE from "three";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
 import {
+	cookingSystem,
 	creatureSystem,
+	eatingSystem,
 	miningSystem,
 	movementSystem,
 	physicsSystem,
@@ -28,9 +30,11 @@ import {
 	worldEventSystem,
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
 import {
+	CookingState,
 	CreatureAnimation,
 	CreatureHealth,
 	CreatureTag,
@@ -53,7 +57,6 @@ import {
 	WorldSeed,
 	WorldTime,
 } from "../ecs/traits/index.ts";
-
 import { createBlockDefinitions } from "../world/block-definitions.ts";
 import { BlockId } from "../world/blocks.ts";
 import { biomeAt } from "../world/landmark-generator.ts";
@@ -104,6 +107,9 @@ let ambientLight: THREE.AmbientLight | null = null;
 let sunLight: THREE.DirectionalLight | null = null;
 let resizeHandler: (() => void) | null = null;
 
+/** Cooldown timer for combat tool durability drain (drains 1 per COMBAT_DRAIN_COOLDOWN seconds). */
+let combatDrainTimer = 0;
+
 /**
  * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
  * Drives all Koota ECS systems and pushes state to the visual Behaviors.
@@ -120,6 +126,8 @@ class GameBridge extends Behavior {
 		movementSystem(kootaWorld, dt);
 		physicsSystem(kootaWorld, dt);
 		survivalSystem(kootaWorld, dt);
+		eatingSystem(kootaWorld, dt);
+		cookingSystem(kootaWorld, dt);
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
@@ -285,9 +293,13 @@ class GameBridge extends Behavior {
 				}
 			});
 
-		if (!isMining) return;
+		if (!isMining) {
+			combatDrainTimer = 0;
+			return;
+		}
 
 		// Check all creatures within 3 blocks
+		let hitAny = false;
 		kootaWorld.query(CreatureTag, CreatureHealth, Position).updateEach(([hp, pos]) => {
 			const dx = pos.x - px;
 			const dy = pos.y - py;
@@ -296,8 +308,24 @@ class GameBridge extends Behavior {
 			if (dist < 3) {
 				hp.hp -= toolPower * 0.03 * dt;
 				particlesBehavior?.spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
+				hitAny = true;
 			}
 		});
+
+		// Drain tool durability on combat hit (1 per COMBAT_DRAIN_COOLDOWN)
+		if (hitAny) {
+			combatDrainTimer += dt;
+			if (combatDrainTimer >= COMBAT_DRAIN_COOLDOWN) {
+				combatDrainTimer -= COMBAT_DRAIN_COOLDOWN;
+				kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
+					const slot = hotbar.slots[hotbar.activeSlot];
+					if (slot && slot.type === "item" && drainDurability(slot)) {
+						hotbar.slots[hotbar.activeSlot] = null;
+						particlesBehavior?.spawn(px, py, pz, 0xaaaaaa, 20);
+					}
+				});
+			}
+		}
 	}
 }
 
@@ -569,6 +597,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		MiningState,
 		QuestProgress,
 		ToolSwing,
+		CookingState,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
@@ -763,5 +792,6 @@ export function destroyGame(): void {
 	sunLight = null;
 	loadedChunks.clear();
 	chunkData.clear();
+	combatDrainTimer = 0;
 	kootaWorld.reset();
 }

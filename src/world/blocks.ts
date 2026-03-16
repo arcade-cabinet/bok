@@ -128,7 +128,7 @@ export function isSoft(blockId: number): boolean {
 
 export interface ItemDef {
 	name: string;
-	type: "axe" | "pickaxe" | "sword";
+	type: "axe" | "pickaxe" | "sword" | "food";
 	target: string;
 	power: number;
 	color: string;
@@ -141,6 +141,8 @@ export const ITEMS: Record<number, ItemDef> = {
 	102: { name: "Wood Pickaxe", type: "pickaxe", target: "Stone", power: 3, color: "#8D6E63" },
 	103: { name: "Stone Pickaxe", type: "pickaxe", target: "Stone", power: 6, color: "#9E9E9E" },
 	104: { name: "Stone Sword", type: "sword", target: "Entity", power: 1, color: "#9E9E9E" },
+	201: { name: "Raw Meat", type: "food", target: "Hunger", power: 10, color: "#8B4513" },
+	202: { name: "Cooked Meat", type: "food", target: "Hunger", power: 35, color: "#CD853F" },
 };
 
 export interface CraftRecipe {
@@ -183,5 +185,11 @@ export const RECIPES: CraftRecipe[] = [
 		name: "Stone Sword",
 		result: { type: "item", id: 104, qty: 1 },
 		cost: { [BlockId.Wood]: 2, [BlockId.Stone]: 3 },
+	},
+	{
+		id: "cooked_meat",
+		name: "Cooked Meat",
+		result: { type: "item", id: 202, qty: 1 },
+		cost: { 201: 1, [BlockId.Torch]: 1 },
 	},
 ];

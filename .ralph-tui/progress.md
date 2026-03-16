@@ -164,6 +164,33 @@ The world event system separates pure math from ECS state management, following 
 - **Singleton event trait**: `NorrskenEvent` spawned once in initGame as its own entity. Queryable via standard ECS patterns.
 - **Ambient tint via side effects**: `setAmbientTint` callback modifies existing `ambientLight` — no new Behavior needed for basic visual integration.
 
+### Food & Hunger System Architecture
+The food system separates pure data from ECS behavior, following the creature pattern:
+- `food.ts` — Food IDs, restoration values, cooking table, hunger thresholds. Pure data, no ECS/Three.js.
+- `eating.ts` — ECS system: reads `wantsEat` flag, checks hotbar for food, deducts from inventory, restores hunger.
+- `cooking.ts` — ECS system: ticks cooking timer, adds cooked result to inventory on completion. `startCooking()` pure function for game bridge.
+- `survival.ts` — Extended with hunger threshold effects: `hungerSlowed` flag at <20%, health drain at <10%.
+- `movement.ts` — Reads `hungerSlowed` flag to apply speed multiplier.
+- Key patterns:
+- **One-shot action flag**: `wantsEat` on PlayerState is set by input (keyboard F / hotbar double-tap), consumed and reset by eatingSystem each frame. Prevents continuous eating.
+- **Threshold flags for cross-system communication**: `hungerSlowed` is computed in survivalSystem and read by movementSystem + UI. Avoids coupling movement to hunger calculations.
+- **Food as dual-namespace**: Block IDs (Mushroom=22, Cranberry=33, Wildflower=32) and item IDs (RawMeat=201, CookedMeat=202) both map to FOOD_RESTORE. Inventory already uses generic number keys.
+- **Cooking via ECS trait**: `CookingState` trait on player entity tracks timer, input/result IDs. `startCooking()` is a pure function called from game bridge—side-effect pattern.
+- **Koota .get() mutability gotcha**: `entity.get(Trait)` returns a read-only view for primitive-valued traits. Use `world.query(...).updateEach(([trait]) => {...})` for writes. Nested object mutations (like `inv.items[id]`) work because the proxy returns actual object references.
+
+### Tool Durability System Architecture
+The tool durability system follows the same pure-data ↔ ECS bridge separation:
+- `tool-durability.ts` — Tool tiers (Wood=50, Stone=150, Iron=500, Crystal=1000), max durability lookups, `drainDurability()` helper, `isTool()`/`getMaxDurability()` queries. Pure data, no ECS/Three.js.
+- `mining.ts` — Drains 1 durability on block break. Calls `drainDurability()` on the active hotbar slot after block removal. If tool breaks, sets slot to null and spawns gray break particles.
+- `game.ts` (combat bridge) — Drains 1 durability per COMBAT_DRAIN_COOLDOWN (1s) during active melee combat. Module-level `combatDrainTimer` tracks cooldown.
+- `App.tsx` (crafting) — Sets initial `durability: getMaxDurability(id)` on crafted tools in the hotbar slot.
+- `HotbarDisplay.tsx` — `DurabilityBar` sub-component renders green/yellow/red bar based on current/max ratio.
+- Key patterns:
+- **Durability on HotbarSlot**: `durability?: number` lives directly on the item-type slot object. Co-locates state with identity, serializes automatically via save/load, backward-compatible (undefined = indestructible legacy tool).
+- **Single drain helper**: `drainDurability(slot)` centralizes the decrement + break detection. Returns boolean for break event. Called from both mining.ts and game.ts combat.
+- **Tier lookup table**: `TOOL_TIER: Record<number, ToolTierId>` maps item IDs to tiers. Adding future iron/crystal tools requires only adding entries here.
+- **Color thresholds**: >50% green, >20% yellow, ≤20% red. Simple step function, no interpolation needed for pixel-art aesthetic.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -539,5 +566,63 @@ The world event system separates pure math from ECS state management, following 
   - **Singleton trait pattern**: `NorrskenEvent` is spawned once in game.ts initGame as its own entity (separate from WorldTime/WorldSeed). This keeps world event state queryable via standard ECS patterns.
   - **Side-effect ambient tint**: Rather than creating a new NorrskenBehavior, the system tints the existing ambientLight directly through a side-effect callback. Minimal rendering integration for maximum ECS purity.
   - **Resource surfacing via voxel-helpers**: Crystal blocks placed with `setVoxelAt` are automatically picked up by the VoxelRenderer — no separate visual integration needed. Cleanup restores Air blocks.
+---
+
+## 2026-03-16 - US-019
+- Food and hunger rework: replaced linear hunger decay with threshold-based effects system
+- New files:
+  - `src/ecs/systems/food.ts` (~60 LOC): Food IDs, restoration values (Mushroom=15, Cranberry=12, Wildflower=8, RawMeat=10, CookedMeat=35), cooking table, hunger thresholds
+  - `src/ecs/systems/eating.ts` (~34 LOC): ECS eating system, consumes food from active hotbar slot
+  - `src/ecs/systems/cooking.ts` (~44 LOC): ECS cooking system, timer-based food transformation
+  - `src/ecs/systems/food.test.ts` (~75 LOC): 10 tests for food data lookups
+  - `src/ecs/systems/eating.test.ts` (~120 LOC): 7 tests for eating mechanics
+  - `src/ecs/systems/cooking.test.ts` (~90 LOC): 7 tests for cooking timer and startCooking
+- Updated files:
+  - `src/world/blocks.ts`: Added food item type to ItemDef, RawMeat/CookedMeat items (IDs 201-202), cooked_meat recipe
+  - `src/ecs/traits/index.ts`: Added hungerSlowed/wantsEat to PlayerState, CookingState trait
+  - `src/ecs/systems/survival.ts`: Hunger threshold effects — hungerSlowed at <20%, health drain at 2HP/s when <10%
+  - `src/ecs/systems/movement.ts`: Speed penalty (0.5x) when hungerSlowed flag is set
+  - `src/ecs/systems/index.ts`: Exported eatingSystem, cookingSystem
+  - `src/engine/game.ts`: CookingState import/spawn, eating/cooking systems in update loop
+  - `src/engine/input-handler.ts`: F key triggers wantsEat flag
+  - `src/App.tsx`: hungerSlowed in HUD state, double-tap hotbar slot to eat, VitalsBar prop
+  - `src/ui/hud/VitalsBar.tsx`: Hunger bar pulsing + color shift when slowed, "Hungry — movement slowed" text with aria-live
+  - `src/ui/hud/VitalsBar.ct.tsx`: 3 new tests for hunger slow indicator and accessibility
+  - `src/ecs/systems/survival.test.ts`: 5 new tests for hunger thresholds
+  - `src/test-utils.ts`: CookingState in player spawn, new PlayerOverrides fields
+- All 624 vitest tests pass, typecheck clean, lint clean on new files
+- **Learnings:**
+  - **Koota .get() mutability**: `entity.get(Trait)` returns a read-only view for flat-data traits. Nested object mutations work (inv.items), but top-level property sets on trait data need `.updateEach()`. Test setup should use `world.query(...).updateEach()` for writes.
+  - **Cross-system flags**: Using a boolean flag on PlayerState (`hungerSlowed`) to communicate between survivalSystem → movementSystem + UI avoids coupling movement to hunger calculations. The flag is the contract.
+  - **One-shot action pattern**: `wantsEat` flag is set by input and consumed (reset to false) in the same frame by eatingSystem. Simple, prevents hold-to-eat exploits.
+  - **Dual-namespace food IDs**: Both block IDs (Mushroom=22) and item IDs (RawMeat=201) map to the same FOOD_RESTORE table. The generic inventory already handles both ID spaces.
+  - **Test updated expectations**: When modifying system behavior (hunger health drain rate), existing tests need expectation updates — the old "drains health when hunger is zero" test expected 1 HP/s but the new system drains at 2 HP/s at <10%.
+---
+
+## 2026-03-16 - US-020
+- Tool durability system: wood (50), stone (150), iron (500), crystal (1000) tier values
+- Durability drains 1 per block mined (in mining.ts) and 1 per second of active combat (in game.ts with cooldown timer)
+- Tool removed from hotbar (slot → null) at durability 0, with gray break particles
+- Durability bar displayed under tool icon in HotbarDisplay (green > yellow > red color steps)
+- Initial durability set on crafted tools in App.tsx handleCraft
+- Files created:
+  - `src/ecs/systems/tool-durability.ts` — Pure data: tier definitions, max durability lookups, drainDurability helper
+  - `src/ecs/systems/tool-durability.test.ts` — 13 unit tests for tier data, drain logic, constants
+  - `src/ecs/systems/durability.test.ts` — 6 unit tests for mining+durability integration
+- Files modified:
+  - `src/ecs/traits/index.ts` — Added `durability?: number` to item-type HotbarSlot
+  - `src/ecs/systems/mining.ts` — Drain durability on block break, spawn break particles
+  - `src/ecs/systems/index.ts` — Export tool-durability utilities
+  - `src/engine/game.ts` — Combat durability drain with 1s cooldown, reset timer in destroyGame
+  - `src/App.tsx` — Set initial durability on crafted tools
+  - `src/ui/hud/HotbarDisplay.tsx` — DurabilityBar sub-component with color thresholds
+  - `src/ui/hud/HotbarDisplay.ct.tsx` — 7 CT tests for durability bar rendering/colors/absence
+- All 643 vitest tests pass, typecheck clean, lint clean on modified files, build succeeds
+- Playwright CT tests have a pre-existing env issue (all mount() calls timeout including unmodified tests)
+- **Learnings:**
+  - **Durability on slot vs parallel array**: Putting durability directly on HotbarSlot is cleaner than a parallel array — co-locates state with identity, auto-serializes in save/load, and is backward-compatible (undefined = no tracking).
+  - **Mining system test setup**: MiningState has flat primitives — must use `world.query(PlayerTag, MiningState).updateEach()` to set `active`, `targetKey`, etc. Using `entity.get(MiningState).active = true` silently fails (Koota read-only proxy for flat traits).
+  - **Discrete vs continuous drain**: Mining has a natural discrete event (block break). Combat is continuous DPS. Using a cooldown timer (`combatDrainTimer`) converts continuous combat into discrete 1/sec drain events.
+  - **Break particles via existing effects**: No new side-effect callback needed — reuse `effects.spawnParticles` in mining.ts and `particlesBehavior?.spawn()` in game.ts for tool break FX.
 ---
 

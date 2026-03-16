@@ -37,6 +37,10 @@ export const PlayerState = trait({
 	/** Camera shake offset (applied then decayed each frame) */
 	shakeX: 0,
 	shakeY: 0,
+	/** True when hunger is below the slow threshold (20%). Read by movement + UI. */
+	hungerSlowed: false,
+	/** Set to true by UI/input to request eating the active hotbar item. */
+	wantsEat: false,
 });
 
 // ─── Camera Traits ───
@@ -55,7 +59,7 @@ export const Inventory = trait((): import("../inventory.ts").InventoryData => ({
 }));
 
 export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
-export type HotbarSlot = { id: BlockIdValue; type: "block" } | { id: number; type: "item" };
+export type HotbarSlot = { id: BlockIdValue; type: "block" } | { id: number; type: "item"; durability?: number };
 
 export interface HotbarState {
 	slots: (HotbarSlot | null)[];
@@ -213,6 +217,18 @@ export const CreatureHealth = trait({
 // ─── Legacy aliases (kept for backward compatibility during migration) ───
 export const EnemyTag = CreatureTag;
 export const EnemyState = CreatureHealth;
+
+// ─── Cooking ───
+export const CookingState = trait({
+	/** Whether a cooking operation is in progress. */
+	active: false,
+	/** Seconds remaining until cooking completes. */
+	timer: 0,
+	/** The raw food item being cooked. */
+	inputId: 0,
+	/** The resulting cooked item. */
+	resultId: 0,
+});
 
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({

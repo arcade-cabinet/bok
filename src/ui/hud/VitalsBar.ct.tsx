@@ -16,4 +16,21 @@ test.describe("VitalsBar", () => {
 		const component = await mount(<VitalsBar health={0} hunger={0} stamina={0} />);
 		await expect(component).toBeVisible();
 	});
+
+	test("shows slow movement indicator when hungerSlowed", async ({ mount }) => {
+		const component = await mount(<VitalsBar health={100} hunger={15} stamina={100} hungerSlowed />);
+		await expect(component).toBeVisible();
+		await expect(component.getByText("Hungry — movement slowed")).toBeVisible();
+	});
+
+	test("does not show slow indicator when not hungerSlowed", async ({ mount }) => {
+		const component = await mount(<VitalsBar health={100} hunger={50} stamina={100} hungerSlowed={false} />);
+		await expect(component.getByText("Hungry — movement slowed")).not.toBeVisible();
+	});
+
+	test("slow indicator has aria-live for accessibility", async ({ mount }) => {
+		const component = await mount(<VitalsBar health={100} hunger={15} stamina={100} hungerSlowed />);
+		const indicator = component.getByText("Hungry — movement slowed");
+		await expect(indicator).toHaveAttribute("aria-live", "polite");
+	});
 });

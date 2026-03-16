@@ -2,6 +2,7 @@ import type { World } from "koota";
 import {
 	MoveInput,
 	PhysicsBody,
+	PlayerState,
 	PlayerTag,
 	Position,
 	Rotation,
@@ -9,6 +10,7 @@ import {
 	ToolSwing,
 	Velocity,
 } from "../traits/index.ts";
+import { HUNGER_SLOW_MULTIPLIER } from "./food.ts";
 
 const CONFIG = {
 	moveSpeed: 5.5,
@@ -18,13 +20,13 @@ const CONFIG = {
 };
 
 export function movementSystem(world: World, dt: number) {
-	// PlayerTag is a tag (no data), so it's excluded from the callback tuple
 	world
-		.query(PlayerTag, Position, Velocity, Rotation, MoveInput, PhysicsBody, Stamina, ToolSwing)
-		.updateEach(([pos, vel, rot, input, body, stamina, toolSwing]) => {
+		.query(PlayerTag, Position, Velocity, Rotation, MoveInput, PhysicsBody, Stamina, ToolSwing, PlayerState)
+		.updateEach(([pos, vel, rot, input, body, stamina, toolSwing, state]) => {
 			void pos; // position updated by physics
 			const canSprint = input.sprint && stamina.current > 0 && !body.isSwimming;
-			const speed = canSprint ? CONFIG.sprintSpeed : CONFIG.moveSpeed;
+			let speed = canSprint ? CONFIG.sprintSpeed : CONFIG.moveSpeed;
+			if (state.hungerSlowed) speed *= HUNGER_SLOW_MULTIPLIER;
 
 			const cosYaw = Math.cos(rot.yaw);
 			const sinYaw = Math.sin(rot.yaw);

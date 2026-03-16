@@ -2,6 +2,7 @@ import type { World } from "koota";
 import { BLOCKS, ITEMS } from "../../world/blocks.ts";
 import { addItem } from "../inventory.ts";
 import { Hotbar, Inventory, MiningState, PlayerTag, QuestProgress, ToolSwing } from "../traits/index.ts";
+import { drainDurability } from "./tool-durability.ts";
 
 /** Hit result from the block highlight raycaster */
 export interface BlockHit {
@@ -88,6 +89,13 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 				const bName = blockDef?.name?.toLowerCase();
 				if (quest.step === 0 && bName === "wood") quest.progress++;
 				if (quest.step === 2 && bName === "stone") quest.progress++;
+
+				// Drain tool durability — 1 per block mined
+				const activeSlot = hotbar.slots[hotbar.activeSlot];
+				if (activeSlot && activeSlot.type === "item" && drainDurability(activeSlot)) {
+					hotbar.slots[hotbar.activeSlot] = null;
+					effects.spawnParticles(hit.x, hit.y + 0.5, hit.z, "#aaaaaa", 20);
+				}
 
 				mining.progress = 0;
 				mining.active = false;

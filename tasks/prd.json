@@ -567,7 +567,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 3 — Survival Depth. UI story (VitalsBar).",
       "labels": [
         "phase-3",
@@ -578,7 +578,8 @@
       "dependsOn": [
         "US-005",
         "US-006"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-020",
@@ -599,7 +600,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 3 — Survival Depth. UI story (HotbarDisplay durability bar).",
       "labels": [
         "phase-3",
@@ -609,7 +610,8 @@
       ],
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-021",
@@ -1650,6 +1652,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T12:02:47.171Z"
+    "updatedAt": "2026-03-16T12:42:17.694Z"
   }
 }

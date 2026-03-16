@@ -1,5 +1,6 @@
 import type { World } from "koota";
 import { Health, Hunger, MoveInput, PlayerState, PlayerTag, Stamina } from "../traits/index.ts";
+import { HUNGER_DRAIN_THRESHOLD, HUNGER_HEALTH_DRAIN_RATE, HUNGER_SLOW_THRESHOLD } from "./food.ts";
 
 export function survivalSystem(world: World, dt: number) {
 	world
@@ -7,9 +8,17 @@ export function survivalSystem(world: World, dt: number) {
 		.updateEach(([health, hunger, stamina, input, state]) => {
 			hunger.current = Math.max(0, hunger.current - dt * hunger.decayRate);
 
-			if (hunger.current <= 0) {
+			const hungerPct = hunger.max > 0 ? hunger.current / hunger.max : 0;
+
+			// Critical hunger: health drain at increased rate
+			if (hungerPct <= HUNGER_DRAIN_THRESHOLD) {
+				health.current = Math.max(0, health.current - dt * HUNGER_HEALTH_DRAIN_RATE);
+			} else if (hunger.current <= 0) {
 				health.current = Math.max(0, health.current - dt);
 			}
+
+			// Hunger slow flag (read by movement system and UI)
+			state.hungerSlowed = hungerPct <= HUNGER_SLOW_THRESHOLD && hungerPct > 0;
 
 			if (stamina.current < stamina.max && !input.sprint && !input.jump) {
 				stamina.current = Math.min(stamina.max, stamina.current + dt * stamina.regenRate);
