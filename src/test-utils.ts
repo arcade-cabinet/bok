@@ -5,6 +5,7 @@ import {
 	AiType,
 	AnimState,
 	BehaviorState,
+	Codex,
 	CookingState,
 	CreatureAI,
 	CreatureAnimation,
@@ -113,6 +114,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		InscriptionLevel(overrides.inscription ?? {}),
 		ShelterState(overrides.shelter ?? {}),
 		ExploredChunks,
+		Codex,
 	);
 }
 

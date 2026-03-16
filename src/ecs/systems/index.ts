@@ -1,3 +1,4 @@
+export { codexSystem, collectLoreEntry, discoverRecipe } from "./codex.ts";
 export { cookingSystem } from "./cooking.ts";
 export { creatureSystem, damageCreature } from "./creature.ts";
 export { eatingSystem } from "./eating.ts";

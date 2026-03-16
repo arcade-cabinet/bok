@@ -19,6 +19,7 @@ import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
 import { registerLandmarkResolver, resetExplorationState } from "../ecs/systems/exploration.ts";
 import {
+	codexSystem,
 	cookingSystem,
 	creatureSystem,
 	eatingSystem,
@@ -40,6 +41,7 @@ import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-dura
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
 import {
+	Codex,
 	CookingState,
 	CreatureAnimation,
 	CreatureHealth,
@@ -158,6 +160,7 @@ class GameBridge extends Behavior {
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
+		codexSystem(kootaWorld, dt);
 		this.runWorldEventSystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
@@ -630,6 +633,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		InscriptionLevel,
 		ShelterState,
 		ExploredChunks,
+		Codex,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));

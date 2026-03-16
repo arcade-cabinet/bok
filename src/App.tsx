@@ -6,6 +6,7 @@ import { worldToChunk } from "./ecs/systems/map-data.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
+	Codex,
 	ExploredChunks,
 	Health,
 	Hotbar,
@@ -74,6 +75,11 @@ export default function App() {
 	const saveSlotRef = useRef<number | null>(null);
 	const saveSeedRef = useRef<string>("");
 	const [mapData, setMapData] = useState<MapData | null>(null);
+	const [codexData, setCodexData] = useState<{
+		creatureProgress: Record<string, number>;
+		loreEntryIds: string[];
+		discoveredRecipeCount: number;
+	} | null>(null);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -158,7 +164,7 @@ export default function App() {
 				};
 			});
 
-			// Map data — only read when bok is open
+			// Map + codex data — only read when bok is open
 			if (bokOpen) {
 				kootaWorld.query(PlayerTag, Position, ExploredChunks).readEach(([pos, explored]) => {
 					const [pcx, pcz] = worldToChunk(pos.x, pos.z);
@@ -168,6 +174,13 @@ export default function App() {
 						playerCz: pcz,
 						biomeAt: (cx, cz) => biomeAt(cx * 16 + 8, cz * 16 + 8),
 						landmarks: getDiscoveredLandmarks(),
+					});
+				});
+				kootaWorld.query(PlayerTag, Codex).readEach(([codex]) => {
+					setCodexData({
+						creatureProgress: { ...codex.creatureProgress },
+						loreEntryIds: [...codex.loreEntries],
+						discoveredRecipeCount: codex.discoveredRecipes.size,
 					});
 				});
 			}
@@ -447,6 +460,7 @@ export default function App() {
 								canvas?.requestPointerLock();
 							}}
 							mapData={mapData ?? undefined}
+							codexData={codexData ?? undefined}
 						/>
 					</>
 				)}

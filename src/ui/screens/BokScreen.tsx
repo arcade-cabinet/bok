@@ -6,6 +6,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LandmarkMarker } from "../../ecs/systems/map-data.ts";
 import type { BiomeId } from "../../world/biomes.ts";
+import type { BokCodexProps } from "../components/BokCodex.tsx";
+import { BokCodex } from "../components/BokCodex.tsx";
 import { BokMap } from "../components/BokMap.tsx";
 import { BokPage } from "../components/BokPage.tsx";
 
@@ -37,11 +39,12 @@ interface BokScreenProps {
 	isOpen: boolean;
 	onClose: () => void;
 	mapData?: MapData;
+	codexData?: BokCodexProps;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function BokScreen({ isOpen, onClose, mapData }: BokScreenProps) {
+export function BokScreen({ isOpen, onClose, mapData, codexData }: BokScreenProps) {
 	const [activeTab, setActiveTab] = useState<BokTabId>("kartan");
 	const [closing, setClosing] = useState(false);
 	const touchStartRef = useRef<number>(0);
@@ -128,6 +131,13 @@ export function BokScreen({ isOpen, onClose, mapData }: BokScreenProps) {
 							playerCz={mapData.playerCz}
 							biomeAt={mapData.biomeAt}
 							landmarks={mapData.landmarks}
+						/>
+					)}
+					{activeTab === "kunskapen" && codexData && (
+						<BokCodex
+							creatureProgress={codexData.creatureProgress}
+							loreEntryIds={codexData.loreEntryIds}
+							discoveredRecipeCount={codexData.discoveredRecipeCount}
 						/>
 					)}
 				</BokPage>

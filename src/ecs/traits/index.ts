@@ -266,6 +266,25 @@ export const ExploredChunks = trait((): { visited: Set<number> } => ({
 	visited: new Set(),
 }));
 
+// ─── Codex (Knowledge) ───
+
+export interface CodexData {
+	/** Observation progress per species id. Range [0, 1]. */
+	creatureProgress: Record<string, number>;
+	/** Collected lore entry IDs. */
+	loreEntries: Set<string>;
+	/** Recipe IDs discovered through exploration. */
+	discoveredRecipes: Set<number>;
+}
+
+export const Codex = trait(
+	(): CodexData => ({
+		creatureProgress: {},
+		loreEntries: new Set(),
+		discoveredRecipes: new Set(),
+	}),
+);
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,
