@@ -38,6 +38,7 @@ A diegetic interface is one that exists **within the game world**. The player ch
 - **Target**: **Block crack overlay** (spatial). The targeted block visually cracks as mining progresses — texture distortion, particle chips, sound escalation. Completion is the block shattering, not a bar filling.
 
 ### Quest Progress
+
 - **Current**: Text in top-right HUD (non-diegetic)
 - **Target**: **The Bok's Sagan page** (diegetic). Quest info is written in the player's book. Environmental hints replace objective markers: "gather wood" is communicated by the spawn shrine being made of stone (contrast implies need for wood). Lore inscriptions hint at next steps.
 

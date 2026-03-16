@@ -20,6 +20,7 @@ Bok uses **@capacitor-community/sqlite** for all persistence. On web, this wraps
 ## Database Schema
 
 ### save_slots
+
 ```sql
 CREATE TABLE save_slots (
   id INTEGER PRIMARY KEY,
@@ -30,6 +31,7 @@ CREATE TABLE save_slots (
 ```
 
 ### player_state
+
 ```sql
 CREATE TABLE player_state (
   slot_id INTEGER PRIMARY KEY REFERENCES save_slots(id) ON DELETE CASCADE,
@@ -43,6 +45,7 @@ CREATE TABLE player_state (
 ```
 
 ### voxel_deltas
+
 ```sql
 CREATE TABLE voxel_deltas (
   slot_id INTEGER NOT NULL REFERENCES save_slots(id) ON DELETE CASCADE,

@@ -11,9 +11,14 @@ const DB_NAME = "bok_game";
 let sqlite: SQLiteConnection | null = null;
 let db: SQLiteDBConnection | null = null;
 let initialized = false;
+let initPromise: Promise<void> | null = null;
 
 export async function initDatabase(): Promise<void> {
 	if (initialized) return;
+	if (initPromise) return initPromise;
+
+	initPromise = (async () => {
+		if (initialized) return;
 
 	// Register jeep-sqlite web component for browser platform
 	if (Capacitor.getPlatform() === "web") {
@@ -64,7 +69,11 @@ export async function initDatabase(): Promise<void> {
 		CREATE INDEX IF NOT EXISTS idx_voxel_deltas_slot ON voxel_deltas(slot_id);
 	`);
 
-	initialized = true;
+		initialized = true;
+	})();
+
+	await initPromise;
+	initPromise = null;
 }
 
 /** Persist to IndexedDB (web only). Call after writes. */
@@ -96,12 +105,19 @@ export async function listSaveSlots(): Promise<SaveSlotMeta[]> {
 
 export async function createSaveSlot(seed: string): Promise<number> {
 	if (!db) throw new Error("Database not initialized");
-	const result = await db.run("INSERT INTO save_slots (seed) VALUES (?)", [seed]);
-	const slotId = result.changes?.lastId;
-	if (slotId === undefined) throw new Error("Failed to create save slot");
-	await db.run("INSERT INTO player_state (slot_id) VALUES (?)", [slotId]);
-	await persistWebStore();
-	return slotId;
+	await db.run("BEGIN TRANSACTION");
+	try {
+		const result = await db.run("INSERT INTO save_slots (seed) VALUES (?)", [seed]);
+		const slotId = result.changes?.lastId;
+		if (slotId === undefined) throw new Error("Failed to create save slot");
+		await db.run("INSERT INTO player_state (slot_id) VALUES (?)", [slotId]);
+		await db.run("COMMIT");
+		await persistWebStore();
+		return slotId;
+	} catch (error) {
+		await db.run("ROLLBACK");
+		throw error;
+	}
 }
 
 export async function deleteSaveSlot(slotId: number): Promise<void> {

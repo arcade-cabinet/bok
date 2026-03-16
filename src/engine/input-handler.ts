@@ -9,6 +9,22 @@ const keys: Record<string, boolean> = {};
 
 export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	const onKeyDown = (e: KeyboardEvent) => {
+		// Prevent default for gameplay keys
+		if (
+			e.code === "KeyW" ||
+			e.code === "KeyA" ||
+			e.code === "KeyS" ||
+			e.code === "KeyD" ||
+			e.code === "Space" ||
+			e.code === "ArrowUp" ||
+			e.code === "ArrowDown" ||
+			e.code === "ArrowLeft" ||
+			e.code === "ArrowRight" ||
+			(e.key >= "1" && e.key <= "5")
+		) {
+			e.preventDefault();
+		}
+
 		keys[e.code] = true;
 		syncKeysToECS();
 
@@ -20,6 +36,22 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	};
 
 	const onKeyUp = (e: KeyboardEvent) => {
+		// Prevent default for gameplay keys
+		if (
+			e.code === "KeyW" ||
+			e.code === "KeyA" ||
+			e.code === "KeyS" ||
+			e.code === "KeyD" ||
+			e.code === "Space" ||
+			e.code === "ArrowUp" ||
+			e.code === "ArrowDown" ||
+			e.code === "ArrowLeft" ||
+			e.code === "ArrowRight" ||
+			(e.key >= "1" && e.key <= "5")
+		) {
+			e.preventDefault();
+		}
+
 		keys[e.code] = false;
 		syncKeysToECS();
 	};

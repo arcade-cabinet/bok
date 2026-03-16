@@ -234,10 +234,10 @@ class GameBridge extends Behavior {
 		miningSystem(kootaWorld, dt, hit, effects);
 
 		// Player-to-enemy combat: when mining is active, check nearby enemies
-		this.checkEnemyCombat();
+		this.checkEnemyCombat(dt);
 	}
 
-	private checkEnemyCombat() {
+	private checkEnemyCombat(dt: number) {
 		let px = 0,
 			py = 0,
 			pz = 0;
@@ -268,7 +268,7 @@ class GameBridge extends Behavior {
 			const dz = pos.z - pz;
 			const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (dist < 3) {
-				enemy.hp -= toolPower * 0.03; // Damage per frame while mining
+				enemy.hp -= toolPower * 0.03 * dt; // Damage scaled by delta time
 				particlesBehavior?.spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
 			}
 		});
@@ -720,6 +720,7 @@ export function destroyGame(): void {
 		window.removeEventListener("resize", resizeHandler);
 		resizeHandler = null;
 	}
+	setVoxelDeltaListener(null);
 	jpRuntime?.stop();
 	jpRuntime = null;
 	threeScene = null;

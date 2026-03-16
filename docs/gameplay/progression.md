@@ -24,18 +24,21 @@ This should evolve into a **discovery-driven** system.
 ## Planned Progression Arc
 
 ### Act I — Awakening (First Day)
+
 - **Goal**: Survive the first night
 - **Discovers**: Basic mining, crafting, block placement, day/night cycle
 - **Threats**: Mörker (weak initial spawns)
 - **Milestone**: Build first shelter (enclosed space detected)
 
-### Act II — The Margin (Days 2-5)
+### Act II — The Margin (Days 2-4)
+
 - **Goal**: Establish a base, explore the starting biome
 - **Discovers**: Tool tiers, food systems, creature observation, the Bok journal
 - **Threats**: Mörker grow in number, Näcken contest territory
 - **Milestone**: Craft first workstation, fill first Kunskapen entry
 
 ### Act III — Beyond the Margin (Days 5-15)
+
 - **Goal**: Explore a second biome, find first Fornlämning
 - **Discovers**: Biome-specific resources, Runväktare, advanced recipes, lore fragments
 - **Threats**: Runväktare at ruins, Vittra in forests, Lindormar in soft terrain
@@ -77,6 +80,6 @@ The player is literally writing themselves into the world's story, and the world
 | 1 — Bench | Planks, Bricks, Glass | Improved tools, basic furniture | Crafting Bench |
 | 2 — Forge | Iron, Coal, Treated Wood | Metal tools, light sources, mechanisms | Forge |
 | 3 — Scriptorium | Crystal, Glyph Fragments, Ink | Enchanted tools, Bok upgrades, fast travel | Scriptorium |
-| 4 — Scriptorium | Runsten Seal, Rare Crystals | Permanent structures, biome shaping | Scriptorium |
+| 4 — Scriptorium II | Runsten Seal, Rare Crystals | Permanent structures, biome shaping | Scriptorium |
 
 Each workstation is a physical block placed in the world. The player must be near it to access its recipes.

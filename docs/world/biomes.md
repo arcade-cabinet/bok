@@ -29,7 +29,7 @@ The safe zone. Rolling grass terrain with scattered **björk** (birch) trees —
 ### Bokskogen (The Beech Forest) — Temperate Forest
 *Named for Sweden's famous beech forests (Skåne region). Dense, cathedral-like canopy.*
 
-Dense forest with towering **bok** (beech) trees — thick trunks, broad canopy creating a dark forest floor. Moss-covered boulders. Mushroom blocks growing on fallen logs. Fornlämningar (ruins) half-swallowed by roots. Bindling webs between trunks. The light filters through in golden shafts.
+Dense forest with towering **bok** (beech) trees — thick trunks, broad canopy creating a dark forest floor. Moss-covered boulders. Mushroom blocks growing on fallen logs. Fornlämningar (ruins) half-swallowed by roots. Binding webs between trunks. The light filters through in golden shafts.
 
 - **Trees**: Beech (thick brown bark, dense wide canopy — 7x7 leaf spread) and oak (gnarled, shorter)
 - **Ground cover**: Moss blocks, mushroom blocks, fallen log blocks
