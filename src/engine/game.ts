@@ -487,4 +487,5 @@ export function destroyGame(): void {
 	ambientLight = null;
 	sunLight = null;
 	loadedChunks.clear();
+	kootaWorld.reset();
 }
