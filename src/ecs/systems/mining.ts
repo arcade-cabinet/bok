@@ -80,14 +80,15 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 					effects.spawnParticles(hit.x, hit.y, hit.z, blockDef.color, 15);
 				}
 
-				// Add to inventory
-				addToInventory(inv as unknown as Record<string, number>, blockDef?.name ?? "");
+				if (blockDef) {
+					// Add to inventory
+					addToInventory(inv as unknown as Record<string, number>, blockDef.name);
 
-				// Quest tracking
-				const bName = (blockDef?.name ?? "").toLowerCase();
-				if (quest.step === 0 && bName === "wood") quest.progress++;
-				if (quest.step === 2 && bName === "stone") quest.progress++;
-
+					// Quest tracking
+					const bName = blockDef.name.toLowerCase();
+					if (quest.step === 0 && bName === "wood") quest.progress++;
+					if (quest.step === 2 && bName === "stone") quest.progress++;
+				}
 				mining.progress = 0;
 				mining.active = false;
 			}
