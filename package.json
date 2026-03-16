@@ -1,0 +1,43 @@
+{
+  "name": "bok",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Bok — A narrative voxel survival game built on Jolly Pixel",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.14.0",
+    "@jolly-pixel/engine": "^2.5.0",
+    "@jolly-pixel/runtime": "^3.3.0",
+    "@jolly-pixel/voxel.renderer": "^1.4.0",
+    "koota": "^0.6.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.182.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.4.21",
+    "daisyui": "^5.0.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^8.0.0"
+  }
+}
