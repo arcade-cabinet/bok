@@ -25,8 +25,10 @@ import {
 	questSystem,
 	survivalSystem,
 	timeSystem,
+	worldEventSystem,
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
 import {
 	CreatureAnimation,
@@ -38,6 +40,7 @@ import {
 	Inventory,
 	MiningState,
 	MoveInput,
+	NorrskenEvent,
 	PhysicsBody,
 	PlayerState,
 	PlayerTag,
@@ -120,6 +123,7 @@ class GameBridge extends Behavior {
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
+		this.runWorldEventSystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
 		this.syncPlayerToCamera(dt);
@@ -225,6 +229,19 @@ class GameBridge extends Behavior {
 				isDaytime,
 			);
 		});
+	}
+
+	private runWorldEventSystem(dt: number) {
+		const effects: WorldEventEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			setAmbientTint: (color, intensity) => {
+				if (ambientLight && intensity > 0) {
+					ambientLight.color.set(color);
+					ambientLight.intensity = 0.05 + intensity;
+				}
+			},
+		};
+		worldEventSystem(kootaWorld, dt, cosmeticRng, effects);
 	}
 
 	private runMiningSystem(dt: number) {
@@ -555,6 +572,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
+	kootaWorld.spawn(NorrskenEvent());
 
 	// ─── Game Bridge Actor ───
 	const bridgeActor = jpWorld.createActor("GameBridge");

@@ -139,6 +139,31 @@ Three new hostile creatures (Runväktare, Lindorm, Draugar) each follow the esta
 - **Context extension for Draugar**: `CreatureUpdateContext` extended with `playerYaw` (from `Rotation` trait). `creature.ts` queries `Rotation` alongside `Position` and `PlayerState`.
 - **Spawner decomposition**: New species spawning extracted to `creature-spawner-hostile.ts` via function injection (passes `spawnEntity` and `findSurfaceSpawn` from the parent module).
 
+### Neutral/Boss Creature AI Pattern (US-017)
+Three special creatures (Vittra, Nacken, Jatten) each follow the established pure-math ↔ ECS bridge separation:
+- `vittra-debuff.ts` — Mound proximity detection, otur debuff constants, orbit mechanics, biome gating, appeasement/aggravation state. `creature-ai-vittra.ts` bridges to ECS.
+- `nacken-aura.ts` — Aura range checks, disorientation sway computation, iron offering detection, rune teaching state machine. `creature-ai-nacken.ts` bridges to ECS.
+- `jatten-boss.ts` — Phase state machine (approach/attack/regen/stagger), inscription threshold, terrain block consumption for regeneration, damage accumulation for stagger. `creature-ai-jatten.ts` bridges to ECS.
+- `creature-ai-neutral.ts` — Dispatch hub for neutral/boss archetypes, contains gravity, debuff application, and disorientation helpers.
+- Key patterns:
+- **Neutral AI dispatch**: `updateNeutralAI` in creature-ai-neutral.ts handles both `neutral` and `boss` aiTypes. The neutral dispatch was extracted from creature-ai.ts to keep files under 200 LOC.
+- **Stationary creatures**: Nacken forces position to `seatX/Y/Z` every frame, making it immune to physics. First creature that never moves.
+- **Floating creatures**: Vittra don't use gravity — they hover via direct Y interpolation toward player head height. The `applyGravity` callback is not passed to them.
+- **Boss phase machine**: Jatten uses `approach → attack → regen → stagger` cycle. `recordDamage` accumulates hits and returns boolean for stagger trigger. `consumeBlock` heals HP with a cooldown.
+- **Spawner decomposition**: `creature-spawner-neutral.ts` mirrors `creature-spawner-hostile.ts` pattern with function injection of `spawnEntity` and `findSurfaceSpawn`.
+- **Part definition files per tier**: `creature-part-defs-neutral.ts` parallels `creature-part-defs-hostile.ts` for the neutral/boss tier.
+
+### World Event System Architecture
+The world event system separates pure math from ECS state management, following the creature pattern:
+- `norrsken-event.ts` — Night detection, trigger probability, aurora color cycling, resource position generation, tint intensity. Pure math, no ECS/Three.js.
+- `world-event.ts` — ECS system managing event lifecycle: night-edge trigger, active timer, creature pacification, Crystal block surfacing/cleanup, side-effect callbacks for visuals.
+- Key patterns:
+- **Post-creature execution order**: `worldEventSystem` runs AFTER `creatureSystem` in game.ts. Creature AI runs normally, then the event overrides all behavior/anim states to Idle. No modification to creature-ai.ts needed.
+- **Night-edge detection**: `wasNight` flag in `NorrskenEvent` trait detects day→night transitions. Trigger check rolls once per night entry, not every frame.
+- **Module-level cleanup tracking**: `surfacedResources` array tracks placed Crystal blocks for cleanup (like morker-pack.ts module maps). Variable-length data doesn't fit ECS traits cleanly.
+- **Singleton event trait**: `NorrskenEvent` spawned once in initGame as its own entity. Queryable via standard ECS patterns.
+- **Ambient tint via side effects**: `setAmbientTint` callback modifies existing `ambientLight` — no new Behavior needed for basic visual integration.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -474,5 +499,45 @@ Three new hostile creatures (Runväktare, Lindorm, Draugar) each follow the esta
   - **Spawner decomposition via function injection**: Rather than exporting `spawnEntity` and `findSurfaceSpawn` directly, passing them as function parameters avoids circular dependencies while keeping the spawner interface clean.
   - **Context extension**: Adding `playerYaw` to `CreatureUpdateContext` required touching both `creature-ai.ts` (interface) and `creature.ts` (Rotation query). This is the pattern for any new player data that creature AI needs.
   - Pre-existing files `creature-ai.ts` (260 LOC) and `creature-spawner.ts` (253 LOC) are both over the 200 LOC limit from previous stories — consider decomposing in a future refactoring story.
+---
+
+## 2026-03-16 - US-017
+- Implemented Vittra (neutral), Nacken (neutral), and Jatten (boss) creatures
+- Pure math modules: `vittra-debuff.ts`, `nacken-aura.ts`, `jatten-boss.ts`
+- ECS bridges: `creature-ai-vittra.ts`, `creature-ai-nacken.ts`, `creature-ai-jatten.ts`
+- Neutral AI dispatch: `creature-ai-neutral.ts` (extracted from creature-ai.ts to keep under 200 LOC)
+- Spawner: `creature-spawner-neutral.ts` (mirrors hostile spawner pattern)
+- Part definitions: `creature-part-defs-neutral.ts` (Vittra: small earthy humanoid, Nacken: green-blue emissive seated humanoid with fiddle, Jatten: 8-block tall terrain-block giant)
+- Test files: `vittra-debuff.test.ts`, `nacken-aura.test.ts`, `jatten-boss.test.ts`
+- Updated `creature-part-defs.ts` to register all 3 new species in SPECIES_PARTS lookup
+- Updated `creature-ai.ts` cleanup function and re-exported neutral AI from dedicated module
+- Updated `creature-spawner.ts` to call neutral spawner
+- Fixed pre-existing test that assumed Vittra had no part definitions
+- Files changed: 9 new files, 5 modified files
+- **Learnings:**
+  - Extracting neutral AI dispatch to its own file was necessary because creature-ai.ts was already at ~275 LOC before this story. The re-export pattern (`export { updateNeutralAI } from "./creature-ai-neutral.ts"`) keeps the public API stable while splitting implementation.
+  - Stationary creatures (Nacken) need to force position every frame — they don't use gravity or movement helpers. This is a new pattern distinct from floating (Vittra) or walking (all others).
+  - Boss creatures need a phase state machine rather than simple behavior states. The `JattenPhase` type is separate from `BehaviorState` because boss phases (approach/attack/regen/stagger) don't map 1:1 to render behavior states.
+  - The `ConsumeTerrainFn` callback for Jatten's regeneration is currently a no-op (`() => false`) in the neutral dispatch — it needs a real implementation wired in game.ts when the terrain consumption side effect is available.
+  - Node 22+ is required for `pnpm test` — Vitest 4.x depends on `node:util.styleText` which doesn't exist in Node 18.
+---
+
+## 2026-03-16 - US-018
+- Norrsken (Northern Lights) world event — first world-level event system, not creature AI
+- New file `src/ecs/systems/norrsken-event.ts` (~130 LOC): Pure math module — night detection, trigger probability (5% per night), aurora color cycling (green #88ff88 → purple #aa66cc → blue #66aaff over 6s period), color interpolation/packing, resource surfacing position generation (ring around player, RESOURCE_MIN_RADIUS to RESOURCE_RADIUS), tint fade-in/fade-out intensity
+- New file `src/ecs/systems/world-event.ts` (~175 LOC): ECS system — night-edge detection (wasNight flag), event lifecycle (trigger/active/cleanup), creature pacification (all archetypes forced Idle), Crystal block surfacing with tracking, aurora visual side effects (tint + particles), resource cleanup on event end
+- New file `src/ecs/systems/norrsken-event.test.ts` (~185 LOC): 18 tests covering night detection, trigger probability, aurora color cycling (start/1/3/2/3/full cycle/interpolation), color packing, resource position generation (count/radius/integers/determinism), event constants, tint fade intensity
+- New file `src/ecs/systems/world-event.test.ts` (~250 LOC): 16 tests covering trigger on night entry, rng rejection, same-night prevention, day rejection, night-edge-only, timer decrement, timer expiry, day-end, creature pacification (hostile/passive/neutral), no pacification when inactive, resource surfacing, resource cleanup, resource placement height, ambient tint calls, tint reset
+- New trait: `NorrskenEvent` in traits/index.ts (active, timer, dayTriggered, wasNight)
+- Updated `src/ecs/systems/index.ts`: exported worldEventSystem
+- Updated `src/engine/game.ts`: NorrskenEvent trait import, entity spawn, runWorldEventSystem method after creatureSystem, WorldEventEffects wiring (particles + ambient light tint)
+- All 596 vitest tests pass, typecheck clean, lint clean on new files
+- **Learnings:**
+  - **Post-creature pacification**: Running worldEventSystem AFTER creatureSystem means creature AI runs normally, then the event overrides all behavior/anim states to Idle. No modification to creature-ai.ts needed — the world event owns the pacification concern.
+  - **Night-edge detection**: Using a `wasNight` flag in the trait detects the day→night transition once per night. Without this, the trigger check would re-roll every frame during night.
+  - **Module-level resource tracking**: `surfacedResources` array tracks placed Crystal blocks for cleanup. Using module-level state (like morker-pack.ts module maps) is simpler than storing variable-length data in an ECS trait.
+  - **Singleton trait pattern**: `NorrskenEvent` is spawned once in game.ts initGame as its own entity (separate from WorldTime/WorldSeed). This keeps world event state queryable via standard ECS patterns.
+  - **Side-effect ambient tint**: Rather than creating a new NorrskenBehavior, the system tints the existing ambientLight directly through a side-effect callback. Minimal rendering integration for maximum ECS purity.
+  - **Resource surfacing via voxel-helpers**: Crystal blocks placed with `setVoxelAt` are automatically picked up by the VoxelRenderer — no separate visual integration needed. Cleanup restores Air blocks.
 ---
 

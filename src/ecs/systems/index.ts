@@ -5,3 +5,4 @@ export { physicsSystem } from "./physics.ts";
 export { questSystem } from "./quest.ts";
 export { survivalSystem } from "./survival.ts";
 export { timeSystem } from "./time.ts";
+export { worldEventSystem } from "./world-event.ts";

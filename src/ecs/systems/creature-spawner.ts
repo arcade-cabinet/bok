@@ -22,6 +22,7 @@ import {
 } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { spawnHostileCreatures } from "./creature-spawner-hostile.ts";
+import { spawnNeutralCreatures } from "./creature-spawner-neutral.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
 import { PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
 import { isSnailBiome } from "./snail-behavior.ts";
@@ -116,6 +117,7 @@ export function spawnCreatures(
 		spawnMorkerPack(world, playerX, playerZ, effects);
 	}
 	spawnHostileCreatures(world, playerX, playerZ, isDaytime, effects, spawnEntity, findSurfaceSpawn);
+	spawnNeutralCreatures(world, playerX, playerZ, isDaytime, effects, spawnEntity, findSurfaceSpawn);
 }
 
 /** Spawn a single creature entity with given defaults. Returns entity ID. */

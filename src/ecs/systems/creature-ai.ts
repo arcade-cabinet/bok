@@ -28,10 +28,13 @@ import { updateLindormAI } from "./creature-ai-lindorm.ts";
 import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI } from "./creature-ai-passive.ts";
 import { updateRunvaktareAI } from "./creature-ai-runvaktare.ts";
 import { cleanupDraugarState } from "./draugar-gaze.ts";
+import { cleanupJattenState } from "./jatten-boss.ts";
 import { cleanupLindormState } from "./lindorm-tunnel.ts";
 import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
 import type { TargetPos } from "./morker-pack.ts";
+import { cleanupNackenState } from "./nacken-aura.ts";
 import { cleanupRunvaktareState } from "./runvaktare-ai.ts";
+import { cleanupVittraState } from "./vittra-debuff.ts";
 
 const GRAVITY = 28;
 
@@ -42,6 +45,9 @@ export function cleanupCreatureState(entityId: number): void {
 	cleanupRunvaktareState(entityId);
 	cleanupLindormState(entityId);
 	cleanupDraugarState(entityId);
+	cleanupVittraState(entityId);
+	cleanupNackenState(entityId);
+	cleanupJattenState(entityId);
 }
 
 export interface CreatureUpdateContext {
@@ -193,10 +199,7 @@ function updateLyktgubbeAI(
 	hp.velY = 0;
 }
 
-/** Run neutral AI: passive until provoked, then hostile. */
-export function updateNeutralAI(_world: World, _dt: number, _ctx: CreatureUpdateContext, _effects?: CreatureEffects) {
-	// Neutral creatures (Vittra, Nacken, Runvaktare) — placeholder for future species
-}
+export { updateNeutralAI } from "./creature-ai-neutral.ts";
 
 // ─── Shared helpers ───
 

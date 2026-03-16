@@ -3,10 +3,10 @@
   "sessionId": "04ab82d4-1d7b-4f5d-a4c6-74976aa7547a",
   "status": "running",
   "startedAt": "2026-03-16T07:58:42.525Z",
-  "updatedAt": "2026-03-16T11:35:36.294Z",
-  "currentIteration": 15,
+  "updatedAt": "2026-03-16T12:02:47.172Z",
+  "currentIteration": 17,
   "maxIterations": 0,
-  "tasksCompleted": 15,
+  "tasksCompleted": 17,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -164,6 +164,26 @@
       "durationMs": 1613295,
       "startedAt": "2026-03-16T10:53:26.370Z",
       "endedAt": "2026-03-16T11:20:19.665Z"
+    },
+    {
+      "iteration": 16,
+      "status": "completed",
+      "taskId": "US-016",
+      "taskTitle": "Runvaktare, Lindormar, and Draugar",
+      "taskCompleted": true,
+      "durationMs": 915540,
+      "startedAt": "2026-03-16T11:20:20.752Z",
+      "endedAt": "2026-03-16T11:35:36.292Z"
+    },
+    {
+      "iteration": 17,
+      "status": "completed",
+      "taskId": "US-017",
+      "taskTitle": "Vittra, Nacken, and Jatten",
+      "taskCompleted": true,
+      "durationMs": 960425,
+      "startedAt": "2026-03-16T11:35:37.397Z",
+      "endedAt": "2026-03-16T11:51:37.822Z"
     }
   ],
   "skippedTaskIds": [],

@@ -101,6 +101,20 @@ export const WorldTime = trait({
 
 export const WorldSeed = trait({ seed: "" });
 
+// ─── World Events ───
+
+/** Norrsken (Northern Lights) event state — singleton trait. */
+export const NorrskenEvent = trait({
+	/** Whether the aurora is currently active. */
+	active: false,
+	/** Seconds remaining in the current event. */
+	timer: 0,
+	/** dayCount when last triggered (prevents re-trigger same night). */
+	dayTriggered: -1,
+	/** Whether we were in night last frame (for edge detection). */
+	wasNight: false,
+});
+
 // ─── Creature Traits ───
 
 /** All creature species in the game, from Swedish folklore. */

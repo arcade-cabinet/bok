@@ -165,7 +165,7 @@ describe("part definitions", () => {
 
 	it("falls back to Mörker for unknown species", () => {
 		const morkerParts = getPartDefs("morker");
-		const fallback = getPartDefs("vittra");
+		const fallback = getPartDefs("unknown_species" as never);
 		expect(fallback).toBe(morkerParts);
 	});
 
