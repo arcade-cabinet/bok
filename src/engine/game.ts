@@ -48,7 +48,7 @@ import {
 	WorldTime,
 } from "../ecs/traits/index.ts";
 
-import { BLOCKS, createBlockDefinitions } from "../world/blocks.ts";
+import { BlockId, BLOCKS, createBlockDefinitions } from "../world/blocks.ts";
 import { initNoise } from "../world/noise.ts";
 import {
 	CHUNK_SIZE,
@@ -70,6 +70,17 @@ export const kootaWorld = createKootaWorld();
 
 const loadedChunks = new Set<string>();
 const RENDER_DISTANCE = 3;
+
+// Authoritative chunk voxel storage: key = "cx,cz", value = Map of "x,y,z" -> blockId
+const chunkData = new Map<string, Map<string, number>>();
+
+function getChunkKey(cx: number, cz: number): string {
+	return `${cx},${cz}`;
+}
+
+function getVoxelKey(x: number, y: number, z: number): string {
+	return `${x},${y},${z}`;
+}
 
 let jpRuntime: Runtime | null = null;
 let voxelRenderer: VoxelRenderer | null = null;
@@ -306,10 +317,28 @@ function streamChunks() {
 		const chunk = chunkLoadQueue.shift();
 		if (!chunk) break;
 		generateChunkTerrain(voxelRenderer, "Ground", chunk.cx, chunk.cz);
+
+		// Reapply stored deltas from chunkData after terrain generation
+		const chunkKey = getChunkKey(chunk.cx, chunk.cz);
+		const deltas = chunkData.get(chunkKey);
+		if (deltas) {
+			for (const [voxelKey, blockId] of deltas.entries()) {
+				const [xStr, yStr, zStr] = voxelKey.split(",");
+				const x = parseInt(xStr, 10);
+				const y = parseInt(yStr, 10);
+				const z = parseInt(zStr, 10);
+				if (blockId === 0) {
+					voxelRenderer.removeVoxel("Ground", { position: { x, y, z } });
+				} else {
+					voxelRenderer.setVoxel("Ground", { position: { x, y, z }, blockId });
+				}
+			}
+		}
+
 		generated++;
 	}
 
-	// Unload distant chunks
+	// Unload distant chunks (remove from renderer but preserve chunkData)
 	for (const key of loadedChunks) {
 		const [cxStr, czStr] = key.split(",");
 		const cx = parseInt(cxStr, 10);
@@ -325,6 +354,7 @@ function streamChunks() {
 				}
 			}
 			loadedChunks.delete(key);
+			// Note: chunkData persists — not deleted here
 		}
 	}
 }
@@ -418,9 +448,22 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 			return entry ? entry.blockId : 0;
 		},
 		(layerName, x, y, z, blockId) => {
+			// Update authoritative chunk data storage
+			const cx = Math.floor(x / CHUNK_SIZE);
+			const cz = Math.floor(z / CHUNK_SIZE);
+			const chunkKey = getChunkKey(cx, cz);
+			const voxelKey = getVoxelKey(x, y, z);
+
+			if (!chunkData.has(chunkKey)) {
+				chunkData.set(chunkKey, new Map());
+			}
+			const deltas = chunkData.get(chunkKey)!;
+
 			if (blockId === 0) {
+				deltas.set(voxelKey, 0);
 				voxelRenderer?.removeVoxel(layerName, { position: { x, y, z } });
 			} else {
+				deltas.set(voxelKey, blockId);
 				voxelRenderer?.setVoxel(layerName, { position: { x, y, z }, blockId });
 			}
 		},
@@ -432,6 +475,32 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 
 	const surfaceY = findSurfaceY(voxelRenderer, 8, 8);
 	generateSpawnShrine(voxelRenderer, "Ground", surfaceY);
+
+	// Store spawn shrine blocks in authoritative chunkData manually
+	// (generateSpawnShrine uses voxelRenderer directly, not setVoxelAt)
+	const spawnChunkKey = getChunkKey(0, 0);
+	if (!chunkData.has(spawnChunkKey)) {
+		chunkData.set(spawnChunkKey, new Map());
+	}
+	const spawnDeltas = chunkData.get(spawnChunkKey)!;
+
+	// Stone brick floor
+	for (let x = 6; x <= 10; x++) {
+		for (let z = 6; z <= 10; z++) {
+			spawnDeltas.set(getVoxelKey(x, surfaceY, z), BlockId.StoneBricks);
+			// Clear space above
+			for (let y = surfaceY + 1; y <= surfaceY + 4; y++) {
+				spawnDeltas.set(getVoxelKey(x, y, z), 0);
+			}
+		}
+	}
+
+	// Torches and glass
+	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 6), BlockId.Torch);
+	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 6), BlockId.Torch);
+	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 10), BlockId.Torch);
+	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 10), BlockId.Torch);
+	spawnDeltas.set(getVoxelKey(8, surfaceY, 8), BlockId.Glass);
 
 	const spawnY = surfaceY + 2.5;
 
@@ -514,7 +583,6 @@ export function placeBlock() {
 		const invKey = craftableKeys[bName];
 		if (invKey) {
 			if ((invAny[invKey] || 0) <= 0) return;
-			invAny[invKey]--;
 		}
 
 		// Don't place inside player
@@ -527,6 +595,11 @@ export function placeBlock() {
 			(pY === Math.floor(pos.y) || pY === Math.floor(pos.y - 1))
 		)
 			return;
+
+		// All placement guards passed — now decrement inventory
+		if (invKey) {
+			invAny[invKey]--;
+		}
 
 		setVoxelAt("Ground", pX, pY, pZ, slot.id);
 		toolSwing.progress = 1.0;
@@ -600,11 +673,28 @@ export function restorePlayerState(data: PlayerSaveData): void {
 	});
 }
 
-/** Apply voxel deltas from the database onto the live world. */
+/** Apply voxel deltas from the database onto the live world and authoritative storage. */
 export function applyVoxelDeltas(deltas: Array<{ x: number; y: number; z: number; blockId: number }>): void {
 	for (const d of deltas) {
 		setVoxelAt("Ground", d.x, d.y, d.z, d.blockId);
 	}
+}
+
+/** Get all voxel deltas from authoritative chunk storage for persistence. */
+export function getAllVoxelDeltas(): Array<{ x: number; y: number; z: number; blockId: number }> {
+	const result: Array<{ x: number; y: number; z: number; blockId: number }> = [];
+	for (const [_chunkKey, deltas] of chunkData.entries()) {
+		for (const [voxelKey, blockId] of deltas.entries()) {
+			const [xStr, yStr, zStr] = voxelKey.split(",");
+			result.push({
+				x: parseInt(xStr, 10),
+				y: parseInt(yStr, 10),
+				z: parseInt(zStr, 10),
+				blockId,
+			});
+		}
+	}
+	return result;
 }
 
 /** Enable voxel delta tracking — calls listener on every setVoxelAt. */
@@ -636,5 +726,6 @@ export function destroyGame(): void {
 	ambientLight = null;
 	sunLight = null;
 	loadedChunks.clear();
+	chunkData.clear();
 	kootaWorld.reset();
 }
