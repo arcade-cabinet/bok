@@ -34,6 +34,9 @@ export const PlayerState = trait({
 	isRunning: false,
 	isDead: false,
 	damageFlash: 0,
+	/** Camera shake offset (applied then decayed each frame) */
+	shakeX: 0,
+	shakeY: 0,
 });
 
 // ─── Camera Traits ───
@@ -116,8 +119,12 @@ export const WorldSeed = trait({ seed: "" });
 export const EnemyTag = trait();
 export const EnemyState = trait({
 	hp: 6,
-	/** Vertical velocity for enemy gravity/jumping */
 	velY: 0,
+	/** AI state: "idle" | "chase" | "attack" */
+	aiState: 0, // 0=idle, 1=chase, 2=attack
+	attackCooldown: 0,
+	/** Three.js mesh instance index for rendering (-1 = unassigned) */
+	meshIndex: -1,
 });
 
 // ─── Tool Swing / ViewModel ───

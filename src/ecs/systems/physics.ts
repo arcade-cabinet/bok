@@ -56,6 +56,8 @@ export function physicsSystem(world: World, dt: number) {
 				vel.z = 0;
 				health.current = Math.max(0, health.current - 25);
 				state.damageFlash = 1.0;
+				state.shakeX = (Math.random() - 0.5) * 0.15;
+				state.shakeY = -0.2;
 			}
 		});
 }

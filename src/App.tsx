@@ -190,7 +190,16 @@ export default function App() {
 
 		const onKey = (e: KeyboardEvent) => {
 			if (e.code === "KeyE") {
-				setCraftingOpen((prev) => !prev);
+				setCraftingOpen((prev) => {
+					const next = !prev;
+					if (next) {
+						document.exitPointerLock();
+					} else {
+						const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+						canvas?.requestPointerLock();
+					}
+					return next;
+				});
 			}
 		};
 		document.addEventListener("keydown", onKey);
@@ -353,7 +362,11 @@ export default function App() {
 							isOpen={craftingOpen}
 							inventory={hudState.inventory}
 							onCraft={handleCraft}
-							onClose={() => setCraftingOpen(false)}
+							onClose={() => {
+								setCraftingOpen(false);
+								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+								canvas?.requestPointerLock();
+							}}
 						/>
 					</>
 				)}

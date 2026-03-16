@@ -15,6 +15,7 @@ import { loadRuntime, Runtime } from "@jolly-pixel/runtime";
 import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
+import type { EnemySideEffects } from "../ecs/systems/enemy.ts";
 import {
 	enemySystem,
 	miningSystem,
@@ -26,6 +27,8 @@ import {
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
 import {
+	EnemyState,
+	EnemyTag,
 	Health,
 	Hotbar,
 	Hunger,
@@ -59,6 +62,7 @@ import { getVoxelAt, registerVoxelAccessors, setVoxelAt, setVoxelDeltaListener }
 import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
+import { EnemyRendererBehavior } from "./behaviors/EnemyRendererBehavior.ts";
 import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
 import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
 
@@ -79,6 +83,7 @@ let celestialBehavior: CelestialBehavior | null = null;
 let blockHighlightBehavior: BlockHighlightBehavior | null = null;
 let particlesBehavior: ParticlesBehavior | null = null;
 let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
+let enemyRendererBehavior: EnemyRendererBehavior | null = null;
 
 // Shared references for the bridge
 let ambientLight: THREE.AmbientLight | null = null;
@@ -103,7 +108,7 @@ class GameBridge extends Behavior {
 		survivalSystem(kootaWorld, dt);
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
-		enemySystem(kootaWorld, dt);
+		this.runEnemySystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
 		this.syncPlayerToCamera(dt);
@@ -118,14 +123,11 @@ class GameBridge extends Behavior {
 		if (!cam) return;
 
 		kootaWorld
-			.query(PlayerTag, Position, Rotation, MoveInput, PhysicsBody, ToolSwing)
-			.readEach(([pos, rot, input, body, toolSwing]) => {
-				cam.position.set(pos.x, pos.y, pos.z);
+			.query(PlayerTag, Position, Rotation, MoveInput, PhysicsBody, ToolSwing, PlayerState)
+			.readEach(([pos, rot, input, body, toolSwing, state]) => {
+				cam.position.set(pos.x + state.shakeX, pos.y + state.shakeY, pos.z);
 				cam.rotation.order = "YXZ";
 				cam.rotation.set(rot.pitch, rot.yaw, 0);
-
-				// Camera shake lerp (resets to 0,0 after mining hits apply offsets)
-				// The camera's local offset is managed by the view model behavior through parent
 
 				// Push to view model behavior
 				if (viewModelBehavior) {
@@ -135,6 +137,13 @@ class GameBridge extends Behavior {
 					viewModelBehavior.swingProgress = toolSwing.progress;
 					viewModelBehavior.swayX = toolSwing.swayX;
 					viewModelBehavior.swayY = toolSwing.swayY;
+				}
+
+				// Sprint particles — kick up dust at player's feet
+				if (input.sprint && body.onGround && (input.forward || input.backward || input.left || input.right)) {
+					if (Math.random() < 0.3 && particlesBehavior) {
+						particlesBehavior.spawn(pos.x, pos.y - 1.6, pos.z, 0x8b7355, 1);
+					}
 				}
 			});
 	}
@@ -177,17 +186,86 @@ class GameBridge extends Behavior {
 		}
 	}
 
+	private runEnemySystem(dt: number) {
+		const effects: EnemySideEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			onEnemySpawned: (entityId) => enemyRendererBehavior?.assignMesh(entityId),
+			onEnemyDied: (entityId) => enemyRendererBehavior?.releaseMesh(entityId),
+		};
+		enemySystem(kootaWorld, dt, effects);
+
+		// Sync enemy positions to renderer
+		let timeOfDay = 0.25;
+		kootaWorld.query(WorldTime).readEach(([time]) => {
+			timeOfDay = time.timeOfDay;
+		});
+		const isDaytime = timeOfDay > 0.25 && timeOfDay < 0.75;
+
+		kootaWorld.query(EnemyTag, EnemyState, Position).readEach(([enemy, pos], entity) => {
+			enemyRendererBehavior?.updatePosition(entity.id(), pos.x, pos.y, pos.z, enemy.aiState, isDaytime);
+		});
+	}
+
 	private runMiningSystem(dt: number) {
 		const hit: BlockHit | null = blockHighlightBehavior?.lastHit ?? null;
 		const effects: MiningSideEffects = {
-			removeBlock: (x, y, z) => setVoxelAt("Ground", x, y, z, 0),
+			removeBlock: (x, y, z) => {
+				setVoxelAt("Ground", x, y, z, 0);
+				// Screen shake on block break
+				kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
+					state.shakeX = (Math.random() - 0.5) * 0.06;
+					state.shakeY = (Math.random() - 0.5) * 0.04;
+				});
+			},
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
 		};
 		miningSystem(kootaWorld, dt, hit, effects);
+
+		// Player-to-enemy combat: when mining is active, check nearby enemies
+		this.checkEnemyCombat();
+	}
+
+	private checkEnemyCombat() {
+		let px = 0,
+			py = 0,
+			pz = 0;
+		let isMining = false;
+		let toolPower = 2;
+		kootaWorld
+			.query(PlayerTag, Position, MiningState, Hotbar, ToolSwing)
+			.readEach(([pos, mining, hotbar, toolSwing]) => {
+				px = pos.x;
+				py = pos.y;
+				pz = pos.z;
+				isMining = mining.active;
+				// Swing animation acts as attack
+				if (toolSwing.progress > 0.5) {
+					const slot = hotbar.slots[hotbar.activeSlot];
+					if (slot && slot.type === "item") {
+						toolPower = 4; // Tool equipped = more damage
+					}
+				}
+			});
+
+		if (!isMining) return;
+
+		// Check all enemies within 3 blocks
+		kootaWorld.query(EnemyTag, EnemyState, Position).updateEach(([enemy, pos]) => {
+			const dx = pos.x - px;
+			const dy = pos.y - py;
+			const dz = pos.z - pz;
+			const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (dist < 3) {
+				enemy.hp -= toolPower * 0.03; // Damage per frame while mining
+				particlesBehavior?.spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
+			}
+		});
 	}
 }
 
 const UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
+const CHUNKS_PER_FRAME = 2;
+const chunkLoadQueue: Array<{ cx: number; cz: number }> = [];
 
 function streamChunks() {
 	if (!voxelRenderer) return;
@@ -202,17 +280,33 @@ function streamChunks() {
 	const pCx = Math.floor(px / CHUNK_SIZE);
 	const pCz = Math.floor(pz / CHUNK_SIZE);
 
-	// Load nearby chunks
+	// Enqueue nearby chunks that aren't loaded
 	for (let dx = -RENDER_DISTANCE; dx <= RENDER_DISTANCE; dx++) {
 		for (let dz = -RENDER_DISTANCE; dz <= RENDER_DISTANCE; dz++) {
 			const cx = pCx + dx;
 			const cz = pCz + dz;
 			const key = `${cx},${cz}`;
 			if (!loadedChunks.has(key)) {
-				loadedChunks.add(key);
-				generateChunkTerrain(voxelRenderer, "Ground", cx, cz);
+				loadedChunks.add(key); // Mark as pending to avoid re-enqueue
+				chunkLoadQueue.push({ cx, cz });
 			}
 		}
+	}
+
+	// Sort queue by distance to player (closest first)
+	chunkLoadQueue.sort((a, b) => {
+		const da = (a.cx - pCx) ** 2 + (a.cz - pCz) ** 2;
+		const db = (b.cx - pCx) ** 2 + (b.cz - pCz) ** 2;
+		return da - db;
+	});
+
+	// Process up to CHUNKS_PER_FRAME from the queue
+	let generated = 0;
+	while (chunkLoadQueue.length > 0 && generated < CHUNKS_PER_FRAME) {
+		const chunk = chunkLoadQueue.shift();
+		if (!chunk) break;
+		generateChunkTerrain(voxelRenderer, "Ground", chunk.cx, chunk.cz);
+		generated++;
 	}
 
 	// Unload distant chunks
@@ -282,6 +376,11 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	const particlesActor = jpWorld.createActor("Particles");
 	particlesBehavior = particlesActor.addComponentAndGet(ParticlesBehavior);
 	particlesBehavior.setup(threeScene);
+
+	// ─── Enemy Renderer Actor ───
+	const enemyActor = jpWorld.createActor("EnemyRenderer");
+	enemyRendererBehavior = enemyActor.addComponentAndGet(EnemyRendererBehavior);
+	enemyRendererBehavior.setup(threeScene);
 
 	// ─── Block Highlight Actor ───
 	const highlightActor = jpWorld.createActor("BlockHighlight");
@@ -533,6 +632,7 @@ export function destroyGame(): void {
 	blockHighlightBehavior = null;
 	particlesBehavior = null;
 	ambientParticlesBehavior = null;
+	enemyRendererBehavior = null;
 	ambientLight = null;
 	sunLight = null;
 	loadedChunks.clear();

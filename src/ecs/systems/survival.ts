@@ -19,6 +19,15 @@ export function survivalSystem(world: World, dt: number) {
 				state.damageFlash = Math.max(0, state.damageFlash - dt * 2);
 			}
 
+			// Decay camera shake
+			if (state.shakeX !== 0 || state.shakeY !== 0) {
+				const decay = Math.min(1, dt * 10);
+				state.shakeX *= 1 - decay;
+				state.shakeY *= 1 - decay;
+				if (Math.abs(state.shakeX) < 0.001) state.shakeX = 0;
+				if (Math.abs(state.shakeY) < 0.001) state.shakeY = 0;
+			}
+
 			if (health.current <= 0 && !state.isDead) {
 				state.isDead = true;
 				state.isRunning = false;
