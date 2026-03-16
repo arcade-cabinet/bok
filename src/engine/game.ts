@@ -17,10 +17,12 @@ import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
+import { registerLandmarkResolver, resetExplorationState } from "../ecs/systems/exploration.ts";
 import {
 	cookingSystem,
 	creatureSystem,
 	eatingSystem,
+	explorationSystem,
 	lightSystem,
 	miningSystem,
 	movementSystem,
@@ -42,6 +44,7 @@ import {
 	CreatureAnimation,
 	CreatureHealth,
 	CreatureTag,
+	ExploredChunks,
 	Health,
 	Hotbar,
 	Hunger,
@@ -66,7 +69,7 @@ import {
 } from "../ecs/traits/index.ts";
 import { createBlockDefinitions } from "../world/block-definitions.ts";
 import { BlockId } from "../world/blocks.ts";
-import { biomeAt } from "../world/landmark-generator.ts";
+import { biomeAt, detectLandmarkType } from "../world/landmark-generator.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
 import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
@@ -123,6 +126,13 @@ let resizeHandler: (() => void) | null = null;
 /** Cooldown timer for combat tool durability drain (drains 1 per COMBAT_DRAIN_COOLDOWN seconds). */
 let combatDrainTimer = 0;
 
+/** Resolve landmark type for a chunk — bridges landmark-generator to LandmarkType. */
+function resolveLandmarkForChunk(cx: number, cz: number): import("../ecs/systems/map-data.ts").LandmarkType | null {
+	const type = detectLandmarkType(cx, cz);
+	if (!type) return null;
+	return type as import("../ecs/systems/map-data.ts").LandmarkType;
+}
+
 /**
  * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
  * Drives all Koota ECS systems and pushes state to the visual Behaviors.
@@ -146,6 +156,7 @@ class GameBridge extends Behavior {
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
+		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		this.runWorldEventSystem(dt);
 
@@ -438,6 +449,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 
 	initNoise(seed);
 	registerBiomeResolver(biomeAt);
+	registerLandmarkResolver((cx, cz) => resolveLandmarkForChunk(cx, cz));
 
 	jpRuntime = new Runtime(canvas, {
 		includePerformanceStats: false,
@@ -617,6 +629,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		WorkstationProximity,
 		InscriptionLevel,
 		ShelterState,
+		ExploredChunks,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
@@ -823,5 +836,6 @@ export function destroyGame(): void {
 	chunkData.clear();
 	combatDrainTimer = 0;
 	resetLightState();
+	resetExplorationState();
 	kootaWorld.reset();
 }

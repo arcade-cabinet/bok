@@ -2,6 +2,12 @@ export { cookingSystem } from "./cooking.ts";
 export { creatureSystem, damageCreature } from "./creature.ts";
 export { eatingSystem } from "./eating.ts";
 export {
+	explorationSystem,
+	getDiscoveredLandmarks,
+	registerLandmarkResolver,
+	resetExplorationState,
+} from "./exploration.ts";
+export {
 	computeInscriptionLevel,
 	getSpawnRateMultiplier,
 	INSCRIPTION_TIERS,

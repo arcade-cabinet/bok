@@ -97,6 +97,23 @@ export function selectBiomeLandmark(biome: BiomeId): string {
 	}
 }
 
+/**
+ * Detect what landmark type exists in a chunk (if any).
+ * Used by the map to show rune markers on explored chunks.
+ */
+export function detectLandmarkType(cx: number, cz: number): string | null {
+	if (chunkHash(cx, cz) > LANDMARK_RATE) return null;
+	const lx = 4 + Math.floor(subHash(cx, cz) * 8);
+	const lz = 4 + Math.floor(subHash(cz, cx) * 8);
+	const gx = cx * CHUNK_SIZE + lx;
+	const gz = cz * CHUNK_SIZE + lz;
+	const h = surfaceYAt(gx, gz);
+	if (h < LANDMARK_MIN_HEIGHT) return null;
+	const biome = biomeAt(gx, gz);
+	if (isBiomeBoundary(gx, gz)) return "stenhog";
+	return selectBiomeLandmark(biome);
+}
+
 // ─── Main Entry Point ───
 
 /**

@@ -4,6 +4,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { LandmarkMarker } from "../../ecs/systems/map-data.ts";
+import type { BiomeId } from "../../world/biomes.ts";
+import { BokMap } from "../components/BokMap.tsx";
 import { BokPage } from "../components/BokPage.tsx";
 
 export type BokTabId = "kartan" | "listan" | "kunskapen" | "sagan";
@@ -22,14 +25,23 @@ const TAB_TITLES: Record<BokTabId, string> = {
 	sagan: "Sagan — The Saga",
 };
 
+export interface MapData {
+	visited: ReadonlySet<number>;
+	playerCx: number;
+	playerCz: number;
+	biomeAt: (cx: number, cz: number) => BiomeId;
+	landmarks: readonly LandmarkMarker[];
+}
+
 interface BokScreenProps {
 	isOpen: boolean;
 	onClose: () => void;
+	mapData?: MapData;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function BokScreen({ isOpen, onClose }: BokScreenProps) {
+export function BokScreen({ isOpen, onClose, mapData }: BokScreenProps) {
 	const [activeTab, setActiveTab] = useState<BokTabId>("kartan");
 	const [closing, setClosing] = useState(false);
 	const touchStartRef = useRef<number>(0);
@@ -108,7 +120,17 @@ export function BokScreen({ isOpen, onClose }: BokScreenProps) {
 				}}
 			>
 				{/* Page content */}
-				<BokPage title={TAB_TITLES[activeTab]} />
+				<BokPage title={TAB_TITLES[activeTab]}>
+					{activeTab === "kartan" && mapData && (
+						<BokMap
+							visited={mapData.visited}
+							playerCx={mapData.playerCx}
+							playerCz={mapData.playerCz}
+							biomeAt={mapData.biomeAt}
+							landmarks={mapData.landmarks}
+						/>
+					)}
+				</BokPage>
 			</div>
 
 			{/* Tab navigation — bottom */}

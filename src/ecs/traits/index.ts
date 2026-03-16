@@ -259,6 +259,13 @@ export const ShelterState = trait({
 	morkerSpawnMult: 1,
 });
 
+// ─── Exploration ───
+
+/** Tracks which chunks the player has visited. Uses packed ints (cx * 65536 + cz). */
+export const ExploredChunks = trait((): { visited: Set<number> } => ({
+	visited: new Set(),
+}));
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
+import { getDiscoveredLandmarks } from "./ecs/systems/exploration.ts";
+import { worldToChunk } from "./ecs/systems/map-data.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
+	ExploredChunks,
 	Health,
 	Hotbar,
 	Hunger,
@@ -46,11 +49,13 @@ import { QuestTracker } from "./ui/hud/QuestTracker.tsx";
 import { TimeDisplay } from "./ui/hud/TimeDisplay.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
+import type { MapData } from "./ui/screens/BokScreen.tsx";
 import { BokScreen } from "./ui/screens/BokScreen.tsx";
 import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
+import { biomeAt } from "./world/landmark-generator.ts";
 
 function isMobile(): boolean {
 	if (typeof window === "undefined" || typeof navigator === "undefined") return false;
@@ -68,6 +73,7 @@ export default function App() {
 	const cleanupRef = useRef<(() => void) | null>(null);
 	const saveSlotRef = useRef<number | null>(null);
 	const saveSeedRef = useRef<string>("");
+	const [mapData, setMapData] = useState<MapData | null>(null);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -152,6 +158,20 @@ export default function App() {
 				};
 			});
 
+			// Map data — only read when bok is open
+			if (bokOpen) {
+				kootaWorld.query(PlayerTag, Position, ExploredChunks).readEach(([pos, explored]) => {
+					const [pcx, pcz] = worldToChunk(pos.x, pos.z);
+					setMapData({
+						visited: explored.visited,
+						playerCx: pcx,
+						playerCz: pcz,
+						biomeAt: (cx, cz) => biomeAt(cx * 16 + 8, cz * 16 + 8),
+						landmarks: getDiscoveredLandmarks(),
+					});
+				});
+			}
+
 			setHudState((prev) => ({
 				...prev,
 				...playerUpdate,
@@ -162,7 +182,7 @@ export default function App() {
 		};
 		raf = requestAnimationFrame(poll);
 		return () => cancelAnimationFrame(raf);
-	}, [phase]);
+	}, [phase, bokOpen]);
 
 	const performSave = useCallback(async (): Promise<void> => {
 		const slotId = saveSlotRef.current;
@@ -426,6 +446,7 @@ export default function App() {
 								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
 								canvas?.requestPointerLock();
 							}}
+							mapData={mapData ?? undefined}
 						/>
 					</>
 				)}

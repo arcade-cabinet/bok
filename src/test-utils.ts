@@ -11,6 +11,7 @@ import {
 	CreatureHealth,
 	CreatureTag,
 	CreatureType,
+	ExploredChunks,
 	Health,
 	Hotbar,
 	Hunger,
@@ -111,6 +112,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		CookingState(),
 		InscriptionLevel(overrides.inscription ?? {}),
 		ShelterState(overrides.shelter ?? {}),
+		ExploredChunks,
 	);
 }
 

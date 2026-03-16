@@ -5,6 +5,18 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Map / Exploration System Architecture
+The Kartan (map) system follows the same pure-data ↔ ECS bridge separation:
+- `map-data.ts` — Chunk packing/unpacking (bit-packed `Set<number>` keys), fog-of-war state computation, biome color palette, landmark rune glyphs. Pure math, no ECS/Three.js.
+- `exploration.ts` — ECS system: per-frame chunk boundary detection, ExploredChunks trait update, injected landmark resolver, module-level landmarks cache.
+- `BokMap.tsx` — Canvas-rendered mini-map: biome-colored grid for explored chunks, parchment fog for unexplored, bright player highlight, rune glyph landmark markers.
+- `useMapGestures.ts` — Pinch-to-zoom (touch) and scroll wheel zoom hook.
+- Key patterns:
+- **Bit-packed chunk keys**: `((cx+32768) << 16) | ((cz+32768) & 0xFFFF)` packs two signed chunk coords into one number for `Set<number>`. Avoids string allocation.
+- **Conditional HUD polling**: Map data only read when bok journal is open. `if (bokOpen)` gate in the animation frame loop.
+- **Landmark resolver injection**: Same pattern as `registerBiomeResolver` — avoids circular deps between exploration ↔ landmark-generator ↔ terrain-generator.
+- **Canvas rendering via useEffect**: React manages lifecycle, canvas draws imperatively. `imageRendering: pixelated` for crisp pixel-art scaling.
+
 ### Procedural Animation Runtime Architecture
 The procedural animation system separates pure math from Three.js rendering:
 - `procedural-anim.ts` — Sine oscillators (`oscillate(time, freq, amp, phase)`), per-species config tables (`AnimConfig`), state-driven blending (`blendAnimParams`, `advanceBlend`). Pure math, no Three.js.
@@ -789,5 +801,34 @@ The light system separates pure data from ECS state management, following the cr
   - **Close animation via state**: CSS closing animation requires a 2-phase approach: set `closing=true` → apply close animation class → `setTimeout` to call `onClose()` after animation duration. This lets the parent control mount/unmount while the child controls its exit animation
   - **Mutual exclusion of overlays**: Crafting and Bok menus are mutually exclusive — opening one closes the other. The toggle handler `setCraftingOpen(false)` before `setBokOpen(!prev)` ensures only one overlay is visible at a time, both on keyboard and mobile
   - **Swipe detection simplicity**: A 50px horizontal touch delta threshold with `touchStartRef` is sufficient for page swiping. No gesture library needed — just touchstart/touchend delta check
+---
+
+## 2026-03-16 - US-026
+- Kartan (Atlas/Map Page): fog-of-war map in the Bok journal showing explored terrain, biome colors, and landmark markers
+- New `ExploredChunks` trait on player entity: `visited: Set<number>` using bit-packed chunk coordinates
+- New file `src/ecs/systems/map-data.ts` (~85 LOC): Pure math — chunk packing/unpacking, world-to-chunk conversion, fog-of-war state computation, biome color palette, landmark glyph table
+- New file `src/ecs/systems/exploration.ts` (~60 LOC): ECS system — per-frame chunk boundary detection, ExploredChunks set update, injected landmark resolver, module-level discovered landmarks cache
+- New file `src/ui/components/BokMap.tsx` (~120 LOC): Canvas-rendered mini-map — biome-colored explored chunks, parchment fog for unexplored, bright player highlight, rune glyph landmark markers
+- New file `src/ui/hooks/useMapGestures.ts` (~70 LOC): Pinch-to-zoom (touch) and scroll wheel zoom, clamped between 4–24 chunk radius
+- New file `src/ecs/systems/map-data.test.ts` (~95 LOC): 14 unit tests — pack/unpack round-trips, worldToChunk, fog state, biome colors, landmark glyphs
+- New file `src/ecs/systems/exploration.test.ts` (~80 LOC): 6 unit tests — chunk recording, deduplication, movement tracking, landmark resolver integration, reset
+- New file `src/ui/components/BokMap.ct.tsx` (~55 LOC): 6 Playwright CT tests — container render, canvas render, aria-label, zoom hint, explored chunks, landmark markers
+- Updated `src/ecs/traits/index.ts`: Added `ExploredChunks` trait
+- Updated `src/ecs/systems/index.ts`: Exports explorationSystem, getDiscoveredLandmarks, registerLandmarkResolver, resetExplorationState
+- Updated `src/engine/game.ts`: Runs explorationSystem in update loop, registers landmark resolver via detectLandmarkType, resets exploration state on game restart, spawns player with ExploredChunks trait
+- Updated `src/world/landmark-generator.ts`: Added `detectLandmarkType(cx, cz)` export for map integration
+- Updated `src/ui/screens/BokScreen.tsx`: Accepts optional `mapData` prop, renders BokMap on Kartan tab via BokPage children
+- Updated `src/App.tsx`: Reads ExploredChunks + Position in HUD poll when bok is open, passes mapData to BokScreen, imports biomeAt for chunk-to-biome resolution
+- Updated `src/test-utils.ts`: Added ExploredChunks to spawnPlayer
+- Typecheck clean, lint clean on all new/modified files
+- Note: `pnpm test`, `pnpm test-ct`, and `pnpm build` all fail due to pre-existing Node 18 + rolldown 1.0.0-rc.9 incompatibility (same as US-025)
+- Files created: `map-data.ts`, `exploration.ts`, `BokMap.tsx`, `useMapGestures.ts`, `map-data.test.ts`, `exploration.test.ts`, `BokMap.ct.tsx`
+- Files modified: `traits/index.ts`, `systems/index.ts`, `game.ts`, `landmark-generator.ts`, `BokScreen.tsx`, `App.tsx`, `test-utils.ts`
+- **Learnings:**
+  - **Set-based chunk tracking via bit packing**: `((cx+32768) << 16) | ((cz+32768) & 0xFFFF)` packs two 16-bit signed chunk coords into a single number for `Set<number>`. Avoids string keys like `${cx},${cz}` — faster hashing and lower GC pressure. Symmetry-safe packing (unlike simple `cx*65536+cz`) via offset to positive range first.
+  - **Conditional HUD poll for expensive reads**: Map data only needs reading when the Bok journal is open. Gating the ExploredChunks query behind `if (bokOpen)` avoids per-frame ECS reads for a UI that's closed 99% of the time. Added `bokOpen` to the useEffect dependency array.
+  - **Landmark resolver injection pattern**: Same pattern as `registerBiomeResolver` — exploration.ts receives a function `(cx, cz) => LandmarkType | null` from game.ts. This avoids circular deps (exploration → landmark-generator → terrain-generator) and keeps the exploration module testable with mock resolvers.
+  - **detectLandmarkType reuses generation hashes**: Rather than duplicating `chunkHash`/`subHash` logic, added a `detectLandmarkType` export to landmark-generator.ts that runs the same deterministic hash + surface height + biome boundary checks as `generateChunkLandmarks`. Guarantees map markers match actual world landmarks.
+  - **Canvas rendering in React via useEffect**: The BokMap uses a canvas ref + useEffect to imperatively draw the map whenever props change. This is the right pattern for pixel-art rendering — React manages lifecycle, canvas handles drawing. The `imageRendering: pixelated` CSS property ensures crisp scaling on retina displays.
 ---
 
