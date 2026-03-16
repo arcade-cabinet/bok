@@ -1,12 +1,20 @@
 import type { World } from "koota";
-import { Health, Hunger, MoveInput, PlayerState, PlayerTag, Stamina } from "../traits/index.ts";
+import { Health, Hunger, MoveInput, PlayerState, PlayerTag, ShelterState, Stamina } from "../traits/index.ts";
 import { HUNGER_DRAIN_THRESHOLD, HUNGER_HEALTH_DRAIN_RATE, HUNGER_SLOW_THRESHOLD } from "./food.ts";
+import { SHELTER_HUNGER_MULT, SHELTER_STAMINA_MULT } from "./structure.ts";
 
 export function survivalSystem(world: World, dt: number) {
+	// Read shelter state (separate query — player may not have ShelterState in tests)
+	let inShelter = false;
+	world.query(PlayerTag, ShelterState).readEach(([shelter]) => {
+		inShelter = shelter.inShelter;
+	});
+
 	world
 		.query(PlayerTag, Health, Hunger, Stamina, MoveInput, PlayerState)
 		.updateEach(([health, hunger, stamina, input, state]) => {
-			hunger.current = Math.max(0, hunger.current - dt * hunger.decayRate);
+			const hungerMult = inShelter ? SHELTER_HUNGER_MULT : 1;
+			hunger.current = Math.max(0, hunger.current - dt * hunger.decayRate * hungerMult);
 
 			const hungerPct = hunger.max > 0 ? hunger.current / hunger.max : 0;
 
@@ -20,8 +28,9 @@ export function survivalSystem(world: World, dt: number) {
 			// Hunger slow flag (read by movement system and UI)
 			state.hungerSlowed = hungerPct <= HUNGER_SLOW_THRESHOLD && hungerPct > 0;
 
+			const staminaMult = inShelter ? SHELTER_STAMINA_MULT : 1;
 			if (stamina.current < stamina.max && !input.sprint && !input.jump) {
-				stamina.current = Math.min(stamina.max, stamina.current + dt * stamina.regenRate);
+				stamina.current = Math.min(stamina.max, stamina.current + dt * stamina.regenRate * staminaMult);
 			}
 
 			if (state.damageFlash > 0) {

@@ -245,6 +245,20 @@ export const InscriptionLevel = trait({
 	structuresBuilt: 0,
 });
 
+// ─── Shelter / Structure ───
+
+/** Tracks whether the player is inside an enclosed structure. */
+export const ShelterState = trait({
+	/** True when player is inside a fully enclosed space. */
+	inShelter: false,
+	/** Volume (air blocks) of the current structure. 0 if not sheltered. */
+	structureVolume: 0,
+	/** Falu red blocks found in structure walls or nearby. */
+	faluRedCount: 0,
+	/** Mörker spawn radius multiplier (1 = normal, lower = reduced). */
+	morkerSpawnMult: 1,
+});
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

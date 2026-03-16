@@ -12,6 +12,7 @@ import {
 	PlayerTag,
 	Position,
 	Rotation,
+	ShelterState,
 	WorldTime,
 } from "../traits/index.ts";
 import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
@@ -61,8 +62,14 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		creatureCount++;
 	});
 
+	// Read shelter state for Mörker spawn reduction (separate query for backward compat)
+	let morkerSpawnMult = 1;
+	world.query(PlayerTag, ShelterState).readEach(([shelter]) => {
+		morkerSpawnMult = shelter.morkerSpawnMult;
+	});
+
 	// Spawn — inscription level affects rates and creature thresholds
-	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay, insLevel);
+	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay, insLevel, morkerSpawnMult);
 
 	// Update AI by archetype
 	const ctx: CreatureUpdateContext = {

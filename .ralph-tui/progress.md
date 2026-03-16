@@ -204,6 +204,19 @@ The workstation system follows the same pure-data ↔ ECS bridge separation:
 - **Station crafting chain**: Crafting Bench (tier 0 recipe) → Forge (tier 1 recipe) → Scriptorium (tier 2 recipe). Each station unlocks recipes for the next.
 - **Block placement as interaction**: Players craft station blocks, place them in the world, then stand near them to unlock recipes. No special "interact" action needed — proximity is the trigger.
 
+### Structure Recognition System Architecture
+The structure recognition system follows the same pure-data ↔ ECS bridge separation:
+- `structure-detect.ts` — BFS flood-fill through air blocks (detects enclosed spaces), cubic radius scan for Falu red blocks, spawn radius multiplier. Pure math, no ECS/Three.js.
+- `structure.ts` — ECS system: throttled 1.0s scan, updates `ShelterState` trait, increments `InscriptionLevel.structuresBuilt` on new detection. Takes injected `getVoxel`/`isSolid` callbacks.
+- `survival.ts` — Reads `ShelterState.inShelter` via separate query. Applies hunger decay × 0.5 and stamina regen × 1.5 when sheltered.
+- `creature.ts` → `creature-spawner.ts` — Reads `ShelterState.morkerSpawnMult` via separate query. Passes to spawner as additional multiplier on Mörker spawn chance.
+- Key patterns:
+- **Flat array BFS**: Queue uses `number[]` with head pointer instead of `Array.shift()` to avoid O(n) cost per dequeue. Each node pushes 3 numbers (x,y,z) directly.
+- **Integer-packed set keys**: `Set<number>` with packed coords avoids string allocation in hot BFS loop.
+- **Separate query for backward compat**: ShelterState read in isolation (`world.query(PlayerTag, ShelterState)`) before the main player query. If the entity lacks ShelterState, the query simply doesn't match — no behavior change.
+- **Position-keyed deduplication**: 4-block grid hash prevents double-counting the same structure position for inscription level.
+- **Dual Falu red detection**: Enclosure walls + radius scan, `Math.max()` for correct behavior both inside and outside structures.
+
 ### Inscription Level System Architecture
 The inscription level system follows the same pure-data ↔ ECS bridge separation:
 - `inscription-level.ts` — Level formula (`computeInscriptionLevel`), spawn rate multiplier tiers (`getSpawnRateMultiplier`), threshold checks (`isThresholdReached`), tier constants (`INSCRIPTION_TIERS`). Pure math, no ECS/Three.js.
@@ -702,5 +715,24 @@ The inscription level system follows the same pure-data ↔ ECS bridge separatio
   - **Piggyback queries**: Rather than creating a new ECS system, inscription counters increment inside existing system queries (`mining.ts` block break, `game.ts` placeBlock). Avoids extra ECS iteration overhead.
   - **Pass-down pattern for spawners**: `creature.ts` reads the inscription level once per frame and passes it as a plain number through the spawner call chain. Spawner modules remain pure functions with no ECS dependency.
   - **Backward-compatible DB schema**: New columns use `NOT NULL DEFAULT 0`, so existing save files load cleanly without migration scripts. The `??0` fallback in `loadPlayerState` handles legacy rows.
+---
+
+## 2026-03-16 - US-023
+- Structure Recognition: enclosed space detection via flood-fill BFS, shelter bonuses, Falu red spawn reduction
+- New file `src/ecs/systems/structure-detect.ts` (120 LOC): pure math — `detectEnclosure()` (BFS flood-fill through air blocks, counts Falu red walls), `countFaluRedNearby()` (cubic radius scan), `faluSpawnRadiusMultiplier()` (linear reduction with floor)
+- New file `src/ecs/systems/structure.ts` (83 LOC): ECS system — throttled 1.0s scan, updates ShelterState trait, increments InscriptionLevel.structuresBuilt on new structure detection (position-keyed deduplication)
+- New trait `ShelterState` on player entity: `inShelter`, `structureVolume`, `faluRedCount`, `morkerSpawnMult`
+- Shelter bonuses wired into `survival.ts`: hunger decay × 0.5, stamina regen × 1.5 when sheltered (separate query for backward compat)
+- Falu red spawn reduction wired into `creature.ts` → `creature-spawner.ts`: `morkerSpawnMult` applied to Mörker spawn chance
+- 29 new unit tests: flood-fill (enclosed box, open space, missing wall, Falu red counting, solid start, maxVolume limit, tiny space, non-integer coords, L-shaped room, partial enclosure), Falu red nearby scan (3), spawn multiplier (4), ECS system (shelter detection, open space, throttling, dt accumulation, Falu red spawn reduction, inscription increment, tiny space rejection, deduplication, constants)
+- All 714 vitest tests pass (36 files), typecheck clean, lint clean (only pre-existing errors)
+- Files created: `src/ecs/systems/structure-detect.ts`, `src/ecs/systems/structure-detect.test.ts`, `src/ecs/systems/structure.ts`, `src/ecs/systems/structure.test.ts`
+- Files modified: `src/ecs/traits/index.ts`, `src/ecs/systems/index.ts`, `src/ecs/systems/survival.ts`, `src/ecs/systems/creature.ts`, `src/ecs/systems/creature-spawner.ts`, `src/engine/game.ts`, `src/test-utils.ts`
+- **Learnings:**
+  - **BFS via flat array queue**: Using a flat `number[]` with head pointer (`queue[head++]`) instead of `Array.shift()` avoids O(n) shift costs on the BFS queue. Each air block pushes 3 numbers (x,y,z) directly.
+  - **Integer packing for set keys**: `(x+512)*1048576 + (y+512)*1024 + (z+512)` packs 3D coords into a single number for `Set<number>`, avoiding string key allocation (`${x},${y},${z}`) in the hot BFS loop.
+  - **Separate query for backward compat**: Reading `ShelterState` in a separate `world.query(PlayerTag, ShelterState).readEach()` before the main player query means the system works even if the player entity doesn't have `ShelterState` — the query simply doesn't match, and the default `inShelter=false` holds. No existing survival.test.ts changes needed.
+  - **Position-keyed deduplication**: Using a 4-block grid hash for the `countedPositions` set prevents double-counting the same structure while allowing nearby but distinct structures to each be counted. Module-level set cleared on game restart via `resetStructureState()`.
+  - **Dual Falu red scan**: Enclosure flood-fill naturally discovers Falu red wall blocks, but `countFaluRedNearby()` catches Falu red when the player is outside a structure. `Math.max()` of both counts provides correct behavior in both cases.
 ---
 

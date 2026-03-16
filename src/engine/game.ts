@@ -25,6 +25,7 @@ import {
 	movementSystem,
 	physicsSystem,
 	questSystem,
+	structureSystem,
 	survivalSystem,
 	timeSystem,
 	workstationProximitySystem,
@@ -53,6 +54,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	ShelterState,
 	Stamina,
 	ToolSwing,
 	Velocity,
@@ -66,7 +68,13 @@ import { biomeAt } from "../world/landmark-generator.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
 import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
-import { getVoxelAt, registerVoxelAccessors, setVoxelAt, setVoxelDeltaListener } from "../world/voxel-helpers.ts";
+import {
+	getVoxelAt,
+	isBlockSolid,
+	registerVoxelAccessors,
+	setVoxelAt,
+	setVoxelDeltaListener,
+} from "../world/voxel-helpers.ts";
 import { findSurfaceY, generateSpawnShrine } from "../world/world-utils.ts";
 import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
@@ -134,6 +142,7 @@ class GameBridge extends Behavior {
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
+		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		this.runCreatureSystem(dt);
 		this.runWorldEventSystem(dt);
 
@@ -604,6 +613,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		CookingState,
 		WorkstationProximity,
 		InscriptionLevel,
+		ShelterState,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));

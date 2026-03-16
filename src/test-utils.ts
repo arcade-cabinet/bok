@@ -24,6 +24,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	ShelterState,
 	Species,
 	Stamina,
 	ToolSwing,
@@ -78,6 +79,12 @@ export interface PlayerOverrides {
 		totalBlocksMined: number;
 		structuresBuilt: number;
 	}>;
+	shelter?: Partial<{
+		inShelter: boolean;
+		structureVolume: number;
+		faluRedCount: number;
+		morkerSpawnMult: number;
+	}>;
 }
 
 /**
@@ -103,6 +110,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		QuestProgress(),
 		CookingState(),
 		InscriptionLevel(overrides.inscription ?? {}),
+		ShelterState(overrides.shelter ?? {}),
 	);
 }
 
