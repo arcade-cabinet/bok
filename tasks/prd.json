@@ -266,7 +266,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 1 — The Swedish Landscape. Depends on biomes being generated.",
       "labels": [
         "phase-1",
@@ -276,7 +276,8 @@
       "dependsOn": [
         "US-006",
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-010",
@@ -1640,6 +1641,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T09:39:22.644Z"
+    "updatedAt": "2026-03-16T09:50:03.555Z"
   }
 }

@@ -8,7 +8,7 @@ import { tiles } from "./tileset-tiles.ts";
 
 const TILE_SIZE = 32;
 const COLS = 8;
-const ROWS = 5;
+const ROWS = 6;
 
 /** Seeded PRNG (mulberry32) for deterministic textures. */
 function mulberry32(seed: number): () => number {

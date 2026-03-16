@@ -175,17 +175,17 @@ describe("tileset tiles", () => {
 		expect(positions.size).toBe(tiles.length);
 	});
 
-	it("all tiles fit within the 8x5 grid", () => {
+	it("all tiles fit within the 8x6 grid", () => {
 		for (const tile of tiles) {
 			expect(tile.col).toBeGreaterThanOrEqual(0);
 			expect(tile.col).toBeLessThan(8);
 			expect(tile.row).toBeGreaterThanOrEqual(0);
-			expect(tile.row).toBeLessThan(5);
+			expect(tile.row).toBeLessThan(6);
 		}
 	});
 
-	it("has at least 38 tiles (15 original + 23 new)", () => {
-		expect(tiles.length).toBeGreaterThanOrEqual(38);
+	it("has at least 39 tiles (38 original + 1 landmark)", () => {
+		expect(tiles.length).toBeGreaterThanOrEqual(39);
 	});
 
 	it("all tiles have a valid baseColor", () => {

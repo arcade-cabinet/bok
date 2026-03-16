@@ -8,6 +8,7 @@
  * Row 2: BirchWoodTop, BirchLeaves, BeechWoodSide, BeechWoodTop, BeechLeaves, PineWoodSide, PineWoodTop, PineLeaves
  * Row 3: SpruceLeaves, DeadWoodSide, DeadWoodTop, Moss, Mushroom, Peat, Ice, SmoothStone
  * Row 4: Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed, Wildflower, Cranberry
+ * Row 5: RuneStone
  */
 
 import { type BlockDefinition, Face } from "@jolly-pixel/voxel.renderer";
@@ -142,5 +143,7 @@ export function createBlockDefinitions(): BlockDefinition[] {
 			faceTextures: {},
 			defaultTexture: tile(7, 4),
 		},
+		// Landmark blocks
+		simpleCube(BlockId.RuneStone, "Rune Stone", 0, 5),
 	];
 }

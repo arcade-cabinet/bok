@@ -368,4 +368,30 @@ export const tiles: TileDef[] = [
 			}
 		},
 	},
+	// Row 5 — landmarks
+	{
+		col: 0,
+		row: 5,
+		baseColor: "#5a5a6a",
+		draw: (ctx, s, rng) => {
+			addNoise(ctx, s, rng);
+			// Elder Futhark-style angular rune carvings
+			ctx.strokeStyle = "rgba(200,180,140,0.6)";
+			ctx.lineWidth = 2;
+			// Vertical stave
+			ctx.beginPath();
+			ctx.moveTo(s * 0.5, s * 0.15);
+			ctx.lineTo(s * 0.5, s * 0.85);
+			ctx.stroke();
+			// Angled branches (ᚠ Fehu-like)
+			ctx.beginPath();
+			ctx.moveTo(s * 0.5, s * 0.3);
+			ctx.lineTo(s * 0.75, s * 0.2);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(s * 0.5, s * 0.5);
+			ctx.lineTo(s * 0.75, s * 0.4);
+			ctx.stroke();
+		},
+	},
 ];

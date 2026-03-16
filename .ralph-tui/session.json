@@ -3,10 +3,10 @@
   "sessionId": "04ab82d4-1d7b-4f5d-a4c6-74976aa7547a",
   "status": "running",
   "startedAt": "2026-03-16T07:58:42.525Z",
-  "updatedAt": "2026-03-16T09:39:22.644Z",
-  "currentIteration": 7,
+  "updatedAt": "2026-03-16T09:50:03.555Z",
+  "currentIteration": 8,
   "maxIterations": 0,
-  "tasksCompleted": 7,
+  "tasksCompleted": 8,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -84,6 +84,16 @@
       "durationMs": 822454,
       "startedAt": "2026-03-16T09:10:18.869Z",
       "endedAt": "2026-03-16T09:24:01.323Z"
+    },
+    {
+      "iteration": 8,
+      "status": "completed",
+      "taskId": "US-008",
+      "taskTitle": "Underground Caves and Ore Veins",
+      "taskCompleted": true,
+      "durationMs": 920226,
+      "startedAt": "2026-03-16T09:24:02.416Z",
+      "endedAt": "2026-03-16T09:39:22.642Z"
     }
   ],
   "skippedTaskIds": [],

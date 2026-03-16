@@ -23,6 +23,7 @@ import {
 } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
 import { applyCaveToStone } from "./cave-generator.ts";
+import { generateChunkLandmarks } from "./landmark-generator.ts";
 import { noise2D } from "./noise.ts";
 import { placeTree } from "./tree-generator.ts";
 
@@ -197,6 +198,9 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 			}
 		}
 	}
+
+	// Landmarks — placed after terrain columns, before bulk set
+	generateChunkLandmarks(entries, cx, cz);
 
 	vr.setVoxelBulk(layerName, entries);
 }

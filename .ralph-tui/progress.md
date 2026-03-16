@@ -67,6 +67,18 @@ Underground cave carving and ore veins are in `cave-generator.ts`, separate from
 - **Ore priority**: ORE_BANDS are iterated in order; first match wins in overlap zones (iron > copper at y 10–15).
 - **Seed name generator** extracted to `seed-names.ts` from noise.ts to keep noise module focused on noise algorithms.
 
+### Landmark Generation Architecture
+Landmarks follow the same decomposition as trees and caves:
+- `landmark-types.ts` — Pure structure builders (placeStenhog, placeRunsten, placeFornlamning, biome-specific). Each pushes VoxelSetOptions onto an entries array. No side effects.
+- `landmark-generator.ts` — Chunk-level placement logic. Uses `chunkHash(cx, cz)` at chunk scale (not block scale) for rarer placement (~5% of chunks). Exports `surfaceYAt(gx, gz)` and `biomeAt(gx, gz)` for surface/biome queries at any world position.
+- Single integration point: `generateChunkLandmarks(entries, cx, cz)` called from terrain-generator.ts after columns, before setVoxelBulk.
+
+Key patterns:
+- **Chunk-scale hashing**: `chunkHash` uses different constants than `posHash` to avoid correlation with tree/feature placement.
+- **Biome boundary detection**: `isBiomeBoundary(gx, gz)` checks 4 cardinal positions at BLEND_CHECK distance — same concept as blend weights but returns boolean.
+- **Structure dispatch**: Boundary positions get stenhogar + runstenar; interior positions get biome-specific landmarks via `selectBiomeLandmark(biome)`.
+- **Height-gated placement**: Landmarks require `surfaceY >= LANDMARK_MIN_HEIGHT` (above water).
+
 ---
 
 ## 2026-03-16 - US-001
@@ -229,5 +241,27 @@ Underground cave carving and ore veins are in `cave-generator.ts`, separate from
   - `applyCaveToStone` computing caveNoise once and reusing for both cave carving and water pool decisions avoids redundant 3D noise evaluations in the hot terrain generation loop
   - Ore depth band overlap (iron y 5–15, copper y 10–20) is handled by iteration order in ORE_BANDS — first match wins, with independent noise offsets ensuring both ores can appear in the overlap zone
   - The `grad3` function for 3D noise uses a 12-direction gradient set (cube edges) encoded as bit operations on the hash, compared to the simpler 8-direction set in 2D
+---
+
+## 2026-03-16 - US-009
+- Procedurally placed Swedish landmarks: stenhogar (cairns), runstenar (runestones), fornlämningar (ruins), and biome-specific landmarks
+- New block: RuneStone (BlockId 34) — dark stone with Elder Futhark-style rune carvings, hardness 7.0
+- Tileset expanded from 8×5 to 8×6 (row 5 for landmark blocks)
+- New file `src/world/landmark-types.ts` (161 LOC): 7 structure builders — placeStenhog (cairn: 3×3 base + tapered column + StoneBricks cap), placeRunsten (3-tall RuneStone column), placeFornlamning (variable 5/7/9 foundation + partial walls + Glass loot stub), placeKolmila (DeadWood/Soot mound), placeOfferkalla (stone ring + water pool + RuneStone marker), placeSjomarke (5-tall SmoothStone pillar + torch), placeFjallstuga (3×3 Planks floor + PineWood walls + SpruceLeaves roof + interior torch)
+- New file `src/world/landmark-generator.ts` (151 LOC): chunk-level placement with `chunkHash(cx, cz)` at ~5% rate, biome boundary detection via 4-cardinal check, `surfaceYAt`/`biomeAt` helpers, `selectBiomeLandmark` dispatch
+- Spawn shrine upgraded: stenhög + runsten + 4 torches on StoneBricks platform (replaces generic stone + glass)
+- game.ts delta tracking updated to match new shrine structure (stenhög blocks + RuneStone column)
+- Integration: single `generateChunkLandmarks(entries, cx, cz)` call in terrain-generator.ts before setVoxelBulk
+- 26 new unit tests: landmark rate constants, deterministic placement, sparse spawn rate (100–1500 of 10000 chunks), surface/biome helpers, biome-specific type selection (6 biomes), stenhog structure (base count, stone vs SmoothStone, cap), runsten (3 RuneStone blocks), fornlamning (5×5/7×7 floors, loot stub, partial walls), kolmila/offerkalla/sjomarke/fjallstuga block composition
+- All 192 vitest tests pass, typecheck clean, lint clean (only pre-existing errors)
+- Files created: src/world/landmark-types.ts, src/world/landmark-generator.ts, src/world/landmark-generator.test.ts
+- Files modified: src/world/blocks.ts, src/world/block-definitions.ts, src/world/tileset-tiles.ts, src/world/tileset-generator.ts, src/world/terrain-generator.ts, src/world/world-utils.ts, src/engine/game.ts, src/world/blocks.test.ts
+- **Learnings:**
+  - Chunk-scale hashing (`chunkHash(cx, cz)`) must use different constants than block-scale `posHash(gx, gz)` to avoid correlation — landmarks and trees would cluster together if they shared the same hash function
+  - The `adjustTemperature` function is private in terrain-generator.ts — landmark-generator.ts duplicates it as `adjustTemp` to avoid circular import (landmark-generator imports from terrain-generator which imports from landmark-generator would be circular)
+  - Structure builders that push to an entries array (same pattern as tree-generator) are trivially testable — create empty array, call builder, assert on resulting entries without needing VoxelRenderer
+  - Biome boundary detection reuses the same BLEND_CHECK radius concept as terrain blending but only needs boolean result, not weight distribution — much cheaper
+  - `as const` array destructuring in loops (e.g., `for (const [dx, dz] of [...] as const)`) gets reformatted by Biome into multi-line arrays — the result is more readable anyway
+  - Tileset grid expansion (5→6 rows) requires updating both `tileset-generator.ts` ROWS constant and the existing "all tiles fit within grid" test assertion
 ---
 

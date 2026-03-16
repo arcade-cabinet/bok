@@ -496,23 +496,36 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		chunkData.set(spawnChunkKey, spawnDeltas);
 	}
 
-	// Stone brick floor
+	// Stone brick floor + cleared space above
 	for (let x = 6; x <= 10; x++) {
 		for (let z = 6; z <= 10; z++) {
 			spawnDeltas.set(getVoxelKey(x, surfaceY, z), BlockId.StoneBricks);
-			// Clear space above
-			for (let y = surfaceY + 1; y <= surfaceY + 4; y++) {
+			for (let y = surfaceY + 1; y <= surfaceY + 5; y++) {
 				spawnDeltas.set(getVoxelKey(x, y, z), 0);
 			}
 		}
 	}
 
-	// Torches and glass
+	// Stenhög (cairn) at center: 3×3 base + column + cap
+	for (let dx = -1; dx <= 1; dx++) {
+		for (let dz = -1; dz <= 1; dz++) {
+			spawnDeltas.set(getVoxelKey(8 + dx, surfaceY + 1, 8 + dz), BlockId.Stone);
+		}
+	}
+	spawnDeltas.set(getVoxelKey(8, surfaceY + 2, 8), BlockId.Stone);
+	spawnDeltas.set(getVoxelKey(8, surfaceY + 3, 8), BlockId.Stone);
+	spawnDeltas.set(getVoxelKey(8, surfaceY + 4, 8), BlockId.StoneBricks);
+
+	// Runsten beside cairn
+	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 8), BlockId.RuneStone);
+	spawnDeltas.set(getVoxelKey(10, surfaceY + 2, 8), BlockId.RuneStone);
+	spawnDeltas.set(getVoxelKey(10, surfaceY + 3, 8), BlockId.RuneStone);
+
+	// Torches at corners
 	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 6), BlockId.Torch);
 	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 6), BlockId.Torch);
 	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 10), BlockId.Torch);
 	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 10), BlockId.Torch);
-	spawnDeltas.set(getVoxelKey(8, surfaceY, 8), BlockId.Glass);
 
 	const spawnY = surfaceY + 2.5;
 
