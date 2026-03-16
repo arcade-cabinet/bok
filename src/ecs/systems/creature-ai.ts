@@ -21,9 +21,16 @@ import {
 	Position,
 	Species,
 } from "../traits/index.ts";
+import type { BoidAgent } from "./boids.ts";
+import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI } from "./creature-ai-passive.ts";
 import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
 
 const GRAVITY = 28;
+
+/** Clean up per-entity state when a creature is removed. */
+export function cleanupCreatureState(entityId: number): void {
+	cleanupPassiveState(entityId);
+}
 
 export interface CreatureUpdateContext {
 	playerX: number;
@@ -47,16 +54,12 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 			const dz = ctx.playerZ - pos.z;
 			const dist = Math.sqrt(dx * dx + dz * dz);
 
-			// Daytime burn
 			if (ctx.isDaytime) {
 				hp.hp -= DAYTIME_DPS * dt;
 				anim.animState = AnimState.Burn;
 			}
 
-			// Gravity + ground collision
 			applyGravity(hp, pos, dt);
-
-			// AI state machine
 			ai.attackCooldown = Math.max(0, ai.attackCooldown - dt);
 
 			if (dist <= ai.attackRange && ctx.playerAlive) {
@@ -75,8 +78,8 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 				if (!ctx.isDaytime) anim.animState = AnimState.Idle;
 			}
 
-			// Death check
 			if (hp.hp <= 0) {
+				cleanupCreatureState(entity.id());
 				effects?.spawnParticles(pos.x, pos.y, pos.z, 0xff0000, 20);
 				effects?.onCreatureDied(entity.id());
 				entity.destroy();
@@ -84,8 +87,20 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 		});
 }
 
-/** Run passive AI: Lyktgubbe drift/scatter, other passives placeholder. */
+/** Run passive AI: Lyktgubbe drift/scatter, Skogssnigel wander/graze/retract, Trana wade/fish/flee. */
 export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
+	// Collect trana positions for Boids flocking
+	const tranaAgents: Array<{ entityId: number; agent: BoidAgent }> = [];
+	world.query(CreatureTag, CreatureAI, CreatureType, Position).readEach(([ai, cType, pos], entity) => {
+		if (ai.aiType === "passive" && cType.species === Species.Trana) {
+			const ts = getTranaState(entity.id());
+			tranaAgents.push({
+				entityId: entity.id(),
+				agent: { x: pos.x, z: pos.z, vx: ts?.wadeDirX ?? 0, vz: ts?.wadeDirZ ?? 0 },
+			});
+		}
+	});
+
 	world
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
 		.updateEach(([ai, hp, anim, cType, pos], entity) => {
@@ -93,6 +108,10 @@ export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateCon
 
 			if (cType.species === Species.Lyktgubbe) {
 				updateLyktgubbeAI(pos, ai, hp, anim, entity, dt, ctx, effects);
+			} else if (cType.species === Species.Skogssnigle) {
+				updateSkogssniglarAI(pos, ai, hp, anim, entity, dt, ctx, applyGravity);
+			} else if (cType.species === Species.Trana) {
+				updateTranaAI(pos, ai, hp, anim, entity, dt, ctx, tranaAgents, applyGravity);
 			}
 		});
 }
@@ -108,7 +127,6 @@ function updateLyktgubbeAI(
 	ctx: CreatureUpdateContext,
 	effects?: CreatureEffects,
 ) {
-	// Despawn outside spawn window
 	if (!isLyktgubbeTime(ctx.timeOfDay)) {
 		effects?.onCreatureDied(entity.id());
 		entity.destroy();
@@ -120,14 +138,12 @@ function updateLyktgubbeAI(
 	const dist = Math.sqrt(dx * dx + dz * dz);
 
 	if (dist < SCATTER_RANGE) {
-		// Scatter away from player
 		ai.behaviorState = BehaviorState.Flee;
 		anim.animState = AnimState.Flee;
 		const invDist = dist > 0.01 ? 1 / dist : 0;
 		pos.x -= dx * invDist * SCATTER_SPEED * dt;
 		pos.z -= dz * invDist * SCATTER_SPEED * dt;
 	} else {
-		// Drift in sine pattern
 		ai.behaviorState = BehaviorState.Idle;
 		anim.animState = AnimState.Idle;
 		const t = anim.animTimer;
@@ -139,8 +155,6 @@ function updateLyktgubbeAI(
 	}
 
 	anim.animTimer += dt;
-
-	// No gravity for floating wisps
 	hp.velY = 0;
 }
 
@@ -184,7 +198,6 @@ function chase(
 	pos.x += dx * invDist * speed * dt;
 	pos.z += dz * invDist * speed * dt;
 
-	// Jump over obstacles
 	const aheadX = Math.floor(pos.x + dx * invDist * 0.5);
 	const aheadZ = Math.floor(pos.z + dz * invDist * 0.5);
 	const aheadY = Math.floor(pos.y);

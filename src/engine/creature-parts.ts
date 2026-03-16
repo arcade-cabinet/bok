@@ -1,11 +1,12 @@
 /**
- * Creature part definitions and assembly functions.
- * Defines creatures as arrays of geometric primitives with joint hierarchy.
- * Assembly creates Three.js mesh groups; variation applies per-individual noise.
+ * Creature part assembly and variation functions.
+ * Creates Three.js mesh groups from part definitions; variation applies per-individual noise.
+ * Part definition data lives in creature-part-defs.ts.
  */
 
 import * as THREE from "three";
 import type { SpeciesId } from "../ecs/traits/index.ts";
+import { DEFAULT_PARTS, SPECIES_PARTS } from "./creature-part-defs.ts";
 
 // ─── Types ───
 
@@ -34,75 +35,8 @@ export interface AssembledCreature {
 
 // ─── Constants ───
 
-/** Distance in blocks beyond which creatures switch to LOD mesh */
 export const LOD_DISTANCE = 30;
 export const LOD_DISTANCE_SQ = LOD_DISTANCE * LOD_DISTANCE;
-
-// ─── Part Definitions ───
-
-const MORKER_PARTS: CreaturePartDef[] = [
-	// 0: body
-	{ geometry: "box", size: [0.6, 1.0, 0.5], offset: [0, 0.5, 0], jointParent: -1, jointAxis: null, color: 0x1a1a2e },
-	// 1: head
-	{ geometry: "box", size: [0.4, 0.35, 0.35], offset: [0, 0.85, 0], jointParent: 0, jointAxis: "y", color: 0x1a1a2e },
-	// 2: left eye
-	{
-		geometry: "sphere",
-		size: [0.06, 0.06, 0.06],
-		offset: [-0.1, 0.06, -0.16],
-		jointParent: 1,
-		jointAxis: null,
-		color: 0xff4444,
-		emissive: 0xff4444,
-	},
-	// 3: right eye
-	{
-		geometry: "sphere",
-		size: [0.06, 0.06, 0.06],
-		offset: [0.1, 0.06, -0.16],
-		jointParent: 1,
-		jointAxis: null,
-		color: 0xff4444,
-		emissive: 0xff4444,
-	},
-	// 4: left arm
-	{
-		geometry: "box",
-		size: [0.18, 0.55, 0.18],
-		offset: [-0.39, -0.1, 0],
-		jointParent: 0,
-		jointAxis: "x",
-		color: 0x1a1a2e,
-	},
-	// 5: right arm
-	{
-		geometry: "box",
-		size: [0.18, 0.55, 0.18],
-		offset: [0.39, -0.1, 0],
-		jointParent: 0,
-		jointAxis: "x",
-		color: 0x1a1a2e,
-	},
-];
-
-const LYKTGUBBE_PARTS: CreaturePartDef[] = [
-	// 0: glowing orb — single sphere, fully emissive with additive blend
-	{
-		geometry: "sphere",
-		size: [0.2, 0.2, 0.2],
-		offset: [0, 0.4, 0],
-		jointParent: -1,
-		jointAxis: null,
-		color: 0xffd700,
-		emissive: 0xffd700,
-		additive: true,
-	},
-];
-
-const SPECIES_PARTS: Partial<Record<SpeciesId, CreaturePartDef[]>> = {
-	morker: MORKER_PARTS,
-	lyktgubbe: LYKTGUBBE_PARTS,
-};
 
 // ─── Variation ───
 
@@ -116,14 +50,11 @@ export function applyHueVariation(hexColor: number, variant: number): number {
 	const r = (hexColor >> 16) & 0xff;
 	const g = (hexColor >> 8) & 0xff;
 	const b = hexColor & 0xff;
-
 	const c = new THREE.Color(r / 255, g / 255, b / 255);
 	const hsl = { h: 0, s: 0, l: 0 };
 	c.getHSL(hsl);
-
 	hsl.h = (((hsl.h + (variant - 0.5) * 0.1) % 1) + 1) % 1;
 	c.setHSL(hsl.h, hsl.s, hsl.l);
-
 	return (Math.round(c.r * 255) << 16) | (Math.round(c.g * 255) << 8) | Math.round(c.b * 255);
 }
 
@@ -144,7 +75,7 @@ function createGeometry(type: GeometryType, size: [number, number, number]): THR
 
 /** Look up part definitions for a species. Falls back to Mörker. */
 export function getPartDefs(species: SpeciesId): CreaturePartDef[] {
-	return SPECIES_PARTS[species] ?? MORKER_PARTS;
+	return SPECIES_PARTS[species] ?? DEFAULT_PARTS;
 }
 
 /** Validate part definitions: all jointParent refs are in range. */
@@ -166,11 +97,7 @@ export function buildJointHierarchy(parts: CreaturePartDef[]): number[][] {
 	return children;
 }
 
-/**
- * Assemble a creature from part definitions into a Three.js Group hierarchy.
- * Each part becomes a Group (for joint rotation) containing a Mesh.
- * Children are nested under their parent's Group.
- */
+/** Assemble a creature from part definitions into a Three.js Group hierarchy. */
 export function assembleCreature(species: SpeciesId, variant: number): AssembledCreature {
 	const defs = getPartDefs(species);
 	const partGroups: THREE.Group[] = [];
@@ -195,7 +122,6 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 		if (def.emissive) {
 			(mat as THREE.MeshBasicMaterial).color.setHex(applyHueVariation(def.emissive, variant));
 		}
-
 		if (def.additive) {
 			mat.blending = THREE.AdditiveBlending;
 			mat.transparent = true;
@@ -211,7 +137,6 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 		} else {
 			partGroups[def.jointParent].add(group);
 		}
-
 		partGroups.push(group);
 	}
 
@@ -219,7 +144,6 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 	lodMesh.visible = false;
 	root.add(lodMesh);
 
-	// Add point light for creatures with additive-blended parts (lyktgubbar)
 	let pointLight: THREE.PointLight | null = null;
 	if (defs.some((d) => d.additive)) {
 		const lightColor = defs[0].emissive ?? defs[0].color;
@@ -231,7 +155,6 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 	return { root, parts: partGroups, lodMesh, pointLight };
 }
 
-/** Create a single-box LOD mesh using the first part's color. */
 function createLodMesh(defs: CreaturePartDef[], variant: number): THREE.Mesh {
 	const primaryColor = defs.length > 0 ? applyHueVariation(defs[0].color, variant) : 0x888888;
 	const geo = new THREE.BoxGeometry(0.6, 1.0, 0.6);
@@ -242,10 +165,7 @@ function createLodMesh(defs: CreaturePartDef[], variant: number): THREE.Mesh {
 	return mesh;
 }
 
-/**
- * Update LOD visibility based on distance squared to camera.
- * Returns true if showing LOD (distant), false if showing full parts.
- */
+/** Update LOD visibility based on distance squared to camera. */
 export function updateLod(assembled: AssembledCreature, distSq: number): boolean {
 	const isLod = distSq > LOD_DISTANCE_SQ;
 	assembled.lodMesh.visible = isLod;

@@ -1,12 +1,13 @@
 /**
  * Creature spawning — handles spawn logic per species.
- * Mörker spawn at night; Lyktgubbar spawn at twilight/dawn in valid biomes.
+ * Mörker spawn at night; Lyktgubbar at twilight/dawn; Skogssniglar/Tranor during day.
  */
 
 import type { World } from "koota";
 import type { BiomeId } from "../../world/biomes.ts";
 import { cosmeticRng, worldRng } from "../../world/noise.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
+import type { AiTypeId, SpeciesId } from "../traits/index.ts";
 import {
 	AiType,
 	AnimState,
@@ -21,15 +22,28 @@ import {
 } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
+import { isSnailBiome } from "./snail-behavior.ts";
+import { isTranaBiome, isTranaSpawnHeight } from "./trana-behavior.ts";
 
-const MAX_CREATURES = 8;
-const SPAWN_DISTANCE = 20;
+const MAX_CREATURES = 12;
 const SPAWN_CHANCE = 0.01;
 const LYKTGUBBE_SPAWN_CHANCE = 0.015;
-const LYKTGUBBE_SPAWN_DISTANCE = 15;
+const SNAIL_SPAWN_CHANCE = 0.008;
+const TRANA_SPAWN_CHANCE = 0.006;
+const TRANA_FLOCK_SIZE = 3;
 
-/** Species-specific defaults for spawning. */
-const MORKER_DEFAULTS = {
+interface SpawnDefaults {
+	hp: number;
+	maxHp: number;
+	aiType: AiTypeId;
+	aggroRange: number;
+	attackRange: number;
+	attackDamage: number;
+	moveSpeed: number;
+	detectionRange: number;
+}
+
+const MORKER: SpawnDefaults = {
 	hp: 6,
 	maxHp: 6,
 	aiType: AiType.Hostile,
@@ -38,9 +52,8 @@ const MORKER_DEFAULTS = {
 	attackDamage: 15,
 	moveSpeed: 2.5,
 	detectionRange: 15,
-} as const;
-
-const LYKTGUBBE_DEFAULTS = {
+};
+const LYKTGUBBE: SpawnDefaults = {
 	hp: 1,
 	maxHp: 1,
 	aiType: AiType.Passive,
@@ -49,17 +62,34 @@ const LYKTGUBBE_DEFAULTS = {
 	attackDamage: 0,
 	moveSpeed: 1.0,
 	detectionRange: 6,
-} as const;
+};
+const SNAIL: SpawnDefaults = {
+	hp: 8,
+	maxHp: 8,
+	aiType: AiType.Passive,
+	aggroRange: 0,
+	attackRange: 0,
+	attackDamage: 0,
+	moveSpeed: 0.4,
+	detectionRange: 4,
+};
+const TRANA: SpawnDefaults = {
+	hp: 4,
+	maxHp: 4,
+	aiType: AiType.Passive,
+	aggroRange: 0,
+	attackRange: 0,
+	attackDamage: 0,
+	moveSpeed: 0.6,
+	detectionRange: 10,
+};
 
-/** Biome resolver — injected to avoid circular dependency with terrain-generator. */
 let biomeResolver: ((gx: number, gz: number) => number) | null = null;
 
-/** Register a function that resolves biome at a world position. */
 export function registerBiomeResolver(resolver: (gx: number, gz: number) => number): void {
 	biomeResolver = resolver;
 }
 
-/** Attempt to spawn creatures near the player. */
 export function spawnCreatures(
 	world: World,
 	playerX: number,
@@ -72,116 +102,129 @@ export function spawnCreatures(
 ) {
 	if (!playerAlive || creatureCount >= MAX_CREATURES) return;
 
-	// Lyktgubbe spawning (twilight/dawn, biome-gated)
 	if (isLyktgubbeTime(timeOfDay) && worldRng() < LYKTGUBBE_SPAWN_CHANCE) {
 		spawnLyktgubbe(world, playerX, playerZ, effects);
 	}
-
-	// Mörker spawning (night only)
+	if (isDaytime && worldRng() < SNAIL_SPAWN_CHANCE) {
+		spawnBiomeGated(world, playerX, playerZ, 18, Species.Skogssnigle, SNAIL, isSnailBiome, effects);
+	}
+	if (isDaytime && worldRng() < TRANA_SPAWN_CHANCE) {
+		spawnTranaFlock(world, playerX, playerZ, effects);
+	}
 	if (!isDaytime && worldRng() < SPAWN_CHANCE) {
-		spawnMorker(world, playerX, playerZ, effects);
+		spawnAt(world, playerX, playerZ, 20, Species.Morker, MORKER, effects);
 	}
 }
 
-function spawnMorker(world: World, playerX: number, playerZ: number, effects?: CreatureEffects) {
-	const angle = worldRng() * Math.PI * 2;
-	const spawnX = playerX + Math.cos(angle) * SPAWN_DISTANCE;
-	const spawnZ = playerZ + Math.sin(angle) * SPAWN_DISTANCE;
-
-	const spawnY = findSurfaceSpawn(spawnX, spawnZ);
-	if (spawnY < 0) return;
-
+/** Spawn a single creature entity with given defaults. */
+function spawnEntity(
+	world: World,
+	x: number,
+	y: number,
+	z: number,
+	species: SpeciesId,
+	d: SpawnDefaults,
+	effects?: CreatureEffects,
+) {
 	const variant = cosmeticRng();
-	const species = Species.Morker;
-
 	const entity = world.spawn(
 		CreatureTag,
-		Position({ x: spawnX, y: spawnY, z: spawnZ }),
+		Position({ x, y, z }),
 		CreatureType({ species }),
 		CreatureAI({
-			aiType: MORKER_DEFAULTS.aiType,
+			aiType: d.aiType,
 			behaviorState: BehaviorState.Idle,
 			targetEntity: -1,
-			aggroRange: MORKER_DEFAULTS.aggroRange,
-			attackRange: MORKER_DEFAULTS.attackRange,
-			attackDamage: MORKER_DEFAULTS.attackDamage,
+			aggroRange: d.aggroRange,
+			attackRange: d.attackRange,
+			attackDamage: d.attackDamage,
 			attackCooldown: 0,
-			moveSpeed: MORKER_DEFAULTS.moveSpeed,
-			detectionRange: MORKER_DEFAULTS.detectionRange,
+			moveSpeed: d.moveSpeed,
+			detectionRange: d.detectionRange,
 		}),
-		CreatureAnimation({
-			animState: AnimState.Idle,
-			animTimer: 0,
-			variant,
-		}),
-		CreatureHealth({
-			hp: MORKER_DEFAULTS.hp,
-			maxHp: MORKER_DEFAULTS.maxHp,
-			velY: 0,
-			meshIndex: -1,
-		}),
+		CreatureAnimation({ animState: AnimState.Idle, animTimer: 0, variant }),
+		CreatureHealth({ hp: d.hp, maxHp: d.maxHp, velY: 0, meshIndex: -1 }),
 	);
-
 	effects?.onCreatureSpawned(entity.id(), species, variant);
 }
 
-function spawnLyktgubbe(world: World, playerX: number, playerZ: number, effects?: CreatureEffects) {
+/** Spawn at a random position around the player. */
+function spawnAt(
+	world: World,
+	px: number,
+	pz: number,
+	dist: number,
+	species: SpeciesId,
+	d: SpawnDefaults,
+	effects?: CreatureEffects,
+) {
 	const angle = worldRng() * Math.PI * 2;
-	const spawnX = playerX + Math.cos(angle) * LYKTGUBBE_SPAWN_DISTANCE;
-	const spawnZ = playerZ + Math.sin(angle) * LYKTGUBBE_SPAWN_DISTANCE;
+	const x = px + Math.cos(angle) * dist;
+	const z = pz + Math.sin(angle) * dist;
+	const y = findSurfaceSpawn(x, z);
+	if (y < 0) return;
+	spawnEntity(world, x, y, z, species, d, effects);
+}
 
-	// Biome check — only spawn in valid biomes
+/** Spawn with biome validation. */
+function spawnBiomeGated(
+	world: World,
+	px: number,
+	pz: number,
+	dist: number,
+	species: SpeciesId,
+	d: SpawnDefaults,
+	biomeCheck: (b: BiomeId) => boolean,
+	effects?: CreatureEffects,
+) {
+	const angle = worldRng() * Math.PI * 2;
+	const x = px + Math.cos(angle) * dist;
+	const z = pz + Math.sin(angle) * dist;
 	if (biomeResolver) {
-		const biome = biomeResolver(Math.floor(spawnX), Math.floor(spawnZ)) as BiomeId;
+		const biome = biomeResolver(Math.floor(x), Math.floor(z)) as BiomeId;
+		if (!biomeCheck(biome)) return;
+	}
+	const y = findSurfaceSpawn(x, z);
+	if (y < 0) return;
+	spawnEntity(world, x, y, z, species, d, effects);
+}
+
+function spawnLyktgubbe(world: World, px: number, pz: number, effects?: CreatureEffects) {
+	const angle = worldRng() * Math.PI * 2;
+	const x = px + Math.cos(angle) * 15;
+	const z = pz + Math.sin(angle) * 15;
+	if (biomeResolver) {
+		const biome = biomeResolver(Math.floor(x), Math.floor(z)) as BiomeId;
 		if (!isLyktgubbeBiome(biome)) return;
 	}
-
-	const spawnY = findSurfaceSpawn(spawnX, spawnZ);
-	if (spawnY < 0) return;
-
-	// Float above ground
-	const floatY = spawnY + 1.5;
-	const variant = cosmeticRng();
-	const species = Species.Lyktgubbe;
-
-	const entity = world.spawn(
-		CreatureTag,
-		Position({ x: spawnX, y: floatY, z: spawnZ }),
-		CreatureType({ species }),
-		CreatureAI({
-			aiType: LYKTGUBBE_DEFAULTS.aiType,
-			behaviorState: BehaviorState.Idle,
-			targetEntity: -1,
-			aggroRange: LYKTGUBBE_DEFAULTS.aggroRange,
-			attackRange: LYKTGUBBE_DEFAULTS.attackRange,
-			attackDamage: LYKTGUBBE_DEFAULTS.attackDamage,
-			attackCooldown: 0,
-			moveSpeed: LYKTGUBBE_DEFAULTS.moveSpeed,
-			detectionRange: LYKTGUBBE_DEFAULTS.detectionRange,
-		}),
-		CreatureAnimation({
-			animState: AnimState.Idle,
-			animTimer: 0,
-			variant,
-		}),
-		CreatureHealth({
-			hp: LYKTGUBBE_DEFAULTS.hp,
-			maxHp: LYKTGUBBE_DEFAULTS.maxHp,
-			velY: 0,
-			meshIndex: -1,
-		}),
-	);
-
-	effects?.onCreatureSpawned(entity.id(), species, variant);
+	const y = findSurfaceSpawn(x, z);
+	if (y < 0) return;
+	spawnEntity(world, x, y + 1.5, z, Species.Lyktgubbe, LYKTGUBBE, effects);
 }
 
-/** Find a valid Y position on the terrain surface. Returns -1 if none found. */
+function spawnTranaFlock(world: World, px: number, pz: number, effects?: CreatureEffects) {
+	const angle = worldRng() * Math.PI * 2;
+	const bx = px + Math.cos(angle) * 20;
+	const bz = pz + Math.sin(angle) * 20;
+	if (biomeResolver) {
+		const biome = biomeResolver(Math.floor(bx), Math.floor(bz)) as BiomeId;
+		if (!isTranaBiome(biome)) return;
+	}
+	const by = findSurfaceSpawn(bx, bz);
+	if (by < 0 || !isTranaSpawnHeight(by)) return;
+
+	for (let i = 0; i < TRANA_FLOCK_SIZE; i++) {
+		const sx = bx + (worldRng() - 0.5) * 4;
+		const sz = bz + (worldRng() - 0.5) * 4;
+		const sy = findSurfaceSpawn(sx, sz);
+		if (sy >= 0) spawnEntity(world, sx, sy, sz, Species.Trana, TRANA, effects);
+	}
+}
+
 function findSurfaceSpawn(x: number, z: number): number {
 	for (let y = 60; y >= 0; y--) {
 		const v = getVoxelAt(Math.floor(x), y, Math.floor(z));
-		if (v > 0 && isBlockSolid(v)) {
-			return y + 2;
-		}
+		if (v > 0 && isBlockSolid(v)) return y + 2;
 	}
 	return -1;
 }

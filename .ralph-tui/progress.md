@@ -386,3 +386,27 @@ Key patterns:
   - Tests that used newly-configured species (lyktgubbe) as "unknown species" for fallback testing needed updating to use genuinely unconfigured species (vittra)
 ---
 
+## 2026-03-16 - US-014
+- Two new passive creatures: Skogssniglar (Forest Snails) and Tranor (Cranes)
+- New file `src/ecs/systems/snail-behavior.ts` (199 LOC): Snail state machine (Wander/Graze/Retract), biome validation (Angen/Bokskogen/Myren), wander direction, grazing on grass/moss, retraction when threatened with timer+distance gating
+- New file `src/ecs/systems/boids.ts` (208 LOC): Reynolds Boids flocking (separation/alignment/cohesion), force composition with max-force clamping, V-formation detection, per-species boid parameters
+- New file `src/ecs/systems/trana-behavior.ts` (237 LOC): Crane state machine (Wade/Fish/Flee), biome validation (Angen/Skargarden), water-level spawn height gating, neck dip animation via sin(π*t), flee direction computation
+- New file `src/ecs/systems/creature-ai-passive.ts` (167 LOC): ECS-integrated AI update functions for Skogssnigel and Trana, per-entity state maps (snailStates/tranaStates), gravity injection pattern
+- New file `src/engine/creature-part-defs.ts` (121 LOC): Species part definition arrays extracted from creature-parts.ts for decomposition. Skogssnigel (10 parts: body + 5 shell segments + 4 legs, moss #3a5a40 + stone #6b6b6b), Trana (14 parts: torso + 8 neck chain + beak + 2 wings + 2 legs, bjork #e0d5c1 + ink #1a1a2e)
+- New test files: `snail-behavior.test.ts` (22 tests), `boids.test.ts` (16 tests), `trana-behavior.test.ts` (25 tests)
+- Updated `creature-ai.ts` (244 LOC): Passive AI dispatcher now routes Skogssnigel/Trana species, Boids data collection pass for flock coordination
+- Updated `creature-spawner.ts` (181 LOC): Refactored with `spawnEntity` helper eliminating duplication, snail biome-gated daytime spawning, trana flock spawning (3 cranes near water), MAX_CREATURES raised to 12
+- Updated `creature-parts.ts` (176 LOC): Refactored to import defs from creature-part-defs.ts
+- Updated `procedural-anim.ts`: Added skogssnigle config (slow breathing, tiny waddle), trana already existed from US-012
+- All 391 vitest tests pass (63 new), typecheck clean, lint clean (only pre-existing CSS parse error + unused `trunks`)
+- **Learnings:**
+  - `cos(0.1 * 2π) ≈ cos(0.9 * 2π)` because cosine is symmetric around π — test hash values must be chosen carefully (0.0 vs 0.5 gives cos(0) vs cos(π) = 1 vs -1)
+  - Boids separation force uses inverse-distance-squared weighting (`(dx/dist)/dist`), not just inverse-distance — closer neighbors exert disproportionately stronger repulsion
+  - Neck dip animation via `sin(π * t)` where t ∈ [0,1] creates a smooth down-and-up arc peaking at t=0.5 — single evaluation, no keyframes
+  - Per-entity state maps (`Map<number, BehaviorState>`) are the cleanest way to store complex per-creature state that doesn't fit in ECS traits (which must be plain objects)
+  - Injecting `applyGravity` as a parameter to passive AI functions avoids duplicating the gravity code while keeping creature-ai-passive.ts independent of the private function
+  - `spawnEntity` helper with `SpawnDefaults` interface eliminates 4 nearly-identical spawn functions, reducing creature-spawner.ts from 326 → 181 LOC
+  - Extracting part definition data to `creature-part-defs.ts` keeps the assembly/variation logic in creature-parts.ts under 200 LOC — data arrays are inherently long but benefit from their own file
+  - Previous US-012 already defined a `trana` anim config — adding a duplicate caused TS1117 (no duplicate properties). Always check existing config before adding
+---
+

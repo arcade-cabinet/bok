@@ -6,7 +6,7 @@
 import type { World } from "koota";
 import { CreatureHealth, CreatureTag, PlayerState, PlayerTag, Position, WorldTime } from "../traits/index.ts";
 import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
-import { updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
+import { cleanupCreatureState, updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
 import { spawnCreatures } from "./creature-spawner.ts";
 
 const DESPAWN_DISTANCE = 50;
@@ -39,6 +39,7 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		const dz = pz - pos.z;
 		const dist = Math.sqrt(dx * dx + dz * dz);
 		if (dist > DESPAWN_DISTANCE) {
+			cleanupCreatureState(entity.id());
 			effects?.onCreatureDied(entity.id());
 			entity.destroy();
 			return;

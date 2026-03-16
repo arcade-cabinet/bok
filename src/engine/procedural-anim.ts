@@ -79,6 +79,15 @@ const SPECIES_CONFIGS: Partial<Record<SpeciesId, AnimConfig>> = {
 		walkBobFreq: 0.4,
 		walkSwingAmp: 0.0, // no arms
 	},
+	skogssnigle: {
+		breathAmp: 0.01,
+		breathFreq: 0.5,
+		idleSwayAmp: 0.0, // no distinct head
+		idleSwayFreq: 0.0,
+		walkBobAmp: 0.02,
+		walkBobFreq: 1.0,
+		walkSwingAmp: 0.15, // stubby leg waddle
+	},
 };
 
 /** Look up animation config for a species. Falls back to default. */
