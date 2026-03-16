@@ -37,7 +37,7 @@ Exploration must feel rewarding in short sessions. The mobile player might explo
 - **Territory**: Blocks placed by the player define territory. Creatures respond to territory differently — some avoid it, some are attracted.
 - **Structure Recognition**: The game recognizes basic structures (walls, roofs, enclosed spaces). Enclosed spaces provide shelter bonuses (hunger decay reduction, stamina regen boost).
 - **Workstations**: Crafting stations placed in the world expand available recipes. **Städ** (anvil) for tools, **Vävstol** (loom) for textiles, **Kolmila** (charcoal kiln) for smelting. Each station is a physical block built from materials.
-- **Decay and Maintenance**: Structures slowly decay if unvisited — the Swedish forest reclaims everything. The player must maintain their builds or moss grows over them. The **Runsten Seal** (Jätten boss drop) stops decay — your saga is deemed worthy.
+- **Decay and Maintenance**: Structures slowly decay if unvisited — the Swedish forest reclaims everything. The player must maintain their builds or moss grows over them. The **Runsten Seal** (dropped by Jätten, the giant world boss) stops decay — your saga is deemed worthy.
 - **Light Radius**: Torches and light sources expand the safe zone. Mörker won't spawn within torch radius. Building a well-lit perimeter of a **stuga** is strategic survival — like keeping the fire burning through a Swedish winter night.
 
 ### Mobile Consideration
