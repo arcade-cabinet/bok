@@ -4,5 +4,5 @@ import App from "./App.tsx";
 
 const uiRoot = document.getElementById("ui-root");
 if (uiRoot) {
-  createRoot(uiRoot).render(<App />);
+	createRoot(uiRoot).render(<App />);
 }

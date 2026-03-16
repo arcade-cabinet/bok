@@ -1,15 +1,15 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
-  base: "/bok/",
-  build: {
-    outDir: "dist",
-    sourcemap: true,
-    target: "esnext",
-  },
-  server: {
-    host: true,
-  },
+	plugins: [react()],
+	base: "/bok/",
+	build: {
+		outDir: "dist",
+		sourcemap: true,
+		target: "esnext",
+	},
+	server: {
+		host: true,
+	},
 });
