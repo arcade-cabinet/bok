@@ -25,6 +25,9 @@ const TOOL_TIER: Record<number, ToolTierId> = {
 	102: ToolTier.Wood, // Wood Pickaxe
 	103: ToolTier.Stone, // Stone Pickaxe
 	104: ToolTier.Stone, // Stone Sword
+	105: ToolTier.Iron, // Iron Pickaxe
+	106: ToolTier.Iron, // Iron Axe
+	107: ToolTier.Iron, // Iron Sword
 };
 
 /** Whether an item ID is a tool with durability. */

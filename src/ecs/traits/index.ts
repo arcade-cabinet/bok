@@ -230,6 +230,21 @@ export const CookingState = trait({
 	resultId: 0,
 });
 
+// ─── Workstation Proximity ───
+export const WorkstationProximity = trait({
+	/** Highest workstation tier within scan radius. 0 = hand-craft only. */
+	maxTier: 0 as 0 | 1 | 2 | 3,
+});
+
+// ─── Inscription Level ───
+
+/** Tracks how much the player has modified the world. */
+export const InscriptionLevel = trait({
+	totalBlocksPlaced: 0,
+	totalBlocksMined: 0,
+	structuresBuilt: 0,
+});
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

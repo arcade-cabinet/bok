@@ -1,18 +1,22 @@
 import type { InventoryData } from "../../ecs/inventory.ts";
 import { canAfford } from "../../ecs/inventory.ts";
-import { type CraftRecipe, getBlockName, RECIPES } from "../../world/blocks.ts";
+import { getAvailableRecipes } from "../../ecs/systems/workstation.ts";
+import { type CraftRecipe, getBlockName, RECIPES, type RecipeTier, TIER_NAMES } from "../../world/blocks.ts";
 
 interface CraftingMenuProps {
 	isOpen: boolean;
 	inventory: InventoryData;
+	/** Highest workstation tier nearby (0=hand, 1=bench, 2=forge, 3=scriptorium). */
+	maxTier: RecipeTier;
 	onCraft: (recipeId: string) => void;
 	onClose: () => void;
 }
 
-export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMenuProps) {
+export function CraftingMenu({ isOpen, inventory, maxTier, onCraft, onClose }: CraftingMenuProps) {
 	if (!isOpen) return null;
 
 	const nonZeroItems = Object.entries(inventory.items).filter(([, v]) => v > 0);
+	const available = getAvailableRecipes(RECIPES, maxTier);
 
 	return (
 		<div
@@ -28,7 +32,7 @@ export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMe
 			}}
 		>
 			<div
-				className="w-96 rounded-2xl p-6 text-white shadow-2xl"
+				className="w-96 rounded-2xl p-6 text-white shadow-2xl max-h-[80vh] overflow-y-auto"
 				style={{
 					background: "rgba(15, 15, 20, 0.95)",
 					backdropFilter: "blur(10px)",
@@ -41,6 +45,12 @@ export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMe
 				>
 					Crafting & Inventory
 				</h2>
+
+				{/* Station indicator */}
+				<div className="text-xs text-gray-400 mb-3" data-testid="tier-indicator">
+					Station: <span className="text-white font-semibold">{TIER_NAMES[maxTier]}</span>
+					{maxTier > 0 && ` (tier ${maxTier})`}
+				</div>
 
 				{/* Inventory grid */}
 				<div className="grid grid-cols-2 gap-2 mb-5 text-sm">
@@ -55,8 +65,8 @@ export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMe
 				</div>
 
 				{/* Recipes */}
-				<div className="grid grid-cols-2 gap-2">
-					{RECIPES.map((recipe) => (
+				<div className="grid grid-cols-2 gap-2" data-testid="recipe-grid">
+					{available.map((recipe) => (
 						<CraftButton key={recipe.id} recipe={recipe} inventory={inventory} onCraft={onCraft} />
 					))}
 				</div>

@@ -4,10 +4,20 @@
  */
 
 import type { World } from "koota";
-import { CreatureHealth, CreatureTag, PlayerState, PlayerTag, Position, Rotation, WorldTime } from "../traits/index.ts";
+import {
+	CreatureHealth,
+	CreatureTag,
+	InscriptionLevel,
+	PlayerState,
+	PlayerTag,
+	Position,
+	Rotation,
+	WorldTime,
+} from "../traits/index.ts";
 import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
 import { cleanupCreatureState, updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
 import { spawnCreatures } from "./creature-spawner.ts";
+import { computeInscriptionLevel } from "./inscription-level.ts";
 
 const DESPAWN_DISTANCE = 50;
 
@@ -20,18 +30,20 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 	});
 	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
-	// Get player position and yaw
+	// Get player position, yaw, and inscription level
 	let px = 0,
 		py = 0,
 		pz = 0,
 		pYaw = 0;
 	let playerAlive = false;
-	world.query(PlayerTag, Position, PlayerState, Rotation).readEach(([pos, state, rot]) => {
+	let insLevel = 0;
+	world.query(PlayerTag, Position, PlayerState, Rotation, InscriptionLevel).readEach(([pos, state, rot, ins]) => {
 		px = pos.x;
 		py = pos.y;
 		pz = pos.z;
 		pYaw = rot.yaw;
 		playerAlive = !state.isDead;
+		insLevel = computeInscriptionLevel(ins.totalBlocksPlaced, ins.totalBlocksMined, ins.structuresBuilt);
 	});
 
 	// Count + despawn distant creatures
@@ -49,8 +61,8 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		creatureCount++;
 	});
 
-	// Spawn
-	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay);
+	// Spawn — inscription level affects rates and creature thresholds
+	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay, insLevel);
 
 	// Update AI by archetype
 	const ctx: CreatureUpdateContext = {

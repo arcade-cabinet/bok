@@ -27,6 +27,7 @@ import {
 	questSystem,
 	survivalSystem,
 	timeSystem,
+	workstationProximitySystem,
 	worldEventSystem,
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
@@ -41,6 +42,7 @@ import {
 	Health,
 	Hotbar,
 	Hunger,
+	InscriptionLevel,
 	Inventory,
 	MiningState,
 	MoveInput,
@@ -54,6 +56,7 @@ import {
 	Stamina,
 	ToolSwing,
 	Velocity,
+	WorkstationProximity,
 	WorldSeed,
 	WorldTime,
 } from "../ecs/traits/index.ts";
@@ -130,6 +133,7 @@ class GameBridge extends Behavior {
 		cookingSystem(kootaWorld, dt);
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
+		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		this.runCreatureSystem(dt);
 		this.runWorldEventSystem(dt);
 
@@ -598,6 +602,8 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		QuestProgress,
 		ToolSwing,
 		CookingState,
+		WorkstationProximity,
+		InscriptionLevel,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
@@ -642,34 +648,37 @@ export function placeBlock() {
 	const prev = blockHighlightBehavior.lastPrev;
 	if (!prev) return;
 
-	kootaWorld.query(PlayerTag, Hotbar, Inventory, Position, ToolSwing).updateEach(([hotbar, inv, pos, toolSwing]) => {
-		const slot = hotbar.slots[hotbar.activeSlot];
-		if (!slot || slot.type !== "block") return;
+	kootaWorld
+		.query(PlayerTag, Hotbar, Inventory, Position, ToolSwing, InscriptionLevel)
+		.updateEach(([hotbar, inv, pos, toolSwing, inscription]) => {
+			const slot = hotbar.slots[hotbar.activeSlot];
+			if (!slot || slot.type !== "block") return;
 
-		// Check inventory for the block
-		const count = inv.items[slot.id] ?? 0;
-		if (count <= 0) return;
+			// Check inventory for the block
+			const count = inv.items[slot.id] ?? 0;
+			if (count <= 0) return;
 
-		// Don't place inside player
-		const pX = prev.x,
-			pY = prev.y,
-			pZ = prev.z;
-		if (
-			pX === Math.floor(pos.x) &&
-			pZ === Math.floor(pos.z) &&
-			(pY === Math.floor(pos.y) || pY === Math.floor(pos.y - 1))
-		)
-			return;
+			// Don't place inside player
+			const pX = prev.x,
+				pY = prev.y,
+				pZ = prev.z;
+			if (
+				pX === Math.floor(pos.x) &&
+				pZ === Math.floor(pos.z) &&
+				(pY === Math.floor(pos.y) || pY === Math.floor(pos.y - 1))
+			)
+				return;
 
-		// Decrement inventory
-		inv.items[slot.id] = count - 1;
-		if (inv.items[slot.id] === 0) {
-			delete inv.items[slot.id];
-		}
+			// Decrement inventory
+			inv.items[slot.id] = count - 1;
+			if (inv.items[slot.id] === 0) {
+				delete inv.items[slot.id];
+			}
 
-		setVoxelAt("Ground", pX, pY, pZ, slot.id);
-		toolSwing.progress = 1.0;
-	});
+			setVoxelAt("Ground", pX, pY, pZ, slot.id);
+			inscription.totalBlocksPlaced++;
+			toolSwing.progress = 1.0;
+		});
 }
 
 import type { PlayerSaveData } from "../persistence/db.ts";
@@ -679,8 +688,8 @@ export function readPlayerStateForSave(): PlayerSaveData | null {
 	let result: PlayerSaveData | null = null;
 
 	kootaWorld
-		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress)
-		.readEach(([pos, health, hunger, stamina, inv, hotbar, quest]) => {
+		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress, InscriptionLevel)
+		.readEach(([pos, health, hunger, stamina, inv, hotbar, quest, inscription]) => {
 			let timeOfDay = 0.25;
 			let dayCount = 1;
 			kootaWorld.query(WorldTime).readEach(([time]) => {
@@ -701,6 +710,9 @@ export function readPlayerStateForSave(): PlayerSaveData | null {
 				dayCount,
 				hotbar: [...hotbar.slots],
 				inventory: { items: { ...inv.items }, capacity: inv.capacity },
+				inscriptionBlocksPlaced: inscription.totalBlocksPlaced,
+				inscriptionBlocksMined: inscription.totalBlocksMined,
+				inscriptionStructuresBuilt: inscription.structuresBuilt,
 			};
 		});
 
@@ -710,8 +722,8 @@ export function readPlayerStateForSave(): PlayerSaveData | null {
 /** Restore player ECS state from save data. */
 export function restorePlayerState(data: PlayerSaveData): void {
 	kootaWorld
-		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress)
-		.updateEach(([pos, health, hunger, stamina, inv, hotbar, quest]) => {
+		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress, InscriptionLevel)
+		.updateEach(([pos, health, hunger, stamina, inv, hotbar, quest, inscription]) => {
 			pos.x = data.posX;
 			pos.y = data.posY;
 			pos.z = data.posZ;
@@ -729,6 +741,10 @@ export function restorePlayerState(data: PlayerSaveData): void {
 			const savedInv = data.inventory;
 			inv.items = { ...savedInv.items };
 			inv.capacity = savedInv.capacity;
+
+			inscription.totalBlocksPlaced = data.inscriptionBlocksPlaced;
+			inscription.totalBlocksMined = data.inscriptionBlocksMined;
+			inscription.structuresBuilt = data.inscriptionStructuresBuilt;
 		});
 
 	kootaWorld.query(WorldTime).updateEach(([time]) => {

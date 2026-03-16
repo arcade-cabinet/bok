@@ -8,12 +8,14 @@ import { worldRng } from "../../world/noise.ts";
 import type { AiTypeId, SpeciesId } from "../traits/index.ts";
 import { AiType, Species } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
+import { INSCRIPTION_TIERS, isThresholdReached } from "./inscription-level.ts";
 import { registerJatten } from "./jatten-boss.ts";
 import { registerNacken } from "./nacken-aura.ts";
 import { registerVittra } from "./vittra-debuff.ts";
 
 const VITTRA_SPAWN_CHANCE = 0.006;
 const NACKEN_SPAWN_CHANCE = 0.002;
+const JATTEN_SPAWN_CHANCE = 0.001;
 
 interface SpawnDefaults {
 	hp: number;
@@ -74,6 +76,8 @@ type FindSurfaceFn = (x: number, z: number) => number;
 /**
  * Attempt spawning neutral/boss creatures (Vittra, Nacken, Jatten).
  * Called from spawnCreatures in creature-spawner.ts.
+ *
+ * Jätten requires inscription level >= 1000 (JATTEN_WAKE).
  */
 export function spawnNeutralCreatures(
 	world: World,
@@ -83,6 +87,7 @@ export function spawnNeutralCreatures(
 	effects: CreatureEffects | undefined,
 	spawnEntity: SpawnEntityFn,
 	findSurface: FindSurfaceFn,
+	inscriptionLevel = 0,
 ): void {
 	// Vittra spawn at night near mounds
 	if (!isDaytime && worldRng() < VITTRA_SPAWN_CHANCE) {
@@ -91,6 +96,10 @@ export function spawnNeutralCreatures(
 	// Nacken spawn rarely (one per region, near water)
 	if (worldRng() < NACKEN_SPAWN_CHANCE) {
 		spawnNacken(world, playerX, playerZ, effects, spawnEntity, findSurface);
+	}
+	// Jätten: boss creature gated by inscription level
+	if (isThresholdReached(inscriptionLevel, INSCRIPTION_TIERS.JATTEN_WAKE) && worldRng() < JATTEN_SPAWN_CHANCE) {
+		spawnJatten(world, playerX + 30, playerZ + 30, effects, spawnEntity, findSurface);
 	}
 }
 

@@ -1,7 +1,15 @@
 import type { World } from "koota";
 import { BLOCKS, ITEMS } from "../../world/blocks.ts";
 import { addItem } from "../inventory.ts";
-import { Hotbar, Inventory, MiningState, PlayerTag, QuestProgress, ToolSwing } from "../traits/index.ts";
+import {
+	Hotbar,
+	InscriptionLevel,
+	Inventory,
+	MiningState,
+	PlayerTag,
+	QuestProgress,
+	ToolSwing,
+} from "../traits/index.ts";
 import { drainDurability } from "./tool-durability.ts";
 
 /** Hit result from the block highlight raycaster */
@@ -28,8 +36,8 @@ export interface MiningSideEffects {
  */
 export function miningSystem(world: World, dt: number, hit: BlockHit | null, effects: MiningSideEffects) {
 	world
-		.query(PlayerTag, MiningState, Inventory, Hotbar, ToolSwing, QuestProgress)
-		.updateEach(([mining, inv, hotbar, toolSwing, quest]) => {
+		.query(PlayerTag, MiningState, Inventory, Hotbar, ToolSwing, QuestProgress, InscriptionLevel)
+		.updateEach(([mining, inv, hotbar, toolSwing, quest, inscription]) => {
 			// Update mining target from raycaster
 			if (hit) {
 				mining.targetX = hit.x;
@@ -84,6 +92,9 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 
 				// Add to inventory using block ID as key
 				addItem(inv, hit.id);
+
+				// Track inscription level
+				inscription.totalBlocksMined++;
 
 				// Quest tracking by block ID
 				const bName = blockDef?.name?.toLowerCase();

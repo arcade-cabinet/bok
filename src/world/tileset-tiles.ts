@@ -344,7 +344,7 @@ export const tiles: TileDef[] = [
 			}
 		},
 	},
-	// Row 5 — landmarks
+	// Row 5 — landmarks + workstations + crafted building
 	// Rune stone — Sten palette with Björk-tinted rune carvings
 	{
 		col: 0,
@@ -367,6 +367,135 @@ export const tiles: TileDef[] = [
 			ctx.moveTo(s * 0.5, s * 0.5);
 			ctx.lineTo(s * 0.75, s * 0.4);
 			ctx.stroke();
+		},
+	},
+	// Crafting Bench — wooden planks with tool marks
+	{
+		col: 1,
+		row: 5,
+		baseColor: "#8D6E63",
+		draw: (ctx, s, rng) => {
+			addNoise(ctx, s, rng);
+			// Work surface grid
+			ctx.strokeStyle = "rgba(0,0,0,0.2)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(2, 2, s - 4, s - 4);
+			ctx.beginPath();
+			ctx.moveTo(s / 2, 2);
+			ctx.lineTo(s / 2, s - 2);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(2, s / 2);
+			ctx.lineTo(s - 2, s / 2);
+			ctx.stroke();
+			// Tool marks
+			ctx.fillStyle = "rgba(60,40,20,0.3)";
+			for (let i = 0; i < 5; i++) {
+				ctx.fillRect(rng() * (s - 6) + 3, rng() * (s - 6) + 3, 3, 1);
+			}
+		},
+	},
+	// Forge — dark stone with ember glow
+	{
+		col: 2,
+		row: 5,
+		baseColor: "#5a4a4a",
+		draw: (ctx, s, rng) => {
+			addWarmNoise(ctx, s, rng);
+			// Brick pattern
+			ctx.strokeStyle = "rgba(0,0,0,0.25)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(1, 1, s - 2, s - 2);
+			ctx.beginPath();
+			ctx.moveTo(0, s * 0.33);
+			ctx.lineTo(s, s * 0.33);
+			ctx.moveTo(0, s * 0.66);
+			ctx.lineTo(s, s * 0.66);
+			ctx.stroke();
+			// Ember glow at center
+			ctx.fillStyle = "rgba(255,120,30,0.4)";
+			ctx.fillRect(s * 0.3, s * 0.3, s * 0.4, s * 0.4);
+			ctx.fillStyle = "rgba(255,200,50,0.3)";
+			ctx.fillRect(s * 0.4, s * 0.4, s * 0.2, s * 0.2);
+		},
+	},
+	// Scriptorium — dark blue-grey with rune carving
+	{
+		col: 3,
+		row: 5,
+		baseColor: "#4a4a5a",
+		draw: (ctx, s, rng) => {
+			addNoise(ctx, s, rng);
+			// Frame
+			ctx.strokeStyle = "rgba(200,180,140,0.3)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(3, 3, s - 6, s - 6);
+			// Rune inscription (Jera / harvest rune)
+			ctx.strokeStyle = "rgba(200,180,140,0.5)";
+			ctx.lineWidth = 1.5;
+			ctx.beginPath();
+			ctx.moveTo(s * 0.35, s * 0.2);
+			ctx.lineTo(s * 0.65, s * 0.5);
+			ctx.lineTo(s * 0.35, s * 0.8);
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.moveTo(s * 0.65, s * 0.2);
+			ctx.lineTo(s * 0.35, s * 0.5);
+			ctx.lineTo(s * 0.65, s * 0.8);
+			ctx.stroke();
+		},
+	},
+	// Treated Planks — darker stained wood
+	{
+		col: 4,
+		row: 5,
+		baseColor: "#6D5040",
+		draw: (ctx, s, rng) => {
+			addNoise(ctx, s, rng);
+			ctx.strokeStyle = "rgba(0,0,0,0.2)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(0, 0, s, s);
+			ctx.beginPath();
+			ctx.moveTo(0, s / 2);
+			ctx.lineTo(s, s / 2);
+			ctx.stroke();
+			// Treated sheen
+			ctx.fillStyle = "rgba(255,240,200,0.06)";
+			ctx.fillRect(2, 2, s - 4, s / 2 - 3);
+		},
+	},
+	// Reinforced Bricks — stone bricks with iron rivets
+	{
+		col: 5,
+		row: 5,
+		baseColor: "#6a6068",
+		draw: (ctx, s, rng) => {
+			addWarmNoise(ctx, s, rng);
+			// Brick pattern
+			ctx.strokeStyle = "rgba(0,0,0,0.25)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(1, 1, s - 2, s - 2);
+			ctx.beginPath();
+			ctx.moveTo(0, s / 2);
+			ctx.lineTo(s, s / 2);
+			ctx.moveTo(s / 2, 0);
+			ctx.lineTo(s / 2, s / 2);
+			ctx.moveTo(s / 4, s / 2);
+			ctx.lineTo(s / 4, s);
+			ctx.moveTo(s * 0.75, s / 2);
+			ctx.lineTo(s * 0.75, s);
+			ctx.stroke();
+			// Iron rivets
+			ctx.fillStyle = "rgba(160,130,100,0.6)";
+			for (const [x, y] of [
+				[s * 0.25, s * 0.25],
+				[s * 0.75, s * 0.25],
+				[s * 0.5, s * 0.75],
+			] as const) {
+				ctx.beginPath();
+				ctx.arc(x, y, 2, 0, Math.PI * 2);
+				ctx.fill();
+			}
 		},
 	},
 ];

@@ -3,10 +3,10 @@
   "sessionId": "04ab82d4-1d7b-4f5d-a4c6-74976aa7547a",
   "status": "running",
   "startedAt": "2026-03-16T07:58:42.525Z",
-  "updatedAt": "2026-03-16T12:42:17.695Z",
-  "currentIteration": 19,
+  "updatedAt": "2026-03-16T13:18:25.848Z",
+  "currentIteration": 21,
   "maxIterations": 0,
-  "tasksCompleted": 19,
+  "tasksCompleted": 21,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -204,6 +204,26 @@
       "durationMs": 1125296,
       "startedAt": "2026-03-16T12:02:48.273Z",
       "endedAt": "2026-03-16T12:21:33.569Z"
+    },
+    {
+      "iteration": 20,
+      "status": "completed",
+      "taskId": "US-020",
+      "taskTitle": "Tool Durability",
+      "taskCompleted": true,
+      "durationMs": 1243060,
+      "startedAt": "2026-03-16T12:21:34.632Z",
+      "endedAt": "2026-03-16T12:42:17.692Z"
+    },
+    {
+      "iteration": 21,
+      "status": "completed",
+      "taskId": "US-021",
+      "taskTitle": "Workstation Crafting",
+      "taskCompleted": true,
+      "durationMs": 1173832,
+      "startedAt": "2026-03-16T12:42:18.830Z",
+      "endedAt": "2026-03-16T13:01:52.662Z"
     }
   ],
   "skippedTaskIds": [],

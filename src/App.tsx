@@ -15,6 +15,7 @@ import {
 	Position,
 	QuestProgress,
 	Stamina,
+	WorkstationProximity,
 	WorldTime,
 } from "./ecs/traits/index.ts";
 import {
@@ -47,6 +48,7 @@ import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
+import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
 
 function isMobile(): boolean {
@@ -83,6 +85,7 @@ export default function App() {
 		timeOfDay: 0.25,
 		dayCount: 1,
 		isDead: false,
+		workstationTier: 0 as RecipeTier,
 	});
 
 	// Init database + check for existing saves on mount
@@ -114,8 +117,9 @@ export default function App() {
 					QuestProgress,
 					PlayerState,
 					PhysicsBody,
+					WorkstationProximity,
 				)
-				.readEach(([health, hunger, stamina, inv, hotbar, mining, quest, state, body]) => {
+				.readEach(([health, hunger, stamina, inv, hotbar, mining, quest, state, body, ws]) => {
 					playerUpdate = {
 						health: health.current,
 						hunger: hunger.current,
@@ -131,6 +135,7 @@ export default function App() {
 						damageFlash: state.damageFlash,
 						isSwimming: body.isSwimming,
 						isDead: state.isDead,
+						workstationTier: ws.maxTier as RecipeTier,
 					};
 
 					if (state.isDead) {
@@ -378,6 +383,7 @@ export default function App() {
 						<CraftingMenu
 							isOpen={craftingOpen}
 							inventory={hudState.inventory}
+							maxTier={hudState.workstationTier}
 							onCraft={handleCraft}
 							onClose={() => {
 								setCraftingOpen(false);

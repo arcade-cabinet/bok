@@ -191,6 +191,30 @@ The tool durability system follows the same pure-data ↔ ECS bridge separation:
 - **Tier lookup table**: `TOOL_TIER: Record<number, ToolTierId>` maps item IDs to tiers. Adding future iron/crystal tools requires only adding entries here.
 - **Color thresholds**: >50% green, >20% yellow, ≤20% red. Simple step function, no interpolation needed for pixel-art aesthetic.
 
+### Workstation Crafting System Architecture
+The workstation system follows the same pure-data ↔ ECS bridge separation:
+- `workstation.ts` — Block → tier mapping, proximity scan function `scanNearbyWorkstationTier()`, recipe filtering `getAvailableRecipes()`. Pure data, no ECS/Three.js.
+- `workstation-proximity.ts` — ECS system: throttled (0.5s interval) scan of nearby blocks, updates `WorkstationProximity` trait on player entity. Takes injected `getVoxel` function (side-effect pattern).
+- `blocks.ts` — `CraftRecipe.tier` field (0-3) categorizes all recipes. `RecipeTier` type and `TIER_NAMES` for UI display.
+- `CraftingMenu.tsx` — Receives `maxTier` prop, filters `RECIPES` via `getAvailableRecipes()`. Shows tier indicator.
+- Key patterns:
+- **Throttled scan**: Unlike per-frame systems, workstation proximity uses a 0.5s interval (`SCAN_INTERVAL`). Cubic scan volume (9×4×9 blocks at radius 4) runs infrequently.
+- **Early exit optimization**: `scanNearbyWorkstationTier` returns immediately when max tier (3) is found, avoiding unnecessary block checks.
+- **Tier as recipe gate**: `CraftRecipe.tier` is a simple number comparison — `recipe.tier <= maxTier`. No unlock/progression state needed beyond proximity detection.
+- **Station crafting chain**: Crafting Bench (tier 0 recipe) → Forge (tier 1 recipe) → Scriptorium (tier 2 recipe). Each station unlocks recipes for the next.
+- **Block placement as interaction**: Players craft station blocks, place them in the world, then stand near them to unlock recipes. No special "interact" action needed — proximity is the trigger.
+
+### Inscription Level System Architecture
+The inscription level system follows the same pure-data ↔ ECS bridge separation:
+- `inscription-level.ts` — Level formula (`computeInscriptionLevel`), spawn rate multiplier tiers (`getSpawnRateMultiplier`), threshold checks (`isThresholdReached`), tier constants (`INSCRIPTION_TIERS`). Pure math, no ECS/Three.js.
+- `InscriptionLevel` trait on player entity — `totalBlocksPlaced`, `totalBlocksMined`, `structuresBuilt` counters.
+- Key patterns:
+- **Inline increment at action site**: Mining increments happen in `mining.ts` at block-break, placement increments in `game.ts` `placeBlock()`. No separate "inscription system" — the counters piggyback on existing queries.
+- **Level as derived value**: The inscription level is not stored — it's computed on demand from the three counters via `computeInscriptionLevel()`. Only raw counters are persisted.
+- **Spawn rate multiplication**: `getSpawnRateMultiplier(level)` returns a stepped multiplier (1.0→1.2→1.5→2.0) applied to all spawn chance rolls in creature-spawner.ts.
+- **Threshold gating**: `isThresholdReached(level, threshold)` gates species spawning: Runväktare at 100+, Lindormar at 300+, Jätten at 1000+. Checked in creature-spawner-hostile.ts and creature-spawner-neutral.ts.
+- **Read-once per frame**: `creature.ts` reads `InscriptionLevel` once per frame, computes the level, and passes it down to spawners as a plain number — spawners don't touch ECS.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -624,5 +648,59 @@ The tool durability system follows the same pure-data ↔ ECS bridge separation:
   - **Mining system test setup**: MiningState has flat primitives — must use `world.query(PlayerTag, MiningState).updateEach()` to set `active`, `targetKey`, etc. Using `entity.get(MiningState).active = true` silently fails (Koota read-only proxy for flat traits).
   - **Discrete vs continuous drain**: Mining has a natural discrete event (block break). Combat is continuous DPS. Using a cooldown timer (`combatDrainTimer`) converts continuous combat into discrete 1/sec drain events.
   - **Break particles via existing effects**: No new side-effect callback needed — reuse `effects.spawnParticles` in mining.ts and `particlesBehavior?.spawn()` in game.ts for tool break FX.
+---
+
+## 2026-03-16 - US-021
+- Workstation crafting system: Crafting Bench (tier 1), Forge (tier 2), Scriptorium (tier 3)
+- Recipe tier system: all 19 recipes categorized (8 hand-craft, 5 bench, 6 forge)
+- New blocks: CraftingBench (35), Forge (36), Scriptorium (37), TreatedPlanks (38), ReinforcedBricks (39)
+- New items: Iron Pickaxe (105), Iron Axe (106), Iron Sword (107), Lantern (108), Ember Lantern (109)
+- Iron tools registered in tool-durability.ts (500 max durability)
+- Proximity detection: scans 9×4×9 block cube around player, throttled to 0.5s intervals
+- CraftingMenu filters recipes by nearby workstation tier, shows tier indicator
+- Files created:
+  - `src/ecs/systems/workstation.ts` — Pure data: block→tier mapping, proximity scan, recipe filter (66 LOC)
+  - `src/ecs/systems/workstation-proximity.ts` — ECS system: throttled scan, updates trait (35 LOC)
+  - `src/ecs/systems/workstation.test.ts` — 27 unit tests for workstation data, proximity scan, recipe filtering
+  - `src/ui/components/CraftingMenu.ct.tsx` — 8 CT tests for tier filtering, indicator display, craft callback
+- Files modified:
+  - `src/world/blocks.ts` — 5 new BlockIds, 5 new items, RecipeTier type, TIER_NAMES, tier field on all recipes, 12 new recipes
+  - `src/world/block-definitions.ts` — 5 new block rendering definitions
+  - `src/world/tileset-tiles.ts` — 5 new tile textures (bench, forge, scriptorium, treated planks, reinforced bricks)
+  - `src/ecs/traits/index.ts` — WorkstationProximity trait
+  - `src/ecs/systems/index.ts` — Export workstationProximitySystem
+  - `src/ecs/systems/tool-durability.ts` — Iron tool tier entries (105-107)
+  - `src/engine/game.ts` — Run workstationProximitySystem in update loop, add WorkstationProximity to player spawn
+  - `src/App.tsx` — Read workstationTier from ECS, pass maxTier to CraftingMenu
+  - `src/ui/components/CraftingMenu.tsx` — Accept maxTier prop, filter recipes, show tier indicator
+- All 666 vitest tests pass (33 files), typecheck clean, lint clean
+- Playwright CT tests have pre-existing env timeout (all mount() calls timeout for ALL tests, not just new ones)
+- **Learnings:**
+  - **Proximity as interaction**: No "interact" button needed — just standing near a workstation unlocks recipes. Simple, mobile-friendly, and diegetic.
+  - **Tier chain via recipes**: Each workstation is itself a craftable block. CraftingBench is tier 0 (hand-craft), Forge is tier 1 (needs bench), Scriptorium is tier 2 (needs forge). This creates a natural progression chain without explicit unlock state.
+  - **Throttled ECS systems**: Not every system needs 60fps updates. Workstation proximity uses a 0.5s interval — sufficient for a spatial check that only matters when the crafting menu opens.
+  - **ItemDef type expansion**: Added "light" to the `type` union for Lantern/Ember Lantern items. The existing tool system doesn't track these since they aren't tools with durability.
+  - **Tileset row 5**: Expanded from 1 tile (RuneStone) to 6. Row 5 still has 2 open slots for future blocks.
+---
+
+## 2026-03-16 - US-022
+- Inscription Level System — tracks player world modification and escalates creature responses
+- New `InscriptionLevel` trait: `totalBlocksPlaced`, `totalBlocksMined`, `structuresBuilt` counters
+- New `inscription-level.ts` (53 LOC): pure math module with `computeInscriptionLevel()` (weighted formula: placed×1 + mined×0.5 + structures×10), `getSpawnRateMultiplier()` (stepped tiers: 1.0/1.2/1.5/2.0), `isThresholdReached()`, `INSCRIPTION_TIERS` constants
+- Mining increment in `mining.ts` (block break), placement increment in `game.ts` `placeBlock()`
+- Creature spawn scaling: all spawn chances multiplied by inscription-level-derived multiplier in `creature-spawner.ts`
+- Threshold gating: Runväktare at 100+ (`creature-spawner-hostile.ts`), Lindormar at 300+ (`creature-spawner-hostile.ts`), Jätten at 1000+ (`creature-spawner-neutral.ts`)
+- Persistence: 3 new columns in `player_state` table (`inscription_blocks_placed/mined`, `inscription_structures_built`), `PlayerSaveData` extended, save/load in `game.ts`
+- Test utils: `InscriptionLevel` added to `spawnPlayer()` with `inscription` overrides
+- 18 new unit tests in `inscription-level.test.ts`: formula (5), spawn rate scaling (5), thresholds (6), ECS trait round-trip (3 including override and updateEach)
+- All 685 vitest tests pass (34 files), typecheck clean, build clean
+- Playwright CT tests have pre-existing env timeout (unrelated to inscription changes)
+- Files created: `src/ecs/systems/inscription-level.ts`, `src/ecs/systems/inscription-level.test.ts`
+- Files modified: `src/ecs/traits/index.ts`, `src/ecs/systems/index.ts`, `src/ecs/systems/mining.ts`, `src/ecs/systems/creature.ts`, `src/ecs/systems/creature-spawner.ts`, `src/ecs/systems/creature-spawner-hostile.ts`, `src/ecs/systems/creature-spawner-neutral.ts`, `src/engine/game.ts`, `src/persistence/db.ts`, `src/test-utils.ts`
+- **Learnings:**
+  - **Derived vs stored level**: Computing the inscription level on demand from raw counters avoids ECS sync issues and simplifies persistence (only 3 integers to save). The formula can be rebalanced without migrations.
+  - **Piggyback queries**: Rather than creating a new ECS system, inscription counters increment inside existing system queries (`mining.ts` block break, `game.ts` placeBlock). Avoids extra ECS iteration overhead.
+  - **Pass-down pattern for spawners**: `creature.ts` reads the inscription level once per frame and passes it as a plain number through the spawner call chain. Spawner modules remain pure functions with no ECS dependency.
+  - **Backward-compatible DB schema**: New columns use `NOT NULL DEFAULT 0`, so existing save files load cleanly without migration scripts. The `??0` fallback in `loadPlayerState` handles legacy rows.
 ---
 

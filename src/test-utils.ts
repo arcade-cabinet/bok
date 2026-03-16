@@ -14,6 +14,7 @@ import {
 	Health,
 	Hotbar,
 	Hunger,
+	InscriptionLevel,
 	Inventory,
 	MiningState,
 	MoveInput,
@@ -72,6 +73,11 @@ export interface PlayerOverrides {
 		height: number;
 		depth: number;
 	}>;
+	inscription?: Partial<{
+		totalBlocksPlaced: number;
+		totalBlocksMined: number;
+		structuresBuilt: number;
+	}>;
 }
 
 /**
@@ -96,6 +102,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		Hotbar(),
 		QuestProgress(),
 		CookingState(),
+		InscriptionLevel(overrides.inscription ?? {}),
 	);
 }
 

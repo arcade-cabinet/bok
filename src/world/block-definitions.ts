@@ -145,5 +145,12 @@ export function createBlockDefinitions(): BlockDefinition[] {
 		},
 		// Landmark blocks
 		simpleCube(BlockId.RuneStone, "Rune Stone", 0, 5),
+		// Workstation blocks
+		simpleCube(BlockId.CraftingBench, "Crafting Bench", 1, 5),
+		simpleCube(BlockId.Forge, "Forge", 2, 5),
+		simpleCube(BlockId.Scriptorium, "Scriptorium", 3, 5),
+		// Crafted building blocks
+		simpleCube(BlockId.TreatedPlanks, "Treated Planks", 4, 5),
+		simpleCube(BlockId.ReinforcedBricks, "Reinforced Bricks", 5, 5),
 	];
 }

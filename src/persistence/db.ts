@@ -54,7 +54,10 @@ export async function initDatabase(): Promise<void> {
 			time_of_day REAL NOT NULL DEFAULT 0.25,
 			day_count INTEGER NOT NULL DEFAULT 1,
 			hotbar_json TEXT NOT NULL DEFAULT '[]',
-			inventory_json TEXT NOT NULL DEFAULT '{}'
+			inventory_json TEXT NOT NULL DEFAULT '{}',
+			inscription_blocks_placed INTEGER NOT NULL DEFAULT 0,
+			inscription_blocks_mined INTEGER NOT NULL DEFAULT 0,
+			inscription_structures_built INTEGER NOT NULL DEFAULT 0
 		);
 
 		CREATE TABLE IF NOT EXISTS voxel_deltas (
@@ -143,6 +146,9 @@ export interface PlayerSaveData {
 	dayCount: number;
 	hotbar: unknown[];
 	inventory: InventoryData;
+	inscriptionBlocksPlaced: number;
+	inscriptionBlocksMined: number;
+	inscriptionStructuresBuilt: number;
 }
 
 export async function savePlayerState(slotId: number, data: PlayerSaveData): Promise<void> {
@@ -153,7 +159,10 @@ export async function savePlayerState(slotId: number, data: PlayerSaveData): Pro
 			health = ?, hunger = ?, stamina = ?,
 			quest_step = ?, quest_progress = ?,
 			time_of_day = ?, day_count = ?,
-			hotbar_json = ?, inventory_json = ?
+			hotbar_json = ?, inventory_json = ?,
+			inscription_blocks_placed = ?,
+			inscription_blocks_mined = ?,
+			inscription_structures_built = ?
 		WHERE slot_id = ?`,
 		[
 			data.posX,
@@ -168,6 +177,9 @@ export async function savePlayerState(slotId: number, data: PlayerSaveData): Pro
 			data.dayCount,
 			JSON.stringify(data.hotbar),
 			JSON.stringify(data.inventory),
+			data.inscriptionBlocksPlaced,
+			data.inscriptionBlocksMined,
+			data.inscriptionStructuresBuilt,
 			slotId,
 		],
 	);
@@ -223,6 +235,9 @@ export async function loadPlayerState(slotId: number): Promise<PlayerSaveData | 
 		dayCount: row.day_count as number,
 		hotbar,
 		inventory,
+		inscriptionBlocksPlaced: (row.inscription_blocks_placed as number) ?? 0,
+		inscriptionBlocksMined: (row.inscription_blocks_mined as number) ?? 0,
+		inscriptionStructuresBuilt: (row.inscription_structures_built as number) ?? 0,
 	};
 }
 

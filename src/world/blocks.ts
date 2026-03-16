@@ -39,6 +39,13 @@ export const BlockId = {
 	Wildflower: 32,
 	Cranberry: 33,
 	RuneStone: 34,
+	// Workstation blocks
+	CraftingBench: 35,
+	Forge: 36,
+	Scriptorium: 37,
+	// Crafted building materials
+	TreatedPlanks: 38,
+	ReinforcedBricks: 39,
 } as const;
 
 export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
@@ -102,6 +109,13 @@ export const BLOCKS: Record<number, BlockMeta> = {
 	[BlockId.Wildflower]: { name: "Wildflower", color: "#d4a0d4", solid: false, hardness: 0.1 },
 	[BlockId.Cranberry]: { name: "Cranberry", color: "#8a2030", solid: false, hardness: 0.1 },
 	[BlockId.RuneStone]: { name: "Rune Stone", color: "#5a5a6a", solid: true, hardness: 7.0 },
+	// Workstations
+	[BlockId.CraftingBench]: { name: "Crafting Bench", color: "#8D6E63", solid: true, hardness: 2.5 },
+	[BlockId.Forge]: { name: "Forge", color: "#5a4a4a", solid: true, hardness: 5.0, emissive: true },
+	[BlockId.Scriptorium]: { name: "Scriptorium", color: "#4a4a5a", solid: true, hardness: 4.0 },
+	// Crafted building materials
+	[BlockId.TreatedPlanks]: { name: "Treated Planks", color: "#6D5040", solid: true, hardness: 3.0 },
+	[BlockId.ReinforcedBricks]: { name: "Reinforced Bricks", color: "#6a6068", solid: true, hardness: 6.0 },
 };
 
 export function getBlockHardness(blockId: number): number {
@@ -128,7 +142,7 @@ export function isSoft(blockId: number): boolean {
 
 export interface ItemDef {
 	name: string;
-	type: "axe" | "pickaxe" | "sword" | "food";
+	type: "axe" | "pickaxe" | "sword" | "food" | "light";
 	target: string;
 	power: number;
 	color: string;
@@ -141,8 +155,27 @@ export const ITEMS: Record<number, ItemDef> = {
 	102: { name: "Wood Pickaxe", type: "pickaxe", target: "Stone", power: 3, color: "#8D6E63" },
 	103: { name: "Stone Pickaxe", type: "pickaxe", target: "Stone", power: 6, color: "#9E9E9E" },
 	104: { name: "Stone Sword", type: "sword", target: "Entity", power: 1, color: "#9E9E9E" },
+	// Iron tools (tier 2 — forge)
+	105: { name: "Iron Pickaxe", type: "pickaxe", target: "Stone", power: 9, color: "#707070" },
+	106: { name: "Iron Axe", type: "axe", target: "Wood", power: 9, color: "#707070" },
+	107: { name: "Iron Sword", type: "sword", target: "Entity", power: 3, color: "#707070" },
+	// Light items (tier 1 — bench)
+	108: { name: "Lantern", type: "light", target: "Light", power: 1, color: "#FFD700" },
+	// Light items (tier 2 — forge)
+	109: { name: "Ember Lantern", type: "light", target: "Light", power: 2, color: "#FF6600" },
+	// Food
 	201: { name: "Raw Meat", type: "food", target: "Hunger", power: 10, color: "#8B4513" },
 	202: { name: "Cooked Meat", type: "food", target: "Hunger", power: 35, color: "#CD853F" },
+};
+
+/** Recipe tier: 0=hand, 1=Crafting Bench, 2=Forge, 3=Scriptorium. */
+export type RecipeTier = 0 | 1 | 2 | 3;
+
+export const TIER_NAMES: Record<RecipeTier, string> = {
+	0: "Hand",
+	1: "Bench",
+	2: "Forge",
+	3: "Scriptorium",
 };
 
 export interface CraftRecipe {
@@ -150,46 +183,145 @@ export interface CraftRecipe {
 	name: string;
 	result: { type: "block" | "item"; id: number; qty: number };
 	cost: Record<number, number>;
+	/** Minimum workstation tier required. 0 = craftable by hand anywhere. */
+	tier: RecipeTier;
 }
 
 export const RECIPES: CraftRecipe[] = [
+	// ─── Tier 0: Hand-craftable (always available) ───
 	{
 		id: "planks",
 		name: "Wood Planks x4",
 		result: { type: "block", id: BlockId.Planks, qty: 4 },
 		cost: { [BlockId.Wood]: 1 },
+		tier: 0,
 	},
 	{
 		id: "torch",
 		name: "Torches x4",
 		result: { type: "block", id: BlockId.Torch, qty: 4 },
 		cost: { [BlockId.Wood]: 1 },
+		tier: 0,
 	},
 	{
 		id: "bricks",
 		name: "Stone Bricks x4",
 		result: { type: "block", id: BlockId.StoneBricks, qty: 4 },
 		cost: { [BlockId.Stone]: 4 },
+		tier: 0,
 	},
 	{
 		id: "glass",
 		name: "Mystic Glass x1",
 		result: { type: "block", id: BlockId.Glass, qty: 1 },
 		cost: { [BlockId.Sand]: 1 },
+		tier: 0,
 	},
-	{ id: "wood_axe", name: "Wooden Axe", result: { type: "item", id: 101, qty: 1 }, cost: { [BlockId.Wood]: 3 } },
-	{ id: "wood_pick", name: "Wooden Pickaxe", result: { type: "item", id: 102, qty: 1 }, cost: { [BlockId.Wood]: 5 } },
-	{ id: "stone_pick", name: "Stone Pickaxe", result: { type: "item", id: 103, qty: 1 }, cost: { [BlockId.Stone]: 5 } },
 	{
-		id: "sword",
-		name: "Stone Sword",
-		result: { type: "item", id: 104, qty: 1 },
-		cost: { [BlockId.Wood]: 2, [BlockId.Stone]: 3 },
+		id: "wood_axe",
+		name: "Wooden Axe",
+		result: { type: "item", id: 101, qty: 1 },
+		cost: { [BlockId.Wood]: 3 },
+		tier: 0,
+	},
+	{
+		id: "wood_pick",
+		name: "Wooden Pickaxe",
+		result: { type: "item", id: 102, qty: 1 },
+		cost: { [BlockId.Wood]: 5 },
+		tier: 0,
 	},
 	{
 		id: "cooked_meat",
 		name: "Cooked Meat",
 		result: { type: "item", id: 202, qty: 1 },
 		cost: { 201: 1, [BlockId.Torch]: 1 },
+		tier: 0,
+	},
+	{
+		id: "crafting_bench",
+		name: "Crafting Bench",
+		result: { type: "block", id: BlockId.CraftingBench, qty: 1 },
+		cost: { [BlockId.Planks]: 4, [BlockId.Wood]: 2 },
+		tier: 0,
+	},
+	// ─── Tier 1: Crafting Bench ───
+	{
+		id: "stone_pick",
+		name: "Stone Pickaxe",
+		result: { type: "item", id: 103, qty: 1 },
+		cost: { [BlockId.Stone]: 5 },
+		tier: 1,
+	},
+	{
+		id: "sword",
+		name: "Stone Sword",
+		result: { type: "item", id: 104, qty: 1 },
+		cost: { [BlockId.Wood]: 2, [BlockId.Stone]: 3 },
+		tier: 1,
+	},
+	{
+		id: "lantern",
+		name: "Lantern",
+		result: { type: "item", id: 108, qty: 1 },
+		cost: { [BlockId.Glass]: 1, [BlockId.IronOre]: 1 },
+		tier: 1,
+	},
+	{
+		id: "forge",
+		name: "Forge",
+		result: { type: "block", id: BlockId.Forge, qty: 1 },
+		cost: { [BlockId.Stone]: 8, [BlockId.IronOre]: 4, [BlockId.Torch]: 2 },
+		tier: 1,
+	},
+	{
+		id: "treated_planks",
+		name: "Treated Planks x4",
+		result: { type: "block", id: BlockId.TreatedPlanks, qty: 4 },
+		cost: { [BlockId.Planks]: 4, [BlockId.Peat]: 1 },
+		tier: 1,
+	},
+	// ─── Tier 2: Forge ───
+	{
+		id: "iron_pick",
+		name: "Iron Pickaxe",
+		result: { type: "item", id: 105, qty: 1 },
+		cost: { [BlockId.IronOre]: 5, [BlockId.Wood]: 2 },
+		tier: 2,
+	},
+	{
+		id: "iron_axe",
+		name: "Iron Axe",
+		result: { type: "item", id: 106, qty: 1 },
+		cost: { [BlockId.IronOre]: 3, [BlockId.Wood]: 2 },
+		tier: 2,
+	},
+	{
+		id: "iron_sword",
+		name: "Iron Sword",
+		result: { type: "item", id: 107, qty: 1 },
+		cost: { [BlockId.IronOre]: 4, [BlockId.Wood]: 1 },
+		tier: 2,
+	},
+	{
+		id: "ember_lantern",
+		name: "Ember Lantern",
+		result: { type: "item", id: 109, qty: 1 },
+		cost: { [BlockId.Glass]: 2, [BlockId.IronOre]: 2, [BlockId.CopperOre]: 1 },
+		tier: 2,
+	},
+	{
+		id: "reinforced_bricks",
+		name: "Reinforced Bricks x4",
+		result: { type: "block", id: BlockId.ReinforcedBricks, qty: 4 },
+		cost: { [BlockId.StoneBricks]: 4, [BlockId.IronOre]: 2 },
+		tier: 2,
+	},
+	{
+		id: "scriptorium",
+		name: "Scriptorium",
+		result: { type: "block", id: BlockId.Scriptorium, qty: 1 },
+		cost: { [BlockId.TreatedPlanks]: 4, [BlockId.Crystal]: 2, [BlockId.RuneStone]: 1 },
+		tier: 2,
 	},
 ];

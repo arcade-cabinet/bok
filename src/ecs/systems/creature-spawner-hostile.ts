@@ -9,6 +9,7 @@ import type { AiTypeId, SpeciesId } from "../traits/index.ts";
 import { AiType, Species } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { registerDraugar } from "./draugar-gaze.ts";
+import { INSCRIPTION_TIERS, isThresholdReached } from "./inscription-level.ts";
 import { registerLindorm } from "./lindorm-tunnel.ts";
 import { registerRunvaktare } from "./runvaktare-ai.ts";
 
@@ -73,6 +74,9 @@ type FindSurfaceFn = (x: number, z: number) => number;
 /**
  * Attempt spawning hostile creatures (Runväktare, Lindorm, Draugar).
  * Called from spawnCreatures in creature-spawner.ts.
+ *
+ * Runväktare require inscription level >= 100 (RUNVAKTARE_WAKE).
+ * Lindormar require inscription level >= 300 (LINDORM_ATTRACT).
  */
 export function spawnHostileCreatures(
 	world: World,
@@ -82,11 +86,16 @@ export function spawnHostileCreatures(
 	effects: CreatureEffects | undefined,
 	spawnEntity: SpawnEntityFn,
 	findSurface: FindSurfaceFn,
+	inscriptionLevel = 0,
 ): void {
-	if (!isDaytime && worldRng() < RUNVAKTARE_SPAWN_CHANCE) {
+	if (
+		!isDaytime &&
+		isThresholdReached(inscriptionLevel, INSCRIPTION_TIERS.RUNVAKTARE_WAKE) &&
+		worldRng() < RUNVAKTARE_SPAWN_CHANCE
+	) {
 		spawnRunvaktare(world, playerX, playerZ, effects, spawnEntity, findSurface);
 	}
-	if (worldRng() < LINDORM_SPAWN_CHANCE) {
+	if (isThresholdReached(inscriptionLevel, INSCRIPTION_TIERS.LINDORM_ATTRACT) && worldRng() < LINDORM_SPAWN_CHANCE) {
 		spawnLindorm(world, playerX, playerZ, effects, spawnEntity, findSurface);
 	}
 	if (!isDaytime && worldRng() < DRAUGAR_SPAWN_CHANCE) {
