@@ -28,6 +28,8 @@ export { miningSystem } from "./mining.ts";
 export { movementSystem } from "./movement.ts";
 export { physicsSystem } from "./physics.ts";
 export { questSystem } from "./quest.ts";
+export { recordBossDefeat, recordCreatureKill, sagaSystem } from "./saga.ts";
+export { computeActiveObjective, computeSagaStats } from "./saga-data.ts";
 export { structureSystem } from "./structure.ts";
 export { survivalSystem } from "./survival.ts";
 export { timeSystem } from "./time.ts";

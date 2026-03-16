@@ -5,6 +5,18 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Saga / Journal System Architecture
+The saga system follows the same pure-data ↔ ECS bridge separation:
+- `saga-data.ts` — Milestone definitions, prose templates, objective computation, stats aggregation. Pure data, no ECS/Three.js.
+- `saga.ts` — ECS system: throttled (1s interval) milestone detection via `detectNewMilestones()`, `SagaLog` trait updates. `recordCreatureKill()`/`recordBossDefeat()` for external triggers.
+- `BokSaga.tsx` — React component rendering saga entries chronologically, active objective with progress bar, 2×2 stats grid.
+- Key patterns:
+- **Throttled milestone scan**: 1s interval matches structure system. Milestone detection reads ~6 traits but runs infrequently.
+- **External event recording**: `creaturesKilled` and `bossDefeated` live on the `SagaLog` trait, incremented by explicit helper functions called from creature death logic. Unlike inscription counters (which piggyback on existing actions), these need dedicated recording.
+- **Derived biome count**: `countDistinctBiomes()` derives the count from explored chunks via injected biome resolver, early-exiting at 6 (max biomes). No separate biome tracking trait needed.
+- **Serializable UI props**: `BokSagaProps` uses plain arrays and objects. `SagaLog.entries` stores serializable objects (not classes) so they copy cleanly to React props.
+- **Active objective as derived value**: Not stored — computed on demand from achieved milestones via `computeActiveObjective()`. Follows the inscription level pattern (level derived from counters, not stored).
+
 ### Codex / Knowledge System Architecture
 The codex system follows the same pure-data ↔ ECS bridge separation:
 - `codex-data.ts` — Species entries, reveal stages (Hidden/Silhouette/Basic/Full), observation thresholds, lore entries. Pure data, no ECS/Three.js.
@@ -886,5 +898,31 @@ The light system separates pure data from ECS state management, following the cr
   - **Recipe lookup by ingredient**: `findRecipesUsingResource(id)` filters `RECIPES` by checking `id in recipe.cost`. Simple `in` operator works because `cost` is a `Record<number, number>` keyed by resource ID.
   - **Inventory poll pattern**: Same conditional-on-bokOpen pattern as map/codex data polling. `{ ...inv.items }` shallow copy prevents React from skipping re-renders due to Koota's stable object reference.
   - **Tap-to-inspect toggle**: `selectedId` state in BokLedger.tsx. Second tap on same resource deselects (sets null). Recipe panel only renders when `selectedId !== null`.
+---
+
+## 2026-03-16 - US-029
+- Implemented Sagan (Saga/Journal Page) — auto-recording journey milestones as narrative prose
+- Files created:
+  - `src/ecs/systems/saga-data.ts` — 12 milestone definitions, prose templates, objective computation, stats aggregation (~150 LOC)
+  - `src/ecs/systems/saga.ts` — ECS system: throttled milestone detection, biome resolver injection, creature/boss kill recording (~100 LOC)
+  - `src/ui/components/BokSaga.tsx` — React component: entries, active objective with progress bar, 2×2 stats grid (~150 LOC)
+  - `src/ecs/systems/saga-data.test.ts` — 21 unit tests for pure data functions
+  - `src/ecs/systems/saga.test.ts` — 8 ECS system integration tests
+  - `src/ui/components/BokSaga.ct.tsx` — 8 Playwright CT tests
+- Files modified:
+  - `src/ecs/traits/index.ts` — Added `SagaLog` trait (achieved set, entries array, creaturesKilled, bossDefeated)
+  - `src/ecs/systems/index.ts` — Exported sagaSystem, saga-data helpers
+  - `src/engine/game.ts` — Added sagaSystem call, SagaLog trait to player spawn, biome resolver registration, state reset
+  - `src/ui/screens/BokScreen.tsx` — Added BokSaga import, sagaData prop, renders on "sagan" tab
+  - `src/App.tsx` — Added sagaData state, polls SagaLog/InscriptionLevel/ShelterState/Codex when bok is open
+  - `src/test-utils.ts` — Added SagaLog to spawnPlayer
+- Typecheck clean, build clean, lint clean on new files
+- All 29 saga vitest tests pass (4 pre-existing failures in map-data.test.ts unrelated)
+- Playwright CT environment has pre-existing global failure (all 88 CT tests timeout at mount) — BokSaga CT test is correctly structured
+- **Learnings:**
+  - **Biome resolver injection for saga**: Same pattern as `registerBiomeResolver` — avoids circular deps between saga system and terrain-generator. Registered alongside other resolvers in `initGame`.
+  - **Module-level scan timer**: `scanTimer` in saga.ts follows the same pattern as workstation-proximity.ts and structure.ts for throttled systems.
+  - **Entries as plain objects**: `SagaLog.entries` stores `{ milestoneId, day, text }` objects rather than class instances. This ensures they copy cleanly with spread operator for React props, avoiding the Set serialization gotcha documented in codex patterns.
+  - **Derived active objective**: Following inscription-level pattern — `computeActiveObjective()` derives the current objective from achieved milestones on demand rather than storing it. Keeps the trait lean.
 ---
 

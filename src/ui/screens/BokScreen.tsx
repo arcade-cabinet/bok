@@ -12,6 +12,8 @@ import type { BokLedgerProps } from "../components/BokLedger.tsx";
 import { BokLedger } from "../components/BokLedger.tsx";
 import { BokMap } from "../components/BokMap.tsx";
 import { BokPage } from "../components/BokPage.tsx";
+import type { BokSagaProps } from "../components/BokSaga.tsx";
+import { BokSaga } from "../components/BokSaga.tsx";
 
 export type BokTabId = "kartan" | "listan" | "kunskapen" | "sagan";
 
@@ -43,11 +45,12 @@ interface BokScreenProps {
 	mapData?: MapData;
 	codexData?: BokCodexProps;
 	ledgerData?: BokLedgerProps;
+	sagaData?: BokSagaProps;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData }: BokScreenProps) {
+export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sagaData }: BokScreenProps) {
 	const [activeTab, setActiveTab] = useState<BokTabId>("kartan");
 	const [closing, setClosing] = useState(false);
 	const touchStartRef = useRef<number>(0);
@@ -143,6 +146,9 @@ export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData }: B
 							loreEntryIds={codexData.loreEntryIds}
 							discoveredRecipeCount={codexData.discoveredRecipeCount}
 						/>
+					)}
+					{activeTab === "sagan" && sagaData && (
+						<BokSaga entries={sagaData.entries} activeObjective={sagaData.activeObjective} stats={sagaData.stats} />
 					)}
 				</BokPage>
 			</div>

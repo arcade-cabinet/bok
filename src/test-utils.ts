@@ -26,6 +26,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	SagaLog,
 	ShelterState,
 	Species,
 	Stamina,
@@ -115,6 +116,7 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		ShelterState(overrides.shelter ?? {}),
 		ExploredChunks,
 		Codex,
+		SagaLog,
 	);
 }
 

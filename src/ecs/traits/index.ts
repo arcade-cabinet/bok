@@ -285,6 +285,28 @@ export const Codex = trait(
 	}),
 );
 
+// ─── Saga Log ───
+
+export interface SagaLogData {
+	/** Set of achieved milestone IDs. */
+	achieved: Set<string>;
+	/** Ordered list of saga entries (serializable for UI props). */
+	entries: Array<{ milestoneId: string; day: number; text: string }>;
+	/** Number of creatures killed (for milestone detection). */
+	creaturesKilled: number;
+	/** Whether a boss has been defeated. */
+	bossDefeated: boolean;
+}
+
+export const SagaLog = trait(
+	(): SagaLogData => ({
+		achieved: new Set(),
+		entries: [],
+		creaturesKilled: 0,
+		bossDefeated: false,
+	}),
+);
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

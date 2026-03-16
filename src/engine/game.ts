@@ -29,6 +29,7 @@ import {
 	movementSystem,
 	physicsSystem,
 	questSystem,
+	sagaSystem,
 	structureSystem,
 	survivalSystem,
 	timeSystem,
@@ -37,6 +38,7 @@ import {
 } from "../ecs/systems/index.ts";
 import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
@@ -61,6 +63,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	SagaLog,
 	ShelterState,
 	Stamina,
 	ToolSwing,
@@ -161,6 +164,7 @@ class GameBridge extends Behavior {
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		codexSystem(kootaWorld, dt);
+		sagaSystem(kootaWorld, dt);
 		this.runWorldEventSystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
@@ -453,6 +457,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	initNoise(seed);
 	registerBiomeResolver(biomeAt);
 	registerLandmarkResolver((cx, cz) => resolveLandmarkForChunk(cx, cz));
+	registerSagaBiomeResolver(biomeAt);
 
 	jpRuntime = new Runtime(canvas, {
 		includePerformanceStats: false,
@@ -634,6 +639,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		ShelterState,
 		ExploredChunks,
 		Codex,
+		SagaLog,
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
@@ -841,5 +847,6 @@ export function destroyGame(): void {
 	combatDrainTimer = 0;
 	resetLightState();
 	resetExplorationState();
+	resetSagaState();
 	kootaWorld.reset();
 }

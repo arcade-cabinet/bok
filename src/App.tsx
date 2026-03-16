@@ -3,6 +3,7 @@ import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
 import { getDiscoveredLandmarks } from "./ecs/systems/exploration.ts";
 import { worldToChunk } from "./ecs/systems/map-data.ts";
+import { computeActiveObjective, computeSagaStats } from "./ecs/systems/saga-data.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
@@ -11,6 +12,7 @@ import {
 	Health,
 	Hotbar,
 	Hunger,
+	InscriptionLevel,
 	Inventory,
 	MiningState,
 	PhysicsBody,
@@ -18,6 +20,8 @@ import {
 	PlayerTag,
 	Position,
 	QuestProgress,
+	SagaLog,
+	ShelterState,
 	Stamina,
 	WorkstationProximity,
 	WorldTime,
@@ -81,6 +85,7 @@ export default function App() {
 		discoveredRecipeCount: number;
 	} | null>(null);
 	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
+	const [sagaData, setSagaData] = useState<import("./ui/components/BokSaga.tsx").BokSagaProps | null>(null);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -187,6 +192,26 @@ export default function App() {
 				kootaWorld.query(PlayerTag, Inventory).readEach(([inv]) => {
 					setLedgerItems({ ...inv.items });
 				});
+				kootaWorld
+					.query(PlayerTag, SagaLog, InscriptionLevel, ShelterState, Codex)
+					.readEach(([saga, inscription, shelter, codex]) => {
+						const dayCount = timeUpdate.dayCount ?? hudState.dayCount ?? 1;
+						setSagaData({
+							entries: [...saga.entries],
+							activeObjective: computeActiveObjective(
+								dayCount,
+								shelter.inShelter,
+								saga.creaturesKilled > 0,
+								saga.achieved,
+							),
+							stats: computeSagaStats(
+								dayCount,
+								inscription.totalBlocksPlaced,
+								inscription.totalBlocksMined,
+								codex.creatureProgress,
+							),
+						});
+					});
 			}
 
 			setHudState((prev) => ({
@@ -466,6 +491,7 @@ export default function App() {
 							mapData={mapData ?? undefined}
 							codexData={codexData ?? undefined}
 							ledgerData={ledgerItems ? { items: ledgerItems } : undefined}
+							sagaData={sagaData ?? undefined}
 						/>
 					</>
 				)}
