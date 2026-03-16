@@ -39,7 +39,12 @@ const Perm = new Uint8Array(512);
 export function initNoise(seedStr: string): void {
 	const seedFunc = xmur3(seedStr);
 	const rand = sfc32(seedFunc(), seedFunc(), seedFunc(), seedFunc());
-	for (let i = 0; i < 256; i++) Perm[i] = Math.floor(rand() * 256);
+	const p = Array.from({ length: 256 }, (_, i) => i);
+	for (let i = 255; i > 0; i--) {
+		const j = Math.floor(rand() * (i + 1));
+		[p[i], p[j]] = [p[j], p[i]];
+	}
+	for (let i = 0; i < 256; i++) Perm[i] = p[i];
 	for (let i = 0; i < 256; i++) Perm[i + 256] = Perm[i];
 }
 
