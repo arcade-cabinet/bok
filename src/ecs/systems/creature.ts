@@ -12,6 +12,7 @@ import {
 	PlayerTag,
 	Position,
 	Rotation,
+	SeasonState,
 	ShelterState,
 	WorldTime,
 } from "../traits/index.ts";
@@ -68,8 +69,29 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		morkerSpawnMult = shelter.morkerSpawnMult;
 	});
 
-	// Spawn — inscription level affects rates and creature thresholds
-	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay, insLevel, morkerSpawnMult);
+	// Read season modifiers (separate query for backward compat)
+	let seasonMorkerMult = 1;
+	let tranaMigrating = false;
+	world.query(SeasonState).readEach(([season]) => {
+		seasonMorkerMult = season.morkerMult;
+		tranaMigrating = season.tranaMigrating;
+	});
+
+	// Spawn — inscription level + season + shelter affect rates
+	spawnCreatures(
+		world,
+		px,
+		pz,
+		playerAlive,
+		isDaytime,
+		creatureCount,
+		effects,
+		timeOfDay,
+		insLevel,
+		morkerSpawnMult,
+		seasonMorkerMult,
+		tranaMigrating,
+	);
 
 	// Update AI by archetype
 	const ctx: CreatureUpdateContext = {

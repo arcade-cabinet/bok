@@ -17,6 +17,10 @@ const CONFIG = {
 	sprintSpeed: 9,
 	baseJump: 10.5,
 	swimUp: 4,
+	/** How fast velocity ramps up toward target (higher = snappier). */
+	accel: 18,
+	/** How fast velocity decays to zero when no input (higher = less slide). */
+	friction: 12,
 };
 
 export function movementSystem(world: World, dt: number) {
@@ -60,8 +64,13 @@ export function movementSystem(world: World, dt: number) {
 				moveZ /= len;
 			}
 
-			vel.x = moveX * speed;
-			vel.z = moveZ * speed;
+			// Momentum: lerp toward target velocity instead of snapping
+			const targetX = moveX * speed;
+			const targetZ = moveZ * speed;
+			const rate = len > 0 ? CONFIG.accel : CONFIG.friction;
+			const t = Math.min(1, dt * rate);
+			vel.x += (targetX - vel.x) * t;
+			vel.z += (targetZ - vel.z) * t;
 
 			if (canSprint && len > 0) {
 				stamina.current = Math.max(0, stamina.current - dt * 15);

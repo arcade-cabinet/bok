@@ -105,6 +105,24 @@ export const WorldTime = trait({
 
 export const WorldSeed = trait({ seed: "" });
 
+// ─── Seasons ───
+
+/** Tracks the current season and its gameplay effects. Singleton trait on WorldTime entity. */
+export const SeasonState = trait({
+	/** Current season index (0=Vår, 1=Sommar, 2=Höst, 3=Vinter). */
+	current: 0 as 0 | 1 | 2 | 3,
+	/** Progress through current season [0, 1). */
+	progress: 0,
+	/** Hunger drain multiplier for survival system. */
+	hungerMult: 1,
+	/** Mörker spawn/strength multiplier. */
+	morkerMult: 1,
+	/** Night duration multiplier (affects effective darkness time). */
+	nightMult: 1,
+	/** Whether Tranor should migrate (höst + vinter). */
+	tranaMigrating: false,
+});
+
 // ─── World Events ───
 
 /** Norrsken (Northern Lights) event state — singleton trait. */

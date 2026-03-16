@@ -35,6 +35,7 @@ test.describe("SettingsModal", () => {
 		const component = await mount(<SettingsModal onClose={() => {}} />);
 		await component.getByTestId("settings-tab-display").click();
 		await expect(component.getByTestId("settings-tab-display")).toHaveAttribute("aria-selected", "true");
+		await expect(component.getByText("Quality Preset")).toBeVisible();
 		await expect(component.getByText("Show Vitals Bars")).toBeVisible();
 		await expect(component.getByText("Render Distance")).toBeVisible();
 	});

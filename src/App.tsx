@@ -19,6 +19,7 @@ import {
 	InscriptionLevel,
 	Inventory,
 	MiningState,
+	MoveInput,
 	PhysicsBody,
 	PlayerState,
 	PlayerTag,
@@ -31,6 +32,7 @@ import {
 	WorkstationProximity,
 	WorldTime,
 } from "./ecs/traits/index.ts";
+import { getJoystickState } from "./engine/behaviors/InputBehavior.ts";
 import {
 	applyRuneEntries,
 	applyVoxelDeltas,
@@ -41,10 +43,12 @@ import {
 	getTravelAnchors,
 	initGame,
 	kootaWorld,
+	placeBlock,
 	readPlayerStateForSave,
 	restorePlayerState,
 	travelToAnchor,
 } from "./engine/game.ts";
+import { isMobile } from "./engine/input-config.ts";
 import {
 	createSaveSlot,
 	initDatabase,
@@ -63,6 +67,9 @@ import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
 import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
 import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
+import { triggerGameHaptic } from "./ui/hud/haptics.ts";
+import { MobileControls } from "./ui/hud/MobileControls.tsx";
+import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -81,6 +88,8 @@ export default function App() {
 	const [phase, setPhase] = useState<GamePhase>("title");
 	const [craftingOpen, setCraftingOpen] = useState(false);
 	const [bokOpen, setBokOpen] = useState(false);
+	const mobileMode = isMobile();
+	const prevDamageFlashRef = useRef(0);
 	const [hasSaveSlot, setHasSaveSlot] = useState(false);
 	const saveSlotRef = useRef<number | null>(null);
 	const saveSeedRef = useRef<string>("");
@@ -129,6 +138,11 @@ export default function App() {
 		chiselSelectedFace: -1 as number,
 		discoveredRunes: [] as number[],
 		lookingAtBlock: false,
+		joystickActive: false,
+		joystickX: 0,
+		joystickY: 0,
+		joystickCenterX: 0,
+		joystickCenterY: 0,
 	});
 
 	// Init database + check for existing saves on mount
@@ -213,6 +227,16 @@ export default function App() {
 			// Block highlight — are we looking at a block?
 			playerUpdate.lookingAtBlock = getBlockHighlight()?.lastHit != null;
 
+			// Joystick visual state — polled from InputBehavior module cache
+			if (mobileMode) {
+				const joy = getJoystickState();
+				playerUpdate.joystickActive = joy.active;
+				playerUpdate.joystickX = joy.offsetX;
+				playerUpdate.joystickY = joy.offsetY;
+				playerUpdate.joystickCenterX = joy.centerX;
+				playerUpdate.joystickCenterY = joy.centerY;
+			}
+
 			// Map + codex data — only read when bok is open
 			if (bokOpen) {
 				kootaWorld.query(PlayerTag, Position, ExploredChunks).readEach(([pos, explored]) => {
@@ -261,6 +285,14 @@ export default function App() {
 							),
 						});
 					});
+			}
+
+			// Haptic feedback on damage (edge detection)
+			if (mobileMode && playerUpdate.damageFlash != null) {
+				if (playerUpdate.damageFlash > prevDamageFlashRef.current) {
+					triggerGameHaptic("damage");
+				}
+				prevDamageFlashRef.current = playerUpdate.damageFlash;
 			}
 
 			setHudState((prev) => ({
@@ -497,6 +529,45 @@ export default function App() {
 		});
 	}, []);
 
+	// ─── Mobile button handlers ───
+
+	const handleMobilePress = useCallback(
+		(id: MobileButtonId) => {
+			triggerGameHaptic(id === "mine" ? "mine" : id === "place" ? "place" : "jump");
+			if (id === "mine") {
+				kootaWorld.query(PlayerTag, MiningState).updateEach(([mining]) => {
+					mining.active = true;
+				});
+			} else if (id === "place") {
+				placeBlock();
+			} else if (id === "jump") {
+				kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
+					move.jump = true;
+				});
+			} else if (id === "bok") {
+				setCraftingOpen(false);
+				lastSeenSagaCountRef.current = hudState.sagaEntryCount;
+				setBokOpen((prev) => !prev);
+			} else if (id === "inventory") {
+				setBokOpen(false);
+				setCraftingOpen((prev) => !prev);
+			}
+		},
+		[hudState.sagaEntryCount],
+	);
+
+	const handleMobileRelease = useCallback((id: MobileButtonId) => {
+		if (id === "mine") {
+			kootaWorld.query(PlayerTag, MiningState).updateEach(([mining]) => {
+				mining.active = false;
+			});
+		} else if (id === "jump") {
+			kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
+				move.jump = false;
+			});
+		}
+	}, []);
+
 	return (
 		<>
 			{/* Overlays */}
@@ -602,6 +673,18 @@ export default function App() {
 								},
 							}}
 						/>
+
+						{mobileMode && (
+							<MobileControls
+								joystickActive={hudState.joystickActive}
+								joystickX={hudState.joystickX}
+								joystickY={hudState.joystickY}
+								joystickCenterX={hudState.joystickCenterX}
+								joystickCenterY={hudState.joystickCenterY}
+								onButtonPress={handleMobilePress}
+								onButtonRelease={handleMobileRelease}
+							/>
+						)}
 					</>
 				)}
 			</div>

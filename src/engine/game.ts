@@ -15,13 +15,10 @@ import { loadRuntime, Runtime } from "@jolly-pixel/runtime";
 import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
-import type { ComputationalRuneEffects } from "../ecs/systems/computational-rune-system.ts";
-import { computationalRuneSystem, resetComputationalRuneState } from "../ecs/systems/computational-rune-system.ts";
+import { resetComputationalRuneState } from "../ecs/systems/computational-rune-system.ts";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
-import { damageCreature } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
-import type { EmitterEffects } from "../ecs/systems/emitter-system.ts";
-import { emitterSystem, resetEmitterState } from "../ecs/systems/emitter-system.ts";
+import { resetEmitterState } from "../ecs/systems/emitter-system.ts";
 import { registerLandmarkResolver, resetExplorationState } from "../ecs/systems/exploration.ts";
 import {
 	codexSystem,
@@ -36,44 +33,34 @@ import {
 	questSystem,
 	runeInscriptionSystem,
 	sagaSystem,
+	seasonSystem,
 	structureSystem,
 	survivalSystem,
 	timeSystem,
 	workstationProximitySystem,
-	worldEventSystem,
 } from "../ecs/systems/index.ts";
-import type { InteractionRuneEffects } from "../ecs/systems/interaction-rune-system.ts";
-import { interactionRuneSystem, resetInteractionRuneState } from "../ecs/systems/interaction-rune-system.ts";
+import { resetInteractionRuneState } from "../ecs/systems/interaction-rune-system.ts";
 import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
-import type { NetworkRuneEffects } from "../ecs/systems/network-rune-system.ts";
-import { networkRuneSystem, resetNetworkRuneState } from "../ecs/systems/network-rune-system.ts";
-import type { ProtectionRuneEffects } from "../ecs/systems/protection-rune-system.ts";
-import { protectionRuneSystem, resetProtectionRuneState } from "../ecs/systems/protection-rune-system.ts";
-import type { RaidoEffects } from "../ecs/systems/raido-system.ts";
-import { executeFastTravel, getActiveAnchors, raidoSystem, resetRaidoState } from "../ecs/systems/raido-system.ts";
+import { resetNetworkRuneState } from "../ecs/systems/network-rune-system.ts";
+import { resetProtectionRuneState } from "../ecs/systems/protection-rune-system.ts";
+import { getActiveQuality, resetQualityState, setRenderDistanceOverride } from "../ecs/systems/quality-presets.ts";
+import { executeFastTravel, getActiveAnchors, resetRaidoState } from "../ecs/systems/raido-system.ts";
 import type { TravelAnchor } from "../ecs/systems/raido-travel.ts";
-import type { RuneDiscoveryEffects } from "../ecs/systems/rune-discovery-system.ts";
 import {
-	getDiscoveredRuneIds,
 	grantTutorialRunes,
 	registerDiscoveryBiomeResolver,
 	resetDiscoveryState,
-	restoreDiscoveredRunes,
-	runeDiscoverySystem,
 } from "../ecs/systems/rune-discovery-system.ts";
 import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
-import type { SelfModifyEffects } from "../ecs/systems/self-modify-system.ts";
-import { resetSelfModifyState, selfModifySystem } from "../ecs/systems/self-modify-system.ts";
-import type { SettlementEffects } from "../ecs/systems/settlement-system.ts";
-import { resetSettlementState, settlementSystem } from "../ecs/systems/settlement-system.ts";
-import type { TerritoryEffects } from "../ecs/systems/territory.ts";
-import { resetTerritoryState, territorySystem } from "../ecs/systems/territory.ts";
+import { resetSeasonState } from "../ecs/systems/season.ts";
+import { resetSelfModifyState } from "../ecs/systems/self-modify-system.ts";
+import { resetSettlementState } from "../ecs/systems/settlement-system.ts";
+import { resetTerritoryState } from "../ecs/systems/territory.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
-import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
-import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
+import type { AnimStateId } from "../ecs/traits/index.ts";
 import {
 	ChiselState,
 	Codex,
@@ -99,6 +86,7 @@ import {
 	RuneDiscovery,
 	RuneFaces,
 	SagaLog,
+	SeasonState,
 	ShelterState,
 	Stamina,
 	TerritoryState,
@@ -126,25 +114,25 @@ import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.t
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
 import { CreatureRendererBehavior } from "./behaviors/CreatureRendererBehavior.ts";
-import { InputBehavior } from "./behaviors/InputBehavior.ts";
+import { InputBehavior, resetJoystickState } from "./behaviors/InputBehavior.ts";
 import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
 import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
+import { chunkData, getChunkKey, getVoxelKey, loadedChunks, streamChunks } from "./chunk-streaming.ts";
+import {
+	runComputationalRuneSystem,
+	runEmitterSystem,
+	runInteractionRuneSystem,
+	runNetworkRuneSystem,
+	runProtectionRuneSystem,
+	runRaidoSystem,
+	runRuneDiscoverySystem,
+	runSelfModifySystem,
+	runSettlementSystem,
+	runTerritorySystem,
+	runWorldEventSystem,
+} from "./game-effects.ts";
 
 export const kootaWorld = createKootaWorld();
-
-const loadedChunks = new Set<string>();
-const RENDER_DISTANCE = 3;
-
-// Authoritative chunk voxel storage: key = "cx,cz", value = Map of "x,y,z" -> blockId
-const chunkData = new Map<string, Map<string, number>>();
-
-function getChunkKey(cx: number, cz: number): string {
-	return `${cx},${cz}`;
-}
-
-function getVoxelKey(x: number, y: number, z: number): string {
-	return `${x},${y},${z}`;
-}
 
 let jpRuntime: Runtime | null = null;
 let voxelRenderer: VoxelRenderer | null = null;
@@ -160,20 +148,19 @@ let particlesBehavior: ParticlesBehavior | null = null;
 let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
 let creatureRendererBehavior: CreatureRendererBehavior | null = null;
 
-// Shared references for the bridge
 let ambientLight: THREE.AmbientLight | null = null;
 let sunLight: THREE.DirectionalLight | null = null;
 let resizeHandler: (() => void) | null = null;
-
-/** Cooldown timer for combat tool durability drain (drains 1 per COMBAT_DRAIN_COOLDOWN seconds). */
 let combatDrainTimer = 0;
 
-/** Resolve landmark type for a chunk — bridges landmark-generator to LandmarkType. */
 function resolveLandmarkForChunk(cx: number, cz: number): import("../ecs/systems/map-data.ts").LandmarkType | null {
 	const type = detectLandmarkType(cx, cz);
-	if (!type) return null;
-	return type as import("../ecs/systems/map-data.ts").LandmarkType;
+	return type ? (type as import("../ecs/systems/map-data.ts").LandmarkType) : null;
 }
+
+/** Shared particle spawn shorthand. */
+const spawn = (x: number, y: number, z: number, color: number | string, count: number) =>
+	particlesBehavior?.spawn(x, y, z, color as number, count);
 
 /**
  * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
@@ -187,7 +174,7 @@ class GameBridge extends Behavior {
 	update(dt: number) {
 		if (dt <= 0 || dt > 0.1) return;
 
-		// Run ECS systems
+		// Core ECS systems
 		movementSystem(kootaWorld, dt);
 		physicsSystem(kootaWorld, dt);
 		survivalSystem(kootaWorld, dt);
@@ -195,71 +182,63 @@ class GameBridge extends Behavior {
 		cookingSystem(kootaWorld, dt);
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
+		seasonSystem(kootaWorld, dt);
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
-		this.runEmitterSystem(dt);
-		this.runInteractionRuneSystem(dt);
-		this.runProtectionRuneSystem(dt);
-		this.runNetworkRuneSystem(dt);
-		this.runComputationalRuneSystem(dt);
-		this.runSelfModifySystem(dt);
-		this.runSettlementSystem(dt);
-		this.runTerritorySystem(dt);
-		this.runRaidoSystem(dt);
+
+		// Rune + settlement systems (side-effects wired in game-effects.ts)
+		runEmitterSystem(kootaWorld, dt, spawn);
+		runInteractionRuneSystem(kootaWorld, dt, spawn);
+		runProtectionRuneSystem(kootaWorld, dt, spawn);
+		runNetworkRuneSystem(kootaWorld, dt, spawn);
+		runComputationalRuneSystem(kootaWorld, dt, spawn);
+		runSelfModifySystem(kootaWorld, dt, spawn);
+		runSettlementSystem(kootaWorld, dt, spawn);
+		runTerritorySystem(kootaWorld, dt, spawn);
+		runRaidoSystem(kootaWorld, dt, spawn);
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		codexSystem(kootaWorld, dt);
 		sagaSystem(kootaWorld, dt);
-		this.runRuneDiscoverySystem(dt);
-		this.runWorldEventSystem(dt);
+		runRuneDiscoverySystem(kootaWorld, dt, spawn);
+		runWorldEventSystem(kootaWorld, dt, spawn, ambientLight);
 
-		// Sync Koota player state -> Three.js camera + Behaviors
-		this.syncPlayerToCamera(dt);
+		// Sync Koota → Three.js camera + Behaviors
+		this.syncPlayerToCamera();
 		this.syncViewModelState();
 		this.syncEnvironmentState();
 		this.runRuneInscriptionSystem(dt);
 		this.runMiningSystem(dt);
-		streamChunks();
+		if (voxelRenderer) streamChunks(kootaWorld, voxelRenderer);
 	}
 
-	private syncPlayerToCamera(_dt: number) {
+	private syncPlayerToCamera() {
 		const cam = threeCamera;
 		if (!cam) return;
-
 		kootaWorld
 			.query(PlayerTag, Position, Rotation, MoveInput, PhysicsBody, ToolSwing, PlayerState)
 			.readEach(([pos, rot, input, body, toolSwing, state]) => {
 				cam.position.set(pos.x + state.shakeX, pos.y + state.shakeY, pos.z);
 				cam.rotation.order = "YXZ";
 				cam.rotation.set(rot.pitch, rot.yaw, 0);
-
 				creatureRendererBehavior?.setCameraPosition(pos.x, pos.y, pos.z);
-
-				// Push to view model behavior
 				if (viewModelBehavior) {
-					const isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
-					viewModelBehavior.isMoving = isMoving;
+					viewModelBehavior.isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
 					viewModelBehavior.isSprinting = input.sprint;
 					viewModelBehavior.swingProgress = toolSwing.progress;
 					viewModelBehavior.swayX = toolSwing.swayX;
 					viewModelBehavior.swayY = toolSwing.swayY;
 				}
-
-				// Sprint particles — kick up dust at player's feet
 				if (input.sprint && body.onGround && (input.forward || input.backward || input.left || input.right)) {
-					if (cosmeticRng() < 0.3 && particlesBehavior) {
-						particlesBehavior.spawn(pos.x, pos.y - 1.6, pos.z, 0x8b7355, 1);
-					}
+					if (cosmeticRng() < 0.3) spawn(pos.x, pos.y - 1.6, pos.z, 0x8b7355, 1);
 				}
 			});
 	}
 
 	private syncViewModelState() {
 		kootaWorld.query(PlayerTag, Hotbar).readEach(([hotbar]) => {
-			if (viewModelBehavior) {
-				viewModelBehavior.slotData = hotbar.slots[hotbar.activeSlot];
-			}
+			if (viewModelBehavior) viewModelBehavior.slotData = hotbar.slots[hotbar.activeSlot];
 		});
 	}
 
@@ -268,23 +247,19 @@ class GameBridge extends Behavior {
 		let px = 0,
 			py = 0,
 			pz = 0;
-
 		kootaWorld.query(WorldTime).readEach(([time]) => {
 			timeOfDay = time.timeOfDay;
 		});
-
 		kootaWorld.query(PlayerTag, Position).readEach(([pos]) => {
 			px = pos.x;
 			py = pos.y;
 			pz = pos.z;
 		});
-
 		if (celestialBehavior) {
 			celestialBehavior.timeOfDay = timeOfDay;
 			celestialBehavior.playerX = px;
 			celestialBehavior.playerZ = pz;
 		}
-
 		if (ambientParticlesBehavior) {
 			ambientParticlesBehavior.timeOfDay = timeOfDay;
 			ambientParticlesBehavior.playerX = px;
@@ -295,20 +270,17 @@ class GameBridge extends Behavior {
 
 	private runCreatureSystem(dt: number) {
 		const effects: CreatureEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			spawnParticles: spawn,
 			onCreatureSpawned: (entityId, species, variant) =>
 				creatureRendererBehavior?.assignMesh(entityId, species, variant),
 			onCreatureDied: (entityId) => creatureRendererBehavior?.releaseMesh(entityId),
 		};
 		creatureSystem(kootaWorld, dt, effects);
-
-		// Sync creature positions to renderer
 		let timeOfDay = 0.25;
 		kootaWorld.query(WorldTime).readEach(([time]) => {
 			timeOfDay = time.timeOfDay;
 		});
 		const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
-
 		kootaWorld.query(CreatureTag, CreatureAnimation, Position).readEach(([anim, pos], entity) => {
 			creatureRendererBehavior?.updatePosition(
 				entity.id(),
@@ -321,151 +293,12 @@ class GameBridge extends Behavior {
 		});
 	}
 
-	private runWorldEventSystem(dt: number) {
-		const effects: WorldEventEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			setAmbientTint: (color, intensity) => {
-				if (ambientLight && intensity > 0) {
-					ambientLight.color.set(color);
-					ambientLight.intensity = 0.05 + intensity;
-				}
-			},
-		};
-		worldEventSystem(kootaWorld, dt, cosmeticRng, effects);
-	}
-
-	private runRuneDiscoverySystem(dt: number) {
-		const effects: RuneDiscoveryEffects = {
-			addSagaEntry: (text) => {
-				kootaWorld.query(PlayerTag, SagaLog).updateEach(([saga]) => {
-					saga.entries.push({ milestoneId: "rune_discovery", day: 0, text });
-				});
-			},
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		runeDiscoverySystem(kootaWorld, dt, effects);
-	}
-
-	private runEmitterSystem(dt: number) {
-		const effects: EmitterEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		emitterSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
-	}
-
-	private runInteractionRuneSystem(dt: number) {
-		const effects: InteractionRuneEffects = {
-			spawnItemDrop: (_x, _y, _z, _itemId, _qty) => {
-				// TODO: integrate with world item drop system when available
-			},
-			collectNearbyItem: (_runeX, _runeY, _runeZ, _itemId) => {
-				// TODO: integrate with world item drop system when available
-				return false;
-			},
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			damageCreature: (entityId, damage) => {
-				damageCreature(kootaWorld, entityId, damage, {
-					spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-				});
-			},
-			getItemDropsNear: (_x, _y, _z, _radius) => {
-				// TODO: integrate with world item drop system when available
-				return [];
-			},
-			moveItemDrop: (_index, _vx, _vy, _vz, _dt) => {
-				// TODO: integrate with world item drop system when available
-			},
-		};
-		interactionRuneSystem(kootaWorld, dt, effects);
-	}
-
-	private runProtectionRuneSystem(dt: number) {
-		const effects: ProtectionRuneEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		protectionRuneSystem(kootaWorld, dt, effects);
-	}
-
-	private runNetworkRuneSystem(dt: number) {
-		const effects: NetworkRuneEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			pushCreature: (entityId, vx, vy, vz) => {
-				// Apply push velocity to creature position (simple displacement per tick)
-				kootaWorld.query(CreatureTag, Position, CreatureHealth).updateEach(([pos], entity) => {
-					if (entity.id() === entityId) {
-						pos.x += vx * 0.25; // Apply over tick interval
-						pos.y += vy * 0.25;
-						pos.z += vz * 0.25;
-					}
-				});
-			},
-		};
-		networkRuneSystem(kootaWorld, dt, effects);
-	}
-
-	private runComputationalRuneSystem(dt: number) {
-		const effects: ComputationalRuneEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		computationalRuneSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
-	}
-
-	private runSelfModifySystem(dt: number) {
-		const effects: SelfModifyEffects = {
-			placeBlock: (x, y, z, blockId) => {
-				setVoxelAt("Ground", x, y, z, blockId);
-			},
-			removeBlock: (x, y, z) => {
-				setVoxelAt("Ground", x, y, z, 0);
-				getRuneIndex().removeBlock(x, y, z);
-			},
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			getBlock: (x, y, z) => getVoxelAt(x, y, z),
-		};
-		selfModifySystem(kootaWorld, dt, effects);
-	}
-
-	private runSettlementSystem(dt: number) {
-		const effects: SettlementEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		settlementSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
-	}
-
-	private runTerritorySystem(dt: number) {
-		const effects: TerritoryEffects = {
-			placeBlock: (x, y, z, blockId) => {
-				setVoxelAt("Ground", x, y, z, blockId);
-			},
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		territorySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
-	}
-
-	private runRaidoSystem(dt: number) {
-		const effects: RaidoEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
-		raidoSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
-	}
-
 	private runRuneInscriptionSystem(dt: number) {
 		const hit = blockHighlightBehavior?.lastHit ?? null;
 		const prev = blockHighlightBehavior?.lastPrev ?? null;
 		const faceHit: FaceHit | null =
-			hit && prev
-				? {
-						blockX: hit.x,
-						blockY: hit.y,
-						blockZ: hit.z,
-						prevX: prev.x,
-						prevY: prev.y,
-						prevZ: prev.z,
-					}
-				: null;
-		const effects: RuneInscriptionEffects = {
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-		};
+			hit && prev ? { blockX: hit.x, blockY: hit.y, blockZ: hit.z, prevX: prev.x, prevY: prev.y, prevZ: prev.z } : null;
+		const effects: RuneInscriptionEffects = { spawnParticles: spawn };
 		runeInscriptionSystem(kootaWorld, dt, faceHit, effects);
 	}
 
@@ -475,17 +308,14 @@ class GameBridge extends Behavior {
 			removeBlock: (x, y, z) => {
 				setVoxelAt("Ground", x, y, z, 0);
 				getRuneIndex().removeBlock(x, y, z);
-				// Screen shake on block break
 				kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
 					state.shakeX = (cosmeticRng() - 0.5) * 0.06;
 					state.shakeY = (cosmeticRng() - 0.5) * 0.04;
 				});
 			},
-			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			spawnParticles: spawn,
 		};
 		miningSystem(kootaWorld, dt, hit, effects);
-
-		// Player-to-enemy combat: when mining is active, check nearby enemies
 		this.checkEnemyCombat(dt);
 	}
 
@@ -502,44 +332,30 @@ class GameBridge extends Behavior {
 				py = pos.y;
 				pz = pos.z;
 				isMining = mining.active;
-				// Swing animation acts as attack
-				if (toolSwing.progress > 0.5) {
-					const slot = hotbar.slots[hotbar.activeSlot];
-					if (slot && slot.type === "item") {
-						toolPower = 4; // Tool equipped = more damage
-					}
-				}
+				if (toolSwing.progress > 0.5 && hotbar.slots[hotbar.activeSlot]?.type === "item") toolPower = 4;
 			});
-
 		if (!isMining) {
 			combatDrainTimer = 0;
 			return;
 		}
-
-		// Check all creatures within 3 blocks
 		let hitAny = false;
 		kootaWorld.query(CreatureTag, CreatureHealth, Position).updateEach(([hp, pos]) => {
-			const dx = pos.x - px;
-			const dy = pos.y - py;
-			const dz = pos.z - pz;
-			const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			const dist = Math.sqrt((pos.x - px) ** 2 + (pos.y - py) ** 2 + (pos.z - pz) ** 2);
 			if (dist < 3) {
 				hp.hp -= toolPower * 0.03 * dt;
-				particlesBehavior?.spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
+				spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
 				hitAny = true;
 			}
 		});
-
-		// Drain tool durability on combat hit (1 per COMBAT_DRAIN_COOLDOWN)
 		if (hitAny) {
 			combatDrainTimer += dt;
 			if (combatDrainTimer >= COMBAT_DRAIN_COOLDOWN) {
 				combatDrainTimer -= COMBAT_DRAIN_COOLDOWN;
 				kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
 					const slot = hotbar.slots[hotbar.activeSlot];
-					if (slot && slot.type === "item" && drainDurability(slot)) {
+					if (slot?.type === "item" && drainDurability(slot)) {
 						hotbar.slots[hotbar.activeSlot] = null;
-						particlesBehavior?.spawn(px, py, pz, 0xaaaaaa, 20);
+						spawn(px, py, pz, 0xaaaaaa, 20);
 					}
 				});
 			}
@@ -547,90 +363,7 @@ class GameBridge extends Behavior {
 	}
 }
 
-const UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
-const CHUNKS_PER_FRAME = 2;
-const chunkLoadQueue: Array<{ cx: number; cz: number }> = [];
-
-function streamChunks() {
-	if (!voxelRenderer) return;
-
-	let px = 0,
-		pz = 0;
-	kootaWorld.query(PlayerTag, Position).readEach(([pos]) => {
-		px = pos.x;
-		pz = pos.z;
-	});
-
-	const pCx = Math.floor(px / CHUNK_SIZE);
-	const pCz = Math.floor(pz / CHUNK_SIZE);
-
-	// Enqueue nearby chunks that aren't loaded
-	for (let dx = -RENDER_DISTANCE; dx <= RENDER_DISTANCE; dx++) {
-		for (let dz = -RENDER_DISTANCE; dz <= RENDER_DISTANCE; dz++) {
-			const cx = pCx + dx;
-			const cz = pCz + dz;
-			const key = `${cx},${cz}`;
-			if (!loadedChunks.has(key)) {
-				loadedChunks.add(key); // Mark as pending to avoid re-enqueue
-				chunkLoadQueue.push({ cx, cz });
-			}
-		}
-	}
-
-	// Sort queue by distance to player (closest first)
-	chunkLoadQueue.sort((a, b) => {
-		const da = (a.cx - pCx) ** 2 + (a.cz - pCz) ** 2;
-		const db = (b.cx - pCx) ** 2 + (b.cz - pCz) ** 2;
-		return da - db;
-	});
-
-	// Process up to CHUNKS_PER_FRAME from the queue
-	let generated = 0;
-	while (chunkLoadQueue.length > 0 && generated < CHUNKS_PER_FRAME) {
-		const chunk = chunkLoadQueue.shift();
-		if (!chunk) break;
-		generateChunkTerrain(voxelRenderer, "Ground", chunk.cx, chunk.cz);
-
-		// Reapply stored deltas from chunkData after terrain generation
-		const chunkKey = getChunkKey(chunk.cx, chunk.cz);
-		const deltas = chunkData.get(chunkKey);
-		if (deltas) {
-			for (const [voxelKey, blockId] of deltas.entries()) {
-				const [xStr, yStr, zStr] = voxelKey.split(",");
-				const x = parseInt(xStr, 10);
-				const y = parseInt(yStr, 10);
-				const z = parseInt(zStr, 10);
-				if (blockId === 0) {
-					voxelRenderer.removeVoxel("Ground", { position: { x, y, z } });
-				} else {
-					voxelRenderer.setVoxel("Ground", { position: { x, y, z }, blockId });
-				}
-			}
-		}
-
-		generated++;
-	}
-
-	// Unload distant chunks (remove from renderer but preserve chunkData)
-	for (const key of loadedChunks) {
-		const [cxStr, czStr] = key.split(",");
-		const cx = parseInt(cxStr, 10);
-		const cz = parseInt(czStr, 10);
-		if (Math.abs(cx - pCx) > UNLOAD_DISTANCE || Math.abs(cz - pCz) > UNLOAD_DISTANCE) {
-			for (let lx = 0; lx < CHUNK_SIZE; lx++) {
-				for (let lz = 0; lz < CHUNK_SIZE; lz++) {
-					const gx = cx * CHUNK_SIZE + lx;
-					const gz = cz * CHUNK_SIZE + lz;
-					for (let y = 0; y < WORLD_HEIGHT; y++) {
-						voxelRenderer.removeVoxel("Ground", { position: { x: gx, y, z: gz } });
-					}
-				}
-			}
-			loadedChunks.delete(key);
-			// Note: chunkData persists — not deleted here
-		}
-	}
-}
+// ─── Public API ───
 
 export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise<void> {
 	if (jpRuntime) {
@@ -644,24 +377,19 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	registerSagaBiomeResolver(biomeAt);
 	registerDiscoveryBiomeResolver(biomeAt);
 
-	jpRuntime = new Runtime(canvas, {
-		includePerformanceStats: false,
-	});
+	jpRuntime = new Runtime(canvas, { includePerformanceStats: false });
 	const jpWorld = jpRuntime.world;
 
-	// ─── Scene ───
 	threeScene = jpWorld.sceneManager.default;
 	threeScene.background = new THREE.Color(0x87ceeb);
-	threeScene.fog = new THREE.Fog(0x87ceeb, 15, RENDER_DISTANCE * CHUNK_SIZE - 5);
+	const quality = getActiveQuality();
+	threeScene.fog = new THREE.Fog(0x87ceeb, quality.fogNear, quality.renderDistance * CHUNK_SIZE * quality.fogFar);
 
-	// ─── Camera ───
 	threeCamera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
 	jpWorld.renderer.addRenderComponent(threeCamera);
 
-	// ─── Lighting ───
 	ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
 	threeScene.add(ambientLight);
-
 	sunLight = new THREE.DirectionalLight(0xffffee, 1.2);
 	sunLight.castShadow = true;
 	sunLight.shadow.camera.near = 0.5;
@@ -670,54 +398,35 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	sunLight.shadow.camera.right = 40;
 	sunLight.shadow.camera.top = 40;
 	sunLight.shadow.camera.bottom = -40;
-	sunLight.shadow.mapSize.width = 1024;
-	sunLight.shadow.mapSize.height = 1024;
+	sunLight.shadow.mapSize.width = quality.shadowMapSize;
+	sunLight.shadow.mapSize.height = quality.shadowMapSize;
 	threeScene.add(sunLight.target);
 
-	// ─── Celestial Actor ───
-	const celestialActor = jpWorld.createActor("Celestial");
-	celestialBehavior = celestialActor.addComponentAndGet(CelestialBehavior);
+	// Actor setup
+	celestialBehavior = jpWorld.createActor("Celestial").addComponentAndGet(CelestialBehavior);
 	celestialBehavior.setup(threeScene, ambientLight, sunLight);
-
-	// ─── Ambient Particles Actor ───
-	const ambientParticlesActor = jpWorld.createActor("AmbientParticles");
-	ambientParticlesBehavior = ambientParticlesActor.addComponentAndGet(AmbientParticlesBehavior);
-	ambientParticlesBehavior.setup(threeScene);
-
-	// ─── Particle System Actor ───
-	const particlesActor = jpWorld.createActor("Particles");
-	particlesBehavior = particlesActor.addComponentAndGet(ParticlesBehavior);
-	particlesBehavior.setup(threeScene);
-
-	// ─── Creature Renderer Actor ───
-	const creatureActor = jpWorld.createActor("CreatureRenderer");
-	creatureRendererBehavior = creatureActor.addComponentAndGet(CreatureRendererBehavior);
+	ambientParticlesBehavior = jpWorld.createActor("AmbientParticles").addComponentAndGet(AmbientParticlesBehavior);
+	ambientParticlesBehavior.setup(threeScene, quality.ambientParticles);
+	particlesBehavior = jpWorld.createActor("Particles").addComponentAndGet(ParticlesBehavior);
+	particlesBehavior.setup(threeScene, quality.particleBudget);
+	creatureRendererBehavior = jpWorld.createActor("CreatureRenderer").addComponentAndGet(CreatureRendererBehavior);
 	creatureRendererBehavior.setup(threeScene);
-
-	// ─── Block Highlight Actor ───
-	const highlightActor = jpWorld.createActor("BlockHighlight");
-	blockHighlightBehavior = highlightActor.addComponentAndGet(BlockHighlightBehavior);
+	blockHighlightBehavior = jpWorld.createActor("BlockHighlight").addComponentAndGet(BlockHighlightBehavior);
 	blockHighlightBehavior.setup(threeScene, threeCamera, (x, y, z) => getVoxelAt(x, y, z));
-
-	// ─── View Model Actor ───
-	const viewModelActor = jpWorld.createActor("ViewModel");
-	viewModelBehavior = viewModelActor.addComponentAndGet(ViewModelBehavior);
+	viewModelBehavior = jpWorld.createActor("ViewModel").addComponentAndGet(ViewModelBehavior);
 	viewModelBehavior.setCamera(threeCamera);
 
-	// ─── Voxel Map Actor ───
-	const mapActor = jpWorld.createActor("VoxelMap");
-	voxelRenderer = mapActor.addComponentAndGet(VoxelRenderer, {
+	// Voxel renderer
+	voxelRenderer = jpWorld.createActor("VoxelMap").addComponentAndGet(VoxelRenderer, {
 		chunkSize: CHUNK_SIZE,
 		layers: ["Ground"],
 		blocks: createBlockDefinitions(),
 		material: "lambert",
 		alphaTest: 0.1,
 	});
-
-	const tilesetDataURL = generateTilesetDataURL();
 	await voxelRenderer.loadTileset({
 		id: "default",
-		src: tilesetDataURL,
+		src: generateTilesetDataURL(),
 		tileSize: TILE_SIZE,
 		cols: COLS,
 		rows: ROWS,
@@ -726,85 +435,34 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	registerVoxelAccessors(
 		(x, y, z) => {
 			if (y < 0 || y >= WORLD_HEIGHT) return 0;
-			const entry = voxelRenderer?.getVoxel({ x, y, z });
-			return entry ? entry.blockId : 0;
+			const e = voxelRenderer?.getVoxel({ x, y, z });
+			return e ? e.blockId : 0;
 		},
 		(layerName, x, y, z, blockId) => {
-			// Update authoritative chunk data storage
 			const cx = Math.floor(x / CHUNK_SIZE);
 			const cz = Math.floor(z / CHUNK_SIZE);
-			const chunkKey = getChunkKey(cx, cz);
-			const voxelKey = getVoxelKey(x, y, z);
-
-			let deltas = chunkData.get(chunkKey);
+			let deltas = chunkData.get(getChunkKey(cx, cz));
 			if (!deltas) {
 				deltas = new Map();
-				chunkData.set(chunkKey, deltas);
+				chunkData.set(getChunkKey(cx, cz), deltas);
 			}
-
-			if (blockId === 0) {
-				deltas.set(voxelKey, 0);
-				voxelRenderer?.removeVoxel(layerName, { position: { x, y, z } });
-			} else {
-				deltas.set(voxelKey, blockId);
-				voxelRenderer?.setVoxel(layerName, { position: { x, y, z }, blockId });
-			}
+			deltas.set(getVoxelKey(x, y, z), blockId);
+			if (blockId === 0) voxelRenderer?.removeVoxel(layerName, { position: { x, y, z } });
+			else voxelRenderer?.setVoxel(layerName, { position: { x, y, z }, blockId });
 		},
 	);
 
-	// ─── Generate Spawn ───
+	// Spawn
 	generateChunkTerrain(voxelRenderer, "Ground", 0, 0);
 	loadedChunks.add("0,0");
-
 	const surfaceY = findSurfaceY(voxelRenderer, 8, 8);
 	generateSpawnShrine(voxelRenderer, "Ground", surfaceY);
+	recordSpawnShrineDeltas(surfaceY);
 
-	// Store spawn shrine blocks in authoritative chunkData manually
-	// (generateSpawnShrine uses voxelRenderer directly, not setVoxelAt)
-	const spawnChunkKey = getChunkKey(0, 0);
-	let spawnDeltas = chunkData.get(spawnChunkKey);
-	if (!spawnDeltas) {
-		spawnDeltas = new Map();
-		chunkData.set(spawnChunkKey, spawnDeltas);
-	}
-
-	// Stone brick floor + cleared space above
-	for (let x = 6; x <= 10; x++) {
-		for (let z = 6; z <= 10; z++) {
-			spawnDeltas.set(getVoxelKey(x, surfaceY, z), BlockId.StoneBricks);
-			for (let y = surfaceY + 1; y <= surfaceY + 5; y++) {
-				spawnDeltas.set(getVoxelKey(x, y, z), 0);
-			}
-		}
-	}
-
-	// Stenhög (cairn) at center: 3×3 base + column + cap
-	for (let dx = -1; dx <= 1; dx++) {
-		for (let dz = -1; dz <= 1; dz++) {
-			spawnDeltas.set(getVoxelKey(8 + dx, surfaceY + 1, 8 + dz), BlockId.Stone);
-		}
-	}
-	spawnDeltas.set(getVoxelKey(8, surfaceY + 2, 8), BlockId.Stone);
-	spawnDeltas.set(getVoxelKey(8, surfaceY + 3, 8), BlockId.Stone);
-	spawnDeltas.set(getVoxelKey(8, surfaceY + 4, 8), BlockId.StoneBricks);
-
-	// Runsten beside cairn
-	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 8), BlockId.RuneStone);
-	spawnDeltas.set(getVoxelKey(10, surfaceY + 2, 8), BlockId.RuneStone);
-	spawnDeltas.set(getVoxelKey(10, surfaceY + 3, 8), BlockId.RuneStone);
-
-	// Torches at corners
-	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 6), BlockId.Torch);
-	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 6), BlockId.Torch);
-	spawnDeltas.set(getVoxelKey(6, surfaceY + 1, 10), BlockId.Torch);
-	spawnDeltas.set(getVoxelKey(10, surfaceY + 1, 10), BlockId.Torch);
-
-	const spawnY = surfaceY + 2.5;
-
-	// ─── ECS Entities ───
+	// ECS entities
 	kootaWorld.spawn(
 		PlayerTag,
-		Position({ x: 8.5, y: spawnY, z: 8.5 }),
+		Position({ x: 8.5, y: surfaceY + 2.5, z: 8.5 }),
 		Velocity,
 		Rotation,
 		Health,
@@ -830,241 +488,150 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		RuneDiscovery,
 		ChiselState(),
 	);
-
-	// Grant tutorial runes to the freshly spawned player
 	kootaWorld.query(PlayerTag, RuneDiscovery).updateEach(([disc]) => {
 		grantTutorialRunes(disc.discovered);
 	});
-
-	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 900, dayCount: 1 }), WorldSeed({ seed }));
+	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 900, dayCount: 1 }), WorldSeed({ seed }), SeasonState());
 	kootaWorld.spawn(NorrskenEvent());
 
-	// ─── Input Poller Actor (runs before GameBridge) ───
-	const inputActor = jpWorld.createActor("InputPoller");
-	inputActor.addComponent(InputBehavior);
+	jpWorld.createActor("InputPoller").addComponent(InputBehavior);
+	jpWorld.createActor("GameBridge").addComponent(GameBridge);
 
-	// ─── Game Bridge Actor ───
-	const bridgeActor = jpWorld.createActor("GameBridge");
-	bridgeActor.addComponent(GameBridge);
-
-	threeCamera.position.set(8.5, spawnY, 8.5);
+	threeCamera.position.set(8.5, surfaceY + 2.5, 8.5);
 	threeCamera.updateProjectionMatrix();
-
-	// Handle resize
 	resizeHandler = () => {
 		if (!threeCamera) return;
 		threeCamera.aspect = canvas.clientWidth / canvas.clientHeight;
 		threeCamera.updateProjectionMatrix();
 	};
 	window.addEventListener("resize", resizeHandler);
-
 	await loadRuntime(jpRuntime, { loadingDelay: 300 });
 }
+
+function recordSpawnShrineDeltas(surfaceY: number) {
+	let deltas = chunkData.get(getChunkKey(0, 0));
+	if (!deltas) {
+		deltas = new Map();
+		chunkData.set(getChunkKey(0, 0), deltas);
+	}
+	for (let x = 6; x <= 10; x++)
+		for (let z = 6; z <= 10; z++) {
+			deltas.set(getVoxelKey(x, surfaceY, z), BlockId.StoneBricks);
+			for (let y = surfaceY + 1; y <= surfaceY + 5; y++) deltas.set(getVoxelKey(x, y, z), 0);
+		}
+	for (let dx = -1; dx <= 1; dx++)
+		for (let dz = -1; dz <= 1; dz++) deltas.set(getVoxelKey(8 + dx, surfaceY + 1, 8 + dz), BlockId.Stone);
+	deltas.set(getVoxelKey(8, surfaceY + 2, 8), BlockId.Stone);
+	deltas.set(getVoxelKey(8, surfaceY + 3, 8), BlockId.Stone);
+	deltas.set(getVoxelKey(8, surfaceY + 4, 8), BlockId.StoneBricks);
+	deltas.set(getVoxelKey(10, surfaceY + 1, 8), BlockId.RuneStone);
+	deltas.set(getVoxelKey(10, surfaceY + 2, 8), BlockId.RuneStone);
+	deltas.set(getVoxelKey(10, surfaceY + 3, 8), BlockId.RuneStone);
+	for (const [cx, cz] of [
+		[6, 6],
+		[10, 6],
+		[6, 10],
+		[10, 10],
+	] as const)
+		deltas.set(getVoxelKey(cx, surfaceY + 1, cz), BlockId.Torch);
+}
+
+// ─── Getters ───
 
 export function getKootaWorld() {
 	return kootaWorld;
 }
-
 export function getVoxelRenderer() {
 	return voxelRenderer;
 }
-
 export function getBlockHighlight() {
 	return blockHighlightBehavior;
 }
-
 export function getParticlesBehavior() {
 	return particlesBehavior;
 }
+
+// ─── Block placement ───
 
 export function placeBlock() {
 	if (!blockHighlightBehavior) return;
 	const prev = blockHighlightBehavior.lastPrev;
 	if (!prev) return;
-
 	kootaWorld
 		.query(PlayerTag, Hotbar, Inventory, Position, ToolSwing, InscriptionLevel)
 		.updateEach(([hotbar, inv, pos, toolSwing, inscription]) => {
 			const slot = hotbar.slots[hotbar.activeSlot];
 			if (!slot || slot.type !== "block") return;
-
-			// Check inventory for the block
 			const count = inv.items[slot.id] ?? 0;
 			if (count <= 0) return;
-
-			// Don't place inside player
-			const pX = prev.x,
-				pY = prev.y,
-				pZ = prev.z;
 			if (
-				pX === Math.floor(pos.x) &&
-				pZ === Math.floor(pos.z) &&
-				(pY === Math.floor(pos.y) || pY === Math.floor(pos.y - 1))
+				prev.x === Math.floor(pos.x) &&
+				prev.z === Math.floor(pos.z) &&
+				(prev.y === Math.floor(pos.y) || prev.y === Math.floor(pos.y - 1))
 			)
 				return;
-
-			// Decrement inventory
 			inv.items[slot.id] = count - 1;
-			if (inv.items[slot.id] === 0) {
-				delete inv.items[slot.id];
-			}
-
-			setVoxelAt("Ground", pX, pY, pZ, slot.id);
+			if (inv.items[slot.id] === 0) delete inv.items[slot.id];
+			setVoxelAt("Ground", prev.x, prev.y, prev.z, slot.id);
 			inscription.totalBlocksPlaced++;
 			toolSwing.progress = 1.0;
 		});
 }
 
-import type { PlayerSaveData } from "../persistence/db.ts";
+// ─── Save/load re-exports (delegates to game-save.ts) ───
 
-/** Read current ECS state for persistence. */
-export function readPlayerStateForSave(): PlayerSaveData | null {
-	let result: PlayerSaveData | null = null;
-
-	kootaWorld
-		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress, InscriptionLevel)
-		.readEach(([pos, health, hunger, stamina, inv, hotbar, quest, inscription]) => {
-			let timeOfDay = 0.25;
-			let dayCount = 1;
-			kootaWorld.query(WorldTime).readEach(([time]) => {
-				timeOfDay = time.timeOfDay;
-				dayCount = time.dayCount;
-			});
-
-			result = {
-				posX: pos.x,
-				posY: pos.y,
-				posZ: pos.z,
-				health: health.current,
-				hunger: hunger.current,
-				stamina: stamina.current,
-				questStep: quest.step,
-				questProgress: quest.progress,
-				timeOfDay,
-				dayCount,
-				hotbar: [...hotbar.slots],
-				inventory: { items: { ...inv.items }, capacity: inv.capacity },
-				inscriptionBlocksPlaced: inscription.totalBlocksPlaced,
-				inscriptionBlocksMined: inscription.totalBlocksMined,
-				inscriptionStructuresBuilt: inscription.structuresBuilt,
-				discoveredRunes: getDiscoveredRuneIds(kootaWorld),
-			};
-		});
-
-	return result;
+import {
+	applyRuneEntries as _applyRunes,
+	readPlayerStateForSave as _readSave,
+	restorePlayerState as _restore,
+	getRuneIndexEntries,
+} from "./game-save.ts";
+export function readPlayerStateForSave() {
+	return _readSave(kootaWorld);
 }
-
-/** Restore player ECS state from save data. */
-export function restorePlayerState(data: PlayerSaveData): void {
-	kootaWorld
-		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress, InscriptionLevel)
-		.updateEach(([pos, health, hunger, stamina, inv, hotbar, quest, inscription]) => {
-			pos.x = data.posX;
-			pos.y = data.posY;
-			pos.z = data.posZ;
-			health.current = data.health;
-			hunger.current = data.hunger;
-			stamina.current = data.stamina;
-			quest.step = data.questStep;
-			quest.progress = data.questProgress;
-
-			const savedHotbar = data.hotbar as (HotbarSlot | null)[];
-			for (let i = 0; i < hotbar.slots.length; i++) {
-				hotbar.slots[i] = savedHotbar[i] ?? null;
-			}
-
-			const savedInv = data.inventory;
-			inv.items = { ...savedInv.items };
-			inv.capacity = savedInv.capacity;
-
-			inscription.totalBlocksPlaced = data.inscriptionBlocksPlaced;
-			inscription.totalBlocksMined = data.inscriptionBlocksMined;
-			inscription.structuresBuilt = data.inscriptionStructuresBuilt;
-		});
-
-	kootaWorld.query(WorldTime).updateEach(([time]) => {
-		time.timeOfDay = data.timeOfDay;
-		time.dayCount = data.dayCount;
-	});
-
-	// Restore discovered runes
-	if (data.discoveredRunes && data.discoveredRunes.length > 0) {
-		restoreDiscoveredRunes(kootaWorld, data.discoveredRunes);
-	}
+export function restorePlayerState(data: import("../persistence/db.ts").PlayerSaveData) {
+	_restore(kootaWorld, data);
 }
-
-/** Apply voxel deltas from the database onto the live world and authoritative storage. */
-export function applyVoxelDeltas(deltas: Array<{ x: number; y: number; z: number; blockId: number }>): void {
-	for (const d of deltas) {
-		setVoxelAt("Ground", d.x, d.y, d.z, d.blockId);
-	}
+export function applyVoxelDeltas(deltas: Array<{ x: number; y: number; z: number; blockId: number }>) {
+	for (const d of deltas) setVoxelAt("Ground", d.x, d.y, d.z, d.blockId);
 }
-
-/** Get all voxel deltas from authoritative chunk storage for persistence. */
-export function getAllVoxelDeltas(): Array<{ x: number; y: number; z: number; blockId: number }> {
+export function getAllVoxelDeltas() {
 	const result: Array<{ x: number; y: number; z: number; blockId: number }> = [];
-	for (const [_chunkKey, deltas] of chunkData.entries()) {
-		for (const [voxelKey, blockId] of deltas.entries()) {
-			const [xStr, yStr, zStr] = voxelKey.split(",");
-			result.push({
-				x: parseInt(xStr, 10),
-				y: parseInt(yStr, 10),
-				z: parseInt(zStr, 10),
-				blockId,
-			});
+	for (const [, deltas] of chunkData.entries())
+		for (const [vk, bid] of deltas.entries()) {
+			const [x, y, z] = vk.split(",").map(Number);
+			result.push({ x, y, z, blockId: bid });
 		}
-	}
 	return result;
 }
-
-/** Get all rune entries from the spatial index for persistence. */
-export function getRuneIndexEntries(): Array<{ x: number; y: number; z: number; face: number; runeId: number }> {
-	return getRuneIndex().getAllEntries();
+export { getRuneIndexEntries };
+export function applyRuneEntries(entries: Array<{ x: number; y: number; z: number; face: number; runeId: number }>) {
+	_applyRunes(kootaWorld, entries);
 }
-
-/** Restore rune entries into the spatial index (and ECS RuneFaces trait). */
-export function applyRuneEntries(
-	entries: Array<{ x: number; y: number; z: number; face: number; runeId: number }>,
-): void {
-	const idx = getRuneIndex();
-	idx.loadEntries(entries as import("../ecs/systems/rune-index.ts").RuneEntry[]);
-
-	// Sync to RuneFaces ECS trait for backward compat
-	kootaWorld.query(PlayerTag, RuneFaces).updateEach(([runeFaces]) => {
-		for (const e of entries) {
-			const key = `${e.x},${e.y},${e.z}`;
-			if (!runeFaces.faces[key]) {
-				runeFaces.faces[key] = new Array(6).fill(0);
-			}
-			runeFaces.faces[key][e.face] = e.runeId;
-		}
-	});
-}
-
-/** Enable voxel delta tracking — calls listener on every setVoxelAt. */
-export function enableVoxelDeltaTracking(listener: (x: number, y: number, z: number, blockId: number) => void): void {
+export function enableVoxelDeltaTracking(listener: (x: number, y: number, z: number, blockId: number) => void) {
 	setVoxelDeltaListener(listener);
 }
-
-/** Disable voxel delta tracking. */
-export function disableVoxelDeltaTracking(): void {
+export function disableVoxelDeltaTracking() {
 	setVoxelDeltaListener(null);
 }
-
-/** Get all active Raido fast-travel anchors (for map display). */
 export function getTravelAnchors(): readonly TravelAnchor[] {
 	return getActiveAnchors();
 }
-
-/** Execute fast travel to a target anchor. Returns true on success. */
 export function travelToAnchor(target: TravelAnchor, cost: number): boolean {
 	const success = executeFastTravel(kootaWorld, target, cost);
-	if (success) {
-		// Spawn arrival particles
-		particlesBehavior?.spawn(target.x + 0.5, target.y + 2, target.z + 0.5, 0x6a5acd, 20);
-	}
+	if (success) spawn(target.x + 0.5, target.y + 2, target.z + 0.5, 0x6a5acd, 20);
 	return success;
 }
+export function applyRenderDistance(distance: number) {
+	setRenderDistanceOverride(distance);
+	if (threeScene?.fog instanceof THREE.Fog) {
+		const q = getActiveQuality();
+		threeScene.fog.near = q.fogNear;
+		threeScene.fog.far = q.renderDistance * CHUNK_SIZE * q.fogFar;
+	}
+}
+
+// ─── Cleanup ───
 
 export function destroyGame(): void {
 	if (resizeHandler) {
@@ -1102,5 +669,8 @@ export function destroyGame(): void {
 	resetRaidoState();
 	resetSagaState();
 	resetDiscoveryState();
+	resetSeasonState();
+	resetJoystickState();
+	resetQualityState();
 	kootaWorld.reset();
 }

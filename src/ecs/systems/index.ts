@@ -4,6 +4,8 @@ export { computeAnsuzSignalStrength, countDetectedEntities, detectsEntity, isEnt
 export type { ArchetypeKey, DetectedArchetype } from "./archetype-data.ts";
 export { ALL_ARCHETYPES, ArchetypeId, FOUNDING_ARCHETYPES, FOUNDING_THRESHOLD } from "./archetype-data.ts";
 export { detectAllArchetypes, groupByChunk } from "./archetype-detect.ts";
+export type { AutoTargetResult, TargetCandidate } from "./auto-target.ts";
+export { selectAutoTarget, yawToTarget } from "./auto-target.ts";
 export type { GrowthZone } from "./berkanan-grow.ts";
 export {
 	computeGrowthMultiplier,
@@ -11,6 +13,16 @@ export {
 	getBestGrowthMultiplier,
 	isInGrowthZone,
 } from "./berkanan-grow.ts";
+export type { ChunkLodId } from "./chunk-lod.ts";
+export {
+	CHUNK_LOD_MID_SQ,
+	CHUNK_LOD_NEAR_SQ,
+	ChunkLod,
+	chunkDistanceSq,
+	chunkLoadPriority,
+	classifyChunkLod,
+	shouldUnloadChunk,
+} from "./chunk-lod.ts";
 export { codexSystem, collectLoreEntry, discoverRecipe } from "./codex.ts";
 export {
 	COMPUTATIONAL_RUNE_IDS,
@@ -141,6 +153,26 @@ export {
 	protectionRuneSystem,
 	resetProtectionRuneState,
 } from "./protection-rune-system.ts";
+export type { DeviceTierId, QualityPreset } from "./quality-data.ts";
+export {
+	clampRenderDistance,
+	DeviceTier,
+	getPresetForTier,
+	isValidTier,
+	QUALITY_PRESETS,
+} from "./quality-data.ts";
+export {
+	classifyGpu,
+	detectCpuTier,
+	detectDeviceTier,
+	detectGpuRenderer,
+	detectMemoryTier,
+	getActiveQuality,
+	initQuality,
+	resetQualityState,
+	setQualityTier,
+	setRenderDistanceOverride,
+} from "./quality-presets.ts";
 export { questSystem } from "./quest.ts";
 export {
 	CRYSTAL_DUST_ID,
@@ -194,6 +226,22 @@ export {
 } from "./rune-inscription.ts";
 export { recordBossDefeat, recordCreatureKill, sagaSystem } from "./saga.ts";
 export { computeActiveObjective, computeSagaStats } from "./saga-data.ts";
+export { getCurrentSeason, getSeasonProgress, resetSeasonState, seasonSystem } from "./season.ts";
+export type { SeasonId } from "./season-data.ts";
+export {
+	computeSeason,
+	GRASS_TINT,
+	hungerDrainMultiplier,
+	isSnowSeason,
+	isTranaMigrationSeason,
+	LEAF_TINT,
+	morkerStrengthMultiplier,
+	nightDurationMultiplier,
+	SEASON_LENGTH,
+	SEASON_NAMES,
+	Season,
+	seasonProgress,
+} from "./season-data.ts";
 export {
 	DESTROY_MIN_SIGNAL,
 	FUSE_BURN_THRESHOLD,

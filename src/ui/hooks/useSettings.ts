@@ -18,6 +18,7 @@ import { getSetting, setSetting } from "../../persistence/db.ts";
 export interface GameSettings {
 	showVitals: boolean;
 	renderDistance: number;
+	qualityTier: string;
 	masterVolume: number;
 	musicVolume: number;
 	sfxVolume: number;
@@ -28,6 +29,7 @@ export interface GameSettings {
 const DEFAULTS: GameSettings = {
 	showVitals: true,
 	renderDistance: 3,
+	qualityTier: "auto",
 	masterVolume: 80,
 	musicVolume: 60,
 	sfxVolume: 80,
@@ -48,10 +50,11 @@ export function useSettings(): {
 	useEffect(() => {
 		let cancelled = false;
 		(async () => {
-			const [showVitals, renderDistance, masterVolume, musicVolume, sfxVolume, bindingsJson, mobileJson] =
+			const [showVitals, renderDistance, qualityTier, masterVolume, musicVolume, sfxVolume, bindingsJson, mobileJson] =
 				await Promise.all([
 					getSetting("showVitals", "true"),
 					getSetting("renderDistance", "3"),
+					getSetting("qualityTier", "auto"),
 					getSetting("masterVolume", "80"),
 					getSetting("musicVolume", "60"),
 					getSetting("sfxVolume", "80"),
@@ -75,6 +78,7 @@ export function useSettings(): {
 			setSettings({
 				showVitals: showVitals === "true",
 				renderDistance: Number(renderDistance),
+				qualityTier,
 				masterVolume: Number(masterVolume),
 				musicVolume: Number(musicVolume),
 				sfxVolume: Number(sfxVolume),

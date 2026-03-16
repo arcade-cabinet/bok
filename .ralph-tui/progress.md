@@ -5,6 +5,43 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Performance Budget & Quality Preset Architecture
+The performance budget system separates pure data from detection logic and game engine wiring:
+- `quality-data.ts` — Device tier enum (Low/Medium/High), QualityPreset interface (render distance, shadow map size, particle budgets, ambient particles, fog settings), tier validation, render distance clamping. Pure data, no ECS/Three.js.
+- `quality-presets.ts` — GPU/memory/CPU detection heuristics, module-level active preset cache, `getActiveQuality()` for runtime reads, `setRenderDistanceOverride()` for settings integration. Same module-cache pattern as `getSignalMap()`.
+- `chunk-lod.ts` — Chunk distance classification (Near/Mid/Far), squared-distance math, load priority, unload eligibility. Pure math.
+- Key patterns:
+  - **Module-level quality cache**: `getActiveQuality()` returns the active preset. `game.ts` calls `getRenderDistance()` every frame from the cache — zero allocation. Same pattern as all other module-level caches.
+  - **Override composition**: `setRenderDistanceOverride()` lets the settings slider override just render distance while preserving all other tier-based settings. The getter merges override on top of tier preset.
+  - **Setup-time budgets**: Particle counts and shadow map sizes are set during `initGame()` when behaviors are created. These aren't dynamic because recreating InstancedMesh or shadow maps mid-game causes frame drops.
+  - **Dynamic render distance**: Unlike particles/shadows, render distance CAN change mid-game because chunk streaming already handles loading/unloading on the fly. Fog distance updates in lockstep.
+  - **GPU heuristic patterns**: Low-end GPUs (Mali-4/T6, Adreno 3xx, PowerVR SGX) → Low tier. High-end GPUs (RTX, Apple M2+, Adreno 7xx) → High tier. Unknown → fall through to memory → CPU → mobile UA → Medium default.
+
+### Mobile Controls Architecture
+The mobile controls system separates pure data from React UI, following the codebase's decomposition pattern:
+- `mobile-controls-data.ts` — Button layouts (5 buttons: mine/place/jump on right, bok/inventory on left), haptic patterns (light/medium/heavy), gesture thresholds (swipe distance, double-tap interval), touch target sizes (48px min). Pure data, no React.
+- `mobile-gestures.ts` — Joystick ramp curve (dead zone removal + quadratic ramp), swipe-down detection (distance + time threshold), double-tap detection (interval + drift). Pure math.
+- `auto-target.ts` — Nearest enemy selection via dot-product scoring (alignment × inverse distance). Same cone-check pattern as draugar-gaze.ts. Pure math.
+- `MobileControls.tsx` — React overlay: visual joystick nub + 5 action buttons. Purely presentational — receives joystick state as props, dispatches button events via callbacks.
+- `joystick-state.ts` — Module-level cache: InputBehavior writes joystick position every frame, App.tsx reads it during HUD polling. Same pattern as `getSignalMap()`.
+- `haptics.ts` — Web Vibration API wrapper: `triggerGameHaptic(event)` maps game events to vibration durations. Silent no-op on unsupported platforms.
+- Key patterns:
+  - **JP engine writes, React reads**: InputBehavior (Jolly Pixel Behavior) handles actual touch input polling. MobileControls (React) only provides visual feedback. Communication happens through a module-level joystick state cache — no prop drilling through the engine layer.
+  - **Quadratic ramp for analog feel**: `applyAxisRamp(raw, deadZone)` remaps [deadZone, 1] → [0, 1] then squares. Half-deflection = 25% output. Prevents accidental full-speed from imprecise thumbs.
+  - **Thumb zone compliance**: All 5 buttons positioned in the bottom 40% of viewport. `isInThumbZone(bottomPx, viewportHeight)` validates at test time. Right-side buttons cluster for action, left-side for navigation.
+  - **Haptic feedback via edge detection**: Damage haptic triggers when `damageFlash` increases (same edge-detection pattern as DamageVignette). Block place/mine haptics fire from button press handlers.
+
+### Season Cycle System Architecture
+The season system cycles through four Swedish seasons (Vår/Sommar/Höst/Vinter) with gameplay and visual effects:
+- `season-data.ts` — Season enum, cycle length (8 days/season), night duration multipliers (sommar 0.6, vinter 1.6), hunger drain multipliers, Mörker strength multipliers, Trana migration flags, leaf/grass tint colors. Pure data, no ECS/Three.js.
+- `season.ts` — ECS system: reads WorldTime.dayCount, computes season via edge detection (only recalculates on day change), updates SeasonState trait with all pre-computed multipliers, exposes `getCurrentSeason()` module-level cache.
+- Key patterns:
+  - **Day-edge detection**: `lastDayCount` module variable prevents per-frame recomputation. Season only changes when dayCount changes, making the system essentially zero-cost during steady state.
+  - **Pre-computed multipliers on trait**: All downstream effects (hunger, mörker, night, trana) are pre-computed onto SeasonState so consumers read cached values. No system re-derives season from dayCount.
+  - **Separate query for backward compat**: Systems like survival.ts and creature.ts read SeasonState via separate queries (`world.query(SeasonState).readEach`). If the entity doesn't exist (e.g., in old tests), the query simply doesn't match — defaults apply.
+  - **Night duration via time speed modulation**: Rather than changing day length globally, `time.ts` slows/speeds time advancement only during the night portion (`timeOfDay >= 0.75 || < 0.25`). This makes vinter nights literally longer in real time while keeping days constant.
+  - **Multiplicative composition**: Season Mörker multiplier composes with territory and shelter multipliers: `SPAWN_CHANCE * inscriptionMult * morkerSpawnMult * seasonMorkerMult`. Each system contributes independently.
+
 ### Territory and Decay System Architecture
 The territory system computes territory density from player-placed blocks and manages structure decay:
 - `territory-data.ts` — Territory block set (Planks, StoneBricks, FaluRed, etc.), density formulas, decay constants (30 game-day onset, 5-day interval), RuneSeal block ID (40), creature influence formulas. Pure data, no ECS/Three.js.
@@ -1453,4 +1490,89 @@ The light system separates pure data from ECS state management, following the cr
   - **Deterministic decay selection**: Using `(dayCount + i) * 2654435761 >>> 0` for target selection ensures the same blocks are selected on the same game day, making saves/loads consistent. Same golden ratio hash used by `chunkNameSeed()`.
   - **Seal scan stride optimization**: Scanning every 2nd block in each dimension (`dx += 2`) for seal detection halves scan cost while still catching full-sized blocks. Acceptable because seals are 1×1×1 blocks.
   - **Falu red effect already exists**: The acceptance criteria mentions "Falu red blocks reduce Morker spawn radius" — this was already implemented in structure-detect.ts via `faluSpawnRadiusMultiplier()`. No new code needed, just verification.
+---
+
+## 2026-03-16 - US-044
+- Implemented seasonal cycle system: Vår → Sommar → Höst → Vinter (8 game-days each)
+- Files created:
+  - `src/ecs/systems/season-data.ts` — Pure data module: season enum, multipliers, tints, formulas
+  - `src/ecs/systems/season.ts` — ECS system with module-level cache
+  - `src/ecs/systems/season-data.test.ts` — 14 tests for pure data functions
+  - `src/ecs/systems/season.test.ts` — 11 tests for ECS system behavior
+- Files modified:
+  - `src/ecs/traits/index.ts` — Added SeasonState trait
+  - `src/ecs/systems/index.ts` — Exported season-data and season system
+  - `src/ecs/systems/survival.ts` — Season hunger drain multiplier
+  - `src/ecs/systems/time.ts` — Night duration modulation per season
+  - `src/ecs/systems/creature.ts` — Read SeasonState for spawner params
+  - `src/ecs/systems/creature-spawner.ts` — Mörker strength + Trana migration
+  - `src/engine/game.ts` — Wired seasonSystem, SeasonState spawn, resetSeasonState
+- **Learnings:**
+  - **Day-edge detection pattern**: Using a module-level `lastDayCount` for edge detection is more efficient than throttled timers for systems that only change on day boundaries. Season changes once per 8 game-days, so per-frame checks with early return are essentially free.
+  - **Night speed modulation vs. day duration change**: Adjusting `dayDuration` would change both day and night length. Instead, modulating time speed only during `isNight` (timeOfDay >= 0.75 || < 0.25) preserves day length while making nights feel longer/shorter.
+  - **Separate query pattern scales well**: The pattern of reading traits via separate queries for backward compatibility (used by ShelterState, SeasonState) is now used in 3+ systems. It ensures old tests that don't spawn optional traits still work without modification.
+  - **Multiplicative spawner composition**: Season, territory, shelter, and inscription level multipliers all compose multiplicatively on spawn chance. Each system independently contributes its multiplier without knowing about others.
+---
+
+## 2026-03-16 - US-045
+- Implemented mobile controls refinement: virtual joystick with ramp curve, action buttons in thumb zone, haptic feedback, gesture detection, auto-targeting
+- Files created:
+  - `src/ui/hud/mobile-controls-data.ts` (NEW) — 108 LOC: button layout, haptic patterns, gesture thresholds, layout helpers
+  - `src/ui/hud/mobile-gestures.ts` (NEW) — 127 LOC: joystick ramp curve, swipe detection, double-tap detection
+  - `src/ui/hud/MobileControls.tsx` (NEW) — 184 LOC: joystick nub overlay + 5 action buttons (mine/place/jump/bok/inventory)
+  - `src/ui/hud/haptics.ts` (NEW) — 34 LOC: Web Vibration API wrapper for haptic feedback
+  - `src/ecs/systems/auto-target.ts` (NEW) — 91 LOC: nearest enemy selection via dot-product scoring
+  - `src/engine/behaviors/joystick-state.ts` (NEW) — 30 LOC: module-level joystick visual state cache
+  - `src/ui/hud/mobile-controls-data.test.ts` (NEW) — 15 tests: button layout, thumb zone, haptic patterns
+  - `src/ui/hud/mobile-gestures.test.ts` (NEW) — 24 tests: ramp curve, dead zone, swipe, double-tap
+  - `src/ecs/systems/auto-target.test.ts` (NEW) — 11 tests: targeting, range, cone, scoring
+  - `src/ui/hud/MobileControls.ct.tsx` (NEW) — 9 Playwright CT tests: rendering, button sizes, thumb zone positioning
+- Files modified:
+  - `src/engine/behaviors/InputBehavior.ts` — Switched to computeJoystickAnalog with ramp curve, exports joystick state
+  - `src/engine/behaviors/input-helpers.ts` — Added computeJoystickAnalog with dead zone removal + quadratic ramp
+  - `src/engine/behaviors/InputBehavior.test.ts` — 6 new tests for computeJoystickAnalog
+  - `src/ecs/systems/index.ts` — Exported auto-target module
+  - `src/engine/game.ts` — Added resetJoystickState to destroyGame
+  - `src/App.tsx` — Integrated MobileControls with isMobile() gating, haptic damage feedback, mobile button handlers
+- **Learnings:**
+  - **Module-level state cache for cross-layer communication**: Extracted joystick visual state to `joystick-state.ts` following the same pattern as `getSignalMap()`, `getActiveWards()`, etc. InputBehavior writes to it every frame, React reads it during HUD polling. Keeps the Behavior under 200 LOC.
+  - **Quadratic ramp curve for joystick feel**: After dead zone removal, `raw²` produces gentle start + strong finish. Half-deflection gives only 25% output — prevents accidental full-speed movement from imprecise thumb position. This is the standard approach for analog stick processing in mobile games.
+  - **Web Vibration API as haptic fallback**: Rather than adding `@capacitor/haptics` as a dependency, `navigator.vibrate()` provides sufficient haptic feedback on mobile browsers. It's universally supported on Android and silently fails on iOS Safari (no-op), matching the project's graceful degradation pattern.
+  - **Auto-targeting reuses dot-product pattern from Draugar gaze**: The `selectAutoTarget` function uses the same `lookDir · normalize(toCreature)` dot product as `draugar-gaze.ts`, but reversed — the player's view cone finds the most aligned hostile. Score combines alignment with inverse distance for natural target selection.
+  - **Biome's aria-label rule on divs**: `aria-label` requires an explicit ARIA role when used on generic elements like `<div>`. For game overlays, `aria-hidden="true"` is more appropriate since the controls are not meant for screen readers — the buttons themselves have individual `aria-label` attributes.
+---
+
+## 2026-03-16 - US-046
+- Implemented adaptive quality system with device tier detection (Low/Medium/High)
+- Quality presets control: shadow map size (512/1024), particle budget (100/200/500), ambient particles (100/200/300), render distance (2/3/4), fog distances
+- Made render distance dynamic (was hardcoded const, now reads from quality preset module cache)
+- Added render distance override from settings slider (2-5 chunks, clamped by tier)
+- Shadow map sizes: 512x512 for Low tier (mobile), 1024x1024 for Medium/High
+- Particle budgets enforced: ParticlesBehavior and AmbientParticlesBehavior now accept budget parameter at setup
+- Added Quality Preset selector to Settings > Display tab (Auto/Low/Medium/High buttons)
+- GPU auto-detection via WebGL debug renderer info + memory + CPU core heuristics
+- Chunk LOD classification system (Near/Mid/Far) for streaming priority
+- Creature LOD (from US-011) already complete: single-box beyond 30 blocks
+- Files created:
+  - `src/ecs/systems/quality-data.ts` — Device tiers, quality presets, particle budgets (pure data)
+  - `src/ecs/systems/quality-presets.ts` — Detection logic, module-level cache, render distance override
+  - `src/ecs/systems/chunk-lod.ts` — Chunk distance classification and streaming priority
+  - `src/ecs/systems/quality-data.test.ts` — 18 tests for presets, tiers, clamping
+  - `src/ecs/systems/quality-presets.test.ts` — 14 tests for detection, GPU classification, init
+  - `src/ecs/systems/chunk-lod.test.ts` — 17 tests for LOD classification, distance, unload
+- Files modified:
+  - `src/engine/game.ts` — Dynamic render distance, quality-based shadow/fog/particles
+  - `src/engine/behaviors/ParticlesBehavior.ts` — Dynamic budget parameter
+  - `src/engine/behaviors/AmbientParticlesBehavior.ts` — Dynamic count parameter
+  - `src/ui/components/SettingsDisplay.tsx` — Quality preset selector
+  - `src/ui/hooks/useSettings.ts` — qualityTier setting
+  - `src/ui/screens/SettingsModal.tsx` — Passing quality tier props
+  - `src/ui/screens/SettingsModal.ct.tsx` — Quality Preset visibility check
+  - `src/ecs/systems/index.ts` — Exported new modules
+- **Learnings:**
+  - **Setup-time vs runtime budgets**: Particle InstancedMesh and shadow maps should be set at init, not changed mid-game (recreating causes GC stalls). Render distance is safe to change dynamically because chunk streaming already handles it.
+  - **Module-level cache pattern scales well**: The getActiveQuality() pattern matches getSignalMap(), getActiveWards(), etc. — zero allocation reads per frame.
+  - **Render distance was disconnected from settings**: The settings UI had a render distance slider persisted to SQLite, but game.ts used a hardcoded `const RENDER_DISTANCE = 3`. This is now wired via the quality preset system.
+  - **WebGL debug renderer info requires extension**: GPU detection needs WEBGL_debug_renderer_info extension — returns null in privacy-focused browsers. Graceful fallback to memory/CPU/UA heuristics.
+  - **Playwright CT still broken on Vite 8**: All CT tests timeout at mount() due to Rolldown incompatibility. Pre-existing issue, not affected by these changes.
 ---

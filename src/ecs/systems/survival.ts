@@ -1,5 +1,14 @@
 import type { World } from "koota";
-import { Health, Hunger, MoveInput, PlayerState, PlayerTag, ShelterState, Stamina } from "../traits/index.ts";
+import {
+	Health,
+	Hunger,
+	MoveInput,
+	PlayerState,
+	PlayerTag,
+	SeasonState,
+	ShelterState,
+	Stamina,
+} from "../traits/index.ts";
 import { HUNGER_DRAIN_THRESHOLD, HUNGER_HEALTH_DRAIN_RATE, HUNGER_SLOW_THRESHOLD } from "./food.ts";
 import { SHELTER_HUNGER_MULT, SHELTER_STAMINA_MULT } from "./structure.ts";
 
@@ -10,10 +19,16 @@ export function survivalSystem(world: World, dt: number) {
 		inShelter = shelter.inShelter;
 	});
 
+	// Read season hunger multiplier (separate query — backward compat)
+	let seasonHungerMult = 1;
+	world.query(SeasonState).readEach(([season]) => {
+		seasonHungerMult = season.hungerMult;
+	});
+
 	world
 		.query(PlayerTag, Health, Hunger, Stamina, MoveInput, PlayerState)
 		.updateEach(([health, hunger, stamina, input, state]) => {
-			const hungerMult = inShelter ? SHELTER_HUNGER_MULT : 1;
+			const hungerMult = (inShelter ? SHELTER_HUNGER_MULT : 1) * seasonHungerMult;
 			hunger.current = Math.max(0, hunger.current - dt * hunger.decayRate * hungerMult);
 
 			const hungerPct = hunger.max > 0 ? hunger.current / hunger.max : 0;

@@ -105,6 +105,8 @@ export function spawnCreatures(
 	timeOfDay = 0.25,
 	inscriptionLevel = 0,
 	morkerSpawnMult = 1,
+	seasonMorkerMult = 1,
+	tranaMigrating = false,
 ) {
 	if (!playerAlive || creatureCount >= MAX_CREATURES) return;
 
@@ -116,10 +118,10 @@ export function spawnCreatures(
 	if (isDaytime && worldRng() < SNAIL_SPAWN_CHANCE * mult) {
 		spawnBiomeGated(world, playerX, playerZ, 18, Species.Skogssnigle, SNAIL, isSnailBiome, effects);
 	}
-	if (isDaytime && worldRng() < TRANA_SPAWN_CHANCE * mult) {
+	if (isDaytime && !tranaMigrating && worldRng() < TRANA_SPAWN_CHANCE * mult) {
 		spawnTranaFlock(world, playerX, playerZ, effects);
 	}
-	if (!isDaytime && worldRng() < SPAWN_CHANCE * mult * morkerSpawnMult) {
+	if (!isDaytime && worldRng() < SPAWN_CHANCE * mult * morkerSpawnMult * seasonMorkerMult) {
 		spawnMorkerPack(world, playerX, playerZ, effects);
 	}
 	spawnHostileCreatures(world, playerX, playerZ, isDaytime, effects, spawnEntity, findSurfaceSpawn, inscriptionLevel);

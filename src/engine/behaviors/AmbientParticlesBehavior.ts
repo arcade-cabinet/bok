@@ -7,11 +7,12 @@ import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import { cosmeticRng } from "../../world/noise.ts";
 
-const PARTICLE_COUNT = 300;
+const DEFAULT_PARTICLE_COUNT = 300;
 
 export class AmbientParticlesBehavior extends Behavior {
 	private particles!: THREE.Points;
 	private mat!: THREE.PointsMaterial;
+	private particleCount = DEFAULT_PARTICLE_COUNT;
 
 	// Set externally each frame
 	public timeOfDay = 0.25;
@@ -19,10 +20,11 @@ export class AmbientParticlesBehavior extends Behavior {
 	public playerY = 0;
 	public playerZ = 0;
 
-	setup(scene: THREE.Scene) {
+	setup(scene: THREE.Scene, count = DEFAULT_PARTICLE_COUNT) {
+		this.particleCount = count;
 		const geo = new THREE.BufferGeometry();
 		const pos: number[] = [];
-		for (let i = 0; i < PARTICLE_COUNT; i++) {
+		for (let i = 0; i < this.particleCount; i++) {
 			pos.push((cosmeticRng() - 0.5) * 40, (cosmeticRng() - 0.5) * 40, (cosmeticRng() - 0.5) * 40);
 		}
 		geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
@@ -67,7 +69,7 @@ export class AmbientParticlesBehavior extends Behavior {
 		this.mat.opacity = THREE.MathUtils.lerp(this.mat.opacity, partOp, lerpFactor);
 
 		const positions = this.particles.geometry.attributes.position.array as Float32Array;
-		for (let i = 0; i < PARTICLE_COUNT; i++) {
+		for (let i = 0; i < this.particleCount; i++) {
 			positions[i * 3 + 1] += dt * 0.5;
 			if (positions[i * 3 + 1] - this.playerY > 20) positions[i * 3 + 1] -= 40;
 			if (positions[i * 3 + 1] - this.playerY < -20) positions[i * 3 + 1] += 40;

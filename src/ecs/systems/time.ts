@@ -1,12 +1,22 @@
 import type { World } from "koota";
-import { WorldTime } from "../traits/index.ts";
+import { SeasonState, WorldTime } from "../traits/index.ts";
 
 export type TimePhase = "Morning" | "Midday" | "Dusk" | "Night";
 
 export function timeSystem(world: World, dt: number) {
+	// Read night multiplier from season (separate query — backward compat)
+	let nightMult = 1;
+	world.query(SeasonState).readEach(([season]) => {
+		nightMult = season.nightMult;
+	});
+
 	world.query(WorldTime).updateEach(([time]) => {
 		const dayDuration = Number.isFinite(time.dayDuration) && time.dayDuration > 0 ? time.dayDuration : 240;
-		const total = time.timeOfDay + dt / dayDuration;
+		// During night (sunHeight < 0, roughly timeOfDay 0.75–1.0 + 0.0–0.25),
+		// slow time advancement to make nights feel longer/shorter.
+		const isNight = time.timeOfDay >= 0.75 || time.timeOfDay < 0.25;
+		const speedMult = isNight ? 1 / nightMult : 1;
+		const total = time.timeOfDay + (dt / dayDuration) * speedMult;
 		const rollover = Math.floor(total);
 		time.dayCount += rollover;
 		time.timeOfDay = total - rollover;

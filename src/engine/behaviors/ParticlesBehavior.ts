@@ -18,19 +18,21 @@ interface Particle {
 	color: THREE.Color;
 }
 
-const MAX_PARTICLES = 500;
+const DEFAULT_MAX_PARTICLES = 500;
 const GRAVITY = 28;
 
 export class ParticlesBehavior extends Behavior {
 	private particles: Particle[] = [];
 	private particleMesh!: THREE.InstancedMesh;
 	private dummy = new THREE.Object3D();
+	private maxParticles = DEFAULT_MAX_PARTICLES;
 
-	setup(scene: THREE.Scene) {
+	setup(scene: THREE.Scene, budget = DEFAULT_MAX_PARTICLES) {
+		this.maxParticles = budget;
 		this.particleMesh = new THREE.InstancedMesh(
 			new THREE.BoxGeometry(0.1, 0.1, 0.1),
 			new THREE.MeshLambertMaterial({ color: 0xffffff }),
-			MAX_PARTICLES,
+			this.maxParticles,
 		);
 		this.particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 		this.particleMesh.count = 0;
@@ -43,7 +45,7 @@ export class ParticlesBehavior extends Behavior {
 
 	spawn(x: number, y: number, z: number, colorHex: string | number, count = 5) {
 		for (let i = 0; i < count; i++) {
-			if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
+			if (this.particles.length >= this.maxParticles) this.particles.shift();
 			this.particles.push({
 				x: x + 0.5 + (cosmeticRng() - 0.5) * 0.8,
 				y: y + 0.5 + (cosmeticRng() - 0.5) * 0.8,

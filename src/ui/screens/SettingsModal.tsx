@@ -101,8 +101,10 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 						<SettingsDisplay
 							showVitals={settings.showVitals}
 							renderDistance={settings.renderDistance}
+							qualityTier={settings.qualityTier}
 							onToggleVitals={(v) => updateSetting("showVitals", v)}
 							onRenderDistance={(v) => updateSetting("renderDistance", v)}
+							onQualityTier={(v) => updateSetting("qualityTier", v)}
 						/>
 					)}
 					{activeTab === "audio" && (

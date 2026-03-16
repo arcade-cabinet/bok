@@ -1,29 +1,21 @@
-/**
- * InputBehavior — polls Jolly Pixel's unified Input system every frame
- * and writes to Koota ECS traits. Replaces manual DOM event listeners
- * (input-handler.ts) and React touch controls (MobileControls.tsx).
- *
- * Desktop: pointer-locked keyboard + mouse
- * Mobile: invisible touch zones — left half = movement, right half = look
- */
+/** InputBehavior — polls JP's Input system, writes to Koota ECS traits. */
 
 import { Behavior, type Input, type InputKeyboardAction } from "@jolly-pixel/engine";
 import { Hotbar, MiningState, MoveInput, PlayerState, PlayerTag, Rotation, ToolSwing } from "../../ecs/traits/index.ts";
 import { kootaWorld, placeBlock } from "../game.ts";
 import { getBindings, getMobileConfig } from "../input-config.ts";
+import { clamp, clampPitch, computeJoystickAnalog, computeMouseLook } from "./input-helpers.ts";
+import { getJoystickStateRef } from "./joystick-state.ts";
+
+export { getJoystickState, resetJoystickState } from "./joystick-state.ts";
 
 /** Cast binding string to JP's strict KeyCode union. */
 const key = (code: string) => code as InputKeyboardAction;
 
-/** Sensitivity multipliers for mouse look. */
 const MOUSE_SENSITIVITY = 0.002;
 const MOUSE_SWAY_FACTOR = 0.0005;
-
-/** Touch look sensitivity base (scaled by user config). */
 const TOUCH_LOOK_BASE = 0.005;
 const TOUCH_SWAY_FACTOR = 0.001;
-
-/** Joystick radius in pixels for normalizing touch movement. */
 const JOYSTICK_RADIUS = 40;
 
 export class InputBehavior extends Behavior {
@@ -55,12 +47,8 @@ export class InputBehavior extends Behavior {
 		}
 	}
 
-	// ─── Desktop: pointer-locked keyboard + mouse ───
-
 	private pollDesktop(input: Input) {
 		const b = getBindings();
-
-		// Movement keys → MoveInput trait (configured bindings + arrow key fallback)
 		kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
 			move.forward = input.isKeyDown(key(b.forward)) || input.isKeyDown("ArrowUp");
 			move.backward = input.isKeyDown(key(b.backward)) || input.isKeyDown("ArrowDown");
@@ -70,32 +58,27 @@ export class InputBehavior extends Behavior {
 			move.sprint = input.isKeyDown(key(b.sprint));
 		});
 
-		// Mouse look → Rotation + ToolSwing sway (only when pointer locked)
 		if (input.mouse.locked) {
 			const delta = input.getMouseDelta();
+			const look = computeMouseLook(delta.x, delta.y, MOUSE_SENSITIVITY, MOUSE_SWAY_FACTOR);
 			kootaWorld.query(PlayerTag, Rotation, ToolSwing).updateEach(([rot, toolSwing]) => {
-				rot.yaw -= delta.x * MOUSE_SENSITIVITY;
-				rot.pitch -= delta.y * MOUSE_SENSITIVITY;
+				rot.yaw += look.yawDelta;
+				rot.pitch += look.pitchDelta;
 				rot.pitch = clampPitch(rot.pitch);
 
-				toolSwing.targetSwayY -= delta.x * MOUSE_SWAY_FACTOR;
-				toolSwing.targetSwayX -= delta.y * MOUSE_SWAY_FACTOR;
-				toolSwing.targetSwayX = clamp(toolSwing.targetSwayX, -0.1, 0.1);
-				toolSwing.targetSwayY = clamp(toolSwing.targetSwayY, -0.1, 0.1);
+				toolSwing.targetSwayX = look.swayX;
+				toolSwing.targetSwayY = look.swayY;
 			});
 		}
 
-		// Mining: left mouse held → MiningState.active
 		kootaWorld.query(PlayerTag, MiningState).updateEach(([mining]) => {
 			mining.active = input.mouse.locked && input.isMouseButtonDown("left");
 		});
 
-		// Block placement: right click (just pressed)
 		if (input.mouse.locked && input.wasMouseButtonJustPressed("right")) {
 			placeBlock();
 		}
 
-		// Hotbar slots 1-5
 		for (let i = 0; i < 5; i++) {
 			const slotKey = key(`Digit${i + 1}`);
 			if (input.wasKeyJustPressed(slotKey)) {
@@ -105,45 +88,46 @@ export class InputBehavior extends Behavior {
 			}
 		}
 
-		// Eat action
 		if (input.wasKeyJustPressed(key(b.eat))) {
 			kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
 				state.wantsEat = true;
 			});
 		}
 
-		// Pointer lock: click canvas to lock when not locked
 		if (input.wasMouseButtonJustPressed("left") && !input.mouse.locked) {
 			input.lockMouse();
 		}
 	}
-
-	// ─── Mobile: invisible touch zones ───
 
 	private pollTouch(input: Input) {
 		const mobileConfig = getMobileConfig();
 		const screen = input.getScreenSize();
 		const halfW = screen.x / 2;
 
-		// Primary touch (finger 0) — joystick on left half
 		this.pollMovementTouch(input, halfW, mobileConfig.joystickDeadZone);
-
-		// Secondary touch (finger 1) — camera look on right half
 		this.pollLookTouch(input, mobileConfig.lookSensitivity);
 	}
 
 	private pollMovementTouch(input: Input, halfW: number, deadZone: number) {
+		const joyState = getJoystickStateRef();
+
 		if (input.wasTouchStarted("primary")) {
 			const pos = input.getTouchPosition(0);
 			if (pos.x < halfW) {
 				this.joyStartX = pos.x;
 				this.joyStartY = pos.y;
 				this.joyActive = true;
+				joyState.centerX = pos.x;
+				joyState.centerY = pos.y;
+				joyState.active = true;
 			}
 		}
 
 		if (input.wasTouchEnded("primary")) {
 			this.joyActive = false;
+			joyState.active = false;
+			joyState.offsetX = 0;
+			joyState.offsetY = 0;
 			kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
 				move.forward = false;
 				move.backward = false;
@@ -154,21 +138,16 @@ export class InputBehavior extends Behavior {
 
 		if (this.joyActive && input.isTouchDown("primary")) {
 			const pos = input.getTouchPosition(0);
-			let dx = pos.x - this.joyStartX;
-			let dy = pos.y - this.joyStartY;
-			const dist = Math.sqrt(dx * dx + dy * dy);
-			if (dist > JOYSTICK_RADIUS) {
-				dx = (dx / dist) * JOYSTICK_RADIUS;
-				dy = (dy / dist) * JOYSTICK_RADIUS;
-			}
-			const nx = dx / JOYSTICK_RADIUS;
-			const ny = dy / JOYSTICK_RADIUS;
+			const joy = computeJoystickAnalog(pos.x, pos.y, this.joyStartX, this.joyStartY, JOYSTICK_RADIUS, deadZone);
+
+			joyState.offsetX = joy.clampedDx;
+			joyState.offsetY = joy.clampedDy;
 
 			kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
-				move.forward = ny < -deadZone;
-				move.backward = ny > deadZone;
-				move.left = nx < -deadZone;
-				move.right = nx > deadZone;
+				move.forward = joy.ny < 0;
+				move.backward = joy.ny > 0;
+				move.left = joy.nx < 0;
+				move.right = joy.nx > 0;
 			});
 		}
 	}
@@ -180,7 +159,6 @@ export class InputBehavior extends Behavior {
 			this.lookPrevY = pos.y;
 			this.lookActive = true;
 
-			// Contextual mining: touching right side starts mining
 			kootaWorld.query(PlayerTag, MiningState).updateEach(([mining]) => {
 				mining.active = true;
 			});
@@ -214,15 +192,4 @@ export class InputBehavior extends Behavior {
 			});
 		}
 	}
-}
-
-// ─── Helpers ───
-
-function clampPitch(pitch: number): number {
-	const limit = Math.PI / 2 - 0.1;
-	return Math.max(-limit, Math.min(limit, pitch));
-}
-
-function clamp(v: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, v));
 }
