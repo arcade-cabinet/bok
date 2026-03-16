@@ -46,6 +46,8 @@ export const BlockId = {
 	// Crafted building materials
 	TreatedPlanks: 38,
 	ReinforcedBricks: 39,
+	// Territory / Decay
+	RuneSeal: 40,
 } as const;
 
 export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
@@ -116,6 +118,8 @@ export const BLOCKS: Record<number, BlockMeta> = {
 	// Crafted building materials
 	[BlockId.TreatedPlanks]: { name: "Treated Planks", color: "#6D5040", solid: true, hardness: 3.0 },
 	[BlockId.ReinforcedBricks]: { name: "Reinforced Bricks", color: "#6a6068", solid: true, hardness: 6.0 },
+	// Territory / Decay
+	[BlockId.RuneSeal]: { name: "Rune Seal", color: "#4a5a7a", solid: true, emissive: true, hardness: 8.0 },
 };
 
 export function getBlockHardness(blockId: number): number {
@@ -142,7 +146,7 @@ export function isSoft(blockId: number): boolean {
 
 export interface ItemDef {
 	name: string;
-	type: "axe" | "pickaxe" | "sword" | "food" | "light" | "chisel";
+	type: "axe" | "pickaxe" | "sword" | "food" | "light" | "chisel" | "material";
 	target: string;
 	power: number;
 	color: string;
@@ -168,6 +172,8 @@ export const ITEMS: Record<number, ItemDef> = {
 	// Food
 	201: { name: "Raw Meat", type: "food", target: "Hunger", power: 10, color: "#8B4513" },
 	202: { name: "Cooked Meat", type: "food", target: "Hunger", power: 35, color: "#CD853F" },
+	// Materials
+	301: { name: "Crystal Dust", type: "material", target: "Travel", power: 0, color: "#c9a84c" },
 };
 
 /** Recipe tier: 0=hand, 1=Crafting Bench, 2=Forge, 3=Scriptorium. */
@@ -332,5 +338,20 @@ export const RECIPES: CraftRecipe[] = [
 		result: { type: "item", id: 110, qty: 1 },
 		cost: { [BlockId.IronOre]: 3, [BlockId.Crystal]: 1 },
 		tier: 2,
+	},
+	{
+		id: "crystal_dust",
+		name: "Crystal Dust x4",
+		result: { type: "item", id: 301, qty: 4 },
+		cost: { [BlockId.Crystal]: 1 },
+		tier: 1,
+	},
+	// ─── Tier 3: Scriptorium ───
+	{
+		id: "rune_seal",
+		name: "Rune Seal",
+		result: { type: "block", id: BlockId.RuneSeal, qty: 1 },
+		cost: { [BlockId.RuneStone]: 4, [BlockId.Crystal]: 2, [BlockId.IronOre]: 2 },
+		tier: 3,
 	},
 ];

@@ -14,6 +14,8 @@ export interface RuneWheelProps {
 	onClose: () => void;
 	/** Currently highlighted rune (from drag), or 0 for none. */
 	highlightedRune?: number;
+	/** Set of discovered rune IDs. If provided, only discovered runes are shown. */
+	discoveredRunes?: readonly number[];
 }
 
 /** Radius of the rune wheel in pixels. */
@@ -21,10 +23,16 @@ const WHEEL_RADIUS = 90;
 /** Size of each rune button in pixels. */
 const RUNE_SIZE = 44;
 
-export function RuneWheel({ isOpen, onSelectRune, onClose, highlightedRune = 0 }: RuneWheelProps) {
+export function RuneWheel({ isOpen, onSelectRune, onClose, highlightedRune = 0, discoveredRunes }: RuneWheelProps) {
 	if (!isOpen) return null;
 
-	const runeCount = PLACEABLE_RUNES.length;
+	// Filter to only discovered runes when discovery set is provided
+	const discoveredSet = discoveredRunes ? new Set(discoveredRunes) : null;
+	const visibleRunes = discoveredSet ? PLACEABLE_RUNES.filter((id) => discoveredSet.has(id)) : PLACEABLE_RUNES;
+
+	const runeCount = visibleRunes.length;
+	if (runeCount === 0) return null;
+
 	const angleStep = (2 * Math.PI) / runeCount;
 	const startAngle = -Math.PI / 2; // Start from top
 
@@ -47,7 +55,7 @@ export function RuneWheel({ isOpen, onSelectRune, onClose, highlightedRune = 0 }
 
 			{/* Wheel container */}
 			<div className="relative" style={{ width: WHEEL_RADIUS * 2 + RUNE_SIZE, height: WHEEL_RADIUS * 2 + RUNE_SIZE }}>
-				{PLACEABLE_RUNES.map((runeId, i) => {
+				{visibleRunes.map((runeId, i) => {
 					const def = RUNES[runeId];
 					if (!def) return null;
 

@@ -3,6 +3,7 @@ import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
 import { getDiscoveredLandmarks } from "./ecs/systems/exploration.ts";
 import { worldToChunk } from "./ecs/systems/map-data.ts";
+import { CRYSTAL_DUST_ID } from "./ecs/systems/raido-data.ts";
 import type { FaceIndex, RuneIdValue } from "./ecs/systems/rune-data.ts";
 import { placeRune } from "./ecs/systems/rune-inscription.ts";
 import { computeActiveObjective, computeSagaStats } from "./ecs/systems/saga-data.ts";
@@ -23,6 +24,7 @@ import {
 	PlayerTag,
 	Position,
 	QuestProgress,
+	RuneDiscovery,
 	SagaLog,
 	ShelterState,
 	Stamina,
@@ -34,13 +36,15 @@ import {
 	applyVoxelDeltas,
 	disableVoxelDeltaTracking,
 	enableVoxelDeltaTracking,
+	getBlockHighlight,
 	getRuneIndexEntries,
+	getTravelAnchors,
 	initGame,
 	kootaWorld,
 	readPlayerStateForSave,
 	restorePlayerState,
+	travelToAnchor,
 } from "./engine/game.ts";
-import { setupInputHandlers } from "./engine/input-handler.ts";
 import {
 	createSaveSlot,
 	initDatabase,
@@ -59,7 +63,6 @@ import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
 import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
 import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
-import { MobileControls } from "./ui/hud/MobileControls.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -70,10 +73,6 @@ import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
 import { biomeAt } from "./world/landmark-generator.ts";
 
-function isMobile(): boolean {
-	if (typeof window === "undefined" || typeof navigator === "undefined") return false;
-	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
 const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 type GamePhase = "title" | "playing" | "dead";
@@ -83,7 +82,6 @@ export default function App() {
 	const [craftingOpen, setCraftingOpen] = useState(false);
 	const [bokOpen, setBokOpen] = useState(false);
 	const [hasSaveSlot, setHasSaveSlot] = useState(false);
-	const cleanupRef = useRef<(() => void) | null>(null);
 	const saveSlotRef = useRef<number | null>(null);
 	const saveSeedRef = useRef<string>("");
 	const [mapData, setMapData] = useState<MapData | null>(null);
@@ -91,6 +89,7 @@ export default function App() {
 		creatureProgress: Record<string, number>;
 		loreEntryIds: string[];
 		discoveredRecipeCount: number;
+		discoveredRuneIds: number[];
 	} | null>(null);
 	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
 	const [sagaData, setSagaData] = useState<import("./ui/components/BokSaga.tsx").BokSagaProps | null>(null);
@@ -128,6 +127,8 @@ export default function App() {
 		chiselSelectedY: 0,
 		chiselSelectedZ: 0,
 		chiselSelectedFace: -1 as number,
+		discoveredRunes: [] as number[],
+		lookingAtBlock: false,
 	});
 
 	// Init database + check for existing saves on mount
@@ -193,6 +194,10 @@ export default function App() {
 				playerUpdate.chiselSelectedFace = chisel.selectedFace;
 			});
 
+			kootaWorld.query(PlayerTag, RuneDiscovery).readEach(([disc]) => {
+				playerUpdate.discoveredRunes = [...disc.discovered];
+			});
+
 			kootaWorld.query(WorldTime).readEach(([time]) => {
 				timeUpdate = {
 					timeOfDay: time.timeOfDay,
@@ -205,6 +210,9 @@ export default function App() {
 				playerUpdate.sagaEntryCount = saga.entries.length;
 			});
 
+			// Block highlight — are we looking at a block?
+			playerUpdate.lookingAtBlock = getBlockHighlight()?.lastHit != null;
+
 			// Map + codex data — only read when bok is open
 			if (bokOpen) {
 				kootaWorld.query(PlayerTag, Position, ExploredChunks).readEach(([pos, explored]) => {
@@ -215,13 +223,19 @@ export default function App() {
 						playerCz: pcz,
 						biomeAt: (cx, cz) => biomeAt(cx * 16 + 8, cz * 16 + 8),
 						landmarks: getDiscoveredLandmarks(),
+						travelAnchors: getTravelAnchors(),
 					});
 				});
 				kootaWorld.query(PlayerTag, Codex).readEach(([codex]) => {
+					let runeIds: number[] = [];
+					kootaWorld.query(PlayerTag, RuneDiscovery).readEach(([disc]) => {
+						runeIds = [...disc.discovered];
+					});
 					setCodexData({
 						creatureProgress: { ...codex.creatureProgress },
 						loreEntryIds: [...codex.loreEntries],
 						discoveredRecipeCount: codex.discoveredRecipes.size,
+						discoveredRuneIds: runeIds,
 					});
 				});
 				kootaWorld.query(PlayerTag, Inventory).readEach(([inv]) => {
@@ -284,19 +298,12 @@ export default function App() {
 		return () => clearInterval(interval);
 	}, [phase, performSave]);
 
-	// Cleanup input handlers when leaving playing phase or unmounting
+	// Disable voxel delta tracking when leaving playing phase
 	useEffect(() => {
 		if (phase !== "playing") {
-			cleanupRef.current?.();
-			cleanupRef.current = null;
 			disableVoxelDeltaTracking();
-			return;
 		}
-		return () => {
-			cleanupRef.current?.();
-			cleanupRef.current = null;
-			disableVoxelDeltaTracking();
-		};
+		return () => disableVoxelDeltaTracking();
 	}, [phase]);
 
 	// Keyboard listener for crafting (E) and bok (B) toggle
@@ -363,8 +370,6 @@ export default function App() {
 				saveVoxelDelta(slotId, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
 			});
 
-			cleanupRef.current?.();
-			cleanupRef.current = setupInputHandlers(canvas);
 			setPhase("playing");
 		} catch (err) {
 			console.error("Failed to start game:", err);
@@ -410,8 +415,6 @@ export default function App() {
 				saveVoxelDelta(slot.id, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
 			});
 
-			cleanupRef.current?.();
-			cleanupRef.current = setupInputHandlers(canvas);
 			setPhase("playing");
 		} catch (err) {
 			console.error("Failed to continue game:", err);
@@ -514,19 +517,11 @@ export default function App() {
 
 				{phase === "playing" && (
 					<>
-						{!isMobile() && <Crosshair isMining={hudState.miningActive} miningProgress={hudState.miningProgress} />}
-						{isMobile() && (
-							<MobileControls
-								onCraftToggle={() => {
-									setBokOpen(false);
-									setCraftingOpen((prev) => !prev);
-								}}
-								onBokToggle={() => {
-									setCraftingOpen(false);
-									setBokOpen((prev) => !prev);
-								}}
-							/>
-						)}
+						<Crosshair
+							isMining={hudState.miningActive}
+							miningProgress={hudState.miningProgress}
+							lookingAtBlock={hudState.lookingAtBlock}
+						/>
 
 						<div className="absolute top-4 right-4 flex items-center gap-3">
 							<BokIndicator
@@ -580,6 +575,7 @@ export default function App() {
 							isOpen={hudState.chiselWheelOpen}
 							onSelectRune={handleRuneSelect}
 							onClose={handleRuneWheelClose}
+							discoveredRunes={hudState.discoveredRunes}
 						/>
 
 						<BokScreen
@@ -593,6 +589,18 @@ export default function App() {
 							codexData={codexData ?? undefined}
 							ledgerData={ledgerItems ? { items: ledgerItems } : undefined}
 							sagaData={sagaData ?? undefined}
+							travelData={{
+								dustAvailable: hudState.inventory.items[CRYSTAL_DUST_ID] ?? 0,
+								onTravel: (anchor, cost) => {
+									const success = travelToAnchor(anchor, cost);
+									if (success) {
+										setBokOpen(false);
+										const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+										canvas?.requestPointerLock();
+									}
+									return success;
+								},
+							}}
 						/>
 					</>
 				)}

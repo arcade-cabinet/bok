@@ -46,13 +46,31 @@ import type { InteractionRuneEffects } from "../ecs/systems/interaction-rune-sys
 import { interactionRuneSystem, resetInteractionRuneState } from "../ecs/systems/interaction-rune-system.ts";
 import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import type { NetworkRuneEffects } from "../ecs/systems/network-rune-system.ts";
+import { networkRuneSystem, resetNetworkRuneState } from "../ecs/systems/network-rune-system.ts";
 import type { ProtectionRuneEffects } from "../ecs/systems/protection-rune-system.ts";
 import { protectionRuneSystem, resetProtectionRuneState } from "../ecs/systems/protection-rune-system.ts";
+import type { RaidoEffects } from "../ecs/systems/raido-system.ts";
+import { executeFastTravel, getActiveAnchors, raidoSystem, resetRaidoState } from "../ecs/systems/raido-system.ts";
+import type { TravelAnchor } from "../ecs/systems/raido-travel.ts";
+import type { RuneDiscoveryEffects } from "../ecs/systems/rune-discovery-system.ts";
+import {
+	getDiscoveredRuneIds,
+	grantTutorialRunes,
+	registerDiscoveryBiomeResolver,
+	resetDiscoveryState,
+	restoreDiscoveredRunes,
+	runeDiscoverySystem,
+} from "../ecs/systems/rune-discovery-system.ts";
 import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
+import type { SelfModifyEffects } from "../ecs/systems/self-modify-system.ts";
+import { resetSelfModifyState, selfModifySystem } from "../ecs/systems/self-modify-system.ts";
 import type { SettlementEffects } from "../ecs/systems/settlement-system.ts";
 import { resetSettlementState, settlementSystem } from "../ecs/systems/settlement-system.ts";
+import type { TerritoryEffects } from "../ecs/systems/territory.ts";
+import { resetTerritoryState, territorySystem } from "../ecs/systems/territory.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
@@ -78,10 +96,12 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	RuneDiscovery,
 	RuneFaces,
 	SagaLog,
 	ShelterState,
 	Stamina,
+	TerritoryState,
 	ToolSwing,
 	Velocity,
 	WorkstationProximity,
@@ -106,6 +126,7 @@ import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.t
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
 import { CreatureRendererBehavior } from "./behaviors/CreatureRendererBehavior.ts";
+import { InputBehavior } from "./behaviors/InputBehavior.ts";
 import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
 import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
 
@@ -180,12 +201,17 @@ class GameBridge extends Behavior {
 		this.runEmitterSystem(dt);
 		this.runInteractionRuneSystem(dt);
 		this.runProtectionRuneSystem(dt);
+		this.runNetworkRuneSystem(dt);
 		this.runComputationalRuneSystem(dt);
+		this.runSelfModifySystem(dt);
 		this.runSettlementSystem(dt);
+		this.runTerritorySystem(dt);
+		this.runRaidoSystem(dt);
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		codexSystem(kootaWorld, dt);
 		sagaSystem(kootaWorld, dt);
+		this.runRuneDiscoverySystem(dt);
 		this.runWorldEventSystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
@@ -308,6 +334,18 @@ class GameBridge extends Behavior {
 		worldEventSystem(kootaWorld, dt, cosmeticRng, effects);
 	}
 
+	private runRuneDiscoverySystem(dt: number) {
+		const effects: RuneDiscoveryEffects = {
+			addSagaEntry: (text) => {
+				kootaWorld.query(PlayerTag, SagaLog).updateEach(([saga]) => {
+					saga.entries.push({ milestoneId: "rune_discovery", day: 0, text });
+				});
+			},
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		runeDiscoverySystem(kootaWorld, dt, effects);
+	}
+
 	private runEmitterSystem(dt: number) {
 		const effects: EmitterEffects = {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
@@ -348,6 +386,23 @@ class GameBridge extends Behavior {
 		protectionRuneSystem(kootaWorld, dt, effects);
 	}
 
+	private runNetworkRuneSystem(dt: number) {
+		const effects: NetworkRuneEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			pushCreature: (entityId, vx, vy, vz) => {
+				// Apply push velocity to creature position (simple displacement per tick)
+				kootaWorld.query(CreatureTag, Position, CreatureHealth).updateEach(([pos], entity) => {
+					if (entity.id() === entityId) {
+						pos.x += vx * 0.25; // Apply over tick interval
+						pos.y += vy * 0.25;
+						pos.z += vz * 0.25;
+					}
+				});
+			},
+		};
+		networkRuneSystem(kootaWorld, dt, effects);
+	}
+
 	private runComputationalRuneSystem(dt: number) {
 		const effects: ComputationalRuneEffects = {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
@@ -355,11 +410,43 @@ class GameBridge extends Behavior {
 		computationalRuneSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
 	}
 
+	private runSelfModifySystem(dt: number) {
+		const effects: SelfModifyEffects = {
+			placeBlock: (x, y, z, blockId) => {
+				setVoxelAt("Ground", x, y, z, blockId);
+			},
+			removeBlock: (x, y, z) => {
+				setVoxelAt("Ground", x, y, z, 0);
+				getRuneIndex().removeBlock(x, y, z);
+			},
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			getBlock: (x, y, z) => getVoxelAt(x, y, z),
+		};
+		selfModifySystem(kootaWorld, dt, effects);
+	}
+
 	private runSettlementSystem(dt: number) {
 		const effects: SettlementEffects = {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
 		};
 		settlementSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
+	}
+
+	private runTerritorySystem(dt: number) {
+		const effects: TerritoryEffects = {
+			placeBlock: (x, y, z, blockId) => {
+				setVoxelAt("Ground", x, y, z, blockId);
+			},
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		territorySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
+	}
+
+	private runRaidoSystem(dt: number) {
+		const effects: RaidoEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		raidoSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
 	}
 
 	private runRuneInscriptionSystem(dt: number) {
@@ -555,6 +642,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	registerBiomeResolver(biomeAt);
 	registerLandmarkResolver((cx, cz) => resolveLandmarkForChunk(cx, cz));
 	registerSagaBiomeResolver(biomeAt);
+	registerDiscoveryBiomeResolver(biomeAt);
 
 	jpRuntime = new Runtime(canvas, {
 		includePerformanceStats: false,
@@ -734,15 +822,26 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		WorkstationProximity,
 		InscriptionLevel,
 		ShelterState,
+		TerritoryState,
 		ExploredChunks,
 		Codex,
 		SagaLog,
 		RuneFaces,
+		RuneDiscovery,
 		ChiselState(),
 	);
 
-	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
+	// Grant tutorial runes to the freshly spawned player
+	kootaWorld.query(PlayerTag, RuneDiscovery).updateEach(([disc]) => {
+		grantTutorialRunes(disc.discovered);
+	});
+
+	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 900, dayCount: 1 }), WorldSeed({ seed }));
 	kootaWorld.spawn(NorrskenEvent());
+
+	// ─── Input Poller Actor (runs before GameBridge) ───
+	const inputActor = jpWorld.createActor("InputPoller");
+	inputActor.addComponent(InputBehavior);
 
 	// ─── Game Bridge Actor ───
 	const bridgeActor = jpWorld.createActor("GameBridge");
@@ -848,6 +947,7 @@ export function readPlayerStateForSave(): PlayerSaveData | null {
 				inscriptionBlocksPlaced: inscription.totalBlocksPlaced,
 				inscriptionBlocksMined: inscription.totalBlocksMined,
 				inscriptionStructuresBuilt: inscription.structuresBuilt,
+				discoveredRunes: getDiscoveredRuneIds(kootaWorld),
 			};
 		});
 
@@ -886,6 +986,11 @@ export function restorePlayerState(data: PlayerSaveData): void {
 		time.timeOfDay = data.timeOfDay;
 		time.dayCount = data.dayCount;
 	});
+
+	// Restore discovered runes
+	if (data.discoveredRunes && data.discoveredRunes.length > 0) {
+		restoreDiscoveredRunes(kootaWorld, data.discoveredRunes);
+	}
 }
 
 /** Apply voxel deltas from the database onto the live world and authoritative storage. */
@@ -946,6 +1051,21 @@ export function disableVoxelDeltaTracking(): void {
 	setVoxelDeltaListener(null);
 }
 
+/** Get all active Raido fast-travel anchors (for map display). */
+export function getTravelAnchors(): readonly TravelAnchor[] {
+	return getActiveAnchors();
+}
+
+/** Execute fast travel to a target anchor. Returns true on success. */
+export function travelToAnchor(target: TravelAnchor, cost: number): boolean {
+	const success = executeFastTravel(kootaWorld, target, cost);
+	if (success) {
+		// Spawn arrival particles
+		particlesBehavior?.spawn(target.x + 0.5, target.y + 2, target.z + 0.5, 0x6a5acd, 20);
+	}
+	return success;
+}
+
 export function destroyGame(): void {
 	if (resizeHandler) {
 		window.removeEventListener("resize", resizeHandler);
@@ -972,10 +1092,15 @@ export function destroyGame(): void {
 	resetEmitterState();
 	resetInteractionRuneState();
 	resetProtectionRuneState();
+	resetNetworkRuneState();
 	resetComputationalRuneState();
+	resetSelfModifyState();
 	resetSettlementState();
+	resetTerritoryState();
 	resetLightState();
 	resetExplorationState();
+	resetRaidoState();
 	resetSagaState();
+	resetDiscoveryState();
 	kootaWorld.reset();
 }

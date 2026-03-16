@@ -117,6 +117,59 @@ export function chunkNameSeed(cx: number, cz: number): number {
 	return (a ^ b) >>> 0;
 }
 
+// ─── Settlement Bonuses ───
+
+/** Bonuses granted to players within a settlement based on level and archetypes. */
+export interface SettlementBonuses {
+	/** Ward radius multiplier (Algiz wards within settlement are amplified). */
+	wardMult: number;
+	/** Growth speed multiplier (Berkanan effects amplified). */
+	growthMult: number;
+	/** Combat damage multiplier (stacks with Tiwaz). */
+	combatMult: number;
+	/** Mörker spawn suppression multiplier (lower = fewer spawns). */
+	morkerSpawnMult: number;
+	/** Signal strength bonus added to all emitters within the settlement. */
+	signalBonus: number;
+}
+
+/** Default bonuses (no settlement). */
+const NO_BONUSES: SettlementBonuses = {
+	wardMult: 1.0,
+	growthMult: 1.0,
+	combatMult: 1.0,
+	morkerSpawnMult: 1.0,
+	signalBonus: 0,
+};
+
+/**
+ * Compute settlement bonuses from level and archetype set.
+ * Each level provides stronger base bonuses. Specific archetypes
+ * add per-category enhancements.
+ */
+export function computeSettlementBonuses(
+	level: SettlementLevelId,
+	archetypes: ReadonlySet<ArchetypeKey>,
+): SettlementBonuses {
+	if (level === SettlementLevel.None) return NO_BONUSES;
+
+	// Base bonuses scale with level
+	const levelScale = level; // 1, 2, or 3
+	let wardMult = 1.0 + levelScale * 0.15;
+	let growthMult = 1.0 + levelScale * 0.2;
+	let combatMult = 1.0 + levelScale * 0.1;
+	const morkerSpawnMult = Math.max(0.2, 1.0 - levelScale * 0.2);
+	let signalBonus = levelScale;
+
+	// Per-archetype enhancements
+	if (archetypes.has(ArchetypeId.Beacon)) signalBonus += 2;
+	if (archetypes.has(ArchetypeId.Farm)) growthMult += 0.5;
+	if (archetypes.has(ArchetypeId.Trap)) combatMult += 0.2;
+	if (archetypes.has(ArchetypeId.Gate)) wardMult += 0.2;
+
+	return { wardMult, growthMult, combatMult, morkerSpawnMult, signalBonus };
+}
+
 // ─── Saga Prose ───
 
 /** Prose template for settlement founding milestone. */

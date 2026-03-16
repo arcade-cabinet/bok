@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/experimental-ct-react";
 import { packChunk } from "../../ecs/systems/map-data.ts";
+import type { TravelAnchor } from "../../ecs/systems/raido-travel.ts";
 import { Biome } from "../../world/biomes.ts";
 import { BokMap } from "./BokMap.tsx";
 
@@ -55,5 +56,38 @@ test.describe("BokMap", () => {
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={landmarks} />,
 		);
 		await expect(component.getByTestId("bok-map")).toBeVisible();
+	});
+
+	test("shows travel hint when anchors present", async ({ mount }) => {
+		const visited = new Set([packChunk(0, 0)]);
+		const anchors: TravelAnchor[] = [{ x: 10, y: 5, z: 10, cx: 0, cz: 0 }];
+		const component = await mount(
+			<BokMap
+				visited={visited}
+				playerCx={0}
+				playerCz={0}
+				biomeAt={mockBiomeAt}
+				landmarks={emptyLandmarks}
+				travelAnchors={anchors}
+			/>,
+		);
+		await expect(component.getByText("Tap ᚱ to travel")).toBeVisible();
+	});
+
+	test("renders with travel anchors", async ({ mount }) => {
+		const visited = new Set([packChunk(0, 0)]);
+		const anchors: TravelAnchor[] = [{ x: 10, y: 5, z: 10, cx: 0, cz: 0 }];
+		const component = await mount(
+			<BokMap
+				visited={visited}
+				playerCx={0}
+				playerCz={0}
+				biomeAt={mockBiomeAt}
+				landmarks={emptyLandmarks}
+				travelAnchors={anchors}
+				onTravelRequest={() => {}}
+			/>,
+		);
+		await expect(component.getByTestId("bok-map-canvas")).toBeVisible();
 	});
 });

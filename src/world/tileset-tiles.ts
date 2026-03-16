@@ -498,4 +498,33 @@ export const tiles: TileDef[] = [
 			}
 		},
 	},
+	// Rune Seal — blue-grey stone with glowing seal glyph
+	{
+		col: 6,
+		row: 5,
+		baseColor: "#4a5a7a",
+		draw: (ctx, s, rng) => {
+			addNoise(ctx, s, rng);
+			// Border
+			ctx.strokeStyle = "rgba(200,200,255,0.3)";
+			ctx.lineWidth = 2;
+			ctx.strokeRect(2, 2, s - 4, s - 4);
+			// Seal glyph (radial)
+			ctx.strokeStyle = "rgba(180,200,255,0.6)";
+			ctx.lineWidth = 1.5;
+			const cx = s / 2;
+			const cy = s / 2;
+			const r = s * 0.3;
+			ctx.beginPath();
+			ctx.arc(cx, cy, r, 0, Math.PI * 2);
+			ctx.stroke();
+			// Cross inside circle
+			ctx.beginPath();
+			ctx.moveTo(cx - r, cy);
+			ctx.lineTo(cx + r, cy);
+			ctx.moveTo(cx, cy - r);
+			ctx.lineTo(cx, cy + r);
+			ctx.stroke();
+		},
+	},
 ];

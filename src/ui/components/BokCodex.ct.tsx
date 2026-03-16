@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/experimental-ct-react";
+import { RuneId } from "../../ecs/systems/rune-data.ts";
 import { Species } from "../../ecs/traits/index.ts";
 import type { BokCodexProps } from "./BokCodex.tsx";
 import { BokCodex } from "./BokCodex.tsx";
@@ -8,6 +9,7 @@ function makeProps(overrides: Partial<BokCodexProps> = {}): BokCodexProps {
 		creatureProgress: {},
 		loreEntryIds: [],
 		discoveredRecipeCount: 0,
+		discoveredRuneIds: [],
 		...overrides,
 	};
 }
@@ -91,5 +93,47 @@ test.describe("BokCodex", () => {
 		});
 		const component = await mount(<BokCodex {...props} />);
 		await expect(component.getByTestId(`progress-${Species.Morker}`)).toBeVisible();
+	});
+
+	test("does not render runes section when no runes discovered", async ({ mount }) => {
+		const component = await mount(<BokCodex {...makeProps()} />);
+		await expect(component.getByTestId("codex-runes")).not.toBeVisible();
+	});
+
+	test("renders runes section with discovered runes", async ({ mount }) => {
+		const props = makeProps({
+			discoveredRuneIds: [RuneId.Kenaz, RuneId.Sowilo],
+		});
+		const component = await mount(<BokCodex {...props} />);
+		await expect(component.getByTestId("codex-runes")).toBeVisible();
+		await expect(component.getByTestId("rune-entry-kenaz")).toBeVisible();
+		await expect(component.getByTestId("rune-entry-sowilo")).toBeVisible();
+	});
+
+	test("shows discovery and behavior text for rune entries", async ({ mount }) => {
+		const props = makeProps({
+			discoveredRuneIds: [RuneId.Kenaz],
+		});
+		const component = await mount(<BokCodex {...props} />);
+		const kenaz = component.getByTestId("rune-entry-kenaz");
+		await expect(kenaz.getByText(/Torch/)).toBeVisible();
+		await expect(kenaz.getByText(/heat/i)).toBeVisible();
+	});
+
+	test("shows rune count in header", async ({ mount }) => {
+		const props = makeProps({
+			discoveredRuneIds: [RuneId.Kenaz, RuneId.Sowilo],
+		});
+		const component = await mount(<BokCodex {...props} />);
+		await expect(component.getByText("Runes (2/13)")).toBeVisible();
+	});
+
+	test("does not show undiscovered runes", async ({ mount }) => {
+		const props = makeProps({
+			discoveredRuneIds: [RuneId.Kenaz],
+		});
+		const component = await mount(<BokCodex {...props} />);
+		await expect(component.getByTestId("rune-entry-kenaz")).toBeVisible();
+		await expect(component.getByTestId("rune-entry-sowilo")).not.toBeVisible();
 	});
 });

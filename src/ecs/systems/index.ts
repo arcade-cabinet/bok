@@ -51,6 +51,7 @@ export {
 } from "./exploration.ts";
 export { computeFaceIndex, isInternalFace } from "./face-selection.ts";
 export { computePullVelocity, FEHU_COLLECT_DISTANCE, isAtSource, isInPullRange } from "./fehu-pull.ts";
+export { isFuseBlock, shouldFuseBurn } from "./fuse-burn.ts";
 export { analyzeAdjacentSignals, evaluateHagalaz, faceAxis, perpendicularFaces } from "./hagalaz-gate.ts";
 export {
 	computeInscriptionLevel,
@@ -100,6 +101,7 @@ export {
 	pushIsaInput,
 	resetIsaState,
 } from "./isa-delay.ts";
+export { canPlaceBlock, computePlacementCost, selectPlacementBlock } from "./jera-place.ts";
 export { CHARCOAL_ID, COPPER_INGOT_ID, findJeraRecipe, IRON_INGOT_ID, isJeraInput } from "./jera-transform.ts";
 export { getActiveLightSources, lightSystem } from "./light.ts";
 export {
@@ -116,6 +118,20 @@ export { computeCalmRadius, isAiTypeCalmable, isCalmedByZone, isInCalmZone } fro
 export { miningSystem } from "./mining.ts";
 export { movementSystem } from "./movement.ts";
 export { computeNaudizOutput, evaluateNaudiz, maxSignalAtBlock } from "./naudiz-not.ts";
+export {
+	isNetworkRune,
+	NETWORK_RUNE_IDS,
+	TIWAZ_BASE_MULTIPLIER,
+	TIWAZ_BASE_RADIUS,
+	TIWAZ_MAX_MULTIPLIER,
+	TIWAZ_MAX_RADIUS,
+	URUZ_FORCE_PER_STRENGTH,
+	URUZ_MAX_FORCE,
+	URUZ_MIN_SIGNAL,
+	URUZ_PUSH_RADIUS,
+} from "./network-rune-data.ts";
+export type { NetworkRuneEffects } from "./network-rune-system.ts";
+export { getActiveBuffZones, networkRuneSystem, resetNetworkRuneState } from "./network-rune-system.ts";
 export { physicsSystem } from "./physics.ts";
 export type { ProtectionRuneEffects } from "./protection-rune-system.ts";
 export {
@@ -126,7 +142,49 @@ export {
 	resetProtectionRuneState,
 } from "./protection-rune-system.ts";
 export { questSystem } from "./quest.ts";
+export {
+	CRYSTAL_DUST_ID,
+	isRaidoRune,
+	RAIDO_GLOW,
+	RAIDO_PAIR_RANGE_CHUNKS,
+	RAIDO_SCAN_INTERVAL,
+	TRAVEL_BASE_COST,
+	TRAVEL_MAX_COST,
+} from "./raido-data.ts";
+export type { RaidoEffects } from "./raido-system.ts";
+export { executeFastTravel, getActiveAnchors, getActivePairs, raidoSystem, resetRaidoState } from "./raido-system.ts";
+export type { TravelAnchor } from "./raido-travel.ts";
+export {
+	canAffordTravel,
+	computeTravelCost,
+	findPairedAnchors,
+	findRaidoAnchors,
+	getPairPartner,
+} from "./raido-travel.ts";
 export { CHISEL_ITEM_ID, getRuneColor, getRuneDef, PLACEABLE_RUNES, RUNES, RuneId } from "./rune-data.ts";
+export {
+	checkDiscoveryTrigger,
+	isCreatureNearby,
+	isInBiome,
+	isLandmarkNearby,
+	isSunriseObserved,
+} from "./rune-discovery.ts";
+export {
+	DiscoveryTrigger,
+	getDiscoveryEntry,
+	getTutorialRunes,
+	RUNE_DISCOVERIES,
+	TOTAL_DISCOVERABLE_RUNES,
+} from "./rune-discovery-data.ts";
+export type { RuneDiscoveryEffects } from "./rune-discovery-system.ts";
+export {
+	getDiscoveredRuneIds,
+	grantTutorialRunes,
+	registerDiscoveryBiomeResolver,
+	resetDiscoveryState,
+	restoreDiscoveredRunes,
+	runeDiscoverySystem,
+} from "./rune-discovery-system.ts";
 export type { RuneEntry } from "./rune-index.ts";
 export { getRuneIndex, RuneIndex, resetRuneIndex } from "./rune-index.ts";
 export {
@@ -137,7 +195,17 @@ export {
 export { recordBossDefeat, recordCreatureKill, sagaSystem } from "./saga.ts";
 export { computeActiveObjective, computeSagaStats } from "./saga-data.ts";
 export {
+	DESTROY_MIN_SIGNAL,
+	FUSE_BURN_THRESHOLD,
+	isSelfModifyRune,
+	PLACE_MIN_SIGNAL,
+} from "./self-modify-data.ts";
+export type { SelfModifyEffects } from "./self-modify-system.ts";
+export { resetSelfModifyState, selfModifySystem } from "./self-modify-system.ts";
+export type { SettlementBonuses } from "./settlement-data.ts";
+export {
 	chunkNameSeed,
+	computeSettlementBonuses,
 	computeSettlementLevel,
 	generateSettlementName,
 	meetsFoundingRequirement,
@@ -163,8 +231,32 @@ export type { RuneTransform, SignalEmitter, SignalMap } from "./signal-propagati
 export { computeEffectiveStrength, getSignalStrength, propagateSignals } from "./signal-propagation.ts";
 export { structureSystem } from "./structure.ts";
 export { survivalSystem } from "./survival.ts";
+export type { TerritoryEffects } from "./territory.ts";
+export { getActiveTerritoryZones, resetTerritoryState, territorySystem } from "./territory.ts";
+export type { TerritoryZone } from "./territory-data.ts";
+export {
+	computeTerritoryDensity,
+	computeTerritoryRadius,
+	hostileSpawnMultiplier,
+	isInTerritory,
+	isTerritoryBlock,
+	passiveSpawnBonus,
+	RUNE_SEAL_BLOCK_ID,
+} from "./territory-data.ts";
+export {
+	computeDecayCount,
+	countTerritoryBlocks,
+	isDecayable,
+	isDecayEligible,
+	isSealNearby,
+	selectDecayTargets,
+} from "./territory-decay.ts";
 export { computeThurisazDamage, findEntitiesInDamageRadius, isInDamageRadius } from "./thurisaz-damage.ts";
+export { canDestroyBlock, computeDestructionCost } from "./thurisaz-destroy.ts";
 export { timeSystem } from "./time.ts";
+export type { BuffZone } from "./tiwaz-buff.ts";
+export { computeBuffMultiplier, computeBuffRadius, getBestBuffMultiplier, isInBuffZone } from "./tiwaz-buff.ts";
 export { drainDurability, getMaxDurability, isTool } from "./tool-durability.ts";
+export { computePushForce, computePushVelocity, findEntitiesInPushRadius, isInPushRadius } from "./uruz-force.ts";
 export { workstationProximitySystem } from "./workstation-proximity.ts";
 export { worldEventSystem } from "./world-event.ts";

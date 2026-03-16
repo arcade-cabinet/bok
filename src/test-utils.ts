@@ -27,11 +27,13 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	RuneDiscovery,
 	RuneFaces,
 	SagaLog,
 	ShelterState,
 	Species,
 	Stamina,
+	TerritoryState,
 	ToolSwing,
 	Velocity,
 	WorldSeed,
@@ -90,6 +92,13 @@ export interface PlayerOverrides {
 		faluRedCount: number;
 		morkerSpawnMult: number;
 	}>;
+	territory?: Partial<{
+		density: number;
+		radius: number;
+		sealActive: boolean;
+		hostileSpawnMult: number;
+		passiveBonus: number;
+	}>;
 }
 
 /**
@@ -116,10 +125,12 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		CookingState(),
 		InscriptionLevel(overrides.inscription ?? {}),
 		ShelterState(overrides.shelter ?? {}),
+		TerritoryState(overrides.territory ?? {}),
 		ExploredChunks,
 		Codex,
 		SagaLog,
 		RuneFaces,
+		RuneDiscovery,
 		ChiselState(),
 	);
 }

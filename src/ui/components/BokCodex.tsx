@@ -13,6 +13,12 @@ import {
 	type LoreEntry,
 	RevealStage,
 } from "../../ecs/systems/codex-data.ts";
+import { RUNES } from "../../ecs/systems/rune-data.ts";
+import {
+	RUNE_DISCOVERIES,
+	type RuneDiscoveryEntry,
+	TOTAL_DISCOVERABLE_RUNES,
+} from "../../ecs/systems/rune-discovery-data.ts";
 
 export interface BokCodexProps {
 	/** Observation progress per species id. Range [0, 1]. */
@@ -21,9 +27,11 @@ export interface BokCodexProps {
 	loreEntryIds: string[];
 	/** Count of recipes discovered through exploration. */
 	discoveredRecipeCount: number;
+	/** Discovered rune IDs (plain array for serialization). */
+	discoveredRuneIds?: number[];
 }
 
-export function BokCodex({ creatureProgress, loreEntryIds, discoveredRecipeCount }: BokCodexProps) {
+export function BokCodex({ creatureProgress, loreEntryIds, discoveredRecipeCount, discoveredRuneIds }: BokCodexProps) {
 	const creatures = CREATURE_ENTRIES.map((entry) => ({
 		entry,
 		progress: creatureProgress[entry.species] ?? 0,
@@ -31,9 +39,28 @@ export function BokCodex({ creatureProgress, loreEntryIds, discoveredRecipeCount
 	}));
 	const loreSet = new Set(loreEntryIds);
 	const collectedLore = LORE_ENTRIES.filter((l) => loreSet.has(l.id));
+	const discoveredSet = new Set(discoveredRuneIds ?? []);
+	const discoveredRunes = RUNE_DISCOVERIES.filter((e) => discoveredSet.has(e.runeId));
 
 	return (
 		<div className="space-y-6" data-testid="bok-codex">
+			{/* Rune Discoveries */}
+			{discoveredRunes.length > 0 && (
+				<section data-testid="codex-runes">
+					<h3
+						className="font-display text-sm tracking-[0.2em] uppercase mb-3"
+						style={{ color: "var(--color-bok-ink)" }}
+					>
+						Runes ({discoveredRunes.length}/{TOTAL_DISCOVERABLE_RUNES})
+					</h3>
+					<div className="space-y-2">
+						{discoveredRunes.map((entry) => (
+							<RuneCard key={entry.runeId} entry={entry} />
+						))}
+					</div>
+				</section>
+			)}
+
 			{/* Creature Entries */}
 			<section data-testid="codex-creatures">
 				<h3 className="font-display text-sm tracking-[0.2em] uppercase mb-3" style={{ color: "var(--color-bok-ink)" }}>
@@ -135,6 +162,37 @@ function CreatureCard({ entry, progress, stage }: { entry: CreatureEntry; progre
 					</p>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function RuneCard({ entry }: { entry: RuneDiscoveryEntry }) {
+	const runeDef = RUNES[entry.runeId];
+	if (!runeDef) return null;
+
+	return (
+		<div
+			className="rounded-lg p-3"
+			style={{
+				background: "rgba(0,0,0,0.04)",
+				border: `1px solid ${runeDef.color}30`,
+			}}
+			data-testid={`rune-entry-${runeDef.name.toLowerCase()}`}
+		>
+			<div className="flex items-center gap-2 mb-1">
+				<span className="text-lg" style={{ color: runeDef.color }}>
+					{runeDef.glyph}
+				</span>
+				<span className="font-display text-sm tracking-wider" style={{ color: "var(--color-bok-ink)" }}>
+					{entry.title}
+				</span>
+			</div>
+			<p className="text-xs leading-relaxed" style={{ color: "var(--color-bok-ink)", opacity: 0.7 }}>
+				{entry.discoveryText}
+			</p>
+			<p className="text-xs leading-relaxed mt-1" style={{ color: "var(--color-bok-ink)", opacity: 0.5 }}>
+				{entry.behaviorText}
+			</p>
 		</div>
 	);
 }

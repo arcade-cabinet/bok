@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LandmarkMarker } from "../../ecs/systems/map-data.ts";
+import { computeTravelCost, type TravelAnchor } from "../../ecs/systems/raido-travel.ts";
 import type { BiomeId } from "../../world/biomes.ts";
 import type { BokCodexProps } from "../components/BokCodex.tsx";
 import { BokCodex } from "../components/BokCodex.tsx";
@@ -14,6 +15,7 @@ import { BokMap } from "../components/BokMap.tsx";
 import { BokPage } from "../components/BokPage.tsx";
 import type { BokSagaProps } from "../components/BokSaga.tsx";
 import { BokSaga } from "../components/BokSaga.tsx";
+import { TravelConfirm } from "../components/TravelConfirm.tsx";
 
 export type BokTabId = "kartan" | "listan" | "kunskapen" | "sagan";
 
@@ -37,6 +39,14 @@ export interface MapData {
 	playerCz: number;
 	biomeAt: (cx: number, cz: number) => BiomeId;
 	landmarks: readonly LandmarkMarker[];
+	travelAnchors?: readonly TravelAnchor[];
+}
+
+export interface TravelData {
+	/** Crystal dust count in player inventory. */
+	dustAvailable: number;
+	/** Called to execute fast travel. Returns true on success. */
+	onTravel: (anchor: TravelAnchor, cost: number) => boolean;
 }
 
 interface BokScreenProps {
@@ -46,14 +56,16 @@ interface BokScreenProps {
 	codexData?: BokCodexProps;
 	ledgerData?: BokLedgerProps;
 	sagaData?: BokSagaProps;
+	travelData?: TravelData;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sagaData }: BokScreenProps) {
+export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sagaData, travelData }: BokScreenProps) {
 	const [activeTab, setActiveTab] = useState<BokTabId>("kartan");
 	const [closing, setClosing] = useState(false);
 	const touchStartRef = useRef<number>(0);
+	const [travelTarget, setTravelTarget] = useState<TravelAnchor | null>(null);
 
 	// Close with animation
 	const handleClose = useCallback(() => {
@@ -131,13 +143,38 @@ export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sag
 				{/* Page content */}
 				<BokPage title={TAB_TITLES[activeTab]}>
 					{activeTab === "kartan" && mapData && (
-						<BokMap
-							visited={mapData.visited}
-							playerCx={mapData.playerCx}
-							playerCz={mapData.playerCz}
-							biomeAt={mapData.biomeAt}
-							landmarks={mapData.landmarks}
-						/>
+						<>
+							<BokMap
+								visited={mapData.visited}
+								playerCx={mapData.playerCx}
+								playerCz={mapData.playerCz}
+								biomeAt={mapData.biomeAt}
+								landmarks={mapData.landmarks}
+								travelAnchors={mapData.travelAnchors}
+								onTravelRequest={(anchor) => setTravelTarget(anchor)}
+							/>
+							{travelTarget && travelData && (
+								<TravelConfirm
+									destX={travelTarget.x}
+									destY={travelTarget.y}
+									destZ={travelTarget.z}
+									cost={computeTravelCost(mapData.playerCx * 16, mapData.playerCz * 16, travelTarget.x, travelTarget.z)}
+									dustAvailable={travelData.dustAvailable}
+									onConfirm={() => {
+										const cost = computeTravelCost(
+											mapData.playerCx * 16,
+											mapData.playerCz * 16,
+											travelTarget.x,
+											travelTarget.z,
+										);
+										travelData.onTravel(travelTarget, cost);
+										setTravelTarget(null);
+										handleClose();
+									}}
+									onCancel={() => setTravelTarget(null)}
+								/>
+							)}
+						</>
 					)}
 					{activeTab === "listan" && ledgerData && <BokLedger items={ledgerData.items} />}
 					{activeTab === "kunskapen" && codexData && (
@@ -145,6 +182,7 @@ export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sag
 							creatureProgress={codexData.creatureProgress}
 							loreEntryIds={codexData.loreEntryIds}
 							discoveredRecipeCount={codexData.discoveredRecipeCount}
+							discoveredRuneIds={codexData.discoveredRuneIds}
 						/>
 					)}
 					{activeTab === "sagan" && sagaData && (

@@ -33,6 +33,8 @@ export const RuneId = {
 	Mannaz: 11,
 	Naudiz: 12,
 	Hagalaz: 13,
+	Raido: 14,
+	Tiwaz: 15,
 } as const;
 
 export type RuneIdValue = (typeof RuneId)[keyof typeof RuneId];
@@ -56,7 +58,7 @@ export const RUNES: Record<number, RuneDef> = {
 		name: "Uruz",
 		glyph: "\u16A2",
 		color: "#8B6914",
-		description: "Strength — reinforces block",
+		description: "Strength — pushes entities in signal direction",
 	},
 	[RuneId.Thurisaz]: {
 		name: "Thurisaz",
@@ -124,6 +126,18 @@ export const RUNES: Record<number, RuneDef> = {
 		color: "#708090",
 		description: "Hail — gates signal, passes only when two inputs present",
 	},
+	[RuneId.Raido]: {
+		name: "Raido",
+		glyph: "\u16B1",
+		color: "#6A5ACD",
+		description: "Journey — fast travel between inscribed runestones",
+	},
+	[RuneId.Tiwaz]: {
+		name: "Tiwaz",
+		glyph: "\u16CF",
+		color: "#C41E3A",
+		description: "Victory — boosts combat damage for nearby entities",
+	},
 };
 
 /** All placeable rune IDs (excludes None). */
@@ -141,6 +155,8 @@ export const PLACEABLE_RUNES: RuneIdValue[] = [
 	RuneId.Mannaz,
 	RuneId.Naudiz,
 	RuneId.Hagalaz,
+	RuneId.Raido,
+	RuneId.Tiwaz,
 ];
 
 /** Get rune definition, or undefined for None/invalid. */

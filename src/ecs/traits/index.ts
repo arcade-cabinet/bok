@@ -259,6 +259,22 @@ export const ShelterState = trait({
 	morkerSpawnMult: 1,
 });
 
+// ─── Territory ───
+
+/** Tracks territory density and decay state around the player. */
+export const TerritoryState = trait({
+	/** Density of player-placed building blocks nearby [0, 1]. */
+	density: 0,
+	/** Effective territory radius in blocks. */
+	radius: 0,
+	/** Whether a RuneSeal block prevents decay nearby. */
+	sealActive: false,
+	/** Hostile spawn suppression multiplier (1 = normal, lower = fewer). */
+	hostileSpawnMult: 1,
+	/** Passive spawn attraction bonus (0 = none). */
+	passiveBonus: 0,
+});
+
 // ─── Exploration ───
 
 /** Tracks which chunks the player has visited. Uses packed ints (cx * 65536 + cz). */
@@ -304,6 +320,25 @@ export const SagaLog = trait(
 		entries: [],
 		creaturesKilled: 0,
 		bossDefeated: false,
+	}),
+);
+
+// ─── Rune Discovery ───
+
+export interface RuneDiscoveryData {
+	/** Set of discovered RuneId values. */
+	discovered: Set<number>;
+	/** Previous frame's health — for damage detection. */
+	prevHealth: number;
+	/** Previous frame's timeOfDay — for sunrise edge detection. */
+	prevTimeOfDay: number;
+}
+
+export const RuneDiscovery = trait(
+	(): RuneDiscoveryData => ({
+		discovered: new Set(),
+		prevHealth: 100,
+		prevTimeOfDay: 0.25,
 	}),
 );
 

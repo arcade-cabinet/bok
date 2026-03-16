@@ -152,5 +152,7 @@ export function createBlockDefinitions(): BlockDefinition[] {
 		// Crafted building blocks
 		simpleCube(BlockId.TreatedPlanks, "Treated Planks", 4, 5),
 		simpleCube(BlockId.ReinforcedBricks, "Reinforced Bricks", 5, 5),
+		// Territory / Decay
+		simpleCube(BlockId.RuneSeal, "Rune Seal", 6, 5),
 	];
 }

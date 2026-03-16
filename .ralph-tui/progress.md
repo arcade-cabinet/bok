@@ -5,6 +5,71 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Territory and Decay System Architecture
+The territory system computes territory density from player-placed blocks and manages structure decay:
+- `territory-data.ts` — Territory block set (Planks, StoneBricks, FaluRed, etc.), density formulas, decay constants (30 game-day onset, 5-day interval), RuneSeal block ID (40), creature influence formulas. Pure data, no ECS/Three.js.
+- `territory-decay.ts` — Decay eligibility check, moss target selection (deterministic via golden ratio hash), seal proximity detection, territory block counting. Pure math.
+- `territory.ts` — ECS system: dual-timer (2s density scan + 4s decay check), module-level `lastVisitedDay` map for chunk visit tracking, `getActiveTerritoryZones()` cache for creature AI.
+- Key patterns:
+  - **Building material detection instead of placement tracking**: Rather than tracking which blocks the player placed (expensive, requires delta storage), the system counts "building material" blocks (Planks, StoneBricks, FaluRed, Torch, Forge, etc.) that only appear through player action. Natural terrain blocks don't count.
+  - **Dual-timer separation**: Density scan (2s) runs frequently for responsive territory updates. Decay check (4s) runs less often since decay is a slow process. This avoids coupling fast reads with slow writes.
+  - **lastVisitedDay map for decay eligibility**: `Map<packedChunkKey, dayCount>` tracks when the player was last in each territory chunk. Uses same packed-chunk-key pattern as ExploredChunks. Chunks not visited for 30+ game-days start accumulating moss.
+  - **RuneSeal as permanent decay prevention**: BlockId.RuneSeal (40) is a Scriptorium-tier craftable block. When placed within SEAL_RADIUS (24 blocks), `isSealNearby()` returns true and decay is permanently blocked for that zone.
+  - **Hostile spawn suppression + passive attraction**: `hostileSpawnMultiplier(density)` and `passiveSpawnBonus(density)` are stored on TerritoryState trait. Creature spawners can read these without re-scanning territory.
+
+### Network Rune System Architecture
+The network rune system adds force (Uruz) and combat buff (Tiwaz) runes powered by the signal network:
+- `network-rune-data.ts` — Constants for Uruz push (force per strength, max force, min signal, radius) and Tiwaz buff (base/max radius, base/max multiplier). `isNetworkRune()` helper. Pure data, no ECS/Three.js.
+- `uruz-force.ts` — Push math: `computePushForce()` (strength × rate, capped), `computePushVelocity()` (force × face normal), `findEntitiesInPushRadius()`. Uses `FACE_OFFSETS` for directional push. Pure math.
+- `tiwaz-buff.ts` — Buff math: `computeBuffRadius()` and `computeBuffMultiplier()` (both base + strength × scale, capped), `getBestBuffMultiplier()` for multi-zone max. Same pattern as Berkanan growth zones. Pure math.
+- `network-rune-system.ts` — ECS system: throttled at INTERACTION_TICK_INTERVAL (0.25s), chunk-based scanning, Tiwaz zones cached for combat systems, Uruz push applied via `effects.pushCreature()` callback.
+- Key patterns:
+  - **Face-directional push**: Uruz uses the inscribed face normal as push direction. `FACE_OFFSETS[face]` gives the [dx,dy,dz] direction vector — same data used by signal propagation. Push velocity = normalized direction × force magnitude.
+  - **Buff zones cached like ward zones**: `getActiveBuffZones()` follows the same module-level cache pattern as `getActiveWards()`, `getActiveCalmZones()`, `getActiveGrowthZones()`. Combat systems read without re-scanning.
+  - **Side-effect push callback**: `effects.pushCreature(entityId, vx, vy, vz)` lets game.ts handle the actual position mutation. Tests mock the callback. Follows the same pattern as Thurisaz damage via `effects.damageCreature()`.
+  - **Settlement bonus system**: `computeSettlementBonuses(level, archetypes)` returns ward/growth/combat/spawn multipliers + signal bonus. Per-archetype enhancements stack on top of level-scaled base bonuses (e.g., Beacon adds signal bonus, Farm adds growth).
+  - **Crystal amplification pre-existing**: `getBlockConductivity(BlockId.Crystal) === 1.5` was already in signal-data.ts. The BFS propagation engine applies this multiplier during traversal, extending effective signal range through crystal blocks.
+
+### Fast Travel (Raido) System Architecture
+The fast travel system enables teleportation between Raido-inscribed runestones:
+- `raido-data.ts` — Constants: crystal dust item ID (301), travel cost formula (base + per-100-blocks, capped at 5), scan interval (2s), pairing range (6 chunks), particle color. `isRaidoRune()` helper. Pure data, no ECS/Three.js.
+- `raido-travel.ts` — Pure math: `findRaidoAnchors()` scans RuneIndex for Raido (14) on RuneStone blocks, deduplicates by position. `computeTravelCost()` distance-based formula. `canAffordTravel()` checks inventory. `findPairedAnchors()` pairs nearby anchors for item teleportation. `getPairPartner()` finds paired endpoint.
+- `raido-system.ts` — ECS system: 2s throttled scan, module-level `getActiveAnchors()`/`getActivePairs()` caches, particle effects at anchors. `executeFastTravel()` teleports player + deducts crystal dust.
+- Key patterns:
+- **Anchors derived from RuneIndex**: No separate anchor storage — `findRaidoAnchors()` scans the existing RuneIndex for Raido runes on RuneStone blocks. Anchors automatically persist via rune_faces table. Same "derived value" pattern as inscription level.
+- **Crystal Dust as travel currency**: New item type "material" (id 301) added to blocks.ts. Craftable from Crystal blocks (1 Crystal → 4 Dust at Bench tier). ItemDef type union extended with "material".
+- **Map click detection via anchorHitsRef**: Canvas-rendered markers need click detection. BokMap stores pixel positions of rendered anchors in a ref, then checks click coordinates against them using distance-squared hit testing.
+- **Travel confirmation via BokScreen state**: `travelTarget: TravelAnchor | null` state in BokScreen. Set by BokMap `onTravelRequest`, cleared by TravelConfirm confirm/cancel. Cost computed inline from player-to-anchor distance.
+- **Paired anchors for item teleportation**: `findPairedAnchors()` uses greedy closest-first matching within chunk range. Each anchor used in at most one pair. Pattern enables inter-chunk signal bridges.
+
+### Rune Discovery System Architecture
+The rune discovery system tracks which runes the player has learned through world observation:
+- `rune-discovery-data.ts` — Discovery table mapping each rune to its trigger type (tutorial/sunrise/creature_nearby/landmark_nearby/damage_taken/creature_killed/biome_visited), plus Kunskapen entry text (title, discoveryText, behaviorText, sagaText). Pure data, no ECS/Three.js.
+- `rune-discovery.ts` — Pure math trigger checks: `isSunriseObserved()` (timeOfDay edge detection), `isCreatureNearby()`, `isLandmarkNearby()`, `isInBiome()`, `checkDiscoveryTrigger()` (unified dispatch). All take a `DiscoveryContext` snapshot.
+- `rune-discovery-system.ts` — ECS system: 1s throttle, reads player position/health/time + creature proximity + discovered landmarks + biome resolver, diffs health for damage detection, calls effects on new discoveries.
+- `RuneDiscovery` trait — `Set<number>` of discovered RuneId values + `prevHealth`/`prevTimeOfDay` for edge detection.
+- Key patterns:
+- **Damage detection via health delta**: `prevHealth` tracked on the trait itself (not a shared flag). Each tick, `currentHealth < prevHealth` = damage. Same approach as DamageVignette flash.
+- **Sunrise edge detection**: `prevTimeOfDay < 0.2 && currentTime >= 0.2` catches the single tick when dawn begins. Prevents re-triggering every frame during dawn window.
+- **RuneWheel filtering via optional prop**: `discoveredRunes?: readonly number[]` prop on RuneWheel. When provided, `PLACEABLE_RUNES.filter()` shows only discovered runes. When absent (undefined), shows all — backward compatible.
+- **Persistence via JSON column**: `discovered_runes_json TEXT` on `player_state` table. Simple `JSON.stringify(array)` / `JSON.parse()`. Migration via try/catch `ALTER TABLE ADD COLUMN` for existing databases.
+- **Tutorial runes auto-granted**: `grantTutorialRunes()` called in `initGame()` after player spawn. Kenaz is always available from the start.
+
+### Self-Modifying Circuit System Architecture
+The self-modifying circuit system enables Turing-complete circuits through topology-altering rune behaviors:
+- `self-modify-data.ts` — Constants for Jera PLACE (cost per hardness, signal-to-block mapping), Thurisaz DESTROY (min signal, cost per hardness), and fuse mechanics (burn threshold, wood block set). `isSelfModifyRune()` for category filtering. Pure data, no ECS/Three.js.
+- `jera-place.ts` — Block placement math: `selectPlacementBlock()` maps signal types to block types (Heat→StoneBricks, Light→Glass, Force→Stone, Detection→RuneStone). `computePlacementCost()` and `canPlaceBlock()` check signal vs hardness-based cost. Pure math.
+- `thurisaz-destroy.ts` — Block destruction math: `computeDestructionCost()` with hardness floor, `canDestroyBlock()` checks solid+sufficient signal. Pure math.
+- `fuse-burn.ts` — Fuse detection: `isFuseBlock()` (all wood variants), `shouldFuseBurn()` (heat threshold), `getHeatStrength()` helper. Pure math.
+- `self-modify-system.ts` — ECS system: throttled at INTERACTION_TICK_INTERVAL (0.25s), chunk-based Jera/Thurisaz collection, fuse scanning from signal map neighbors, mutation budget (8/tick).
+- Key patterns:
+- **Mutation budget prevents runaway**: `MAX_MUTATIONS_PER_TICK = 8` caps block changes per tick. Budget shared across place/destroy/fuse. Priority: Jera PLACE first, then Thurisaz DESTROY, then fuse burns.
+- **Signal-to-block mapping**: Each signal type creates a thematically appropriate block. Heat smelts StoneBricks, Light fuses Glass, Force creates Stone, Detection creates RuneStone.
+- **Fuse adjacency detection**: Wood blocks have conductivity 0, so they don't appear in signal map. System iterates signal map entries with Heat and checks 6 neighbors for wood. Inverse of normal rune scanning pattern.
+- **Physical switches emerge naturally**: Placing/removing a conductor block manually toggles circuit paths because signal propagation BFS only traverses conductors (conductivity > 0). No special switch code needed.
+- **Feedback loop safety**: Three layers prevent infinite loops: (1) BFS visited set prevents within-tick cycles, (2) one-tick delay between computational emitters and propagation, (3) self-modifying changes occur between ticks so next tick sees fresh topology.
+- **Hardness-based costs**: Both placement and destruction require signal strength proportional to block hardness. Soft blocks (Glass, Dirt) are cheap; hard blocks (RuneStone, CorruptedStone) require strong signals.
+
 ### Computational Rune System Architecture
 The computational rune system adds logic gates (Naudiz/Isa/Hagalaz) for circuit-building, following the pure-data ↔ ECS bridge separation:
 - `computational-rune-data.ts` — Constants for all three gates (output strengths, delay ticks, particle colors). `isComputationalRune()` for category filtering. Pure data, no ECS/Three.js.
@@ -1249,4 +1314,143 @@ The light system separates pure data from ECS state management, following the cr
   - **Isa reuses existing RuneId (6)**: Isa was already defined but had no system behavior. Repurposing it as DELAY gate is backward-compatible since no existing systems process Isa blocks.
   - **Cross-coupled NOT gates oscillate, not stabilize**: Two Naudiz gates cross-connected without delay oscillate in sync (both on, both off). True flip-flop requires Isa delays in the feedback path. Test was corrected to verify oscillation rather than complementary stability.
   - **Naudiz emits Force signal type**: Since Naudiz is a logic gate (not a sensor/heater), it emits SignalType.Force. This differentiates gate outputs from environmental signals.
+---
+
+## 2026-03-16 - US-039
+- **What was implemented**: Self-modifying circuits and feedback loops — Jera exit-face PLACE (signal exits into air → places block), Thurisaz exit-face DESTROY (signal exits into block → removes it), fuse consumption (wood blocks adjacent to heat signals burn), mutation budget limiting, physical switch support (inherent from conductor topology).
+- **Files changed**:
+  - `src/ecs/systems/self-modify-data.ts` (NEW) — Pure data: placement/destruction costs, signal-to-block mapping, fuse block set, particle colors
+  - `src/ecs/systems/jera-place.ts` (NEW) — Pure math: block type selection, placement cost computation, placement eligibility
+  - `src/ecs/systems/thurisaz-destroy.ts` (NEW) — Pure math: destruction cost computation, destruction eligibility
+  - `src/ecs/systems/fuse-burn.ts` (NEW) — Pure math: fuse block identification, burn threshold check, heat extraction
+  - `src/ecs/systems/self-modify-system.ts` (NEW) — ECS system: throttled scan, Jera/Thurisaz processing, fuse adjacency scanning, mutation budget
+  - `src/ecs/systems/self-modify-data.test.ts` (NEW) — 11 tests: rune identification, constant validation, signal-to-block mapping, fuse block set
+  - `src/ecs/systems/jera-place.test.ts` (NEW) — 11 tests: signal-to-block selection, cost computation, placement eligibility
+  - `src/ecs/systems/thurisaz-destroy.test.ts` (NEW) — 11 tests: cost computation, destruction eligibility, edge cases
+  - `src/ecs/systems/fuse-burn.test.ts` (NEW) — 12 tests: fuse identification, burn threshold, heat extraction
+  - `src/ecs/systems/self-modify-system.test.ts` (NEW) — 11 tests: integration scenarios for place/destroy/fuse/switch/feedback
+  - `src/ecs/systems/index.ts` — Added barrel exports for all new modules
+  - `src/engine/game.ts` — Added `runSelfModifySystem()` after computational rune system, `resetSelfModifyState()` in destroyGame
+- **Learnings:**
+  - **Fuse adjacency is inverse scanning**: Unlike rune systems that scan inscribed blocks then check signals, fuse scanning iterates signal map entries then checks neighbors. This is because wood has conductivity 0 and doesn't appear in the signal map.
+  - **Physical switches need no code**: Placing/removing conductor blocks naturally toggles circuits because BFS only traverses blocks with conductivity > 0. The existing signal propagation engine handles this implicitly.
+  - **Mutation budget is essential for self-modifying circuits**: Without a per-tick cap, a circuit could theoretically place/destroy hundreds of blocks per tick. The budget (8 mutations/tick) ensures frame rate stability.
+  - **Three-layer feedback protection**: (1) BFS visited set prevents within-tick infinite loops, (2) computational emitter one-tick delay prevents oscillation, (3) topology changes between ticks mean each tick sees consistent world state.
+  - **Signal-to-block mapping enables emergent construction**: Different signal types create different blocks, so a Jera rune connected to Kenaz (Heat) builds StoneBricks, while connected to Sowilo (Light) builds Glass. Players can design auto-building circuits.
+---
+
+## 2026-03-16 - US-040
+- Implemented rune discovery system: 13 runes discoverable through world interactions per structures.md discovery table
+- Discovery conditions: tutorial (Kenaz auto-granted), sunrise observation (Sowilo), creature proximity (Ansuz/Jera/Uruz/Mannaz), landmark proximity (Fehu/Algiz/Naudiz), damage taken (Thurisaz), creature killed (Hagalaz), biome visited (Berkanan/Isa)
+- BokCodex Kunskapen page shows discovered runes with title, discovery flavor text, and behavior description
+- RuneWheel filters to only show discovered runes via new `discoveredRunes` prop
+- RuneDiscovery trait tracks discovered set + prev health/time for edge detection
+- Persistence via `discovered_runes_json` column on player_state table (with ALTER TABLE migration)
+- Files created:
+  - `src/ecs/systems/rune-discovery-data.ts` (NEW) — 185 LOC: discovery table, trigger types, entry text
+  - `src/ecs/systems/rune-discovery.ts` (NEW) — 77 LOC: pure math trigger checks
+  - `src/ecs/systems/rune-discovery-system.ts` (NEW) — 200 LOC: ECS system with effects callbacks
+  - `src/ecs/systems/rune-discovery-data.test.ts` (NEW) — 8 tests
+  - `src/ecs/systems/rune-discovery.test.ts` (NEW) — 17 tests
+  - `src/ecs/systems/rune-discovery-system.test.ts` (NEW) — 8 tests (6 scenarios)
+- Files modified:
+  - `src/ecs/traits/index.ts` — Added RuneDiscovery trait
+  - `src/ecs/systems/index.ts` — Added barrel exports for discovery modules
+  - `src/engine/game.ts` — Wired system into game loop, save/load, destroyGame
+  - `src/App.tsx` — Reads RuneDiscovery trait, passes to RuneWheel and BokCodex
+  - `src/ui/components/RuneWheel.tsx` — Added `discoveredRunes` prop for filtering
+  - `src/ui/components/BokCodex.tsx` — Added Runes section with RuneCard component
+  - `src/ui/screens/BokScreen.tsx` — Passes discoveredRuneIds through to BokCodex
+  - `src/persistence/db.ts` — Added discovered_runes_json column + migration
+  - `src/test-utils.ts` — Added RuneDiscovery to spawnPlayer
+  - `src/ui/components/BokCodex.ct.tsx` — 5 new CT tests for rune entries
+  - `src/ui/components/RuneWheel.ct.tsx` — 3 new CT tests for discovery filtering + fixed stale count
+- **Learnings:**
+  - **Damage detection without cross-system coupling**: Tracking `prevHealth` on the RuneDiscovery trait itself (not a shared flag on PlayerState) keeps systems decoupled. Each system that needs damage detection can independently track its own health delta.
+  - **Optional prop for backward compatibility**: Making `discoveredRunes` optional on RuneWheel means existing code that doesn't pass it shows all runes (no behavior change). Only when explicitly provided does filtering activate. This pattern is safer than requiring a migration of all callsites.
+  - **JSON column for small persisted sets**: For a set of ~13 integers, a JSON column on an existing table is simpler than a dedicated table. The pattern mirrors `hotbar_json` and `inventory_json`.
+  - **Playwright CT remains broken on Vite 8**: All 121 CT tests (including pre-existing ones) timeout due to `@playwright/experimental-ct-react` incompatibility with Vite 8's Rolldown bundler. The new CT tests are correctly written and will pass when the platform issue is resolved.
+  - **structures.md lists 15 runes but only 13 are implemented**: Raido (teleport) and Tiwaz (combat buff) are Phase E features. Discovery system covers the 13 runes in the current RuneId enum.
+---
+
+## 2026-03-16 - US-041
+- Implemented fast travel system via Raido rune inscription on RuneStone blocks
+- Files created:
+  - `src/ecs/systems/raido-data.ts` — Pure data constants (crystal dust ID, travel costs, scan interval)
+  - `src/ecs/systems/raido-travel.ts` — Pure math (anchor finding, cost computation, pairing)
+  - `src/ecs/systems/raido-travel.test.ts` — 15 unit tests for pure math
+  - `src/ecs/systems/raido-system.ts` — ECS system (throttled scan, module-level cache, travel execution)
+  - `src/ecs/systems/raido-system.test.ts` — 8 unit tests for ECS system
+  - `src/ui/components/TravelConfirm.tsx` — Travel confirmation dialog component
+  - `src/ui/components/TravelConfirm.ct.tsx` — 7 Playwright CT tests
+- Files modified:
+  - `src/ecs/systems/rune-data.ts` — Added RuneId.Raido (14) with ᚱ glyph and definition
+  - `src/world/blocks.ts` — Added Crystal Dust item (301), "material" type, crafting recipe
+  - `src/ecs/systems/rune-discovery-data.ts` — Added Raido discovery entry (landmark_nearby/runsten)
+  - `src/ecs/systems/index.ts` — Exported Raido system, data, and travel functions
+  - `src/ui/components/BokMap.tsx` — Interactive Raido anchor markers with click detection
+  - `src/ui/components/BokMap.ct.tsx` — 2 new CT tests for travel anchor rendering
+  - `src/ui/screens/BokScreen.tsx` — Wired travel confirmation flow with TravelConfirm dialog
+  - `src/engine/game.ts` — Integrated Raido system in game loop, exposed travel API
+  - `src/App.tsx` — Connected travel anchors and travel execution to BokScreen
+  - `src/ecs/systems/rune-data.test.ts` — Updated PLACEABLE_RUNES count 13→14
+  - `src/ecs/systems/rune-discovery-data.test.ts` — Updated TOTAL_DISCOVERABLE_RUNES 13→14
+- **Learnings:**
+  - **Canvas click detection for interactive markers**: Storing rendered pixel positions in a ref during useEffect draw, then checking click coordinates against them using distance-squared hit test. More efficient than re-rendering for click targets.
+  - **Extending ItemDef type union**: Adding "material" to the type discriminant requires careful update of the type union in blocks.ts. No existing code pattern-matches exhaustively on item type, so the extension is safe.
+  - **Raido is the 14th rune**: structures.md previously noted only 13 implemented runes. With Raido added, 14 of the planned 15 Elder Futhark runes are implemented (only Tiwaz remains).
+  - **Module-level cache access for UI**: `getActiveAnchors()` follows the same pattern as `getActiveWards()`, `getSignalMap()`, `getActiveSettlements()` — module-level array cached by the ECS system, read by React UI via game.ts bridge functions.
+  - **Travel cost as derived value**: Cost computed inline in BokScreen from player-to-anchor distance, not stored. Follows the "inscription level" pattern of deriving from raw data on demand.
+---
+
+## 2026-03-16 - US-042
+- Implemented network runes (Uruz push + Tiwaz combat buff) + crystal amplification verification + settlement growth bonuses
+- Tiwaz added as 15th Elder Futhark rune — all planned runes now implemented
+- Files created:
+  - `src/ecs/systems/network-rune-data.ts` (NEW) — 50 LOC: constants for Uruz/Tiwaz, isNetworkRune helper
+  - `src/ecs/systems/uruz-force.ts` (NEW) — 80 LOC: push force math, face-directional velocity, radius checks
+  - `src/ecs/systems/tiwaz-buff.ts` (NEW) — 78 LOC: buff radius/multiplier math, zone checks, multi-zone max
+  - `src/ecs/systems/network-rune-system.ts` (NEW) — 195 LOC: ECS system with chunk scan, Tiwaz zone cache, Uruz push execution
+  - `src/ecs/systems/uruz-force.test.ts` (NEW) — 14 tests: force calculation, directional push, radius detection
+  - `src/ecs/systems/tiwaz-buff.test.ts` (NEW) — 12 tests: radius, multiplier, zone detection, multi-zone max
+  - `src/ecs/systems/network-rune-data.test.ts` (NEW) — 14 tests: rune classification, crystal amplification, settlement bonuses
+  - `src/ecs/systems/network-rune-system.test.ts` (NEW) — 5 tests: buff zone production, Uruz push execution, throttling
+- Files modified:
+  - `src/ecs/systems/rune-data.ts` — Added RuneId.Tiwaz (15) with ᛏ glyph, updated Uruz description to "pushes entities"
+  - `src/ecs/systems/rune-discovery-data.ts` — Added Tiwaz discovery entry (creature_killed trigger), updated comment 13→15
+  - `src/ecs/systems/settlement-data.ts` — Added `computeSettlementBonuses()` with level-scaled + archetype-enhanced bonuses
+  - `src/ecs/systems/settlement-system.ts` — Added isNetworkRune check to collectAllRunes for archetype detection
+  - `src/ecs/systems/index.ts` — Exported all new modules, types, and settlement bonuses
+  - `src/engine/game.ts` — Wired networkRuneSystem into game loop after protectionRuneSystem, pushCreature callback
+  - `src/ecs/systems/rune-data.test.ts` — Updated PLACEABLE_RUNES count 14→15
+  - `src/ecs/systems/rune-discovery-data.test.ts` — Updated TOTAL_DISCOVERABLE_RUNES 14→15, added Tiwaz/Raido checks
+- **Learnings:**
+  - **Face-directional force via FACE_OFFSETS**: Uruz push direction comes from the inscribed face normal, reusing the same `FACE_OFFSETS` array that signal propagation uses. This means the push direction is always perpendicular to the inscribed surface — intuitive for players inscribing runes on walls/floors.
+  - **All 15 Elder Futhark runes now implemented**: The complete set spans 4 categories: emitters (Kenaz, Sowilo), interaction (Jera, Fehu, Ansuz, Thurisaz), protection (Algiz, Mannaz, Berkanan), computational (Naudiz, Isa, Hagalaz), network (Uruz, Tiwaz), and special (Raido). Each category has its own system file.
+  - **Crystal amplification was already in place**: `getBlockConductivity(BlockId.Crystal) === 1.5` in signal-data.ts means crystal blocks already amplify signals during BFS propagation. No new code needed — just verification tests.
+  - **Settlement bonuses as a separate function**: `computeSettlementBonuses()` is pure data (no ECS) and returns a typed bonus object. This keeps it testable and allows other systems to compose bonuses with their own multipliers (e.g., Tiwaz buff × settlement combat buff).
+  - **Module-scoped mock for signal map**: Using `let mockSignalMap` at module level with `vi.mock()` returning a closure over it allows tests to control the signal map without using `__setSignalMap` hacks. Pattern: declare mutable variable → mock factory captures it → tests mutate directly.
+---
+
+## 2026-03-16 - US-043
+- Territory and Decay system implemented
+- Files created:
+  - `src/ecs/systems/territory-data.ts` (NEW) — 129 LOC: territory block set, density/radius formulas, creature influence, decay constants, RuneSeal, TerritoryZone type
+  - `src/ecs/systems/territory-decay.ts` (NEW) — 133 LOC: decay eligibility, moss target selection, seal detection, territory block counting
+  - `src/ecs/systems/territory.ts` (NEW) — 195 LOC: ECS system with dual-timer scan, density computation, decay processing, module-level zone cache
+  - `src/ecs/systems/territory.test.ts` (NEW) — 42 tests: territory block detection, density computation, radius scaling, hostile/passive influence, decay eligibility, moss target selection, seal detection, ECS system integration
+- Files modified:
+  - `src/world/blocks.ts` — Added BlockId.RuneSeal (40) with metadata, Rune Seal crafting recipe (Scriptorium tier: 4 RuneStone + 2 Crystal + 2 IronOre)
+  - `src/world/block-definitions.ts` — Added RuneSeal block definition at tileset col 6, row 5
+  - `src/world/tileset-tiles.ts` — Added RuneSeal tile (blue-grey stone with glowing seal glyph)
+  - `src/ecs/traits/index.ts` — Added TerritoryState trait (density, radius, sealActive, hostileSpawnMult, passiveBonus)
+  - `src/ecs/systems/index.ts` — Exported territory-data, territory-decay, territory system
+  - `src/engine/game.ts` — Wired territorySystem after settlementSystem, added resetTerritoryState to destroyGame, TerritoryState to player spawn
+  - `src/test-utils.ts` — Added TerritoryState to spawnPlayer with territory overrides
+- **Learnings:**
+  - **Building material detection vs. placement tracking**: Detecting building materials (Planks, StoneBricks, etc.) is cleaner than tracking voxel deltas. Natural terrain never contains these blocks, so their presence reliably indicates player activity.
+  - **Dual-timer pattern for read/write separation**: Using 2s for density reads and 4s for decay writes avoids coupling fast scans with slow mutations. Same principle as the emitter (0.25s) vs. self-modify (0.25s with mutation budget) systems.
+  - **Deterministic decay selection**: Using `(dayCount + i) * 2654435761 >>> 0` for target selection ensures the same blocks are selected on the same game day, making saves/loads consistent. Same golden ratio hash used by `chunkNameSeed()`.
+  - **Seal scan stride optimization**: Scanning every 2nd block in each dimension (`dx += 2`) for seal detection halves scan cost while still catching full-sized blocks. Acceptable because seals are 1×1×1 blocks.
+  - **Falu red effect already exists**: The acceptance criteria mentions "Falu red blocks reduce Morker spawn radius" — this was already implemented in structure-detect.ts via `faluSpawnRadiusMultiplier()`. No new code needed, just verification.
 ---

@@ -14,10 +14,10 @@ test.describe("RuneWheel", () => {
 		await expect(component.getByTestId("rune-wheel")).toBeVisible();
 	});
 
-	test("renders all 8 rune buttons", async ({ mount }) => {
+	test("renders all 13 rune buttons when no discovery filter", async ({ mount }) => {
 		const component = await mount(<RuneWheel isOpen={true} onSelectRune={() => {}} onClose={() => {}} />);
 		const buttons = component.locator("button");
-		await expect(buttons).toHaveCount(8);
+		await expect(buttons).toHaveCount(13);
 	});
 
 	test("renders rune glyphs", async ({ mount }) => {
@@ -72,5 +72,36 @@ test.describe("RuneWheel", () => {
 		// Highlighted rune should have scale(1.2) transform
 		const transform = await fehu.evaluate((el) => el.style.transform);
 		expect(transform).toContain("scale(1.2)");
+	});
+
+	test("only shows discovered runes when filter is provided", async ({ mount }) => {
+		const component = await mount(
+			<RuneWheel
+				isOpen={true}
+				onSelectRune={() => {}}
+				onClose={() => {}}
+				discoveredRunes={[RuneId.Kenaz, RuneId.Sowilo]}
+			/>,
+		);
+		const buttons = component.locator("button");
+		await expect(buttons).toHaveCount(2);
+		await expect(component.getByTestId("rune-kenaz")).toBeVisible();
+		await expect(component.getByTestId("rune-sowilo")).toBeVisible();
+	});
+
+	test("hides undiscovered runes", async ({ mount }) => {
+		const component = await mount(
+			<RuneWheel isOpen={true} onSelectRune={() => {}} onClose={() => {}} discoveredRunes={[RuneId.Kenaz]} />,
+		);
+		await expect(component.getByTestId("rune-kenaz")).toBeVisible();
+		await expect(component.getByTestId("rune-fehu")).not.toBeVisible();
+		await expect(component.getByTestId("rune-sowilo")).not.toBeVisible();
+	});
+
+	test("renders nothing when empty discovered set", async ({ mount }) => {
+		const component = await mount(
+			<RuneWheel isOpen={true} onSelectRune={() => {}} onClose={() => {}} discoveredRunes={[]} />,
+		);
+		await expect(component.locator("[role='dialog']")).toHaveCount(0);
 	});
 });

@@ -59,7 +59,8 @@ export async function initDatabase(): Promise<void> {
 			inventory_json TEXT NOT NULL DEFAULT '{}',
 			inscription_blocks_placed INTEGER NOT NULL DEFAULT 0,
 			inscription_blocks_mined INTEGER NOT NULL DEFAULT 0,
-			inscription_structures_built INTEGER NOT NULL DEFAULT 0
+			inscription_structures_built INTEGER NOT NULL DEFAULT 0,
+			discovered_runes_json TEXT NOT NULL DEFAULT '[]'
 		);
 
 		CREATE TABLE IF NOT EXISTS voxel_deltas (
@@ -90,6 +91,13 @@ export async function initDatabase(): Promise<void> {
 			value TEXT NOT NULL
 		);
 	`);
+
+		// Migration: add discovered_runes_json column for existing databases
+		try {
+			await db.execute("ALTER TABLE player_state ADD COLUMN discovered_runes_json TEXT NOT NULL DEFAULT '[]'");
+		} catch {
+			// Column already exists — ignore
+		}
 
 		initialized = true;
 	})();
@@ -161,6 +169,7 @@ export interface PlayerSaveData {
 	inscriptionBlocksPlaced: number;
 	inscriptionBlocksMined: number;
 	inscriptionStructuresBuilt: number;
+	discoveredRunes: number[];
 }
 
 export async function savePlayerState(slotId: number, data: PlayerSaveData): Promise<void> {
@@ -174,7 +183,8 @@ export async function savePlayerState(slotId: number, data: PlayerSaveData): Pro
 			hotbar_json = ?, inventory_json = ?,
 			inscription_blocks_placed = ?,
 			inscription_blocks_mined = ?,
-			inscription_structures_built = ?
+			inscription_structures_built = ?,
+			discovered_runes_json = ?
 		WHERE slot_id = ?`,
 		[
 			data.posX,
@@ -192,6 +202,7 @@ export async function savePlayerState(slotId: number, data: PlayerSaveData): Pro
 			data.inscriptionBlocksPlaced,
 			data.inscriptionBlocksMined,
 			data.inscriptionStructuresBuilt,
+			JSON.stringify(data.discoveredRunes),
 			slotId,
 		],
 	);
@@ -250,7 +261,18 @@ export async function loadPlayerState(slotId: number): Promise<PlayerSaveData | 
 		inscriptionBlocksPlaced: (row.inscription_blocks_placed as number) ?? 0,
 		inscriptionBlocksMined: (row.inscription_blocks_mined as number) ?? 0,
 		inscriptionStructuresBuilt: (row.inscription_structures_built as number) ?? 0,
+		discoveredRunes: parseDiscoveredRunes(row.discovered_runes_json as string | undefined),
 	};
+}
+
+function parseDiscoveredRunes(json: string | undefined): number[] {
+	if (!json) return [];
+	try {
+		const arr = JSON.parse(json);
+		return Array.isArray(arr) ? arr.filter((n): n is number => typeof n === "number") : [];
+	} catch {
+		return [];
+	}
 }
 
 // ─── Voxel Deltas ───

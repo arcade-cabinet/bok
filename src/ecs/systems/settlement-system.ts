@@ -10,6 +10,7 @@ import { detectAllArchetypes, type RuneBlock } from "./archetype-detect.ts";
 import { isEmitterRune } from "./emitter-runes.ts";
 import { getSignalMap } from "./emitter-system.ts";
 import { isInteractionRune, isProtectionRune } from "./interaction-rune-data.ts";
+import { isNetworkRune } from "./network-rune-data.ts";
 import { unpackFaceKey } from "./rune-data.ts";
 import { getRuneIndex } from "./rune-index.ts";
 import { LEVEL_NAMES, settlementFoundedProse, settlementGrewProse } from "./settlement-data.ts";
@@ -54,7 +55,7 @@ function collectAllRunes(playerCx: number, playerCz: number): RuneBlock[] {
 			for (const [vk, faces] of chunkRunes) {
 				const { x, y, z } = unpackFaceKey(vk);
 				for (const [_face, runeId] of faces) {
-					if (isEmitterRune(runeId) || isInteractionRune(runeId) || isProtectionRune(runeId)) {
+					if (isEmitterRune(runeId) || isInteractionRune(runeId) || isProtectionRune(runeId) || isNetworkRune(runeId)) {
 						results.push({ x, y, z, runeId });
 						break; // one entry per block (use first rune found)
 					}
