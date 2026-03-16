@@ -1,4 +1,4 @@
-import { BLOCKS, ITEMS } from "../../world/blocks.ts";
+import { BLOCKS, ITEMS, BlockId } from "../../world/blocks.ts";
 import type { HotbarSlot, InventoryData } from "../../ecs/traits/index.ts";
 
 interface HotbarDisplayProps {
@@ -58,7 +58,7 @@ export function HotbarDisplay({ slots, activeSlot, inventory, onSlotClick }: Hot
 
 function getSlotBackground(slot: HotbarSlot): string {
   if (slot.type === "block") {
-    if (slot.id === 8) return "linear-gradient(45deg, #5D4037 50%, #FFD700 50%)";
+    if (slot.id === BlockId.Torch) return "linear-gradient(45deg, #5D4037 50%, #FFD700 50%)";
     return BLOCKS[slot.id]?.color || "#444";
   }
   return "rgba(255,255,255,0.05)";

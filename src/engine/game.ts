@@ -84,6 +84,7 @@ let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
 // Shared references for the bridge
 let ambientLight: THREE.AmbientLight | null = null;
 let sunLight: THREE.DirectionalLight | null = null;
+let resizeHandler: (() => void) | null = null;
 
 /**
  * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
@@ -291,7 +292,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
   threeScene.fog = new THREE.Fog(0x87ceeb, 15, RENDER_DISTANCE * CHUNK_SIZE - 5);
 
   // ─── Camera ───
-  threeCamera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 100);
+  threeCamera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
   jpWorld.renderer.addRenderComponent(threeCamera);
 
   // ─── Lighting ───
@@ -414,12 +415,12 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
   threeCamera.updateProjectionMatrix();
 
   // Handle resize
-  const onResize = () => {
+  resizeHandler = () => {
     if (!threeCamera) return;
     threeCamera.aspect = canvas.clientWidth / canvas.clientHeight;
     threeCamera.updateProjectionMatrix();
   };
-  window.addEventListener("resize", onResize);
+  window.addEventListener("resize", resizeHandler);
 
   await loadRuntime(jpRuntime, { loadingDelay: 300 });
 }
@@ -518,6 +519,10 @@ export function saveGameState(): string {
 }
 
 export function destroyGame(): void {
+  if (resizeHandler) {
+    window.removeEventListener("resize", resizeHandler);
+    resizeHandler = null;
+  }
   jpRuntime?.stop();
   jpRuntime = null;
   threeScene = null;

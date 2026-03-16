@@ -8,6 +8,7 @@ import {
   QuestProgress,
 } from "../traits/index.ts";
 import { BLOCKS, ITEMS } from "../../world/blocks.ts";
+import { getVoxelAt } from "../../world/voxel-helpers.ts";
 
 export function miningSystem(world: World, dt: number) {
   world
@@ -34,7 +35,8 @@ export function miningSystem(world: World, dt: number) {
         }
       }
 
-      const blockMeta = BLOCKS[mining.targetX]; // Approximate — resolved by bridge
+      const blockId = getVoxelAt(mining.targetX, mining.targetY, mining.targetZ);
+      const blockMeta = BLOCKS[blockId];
       const hardness = blockMeta?.hardness ?? 1.0;
       const mineTime = Math.max(0.1, hardness / speedMult);
       mining.progress += dt / mineTime;
@@ -55,7 +57,8 @@ export function addToInventory(
   blockName: string
 ) {
   const key = blockName.toLowerCase();
-  if (key in inventory) {
-    inventory[key] += 1;
+  if (!(key in inventory)) {
+    inventory[key] = 0;
   }
+  inventory[key] += 1;
 }

@@ -74,8 +74,12 @@ export function listSaveSlots(): SaveSlot[] {
  */
 export function saveToSlot(slotId: number, data: GameSaveData): void {
   if (slotId < 0 || slotId >= MAX_SAVE_SLOTS) return;
-  localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}`, JSON.stringify(data));
-  localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}_ts`, Date.now().toString());
+  try {
+    localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}`, JSON.stringify(data));
+    localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}_ts`, Date.now().toString());
+  } catch (error) {
+    console.error("Failed to save game:", error);
+  }
 }
 
 /**

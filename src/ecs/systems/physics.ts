@@ -8,6 +8,7 @@ import {
   PlayerTag,
 } from "../traits/index.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
+import { BlockId } from "../../world/blocks.ts";
 
 const BASE_GRAVITY = 28;
 
@@ -17,7 +18,7 @@ export function physicsSystem(world: World, dt: number) {
     .updateEach(([pos, vel, body, health, state]) => {
       const headVoxel = getVoxelAt(Math.floor(pos.x), Math.floor(pos.y), Math.floor(pos.z));
       const feetVoxel = getVoxelAt(Math.floor(pos.x), Math.floor(pos.y - 1.5), Math.floor(pos.z));
-      body.isSwimming = feetVoxel === 7 || headVoxel === 7;
+      body.isSwimming = feetVoxel === BlockId.Water || headVoxel === BlockId.Water;
 
       if (body.isSwimming) {
         body.gravity = BASE_GRAVITY * 0.3;

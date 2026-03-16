@@ -58,16 +58,19 @@ export default function App() {
     isDead: false,
   });
 
-  // HUD polling loop
+  // HUD polling loop — single setHudState per frame
   useEffect(() => {
     if (phase !== "playing") return;
 
     let raf: number;
     const poll = () => {
+      let playerUpdate: Partial<typeof hudState> = {};
+      let timeUpdate: Partial<typeof hudState> = {};
+
       kootaWorld
         .query(PlayerTag, Health, Hunger, Stamina, Inventory, Hotbar, MiningState, QuestProgress, PlayerState, PhysicsBody)
         .readEach(([health, hunger, stamina, inv, hotbar, mining, quest, state, body]) => {
-          setHudState({
+          playerUpdate = {
             health: health.current,
             hunger: hunger.current,
             stamina: stamina.current,
@@ -80,29 +83,41 @@ export default function App() {
             questProgress: quest.progress,
             damageFlash: state.damageFlash,
             isSwimming: body.isSwimming,
-            timeOfDay: 0.25,
-            dayCount: 1,
             isDead: state.isDead,
-          });
+          };
+
+          // Check death from fresh ECS state (no stale closure)
+          if (state.isDead) {
+            setPhase("dead");
+          }
         });
 
       kootaWorld.query(WorldTime).readEach(([time]) => {
-        setHudState((prev) => ({
-          ...prev,
+        timeUpdate = {
           timeOfDay: time.timeOfDay,
           dayCount: time.dayCount,
-        }));
+        };
       });
 
-      if (hudState.isDead && phase === "playing") {
-        setPhase("dead");
-      }
+      setHudState((prev) => ({
+        ...prev,
+        ...playerUpdate,
+        ...timeUpdate,
+      }));
 
       raf = requestAnimationFrame(poll);
     };
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
-  }, [phase, hudState.isDead]);
+  }, [phase]);
+
+  // Cleanup input handlers when leaving playing phase
+  useEffect(() => {
+    if (phase !== "playing") {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+    }
+  }, [phase]);
 
   // Keyboard listener for crafting toggle
   useEffect(() => {
