@@ -9,9 +9,10 @@ import { kootaWorld } from "../../engine/game.ts";
 
 interface MobileControlsProps {
 	onCraftToggle: () => void;
+	onBokToggle?: () => void;
 }
 
-export function MobileControls({ onCraftToggle }: MobileControlsProps) {
+export function MobileControls({ onCraftToggle, onBokToggle }: MobileControlsProps) {
 	const [joyVisible, setJoyVisible] = useState(false);
 	const [joyPos, setJoyPos] = useState({ x: 0, y: 0 });
 	const [nubOffset, setNubOffset] = useState({ x: 0, y: 0 });
@@ -165,6 +166,20 @@ export function MobileControls({ onCraftToggle }: MobileControlsProps) {
 				>
 					INV
 				</button>
+				{onBokToggle && (
+					<button
+						type="button"
+						className="w-[65px] h-[65px] rounded-full border-2 text-white text-sm font-bold flex items-center justify-center"
+						style={{
+							background: "rgba(201,168,76,0.3)",
+							borderColor: "var(--color-bok-gold)",
+							boxShadow: "0 4px 10px rgba(0,0,0,0.5)",
+						}}
+						onTouchStart={onBokToggle}
+					>
+						BOK
+					</button>
+				)}
 			</div>
 		</div>
 	);

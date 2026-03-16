@@ -771,3 +771,23 @@ The light system separates pure data from ECS state management, following the cr
   - **Held block vs held item**: Torch as block (`type: "block"`) needs to check `BLOCKS[id].emissive` + `BLOCK_LIGHT_RADIUS`. Lantern as item (`type: "item"`) checks `ITEM_LIGHT_RADIUS` directly. The dual check in `getPlayerHotbarLight()` handles both namespaces.
 ---
 
+## 2026-03-16 - US-025
+- Bok Shell: birch-bark journal overlay with 4 tabbed pages (Kartan, Listan, Kunskapen, Sagan)
+- New file `src/ui/screens/BokScreen.tsx` (~152 LOC): Full-screen journal overlay with open/close CSS animation (perspective + rotateY), tab navigation, mobile swipe gestures, backdrop tap-to-close, Escape/B keyboard close
+- New file `src/ui/components/BokPage.tsx` (~44 LOC): Stateless page wrapper with parchment background, rune border decorations (Elder Futhark ᚕ), title, placeholder text for empty pages
+- New file `src/ui/screens/BokScreen.ct.tsx` (~119 LOC): 10 Playwright CT tests — renders nothing when closed, renders overlay when open, all 4 tab buttons visible, starts on Kartan, tab switching, all-tab cycling, backdrop close callback, dialog role + aria-modal, type=button on all tabs, animation class
+- New file `src/ui/components/BokPage.ct.tsx` (~35 LOC): 5 Playwright CT tests — title rendering, children content, placeholder text, rune border decorations, data-testid
+- Updated `src/App.tsx`: Added `bokOpen` state, `KeyB` keyboard toggle (mutually exclusive with crafting via `KeyE`), BokScreen rendering in playing phase
+- Updated `src/ui/hud/MobileControls.tsx`: Added optional `onBokToggle` prop, BOK button with gold-tinted styling
+- Updated `src/index.css`: Added `bok-open-anim` and `bok-close-anim` keyframes (perspective + rotateY + scale), `.bok-open` and `.bok-close` utility classes
+- Typecheck passes, lint passes on all new/changed files
+- Note: `pnpm test`, `pnpm test-ct`, and `pnpm build` all fail due to pre-existing Node 18 + rolldown 1.0.0-rc.9 incompatibility (`styleText` export requires Node 20.12+). Not related to US-025 changes.
+- Files created: `src/ui/screens/BokScreen.tsx`, `src/ui/components/BokPage.tsx`, `src/ui/screens/BokScreen.ct.tsx`, `src/ui/components/BokPage.ct.tsx`
+- Files modified: `src/App.tsx`, `src/ui/hud/MobileControls.tsx`, `src/index.css`
+- **Learnings:**
+  - **ARIA tablist pattern**: `aria-selected` on `<button>` requires `role="tab"` on the button and `role="tablist"` on the container — Biome's `useAriaPropsSupportedByRole` lint rule catches this mismatch
+  - **Close animation via state**: CSS closing animation requires a 2-phase approach: set `closing=true` → apply close animation class → `setTimeout` to call `onClose()` after animation duration. This lets the parent control mount/unmount while the child controls its exit animation
+  - **Mutual exclusion of overlays**: Crafting and Bok menus are mutually exclusive — opening one closes the other. The toggle handler `setCraftingOpen(false)` before `setBokOpen(!prev)` ensures only one overlay is visible at a time, both on keyboard and mobile
+  - **Swipe detection simplicity**: A 50px horizontal touch delta threshold with `touchStartRef` is sufficient for page swiping. No gesture library needed — just touchstart/touchend delta check
+---
+

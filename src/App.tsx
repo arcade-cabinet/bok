@@ -46,6 +46,7 @@ import { QuestTracker } from "./ui/hud/QuestTracker.tsx";
 import { TimeDisplay } from "./ui/hud/TimeDisplay.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
+import { BokScreen } from "./ui/screens/BokScreen.tsx";
 import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import type { RecipeTier } from "./world/blocks.ts";
@@ -62,6 +63,7 @@ type GamePhase = "title" | "playing" | "dead";
 export default function App() {
 	const [phase, setPhase] = useState<GamePhase>("title");
 	const [craftingOpen, setCraftingOpen] = useState(false);
+	const [bokOpen, setBokOpen] = useState(false);
 	const [hasSaveSlot, setHasSaveSlot] = useState(false);
 	const cleanupRef = useRef<(() => void) | null>(null);
 	const saveSlotRef = useRef<number | null>(null);
@@ -199,13 +201,27 @@ export default function App() {
 		};
 	}, [phase]);
 
-	// Keyboard listener for crafting toggle
+	// Keyboard listener for crafting (E) and bok (B) toggle
 	useEffect(() => {
 		if (phase !== "playing") return;
 
 		const onKey = (e: KeyboardEvent) => {
 			if (e.code === "KeyE") {
+				setBokOpen(false);
 				setCraftingOpen((prev) => {
+					const next = !prev;
+					if (next) {
+						document.exitPointerLock();
+					} else {
+						const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+						canvas?.requestPointerLock();
+					}
+					return next;
+				});
+			}
+			if (e.code === "KeyB") {
+				setCraftingOpen(false);
+				setBokOpen((prev) => {
 					const next = !prev;
 					if (next) {
 						document.exitPointerLock();
@@ -355,7 +371,18 @@ export default function App() {
 				{phase === "playing" && (
 					<>
 						{!isMobile() && <Crosshair isMining={hudState.miningActive} miningProgress={hudState.miningProgress} />}
-						{isMobile() && <MobileControls onCraftToggle={() => setCraftingOpen((prev) => !prev)} />}
+						{isMobile() && (
+							<MobileControls
+								onCraftToggle={() => {
+									setBokOpen(false);
+									setCraftingOpen((prev) => !prev);
+								}}
+								onBokToggle={() => {
+									setCraftingOpen(false);
+									setBokOpen((prev) => !prev);
+								}}
+							/>
+						)}
 
 						<div
 							className="absolute top-4 left-4 right-4 flex justify-between items-start"
@@ -387,6 +414,15 @@ export default function App() {
 							onCraft={handleCraft}
 							onClose={() => {
 								setCraftingOpen(false);
+								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+								canvas?.requestPointerLock();
+							}}
+						/>
+
+						<BokScreen
+							isOpen={bokOpen}
+							onClose={() => {
+								setBokOpen(false);
 								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
 								canvas?.requestPointerLock();
 							}}

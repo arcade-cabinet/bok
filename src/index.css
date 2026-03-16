@@ -129,6 +129,37 @@ body {
 	}
 }
 
+/* Bok journal open/close animations */
+@keyframes bok-open-anim {
+	0% {
+		opacity: 0;
+		transform: perspective(800px) rotateY(-30deg) scale(0.9);
+	}
+	100% {
+		opacity: 1;
+		transform: perspective(800px) rotateY(0deg) scale(1);
+	}
+}
+
+@keyframes bok-close-anim {
+	0% {
+		opacity: 1;
+		transform: perspective(800px) rotateY(0deg) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: perspective(800px) rotateY(-30deg) scale(0.9);
+	}
+}
+
+.bok-open {
+	animation: bok-open-anim 0.3s ease-out both;
+}
+
+.bok-close {
+	animation: bok-close-anim 0.25s ease-in both;
+}
+
 /* DaisyUI-like button styles (inline since DaisyUI v5 + Tailwind v4 has compat issues) */
 .btn {
 	display: inline-flex;
