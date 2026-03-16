@@ -81,11 +81,12 @@ export function enemySystem(world: World, dt: number, effects?: EnemySideEffects
 			effects?.onEnemyDied(entity.id());
 			entity.destroy();
 			return;
-		}
+	const normalizedTime = ((timeOfDay % 1) + 1) % 1;
+	const isDaytime = normalizedTime > 0 && normalizedTime < 0.5;
 
-		// Daytime burn damage
+	world.query(EnemyTag, EnemyState, Position).updateEach(([enemy, pos], entity) => {
 		if (isDaytime) {
-			enemy.hp -= DAYTIME_DPS * dt;
+			enemy.hp -= dt * 2;
 		}
 
 		// Gravity
