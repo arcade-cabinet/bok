@@ -6,9 +6,10 @@ export type TimePhase = "Morning" | "Midday" | "Dusk" | "Night";
 export function timeSystem(world: World, dt: number) {
 	world.query(WorldTime).updateEach(([time]) => {
 		time.timeOfDay += dt / time.dayDuration;
-		if (time.timeOfDay > 1) {
-			time.timeOfDay -= 1;
-			time.dayCount++;
+		if (time.timeOfDay >= 1) {
+			const elapsedDays = Math.floor(time.timeOfDay);
+			time.timeOfDay -= elapsedDays;
+			time.dayCount += elapsedDays;
 		}
 	});
 }
