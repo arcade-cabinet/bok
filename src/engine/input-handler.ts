@@ -2,7 +2,7 @@
  * Input handler — captures keyboard and mouse input and writes to Koota ECS traits.
  */
 
-import { kootaWorld } from "./game.ts";
+import { kootaWorld, placeBlock } from "./game.ts";
 import { PlayerTag, MoveInput, Rotation, Hotbar, ToolSwing, MiningState } from "../ecs/traits/index.ts";
 
 const keys: Record<string, boolean> = {};
@@ -48,6 +48,7 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
       });
     } else if (e.button === 2) {
       e.preventDefault();
+      placeBlock();
     }
   };
 

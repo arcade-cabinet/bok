@@ -1,5 +1,13 @@
 /**
- * Core game engine — bridges Jolly Pixel (rendering) with Koota (ECS state).
+ * Core game engine — bridges Jolly Pixel (rendering + Actors) with Koota (ECS state).
+ *
+ * All 3D scene objects are managed as Jolly Pixel Actors with Behaviors:
+ *  - GameBridge: runs Koota systems, syncs state to camera + behaviors
+ *  - CelestialBehavior: sun/moon orbit, sky color, stars
+ *  - ViewModelBehavior: first-person held item with sway/bob/swing
+ *  - BlockHighlightBehavior: wireframe on targeted block + raycasting
+ *  - ParticlesBehavior: instanced mesh particles for mining/combat/sprint
+ *  - AmbientParticlesBehavior: floating atmospheric particles
  */
 
 import * as THREE from "three";
@@ -37,9 +45,9 @@ import {
   enemySystem,
 } from "../ecs/systems/index.ts";
 
-import { createBlockDefinitions } from "../world/blocks.ts";
+import { createBlockDefinitions, BLOCKS, ITEMS } from "../world/blocks.ts";
 import { initNoise } from "../world/noise.ts";
-import { registerVoxelAccessors } from "../world/voxel-helpers.ts";
+import { registerVoxelAccessors, getVoxelAt, setVoxelAt } from "../world/voxel-helpers.ts";
 import {
   generateChunkTerrain,
   generateSpawnShrine,
@@ -49,6 +57,12 @@ import {
 } from "../world/terrain-generator.ts";
 import { generateTilesetDataURL, TILE_SIZE, COLS, ROWS } from "../world/tileset-generator.ts";
 
+import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
+import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
+import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
+import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
+import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
+
 export const kootaWorld = createKootaWorld();
 
 const loadedChunks = new Set<string>();
@@ -57,23 +71,33 @@ const RENDER_DISTANCE = 3;
 let jpRuntime: Runtime | null = null;
 let voxelRenderer: VoxelRenderer | null = null;
 
-// Direct Three.js references (set during init)
 let threeScene: THREE.Scene | null = null;
 let threeCamera: THREE.PerspectiveCamera | null = null;
 
-// Track the last delta for the bridge
-let lastDelta = 0;
+// Jolly Pixel Actor-managed behaviors
+let viewModelBehavior: ViewModelBehavior | null = null;
+let celestialBehavior: CelestialBehavior | null = null;
+let blockHighlightBehavior: BlockHighlightBehavior | null = null;
+let particlesBehavior: ParticlesBehavior | null = null;
+let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
 
+// Shared references for the bridge
+let ambientLight: THREE.AmbientLight | null = null;
+let sunLight: THREE.DirectionalLight | null = null;
+
+/**
+ * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
+ * Drives all Koota ECS systems and pushes state to the visual Behaviors.
+ */
 class GameBridge extends Behavior {
-  update() {
-    // The Behavior's actor.world gives access to the JP World.
-    // FixedTimeStep doesn't expose deltaTime directly, so we track it via clock.
-    const now = performance.now();
-    const dt = Math.min((now - (this as unknown as { _lastTime: number })._lastTime) / 1000, 0.1);
-    (this as unknown as { _lastTime: number })._lastTime = now;
-    if (dt <= 0) return;
-    lastDelta = dt;
+  awake() {
+    this.needUpdate = true;
+  }
 
+  update(dt: number) {
+    if (dt <= 0 || dt > 0.1) return;
+
+    // Run ECS systems
     movementSystem(kootaWorld, dt);
     physicsSystem(kootaWorld, dt);
     survivalSystem(kootaWorld, dt);
@@ -81,26 +105,151 @@ class GameBridge extends Behavior {
     timeSystem(kootaWorld, dt);
     enemySystem(kootaWorld, dt);
 
-    syncPlayerToCamera();
+    // Sync Koota player state -> Three.js camera + Behaviors
+    this.syncPlayerToCamera(dt);
+    this.syncViewModelState();
+    this.syncEnvironmentState();
+    this.syncMiningToHighlight(dt);
     streamChunks();
-    syncEnvironment();
   }
 
-  awake() {
-    (this as unknown as { _lastTime: number })._lastTime = performance.now();
+  private syncPlayerToCamera(dt: number) {
+    if (!threeCamera) return;
+
+    kootaWorld
+      .query(PlayerTag, Position, Rotation, MoveInput, PhysicsBody, ToolSwing)
+      .readEach(([pos, rot, input, body, toolSwing]) => {
+        threeCamera!.position.set(pos.x, pos.y, pos.z);
+        threeCamera!.rotation.order = "YXZ";
+        threeCamera!.rotation.set(rot.pitch, rot.yaw, 0);
+
+        // Camera shake lerp (resets to 0,0 after mining hits apply offsets)
+        // The camera's local offset is managed by the view model behavior through parent
+
+        // Push to view model behavior
+        if (viewModelBehavior) {
+          const isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
+          viewModelBehavior.isMoving = isMoving;
+          viewModelBehavior.isSprinting = input.sprint;
+          viewModelBehavior.swingProgress = toolSwing.progress;
+          viewModelBehavior.swayX = toolSwing.swayX;
+          viewModelBehavior.swayY = toolSwing.swayY;
+        }
+      });
   }
-}
 
-function syncPlayerToCamera() {
-  if (!threeCamera) return;
-
-  kootaWorld
-    .query(PlayerTag, Position, Rotation)
-    .readEach(([pos, rot]) => {
-      threeCamera!.position.set(pos.x, pos.y, pos.z);
-      threeCamera!.rotation.order = "YXZ";
-      threeCamera!.rotation.set(rot.pitch, rot.yaw, 0);
+  private syncViewModelState() {
+    kootaWorld.query(PlayerTag, Hotbar).readEach(([hotbar]) => {
+      if (viewModelBehavior) {
+        viewModelBehavior.slotData = hotbar.slots[hotbar.activeSlot];
+      }
     });
+  }
+
+  private syncEnvironmentState() {
+    let timeOfDay = 0.25;
+    let px = 0, py = 0, pz = 0;
+
+    kootaWorld.query(WorldTime).readEach(([time]) => {
+      timeOfDay = time.timeOfDay;
+    });
+
+    kootaWorld.query(PlayerTag, Position).readEach(([pos]) => {
+      px = pos.x;
+      py = pos.y;
+      pz = pos.z;
+    });
+
+    if (celestialBehavior) {
+      celestialBehavior.timeOfDay = timeOfDay;
+      celestialBehavior.playerX = px;
+      celestialBehavior.playerZ = pz;
+    }
+
+    if (ambientParticlesBehavior) {
+      ambientParticlesBehavior.timeOfDay = timeOfDay;
+      ambientParticlesBehavior.playerX = px;
+      ambientParticlesBehavior.playerY = py;
+      ambientParticlesBehavior.playerZ = pz;
+    }
+  }
+
+  private syncMiningToHighlight(dt: number) {
+    if (!blockHighlightBehavior) return;
+
+    const hit = blockHighlightBehavior.lastHit;
+
+    kootaWorld
+      .query(PlayerTag, MiningState, Inventory, Hotbar, ToolSwing, QuestProgress)
+      .updateEach(([mining, inv, hotbar, toolSwing, quest]) => {
+        // Update mining target from raycaster
+        if (hit) {
+          mining.targetX = hit.x;
+          mining.targetY = hit.y;
+          mining.targetZ = hit.z;
+        }
+
+        if (!mining.active || !hit) {
+          mining.progress = 0;
+          return;
+        }
+
+        const targetKey = `${hit.x},${hit.y},${hit.z}`;
+        if (mining.targetKey !== targetKey) {
+          mining.progress = 0;
+          mining.targetKey = targetKey;
+        }
+
+        // Tool multiplier
+        const slot = hotbar.slots[hotbar.activeSlot];
+        let speedMult = 1;
+        if (slot && slot.type === "item") {
+          const item = ITEMS[slot.id];
+          if (item) {
+            const blockDef = BLOCKS[hit.id];
+            if (blockDef && item.target === blockDef.name) {
+              speedMult = item.power;
+            }
+          }
+        }
+
+        const blockDef = BLOCKS[hit.id];
+        const hardness = blockDef?.hardness ?? 1.0;
+        const mineTime = Math.max(0.1, hardness / speedMult);
+        mining.progress += dt / mineTime;
+
+        // Periodic mining hit particles + swing
+        if (mining.progress < 1.0) {
+          toolSwing.progress = 1.0;
+          if (particlesBehavior && blockDef) {
+            particlesBehavior.spawn(hit.x, hit.y, hit.z, blockDef.color, 2);
+          }
+        }
+
+        // Block broken
+        if (mining.progress >= 1.0) {
+          setVoxelAt("Ground", hit.x, hit.y, hit.z, 0);
+
+          if (particlesBehavior && blockDef) {
+            particlesBehavior.spawn(hit.x, hit.y, hit.z, blockDef.color, 15);
+          }
+
+          // Add to inventory
+          const bName = (blockDef?.name ?? "").toLowerCase();
+          const invAny = inv as unknown as Record<string, number>;
+          if (bName in invAny) {
+            invAny[bName] += 1;
+          }
+
+          // Quest tracking
+          if (quest.step === 0 && bName === "wood") quest.progress++;
+          if (quest.step === 2 && bName === "stone") quest.progress++;
+
+          mining.progress = 0;
+          mining.active = false;
+        }
+      });
+  }
 }
 
 function streamChunks() {
@@ -128,49 +277,6 @@ function streamChunks() {
   }
 }
 
-function syncEnvironment() {
-  if (!threeScene) return;
-
-  kootaWorld.query(WorldTime).readEach(([time]) => {
-    const angle = time.timeOfDay * Math.PI * 2;
-    const sunHeight = Math.sin(angle);
-
-    let bgColor: number;
-    let ambientIntensity: number;
-    let sunIntensity: number;
-
-    if (sunHeight > 0.4) {
-      bgColor = 0x87ceeb;
-      ambientIntensity = 0.35;
-      sunIntensity = 1.2;
-    } else if (sunHeight > 0) {
-      bgColor = 0xff7e47;
-      ambientIntensity = 0.2;
-      sunIntensity = 0.5;
-    } else {
-      bgColor = 0x050510;
-      ambientIntensity = 0.05;
-      sunIntensity = 0;
-    }
-
-    threeScene!.traverse((child: THREE.Object3D) => {
-      if ((child as THREE.AmbientLight).isAmbientLight) {
-        (child as THREE.AmbientLight).intensity = ambientIntensity;
-      }
-      if ((child as THREE.DirectionalLight).isDirectionalLight) {
-        (child as THREE.DirectionalLight).intensity = sunIntensity;
-      }
-    });
-
-    if (threeScene!.background && (threeScene!.background as THREE.Color).isColor) {
-      (threeScene!.background as THREE.Color).setHex(bgColor);
-    }
-    if (threeScene!.fog && (threeScene!.fog as THREE.Fog).color) {
-      (threeScene!.fog as THREE.Fog).color.setHex(bgColor);
-    }
-  });
-}
-
 export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise<void> {
   initNoise(seed);
 
@@ -179,21 +285,20 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
   });
   const jpWorld = jpRuntime.world;
 
-  // Access the Three.js scene via sceneManager
+  // ─── Scene ───
   threeScene = jpWorld.sceneManager.default;
   threeScene.background = new THREE.Color(0x87ceeb);
   threeScene.fog = new THREE.Fog(0x87ceeb, 15, RENDER_DISTANCE * CHUNK_SIZE - 5);
 
-  // Create and register the camera
+  // ─── Camera ───
   threeCamera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 100);
   jpWorld.renderer.addRenderComponent(threeCamera);
 
-  // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+  // ─── Lighting ───
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
   threeScene.add(ambientLight);
 
-  const sunLight = new THREE.DirectionalLight(0xffffee, 1.2);
-  sunLight.position.set(50, 100, 50);
+  sunLight = new THREE.DirectionalLight(0xffffee, 1.2);
   sunLight.castShadow = true;
   sunLight.shadow.camera.near = 0.5;
   sunLight.shadow.camera.far = 150;
@@ -203,32 +308,38 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
   sunLight.shadow.camera.bottom = -40;
   sunLight.shadow.mapSize.width = 1024;
   sunLight.shadow.mapSize.height = 1024;
-  threeScene.add(sunLight);
   threeScene.add(sunLight.target);
 
-  // Stars
-  const starGeo = new THREE.BufferGeometry();
-  const starPos: number[] = [];
-  for (let i = 0; i < 1500; i++) {
-    const u = Math.random();
-    const v = Math.random();
-    const theta = 2 * Math.PI * u;
-    const phi = Math.acos(2 * v - 1);
-    const r = 80;
-    starPos.push(
-      r * Math.sin(phi) * Math.cos(theta),
-      r * Math.sin(phi) * Math.sin(theta),
-      r * Math.cos(phi)
-    );
-  }
-  starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
-  const stars = new THREE.Points(
-    starGeo,
-    new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true, opacity: 0 })
-  );
-  threeScene.add(stars);
+  // ─── Celestial Actor ───
+  const celestialActor = jpWorld.createActor("Celestial");
+  celestialBehavior = celestialActor.addComponentAndGet(CelestialBehavior);
+  celestialBehavior.setup(threeScene, ambientLight, sunLight);
 
-  // Voxel map
+  // ─── Ambient Particles Actor ───
+  const ambientParticlesActor = jpWorld.createActor("AmbientParticles");
+  ambientParticlesBehavior = ambientParticlesActor.addComponentAndGet(AmbientParticlesBehavior);
+  ambientParticlesBehavior.setup(threeScene);
+
+  // ─── Particle System Actor ───
+  const particlesActor = jpWorld.createActor("Particles");
+  particlesBehavior = particlesActor.addComponentAndGet(ParticlesBehavior);
+  particlesBehavior.setup(threeScene);
+
+  // ─── Block Highlight Actor ───
+  const highlightActor = jpWorld.createActor("BlockHighlight");
+  blockHighlightBehavior = highlightActor.addComponentAndGet(BlockHighlightBehavior);
+  blockHighlightBehavior.setup(
+    threeScene,
+    threeCamera,
+    (x, y, z) => getVoxelAt(x, y, z),
+  );
+
+  // ─── View Model Actor ───
+  const viewModelActor = jpWorld.createActor("ViewModel");
+  viewModelBehavior = viewModelActor.addComponentAndGet(ViewModelBehavior);
+  viewModelBehavior.setCamera(threeCamera);
+
+  // ─── Voxel Map Actor ───
   const mapActor = jpWorld.createActor("VoxelMap");
   voxelRenderer = mapActor.addComponentAndGet(VoxelRenderer, {
     chunkSize: CHUNK_SIZE,
@@ -259,10 +370,10 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
       } else {
         voxelRenderer!.setVoxel(layerName, { position: { x, y, z }, blockId });
       }
-    }
+    },
   );
 
-  // Generate spawn
+  // ─── Generate Spawn ───
   generateChunkTerrain(voxelRenderer, "Ground", 0, 0);
   loadedChunks.add("0,0");
 
@@ -271,6 +382,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 
   const spawnY = surfaceY + 2.5;
 
+  // ─── ECS Entities ───
   kootaWorld.spawn(
     PlayerTag,
     Position({ x: 8.5, y: spawnY, z: 8.5 }),
@@ -294,6 +406,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
     WorldSeed({ seed }),
   );
 
+  // ─── Game Bridge Actor ───
   const bridgeActor = jpWorld.createActor("GameBridge");
   bridgeActor.addComponent(GameBridge);
 
@@ -317,6 +430,56 @@ export function getKootaWorld() {
 
 export function getVoxelRenderer() {
   return voxelRenderer;
+}
+
+export function getBlockHighlight() {
+  return blockHighlightBehavior;
+}
+
+export function getParticlesBehavior() {
+  return particlesBehavior;
+}
+
+export function placeBlock() {
+  if (!blockHighlightBehavior) return;
+  const prev = blockHighlightBehavior.lastPrev;
+  if (!prev) return;
+
+  kootaWorld
+    .query(PlayerTag, Hotbar, Inventory, Position, ToolSwing)
+    .updateEach(([hotbar, inv, pos, toolSwing]) => {
+      const slot = hotbar.slots[hotbar.activeSlot];
+      if (!slot || slot.type !== "block") return;
+
+      const blockDef = BLOCKS[slot.id];
+      if (!blockDef) return;
+      const bName = blockDef.name.toLowerCase();
+
+      // Check craftable block inventory
+      const invAny = inv as unknown as Record<string, number>;
+      const craftableKeys: Record<string, string> = {
+        planks: "planks",
+        torch: "torches",
+        stonebricks: "stonebricks",
+        glass: "glass",
+      };
+      const invKey = craftableKeys[bName];
+      if (invKey) {
+        if ((invAny[invKey] || 0) <= 0) return;
+        invAny[invKey]--;
+      }
+
+      // Don't place inside player
+      const pX = prev.x, pY = prev.y, pZ = prev.z;
+      if (
+        pX === Math.floor(pos.x) &&
+        pZ === Math.floor(pos.z) &&
+        (pY === Math.floor(pos.y) || pY === Math.floor(pos.y - 1))
+      ) return;
+
+      setVoxelAt("Ground", pX, pY, pZ, slot.id);
+      toolSwing.progress = 1.0;
+    });
 }
 
 export function saveGameState(): string {
@@ -360,5 +523,12 @@ export function destroyGame(): void {
   threeScene = null;
   threeCamera = null;
   voxelRenderer = null;
+  viewModelBehavior = null;
+  celestialBehavior = null;
+  blockHighlightBehavior = null;
+  particlesBehavior = null;
+  ambientParticlesBehavior = null;
+  ambientLight = null;
+  sunLight = null;
   loadedChunks.clear();
 }

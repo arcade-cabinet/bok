@@ -28,6 +28,9 @@ import { TimeDisplay } from "./ui/hud/TimeDisplay.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
+import { MobileControls } from "./ui/hud/MobileControls.tsx";
+
+const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 type GamePhase = "title" | "playing" | "dead";
 
@@ -201,11 +204,18 @@ export default function App() {
 
         {phase === "playing" && (
           <>
-            {/* Crosshair */}
-            <Crosshair
-              isMining={hudState.miningActive}
-              miningProgress={hudState.miningProgress}
-            />
+            {/* Crosshair (hidden on mobile) */}
+            {!IS_MOBILE && (
+              <Crosshair
+                isMining={hudState.miningActive}
+                miningProgress={hudState.miningProgress}
+              />
+            )}
+
+            {/* Mobile Controls */}
+            {IS_MOBILE && (
+              <MobileControls onCraftToggle={() => setCraftingOpen((prev) => !prev)} />
+            )}
 
             {/* Top HUD */}
             <div className="absolute top-4 left-4 right-4 flex justify-between items-start"
