@@ -45,7 +45,9 @@ import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import { RECIPES } from "./world/blocks.ts";
 
-const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const IS_MOBILE =
+	typeof navigator !== "undefined" &&
+	/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 type GamePhase = "title" | "playing" | "dead";
