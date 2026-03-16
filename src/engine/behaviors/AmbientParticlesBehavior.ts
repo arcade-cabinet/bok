@@ -38,6 +38,8 @@ export class AmbientParticlesBehavior extends Behavior {
     });
 
     this.particles = new THREE.Points(geo, this.mat);
+    // Fixed conservative bounding sphere to prevent frustum culling after position mutations
+    this.particles.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 50);
     scene.add(this.particles);
   }
 

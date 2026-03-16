@@ -67,12 +67,23 @@ export class ViewModelBehavior extends Behavior {
     this.viewModelGroup.rotation.z = -this.swayY * 0.5;
   }
 
+  private disposeObject3D(obj: THREE.Object3D) {
+    obj.traverse((node) => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const mat of materials) mat.dispose();
+      }
+    });
+  }
+
   private rebuildModel() {
-    // Clear existing
+    // Clear existing — dispose geometries and materials to prevent GPU memory leaks
     while (this.viewModelGroup.children.length > 0) {
       const child = this.viewModelGroup.children[0];
       this.viewModelGroup.remove(child);
-      if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
+      this.disposeObject3D(child);
     }
 
     this.handLight.intensity = this.slotData?.id === BlockId.Torch ? 1.5 : 0;
