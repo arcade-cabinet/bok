@@ -1,4 +1,6 @@
-import { type BlockDefinition, Face } from "@jolly-pixel/voxel.renderer";
+// ─── Block Registry ───
+// Block IDs, metadata, physics properties, and lookup utilities.
+// Renderer definitions live in block-definitions.ts.
 
 export const BlockId = {
 	Air: 0,
@@ -14,7 +16,29 @@ export const BlockId = {
 	Snow: 10,
 	StoneBricks: 11,
 	Glass: 12,
+	// Biome-specific blocks
+	BirchWood: 13,
+	BirchLeaves: 14,
+	BeechWood: 15,
+	BeechLeaves: 16,
+	PineWood: 17,
+	PineLeaves: 18,
+	SpruceLeaves: 19,
+	DeadWood: 20,
+	Moss: 21,
+	Mushroom: 22,
+	Peat: 23,
+	Ice: 24,
+	SmoothStone: 25,
+	Soot: 26,
+	CorruptedStone: 27,
+	IronOre: 28,
+	CopperOre: 29,
+	Crystal: 30,
+	FaluRed: 31,
 } as const;
+
+export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
 
 export interface BlockMeta {
 	name: string;
@@ -23,9 +47,13 @@ export interface BlockMeta {
 	transparent?: boolean;
 	fluid?: boolean;
 	emissive?: boolean;
+	slippery?: boolean;
+	bouncy?: boolean;
+	soft?: boolean;
 	hardness: number;
 }
 
+// Colors drawn from the Scandinavian palette (docs/design/art-direction.md)
 export const BLOCKS: Record<number, BlockMeta> = {
 	[BlockId.Air]: { name: "Air", color: "#000000", solid: false, hardness: 0 },
 	[BlockId.Grass]: { name: "Grass", color: "#4CAF50", solid: true, hardness: 0.8 },
@@ -40,11 +68,56 @@ export const BLOCKS: Record<number, BlockMeta> = {
 	[BlockId.Snow]: { name: "Snow", color: "#FFFFFF", solid: true, hardness: 0.5 },
 	[BlockId.StoneBricks]: { name: "Stonebricks", color: "#757575", solid: true, hardness: 4.0 },
 	[BlockId.Glass]: { name: "Glass", color: "#88CCFF", solid: true, transparent: true, hardness: 1.0 },
+	// Biome-specific blocks — Björk palette for birch, Mossa for forest greens, Sten for stone variants
+	[BlockId.BirchWood]: { name: "Birch Wood", color: "#d4c4a8", solid: true, hardness: 2.0 },
+	[BlockId.BirchLeaves]: { name: "Birch Leaves", color: "#5a8a4a", solid: true, transparent: true, hardness: 0.2 },
+	[BlockId.BeechWood]: { name: "Beech Wood", color: "#6e5439", solid: true, hardness: 3.0 },
+	[BlockId.BeechLeaves]: { name: "Beech Leaves", color: "#3a5a40", solid: true, transparent: true, hardness: 0.2 },
+	[BlockId.PineWood]: { name: "Pine Wood", color: "#7a4a30", solid: true, hardness: 2.5 },
+	[BlockId.PineLeaves]: { name: "Pine Leaves", color: "#2a5030", solid: true, transparent: true, hardness: 0.2 },
+	[BlockId.SpruceLeaves]: { name: "Spruce Leaves", color: "#1a4a3a", solid: true, transparent: true, hardness: 0.2 },
+	[BlockId.DeadWood]: { name: "Dead Wood", color: "#8a7a6a", solid: true, hardness: 1.5 },
+	[BlockId.Moss]: { name: "Moss", color: "#3a5a40", solid: true, soft: true, hardness: 0.3 },
+	[BlockId.Mushroom]: { name: "Mushroom", color: "#a3452a", solid: false, hardness: 0.1 },
+	[BlockId.Peat]: { name: "Peat", color: "#3a2a20", solid: true, bouncy: true, hardness: 0.4 },
+	[BlockId.Ice]: { name: "Ice", color: "#b0d8ef", solid: true, transparent: true, slippery: true, hardness: 1.5 },
+	[BlockId.SmoothStone]: { name: "Smooth Stone", color: "#6b6b6b", solid: true, hardness: 5.0 },
+	[BlockId.Soot]: { name: "Soot", color: "#2a2a3e", solid: true, hardness: 0.5 },
+	[BlockId.CorruptedStone]: { name: "Corrupted Stone", color: "#4a3a5a", solid: true, hardness: 6.0 },
+	[BlockId.IronOre]: { name: "Iron Ore", color: "#6b6050", solid: true, hardness: 5.0 },
+	[BlockId.CopperOre]: { name: "Copper Ore", color: "#5b6b5b", solid: true, hardness: 4.5 },
+	[BlockId.Crystal]: {
+		name: "Crystal",
+		color: "#c9a84c",
+		solid: true,
+		transparent: true,
+		emissive: true,
+		hardness: 3.0,
+	},
+	[BlockId.FaluRed]: { name: "Falu Red", color: "#8b2500", solid: true, hardness: 2.0 },
 };
 
 export function getBlockHardness(blockId: number): number {
 	return BLOCKS[blockId]?.hardness ?? 1.0;
 }
+
+export function getBlockName(blockId: number): string {
+	return BLOCKS[blockId]?.name ?? "Unknown";
+}
+
+export function isSlippery(blockId: number): boolean {
+	return BLOCKS[blockId]?.slippery === true;
+}
+
+export function isBouncy(blockId: number): boolean {
+	return BLOCKS[blockId]?.bouncy === true;
+}
+
+export function isSoft(blockId: number): boolean {
+	return BLOCKS[blockId]?.soft === true;
+}
+
+// ─── Items & Recipes ───
 
 export interface ItemDef {
 	name: string;
@@ -85,117 +158,3 @@ export const RECIPES: CraftRecipe[] = [
 	{ id: "stone_pick", name: "Stone Pickaxe", result: { type: "item", id: 103, qty: 1 }, cost: { stone: 5 } },
 	{ id: "sword", name: "Stone Sword", result: { type: "item", id: 104, qty: 1 }, cost: { wood: 2, stone: 3 } },
 ];
-
-export function createBlockDefinitions(): BlockDefinition[] {
-	return [
-		{
-			id: BlockId.Grass,
-			name: "Grass",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {
-				[Face.PosY]: { tilesetId: "default", col: 0, row: 0 },
-				[Face.NegY]: { tilesetId: "default", col: 2, row: 0 },
-				[Face.NegX]: { tilesetId: "default", col: 1, row: 0 },
-				[Face.PosX]: { tilesetId: "default", col: 1, row: 0 },
-				[Face.NegZ]: { tilesetId: "default", col: 1, row: 0 },
-				[Face.PosZ]: { tilesetId: "default", col: 1, row: 0 },
-			},
-			defaultTexture: { tilesetId: "default", col: 1, row: 0 },
-		},
-		{
-			id: BlockId.Dirt,
-			name: "Dirt",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 2, row: 0 },
-		},
-		{
-			id: BlockId.Stone,
-			name: "Stone",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 3, row: 0 },
-		},
-		{
-			id: BlockId.Wood,
-			name: "Wood",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {
-				[Face.PosY]: { tilesetId: "default", col: 5, row: 0 },
-				[Face.NegY]: { tilesetId: "default", col: 5, row: 0 },
-			},
-			defaultTexture: { tilesetId: "default", col: 4, row: 0 },
-		},
-		{
-			id: BlockId.Leaves,
-			name: "Leaves",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 6, row: 0 },
-		},
-		{
-			id: BlockId.Planks,
-			name: "Planks",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 7, row: 0 },
-		},
-		{
-			id: BlockId.Water,
-			name: "Water",
-			shapeId: "cube",
-			collidable: false,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 0, row: 1 },
-		},
-		{
-			id: BlockId.Torch,
-			name: "Torch",
-			shapeId: "poleY",
-			collidable: false,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 1, row: 1 },
-		},
-		{
-			id: BlockId.Sand,
-			name: "Sand",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 2, row: 1 },
-		},
-		{
-			id: BlockId.Snow,
-			name: "Snow",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {
-				[Face.PosY]: { tilesetId: "default", col: 3, row: 1 },
-				[Face.NegY]: { tilesetId: "default", col: 2, row: 0 },
-			},
-			defaultTexture: { tilesetId: "default", col: 4, row: 1 },
-		},
-		{
-			id: BlockId.StoneBricks,
-			name: "Stonebricks",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 5, row: 1 },
-		},
-		{
-			id: BlockId.Glass,
-			name: "Glass",
-			shapeId: "cube",
-			collidable: true,
-			faceTextures: {},
-			defaultTexture: { tilesetId: "default", col: 6, row: 1 },
-		},
-	];
-}

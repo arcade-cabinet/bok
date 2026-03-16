@@ -50,7 +50,8 @@ import {
 	WorldTime,
 } from "../ecs/traits/index.ts";
 
-import { BLOCKS, BlockId, createBlockDefinitions } from "../world/blocks.ts";
+import { createBlockDefinitions } from "../world/block-definitions.ts";
+import { BLOCKS, BlockId } from "../world/blocks.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
 import {
 	CHUNK_SIZE,

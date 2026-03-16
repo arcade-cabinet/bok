@@ -30,6 +30,13 @@ Creature AI calls `getVoxelAt`/`isBlockSolid` for ground collision and obstacle 
 ### Test File Exclusion from Build
 Test files (`*.test.ts`, `*.ct.tsx`) must be excluded from `tsconfig.app.json` via the `exclude` array. Koota's `.get()` returns `T | undefined` in strict mode, which causes type errors in tests that use direct assertions. Vitest handles its own type checking via `vitest.config.ts`.
 
+### Block & Tileset Decomposition Pattern
+The block system is decomposed by concern:
+- `blocks.ts` — Block IDs, metadata (with physics properties), lookup utilities, items/recipes. Pure data, no rendering.
+- `block-definitions.ts` — Jolly Pixel `BlockDefinition` array mapping BlockId to shape, collidability, and tileset coordinates. Uses `simpleCube()` and `woodBlock()` helpers to keep definitions compact.
+- `tileset-tiles.ts` — Tile definitions with procedural draw callbacks. Drawing helpers (`addNoise`, `drawWoodGrain`, `drawWoodRings`) and partial application factories (`withLeaves`, `withOre`) reduce boilerplate. Draw callbacks receive `rng` as parameter to avoid module-level state coupling.
+- `tileset-generator.ts` — Canvas rendering engine. Seeds PRNG, iterates tiles, produces data URL. Only 47 LOC.
+
 ### Biome System Architecture
 The terrain biome system separates pure data/logic from noise-dependent generation:
 - `biomes.ts` — Pure biome definitions, selection function (temp × moisture → biome), surface rules, tree types, blend helpers. No noise dependency = trivially testable.
@@ -94,5 +101,27 @@ Key patterns:
   - Boundary blending fast-path (check 4 cardinals first) avoids expensive 5-point sampling for ~90% of columns that are interior to biomes
   - `Map<BiomeId, number>` requires the key type to match exactly — `number` from Map iteration doesn't satisfy a union type literal; fix with explicit typing on the Map
   - Pre-existing CT test failures (30s timeouts on Crosshair, HotbarDisplay) are environment-specific and unrelated to world/ changes
+---
+
+## 2026-03-16 - US-004
+- 19 new biome-specific block types added to BlockId enum (13-31): BirchWood, BirchLeaves, BeechWood, BeechLeaves, PineWood, PineLeaves, SpruceLeaves, DeadWood, Moss, Mushroom, Peat, Ice, SmoothStone, Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed
+- BlockMeta extended with physics properties: `slippery`, `bouncy`, `soft` (optional booleans)
+- Physics: Ice=slippery, Peat=bouncy, Moss=soft; utility functions `isSlippery()`, `isBouncy()`, `isSoft()`
+- `getBlockName()` utility added for block ID→name lookups
+- All block colors derived from Scandinavian palette (art-direction.md): Björk, Mossa, Sten, Glöd, Falu, Guld, Himmel, Bläck
+- `createBlockDefinitions()` extracted to `block-definitions.ts` with `simpleCube()` and `woodBlock()` helpers
+- Tileset grid expanded from 8×2 to 8×5 (38 tiles for 32 block types)
+- Tileset decomposed: `tileset-tiles.ts` (tile data + draw helpers) + `tileset-generator.ts` (canvas engine)
+- Draw callbacks refactored to receive `rng` parameter instead of capturing module-level state
+- 15 new unit tests in `blocks.test.ts` covering: block ID uniqueness/contiguity, metadata completeness, physics properties, hardness, name lookups, tileset tile coverage
+- All 75 vitest tests pass, typecheck clean, lint clean
+- Files created: src/world/block-definitions.ts, src/world/tileset-tiles.ts, src/world/blocks.test.ts
+- Files modified: src/world/blocks.ts, src/world/tileset-generator.ts, src/engine/game.ts
+- **Learnings:**
+  - Biome formatter expands inline lambdas aggressively — partial application factories (`withLeaves`, `withOre`) are more Biome-friendly than inline arrow functions for data arrays
+  - Physics as optional booleans (`slippery?: boolean`) scales better than union types for potential future combinations
+  - Wood block definitions follow a consistent side+top texture pattern that compresses well with the `woodBlock()` helper
+  - Tileset draw functions should receive `rng` as a parameter rather than closing over module state — enables file splitting without circular dependencies
+  - `BlockIdValue` type alias (`(typeof BlockId)[keyof typeof BlockId]`) provides exhaustive type checking for block IDs without runtime overhead
 ---
 
