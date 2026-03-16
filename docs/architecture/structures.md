@@ -1,250 +1,276 @@
-# Structure Recognition Architecture
+# Runic Computation — Block Behaviors and Emergent Structures
 
-## The Problem
+## The Core Idea
 
-Blocks are atoms. Gameplay happens at the molecule level. When the player arranges blocks into patterns, the game must recognize those patterns and grant them **purpose** — a forge smelts, a shelter protects, a rune ward repels. This document defines how composites of blocks become functional structures.
+Blocks in Bok are not inert. Certain blocks have **behaviors** — they sense, emit, conduct, transform, and act. When blocks with behaviors are placed adjacent to each other, signals propagate between them. Emergent function arises not from the game recognizing prescribed patterns, but from the player **composing behaviors into machines**.
 
-## Two Kinds of Composites
+This is carving runes into the world. Each rune-inscribed block is an instruction. A chain of them is a program. The world executes it.
 
-### 1. Workstations (Pattern-Matched)
+## The Metaphor
 
-A workstation is a small, specific arrangement of blocks that the game recognizes as a functional entity. The player builds it from blocks; the game detects the pattern and activates it.
+In Norse tradition, runes aren't just letters — they are forces. Carving ᚲ (Kenaz, torch) onto bark doesn't just write the word "fire" — it invokes fire's essence. In Bok, inscribing a rune onto a block doesn't label it — it gives it a **behavior**. A network of inscribed blocks is a living inscription, a saga that runs.
 
-**Examples:**
-- **Crafting Bench (Hyvelbänk)**: 4 Planks in a 2×2 square
-- **Forge (Städ)**: 3×3 Stone Bricks base + Torch on center top
-- **Scriptorium (Skrivbord)**: Planks base + Glass top + Torch adjacent
-- **Charcoal Kiln (Kolmila)**: Hollow ring of Stone (3×3×3 with center column empty, fire block inside)
+The player isn't "building a forge." They're inscribing a sentence that says "gather heat, transform stone into metal." The forge is what that sentence *does*.
 
-### 2. Structures (Volume-Based)
+## Block Properties
 
-A structure is an enclosed or semi-enclosed space that provides passive bonuses. Detection is based on volume analysis, not exact block patterns.
+Every block has a fixed material type (wood, stone, iron, etc.) and an optional **rune inscription**. The inscription gives the block a behavior class:
 
-**Examples:**
-- **Shelter (Stuga)**: Enclosed air volume with walls + roof → hunger/stamina bonus
-- **Territory**: Contiguous player-placed block cluster → creature spawn influence
-- **Light Perimeter**: Torch/lantern radius union → Mörker exclusion zone
+### Material Properties (Intrinsic)
 
-## Architecture
+| Property | Blocks | Effect |
+|----------|--------|--------|
+| **Conducts Signal** | Stone, Iron, Copper, Crystal | Signal passes through |
+| **Insulates** | Wood, Planks, Leaves | Signal stops |
+| **Stores** | Chests (future), Hollowed blocks | Holds items/resources |
+| **Burns** | Wood, Planks, Leaves | Consumed by fire signal, produces light/heat |
+| **Flows** | Water | Propagates downhill, cools |
+| **Resonates** | Crystal | Amplifies signal strength |
 
-### Structure Registry — Pattern Definitions
+### Rune Inscriptions (Applied)
+
+The player can inscribe a rune onto any compatible block using a chisel + rune knowledge. The rune grants a behavior:
+
+| Rune | Name | Behavior | Description |
+|------|------|----------|-------------|
+| ᚲ | **Kenaz** (Torch) | **EMIT(heat)** | Produces a continuous heat signal. The elemental source. |
+| ᛊ | **Sowilo** (Sun) | **EMIT(light)** | Produces a continuous light signal. Repels Mörker. |
+| ᚠ | **Fehu** (Wealth) | **PULL(resource)** | Attracts nearby loose items/drops within radius. A collector. |
+| ᚢ | **Uruz** (Strength) | **PUSH(force)** | Exerts a push on entities (creatures, items) in the signal direction. |
+| ᚦ | **Thurisaz** (Thorn) | **DAMAGE(signal)** | Converts incoming signal to area damage. A trap. |
+| ᚨ | **Ansuz** (Wisdom) | **SENSE(entity)** | Detects creatures/player within radius. Emits signal on detection. |
+| ᚱ | **Raido** (Journey) | **TELEPORT(linked)** | Pairs with another Raido block. Moves items/player between them. |
+| ᛉ | **Algiz** (Protection) | **WARD(radius)** | Creates an exclusion zone. Hostile creatures can't enter. |
+| ᛏ | **Tiwaz** (Victory) | **BUFF(combat)** | Entities in radius deal more damage. A war standard. |
+| ᛒ | **Berkanan** (Birch) | **GROW(nature)** | Accelerates natural growth in radius. Saplings grow, crops yield. |
+| ᛗ | **Mannaz** (Humanity) | **CALM(creature)** | Neutral creatures in radius become friendly. A taming ward. |
+| ᛃ | **Jera** (Harvest) | **TRANSFORM(input→output)** | Converts one resource to another when signal + input present. The core of crafting. |
+
+## Signal Propagation
+
+Signals flow through **conducting materials** from emitter to receiver. The rules are simple:
+
+### Signal Types
+- **Heat** — produced by Kenaz. Enables smelting, cooking, light. Diminishes over distance.
+- **Light** — produced by Sowilo. Repels darkness creatures. Diminishes over distance.
+- **Force** — produced by Uruz. Pushes entities. Directional (follows block facing).
+- **Detection** — produced by Ansuz. Binary (creature present / not present). Triggers other blocks.
+- **Resource** — not a signal but a flow. Items move through Fehu-inscribed paths.
+
+### Propagation Rules
+
+```
+1. An EMIT block produces signal at strength S (default 10)
+2. Signal propagates to adjacent blocks (6-connected: ±x, ±y, ±z)
+3. Each block the signal passes through:
+   - Conducting material: strength -= 1 (stone, iron, copper)
+   - Resonating material: strength *= 1.5 (crystal)
+   - Insulating material: signal stops
+   - Air: signal stops (signals travel through blocks, not air)
+4. When signal reaches a BEHAVIOR block, it activates that behavior
+5. Signal strength determines behavior intensity
+```
+
+### Tick Rate
+
+Signal propagation runs on a **slow tick** (4 ticks/second, every 250ms), not per-frame. This is:
+- Performant on mobile (max ~100 blocks evaluated per tick)
+- Visible to the player (they can watch signals propagate)
+- Debuggable (place a block, watch the effect ripple outward)
+
+Each tick, the system:
+1. Collects all EMIT blocks in loaded chunks
+2. BFS from each emitter through conducting blocks
+3. Activates any behavior blocks reached by sufficient signal
+4. Applies effects (damage, push, transform, etc.)
+
+## Emergent Machines
+
+The player doesn't build a "forge" by following a pattern. They **invent** one by composing behaviors:
+
+### Example: A Forge (Emerged, Not Prescribed)
+
+```
+[Kenaz on Stone] → stone → stone → [Jera on Iron Block]
+     (emits heat)    (conducts)       (transforms ore → ingot when heat signal received)
+```
+
+The player places a Kenaz-inscribed stone block (heat emitter), connects it via stone blocks to a Jera-inscribed iron block (transformer). When the player drops ore near the Jera block, and heat signal is present, the ore transforms into an ingot.
+
+There's no "forge recipe." Any arrangement that delivers heat to a Jera transformer IS a forge. The player might build a 2-block forge or a massive industrial chain. Both work.
+
+### Example: A Defensive Perimeter
+
+```
+[Ansuz on Stone] → stone → stone → [Thurisaz on Stone]
+     (senses enemies)  (conducts)     (damages when signaled)
+```
+
+An Ansuz sensor detects approaching Mörker. Signal conducts through stone to a Thurisaz trap block. When signal arrives, the Thurisaz block damages enemies in its radius.
+
+The player could also add Sowilo (light) blocks to the chain — the detection triggers both traps AND lights, creating a responsive defense that only activates at night when threats approach.
+
+### Example: A Resource Collector
+
+```
+[Fehu on Stone] → air gap → dropped items get pulled in
+                         ↓
+             [Jera on Planks] (transforms raw wood → planks automatically)
+```
+
+Fehu pulls nearby items. If those items land adjacent to a Jera block receiving the right signal, they transform. Automated crafting from emergent composition.
+
+### Example: A Settlement Heart
+
+```
+                    [Sowilo] (light ward)
+                        |
+[Ansuz] → stone → [Algiz on Crystal] → amplified protection radius
+                        |
+                    [Berkanan] (growth acceleration)
+```
+
+A central crystal amplifies an Algiz ward's radius. Ansuz sensors on the perimeter feed detection signals inward. Sowilo blocks create light. Berkanan blocks accelerate nearby farms. This is a **settlement** — not because the game labeled it, but because it *does settlement things*.
+
+## Archetypes, Not Prescriptions
+
+The game defines **archetypes** — general categories of function — and recognizes when a player's build achieves one:
+
+| Archetype | Recognized When | Effect |
+|-----------|-----------------|--------|
+| **Hearth** | EMIT(heat) + enclosed space | Shelter bonuses, creature attraction |
+| **Workshop** | EMIT(heat) + TRANSFORM within 5 blocks | Crafting tier unlocked |
+| **Beacon** | EMIT(light) with strength > 20 | Map-visible landmark, Lyktgubbe attraction |
+| **Ward** | WARD active with radius > 5 | Territory claim, creature exclusion |
+| **Trap** | SENSE + DAMAGE connected | Automated defense recognition |
+| **Farm** | GROW active + saplings/crops nearby | Accelerated resource production |
+| **Gate** | Two paired TELEPORT blocks | Fast-travel node registered in Kartan |
+| **Settlement** | Hearth + Workshop + Ward colocated | Full settlement status, named location |
+
+Archetype recognition is **emergent** — the game checks for functional capability, not block arrangement. If the player achieves the function through 3 blocks or 300, it's the same archetype.
+
+### Settlement Founding
+
+A **settlement** is recognized when three archetypes are colocated (within a chunk):
+- A **Hearth** (warmth + shelter)
+- A **Workshop** (crafting capability)
+- A **Ward** (defense perimeter)
+
+When a settlement is first recognized:
+- The Sagan (saga) records the founding: *"Day 7 — A stuga rises in Ängen."*
+- The location gets a name (procedurally generated Swedish place name)
+- The Kartan marks it as a named settlement
+- Passive creature behavior shifts (Lyktgubbar gather, Skogssniglar graze nearby)
+- The inscription level checkpoint changes the world's response
+
+Settlements can **grow** as more archetypes overlap:
+- Add a Farm → settlement produces resources passively
+- Add a Gate → settlement connects to the fast-travel network
+- Add a Beacon → settlement is visible from far away on the map
+- Multiple Wards → settlement is harder for hostiles to approach
+
+## Signals and the 4X Loop
+
+| Pillar | How Signals Serve It |
+|--------|---------------------|
+| **eXplore** | Discover new rune inscriptions at Fornlämningar. Each rune is a new capability. Crystal deposits enable amplification. Deep biomes have unique signal materials. |
+| **eXpand** | Build settlements with functional capability. Expand ward radii. Connect settlements via Raido gates. Territory is defined by what your inscriptions DO, not just where your blocks ARE. |
+| **eXploit** | Automate resource processing with Fehu + Jera chains. Mine ore, conduct heat, transform to ingots — all without manual crafting. Longer chains = higher throughput. Crystal amplification = industrial scale. |
+| **eXterminate** | Build active defenses with Ansuz + Thurisaz. Light perimeters with Sowilo. Ward zones with Algiz. The settlement fights for itself. Scale defense with scale of threat (inscription level). |
+
+## Performance Budget
+
+The runic computation system must run on mobile. Constraints:
+
+| Metric | Budget |
+|--------|--------|
+| Signal ticks/second | 4 (250ms interval) |
+| Max evaluated blocks per tick | 128 |
+| Max active emitters per loaded area | 32 |
+| Max signal propagation depth (BFS) | 16 blocks from any emitter |
+| Max active behavior effects per tick | 16 |
+
+If limits are exceeded, farthest emitters from the player are paused. Signal propagation uses BFS with a visited set — no block is evaluated twice per tick.
+
+### Spatial Index
+
+Active inscribed blocks are tracked in a **chunk-level spatial index**:
 
 ```typescript
-interface StructurePattern {
-  id: string;                    // "forge", "crafting_bench", "scriptorium"
-  name: string;                  // "Städ (Forge)"
-  /** 3D block pattern relative to an anchor point */
-  pattern: PatternVoxel[];
-  /** What this structure does when active */
-  effect: StructureEffect;
-  /** Optional: which block triggers detection (e.g., the last block placed) */
-  triggerBlock?: BlockIdValue;
-}
-
-interface PatternVoxel {
-  dx: number;  // offset from anchor
-  dy: number;
-  dz: number;
-  blockId: BlockIdValue | BlockIdValue[];  // exact match or any-of
-  optional?: boolean;                       // pattern still matches without this
-}
-
-type StructureEffect =
-  | { type: "workstation"; tier: number; recipes: string[] }
-  | { type: "shelter"; hungerMod: number; staminaMod: number }
-  | { type: "ward"; creatureType: string; radius: number }
-  | { type: "landmark"; function: "fast_travel" | "lore" | "offering" };
+// Per-chunk: which blocks have inscriptions
+chunkInscriptions: Map<chunkKey, Map<voxelKey, RuneId>>
 ```
 
-### Detection Strategy
+Updated on block place/remove. The signal system only iterates inscribed blocks, not all voxels.
 
-**When to check:** Not every frame. Only when a block is placed or removed.
+## Implementation Phases
 
-```
-Player places block at (x, y, z)
-  → structureDetectionSystem runs
-    → For each registered pattern whose triggerBlock matches:
-      → Try all rotations (0°, 90°, 180°, 270° around Y)
-      → For each rotation, check if pattern matches at (x, y, z) as anchor
-      → If match found:
-        → Spawn Structure ECS entity at anchor position
-        → Apply visual feedback (particle burst, rune glow)
-        → Register in structure spatial index
-    → Also check if a removed block breaks an existing structure
-```
+### Phase A — Signal Foundation
+- Rune inscription mechanic (chisel + interact with block)
+- Signal propagation BFS on slow tick
+- Kenaz (heat emitter) + Sowilo (light emitter)
+- Stone/iron conduct, wood insulates
+- Visual feedback: inscribed blocks glow with rune color, signal propagation shown as subtle particle trails
 
-**Key constraint:** Patterns are small (3×3×3 max for workstations). Checking a dozen patterns against 27 blocks on block-place is trivially fast. No spatial hash needed for detection — it's O(patterns × rotation × pattern_size) per block event.
+### Phase B — Interaction Behaviors
+- Jera (transform) — ore + heat → ingot, wood + heat → charcoal
+- Fehu (pull) — item collection radius
+- Ansuz (sense) — creature detection trigger
+- Thurisaz (damage) — signal-activated trap
 
-### ECS Representation
+### Phase C — Protection & Territory
+- Algiz (ward) — hostile exclusion zone
+- Mannaz (calm) — creature taming
+- Berkanan (grow) — nature acceleration
+- Archetype recognition (Hearth, Workshop, Ward)
+- Settlement founding
 
-Structures are **ECS entities**, not block metadata. They reference world positions but live in the entity system:
+### Phase D — Network & Scale
+- Raido (teleport) — paired fast travel
+- Crystal amplification
+- Uruz (push) — entity displacement
+- Tiwaz (buff) — combat enhancement
+- Full settlement growth system
 
-```typescript
-// New traits
-export const StructureTag = trait();
+### Phase E — Emergence
+- Player-discovered compound behaviors not anticipated by designers
+- Kunskapen records player-invented machines
+- Other players' settlement designs discoverable as Fornlämningar in new worlds (stretch: ghost archaeology)
 
-export const StructureState = trait({
-  patternId: "",        // references StructurePattern.id
-  anchorX: 0,           // world position of anchor block
-  anchorY: 0,
-  anchorZ: 0,
-  rotation: 0,          // 0, 1, 2, 3 (× 90°)
-  active: true,         // false if a component block was removed
-  integrity: 1.0,       // for decay system (1.0 = pristine, 0 = collapsed)
-});
-```
+## Rune Discovery
 
-When the player is near a workstation structure entity, the crafting system unlocks that tier's recipes. When a structure's component block is removed, the entity deactivates (or is destroyed if critical block removed).
+Runes are NOT available from the start. The player discovers them through the world:
 
-### Shelter Detection (Volume-Based)
+| Rune | Discovery Method |
+|------|-----------------|
+| ᚲ Kenaz | Tutorial — first torch placed teaches basic inscription |
+| ᛊ Sowilo | Dawn observation — watch a full sunrise cycle |
+| ᚠ Fehu | Drop items near a runestone — observe them slide toward it |
+| ᚨ Ansuz | Observe a Runväktare activate when you enter a ruin |
+| ᛉ Algiz | Find a protected zone around a Fornlämning — analyze why Mörker avoid it |
+| ᛃ Jera | Watch a Skogssnigel transform grass into mushroom — nature's Jera |
+| ᚦ Thurisaz | Get damaged by a ruin trap — survive and learn |
+| ᚢ Uruz | Observe Lindormar pushing through earth — force in motion |
+| ᛒ Berkanan | Find a grove where trees grow faster near a runestone |
+| ᛗ Mannaz | Observe Vittra near their mound — peace from presence |
+| ᚱ Raido | Find two linked runestones — step on one, appear at the other |
+| ᛏ Tiwaz | Defeat an enemy near a war-inscribed runestone — feel the boost |
 
-Shelters are NOT pattern-matched — they're detected by **enclosed volume analysis**:
+Each discovery is recorded in the Kunskapen page of the Bok. The player can then inscribe that rune onto blocks.
 
-```
-1. Player enters a position surrounded by player-placed blocks
-2. Flood-fill from player position outward through air blocks
-3. If flood-fill is contained (hits solid blocks on all sides within MAX_SHELTER_SIZE):
-   → Player is "sheltered"
-   → Apply bonuses (hunger decay ×0.5, stamina regen ×1.5)
-4. If flood-fill escapes (reaches open air or exceeds limit):
-   → Not sheltered
-```
+## Why This Works for Mobile
 
-**When to check:** Periodically (every ~2 seconds), not per-frame. Cache result until player moves more than 2 blocks or a nearby block changes.
+1. **Slow tick** — computation isn't per-frame, so phone GPUs aren't stressed
+2. **Small networks** — 16-block max propagation depth means networks stay manageable
+3. **Visual feedback** — glowing runes and particle trails make invisible signals visible on small screens
+4. **Touch-friendly** — inscribing is tap-and-hold on a block, select rune from wheel. No precision needed.
+5. **Session-friendly** — build a 3-block machine in 2 minutes and see it work. Expand it over many sessions.
+6. **Discoverable** — rune discovery through observation is perfect for bus-ride sessions. Watch, learn, close the app. Come back and inscribe.
 
-### Persistence
+## Relation to Previous Pattern-Matching
 
-Structures persist through the existing delta system — the blocks that compose them are already saved as voxel deltas. On world load:
+The previous structures.md described pattern-matched workstations (exact block arrangements). This system **supersedes** it. There are no prescribed patterns — only behaviors and their composition. The game recognizes **functional capability** (archetype), not **physical shape**.
 
-1. Terrain regenerated from seed
-2. Voxel deltas applied (player blocks restored)
-3. **Structure detection runs on all player-placed blocks** to rebuild structure entities
+A "forge" is anything that delivers heat to a transformer. A "settlement" is anything that combines shelter, crafting, and defense. The player's creativity is unbounded within the rule set.
 
-This means structures are **derived state** — they're recomputed from block layout, never stored independently. This is simpler and more robust than serializing structure entities.
-
-**Alternative (optimization):** For large worlds, scanning all deltas on load could be slow. Store structure entities in a `structures` table:
-
-```sql
-CREATE TABLE structures (
-  slot_id INTEGER NOT NULL REFERENCES save_slots(id) ON DELETE CASCADE,
-  pattern_id TEXT NOT NULL,
-  anchor_x INTEGER NOT NULL,
-  anchor_y INTEGER NOT NULL,
-  anchor_z INTEGER NOT NULL,
-  rotation INTEGER NOT NULL DEFAULT 0,
-  integrity REAL NOT NULL DEFAULT 1.0,
-  PRIMARY KEY (slot_id, anchor_x, anchor_y, anchor_z)
-);
-```
-
-Then on load, validate each stored structure still has its blocks intact (fast — just check pattern voxels) rather than re-scanning everything.
-
-## Workstation Definitions
-
-### Tier 0 — Hand Crafting
-No structure needed. Available anywhere. Limited recipes (planks, torches, basic tools).
-
-### Tier 1 — Hyvelbänk (Crafting Bench)
-```
-Pattern (2×1×2):
-  Planks  Planks
-  Planks  Planks
-```
-Unlocks: Improved tools, building materials, basic furniture.
-
-### Tier 2 — Städ (Forge)
-```
-Pattern (3×2×3):
-Layer y=0 (base):
-  StoneBricks  StoneBricks  StoneBricks
-  StoneBricks  StoneBricks  StoneBricks
-  StoneBricks  StoneBricks  StoneBricks
-Layer y=1 (top):
-  (air)        (air)        (air)
-  (air)        Torch        (air)
-  (air)        (air)        (air)
-```
-Unlocks: Metal tools, lanterns, smelted materials.
-
-### Tier 3 — Skrivbord (Scriptorium)
-```
-Pattern (3×2×1):
-Layer y=0:
-  Planks  Planks  Planks
-Layer y=1:
-  Glass   Glass   Glass
-Adjacent Torch required (any side).
-```
-Unlocks: Knowledge items, Bok upgrades, enchanting.
-
-## Territory System
-
-Territory is not a structure — it's a **continuous field** computed from player-placed block density:
-
-```
-territory_strength(x, z) = Σ (1 / (1 + distance²))
-  for all player-placed blocks within TERRITORY_RADIUS
-```
-
-This produces a smooth falloff field. Where `territory_strength > threshold`:
-- Passive creatures may be attracted
-- Hostile spawn rates reduced (scaled by strength)
-- Mörker spawn radius pushed outward
-- Light sources amplified
-
-Territory is computed lazily (only around the player) and cached per-chunk.
-
-## Light Zones
-
-Each light-emitting block (Torch, Lantern, Ember Lantern, Glyph Lamp) defines a spherical zone of influence:
-
-| Source | Radius | Effect |
-|--------|--------|--------|
-| Torch | 4 blocks | Mörker avoidance, mining visibility |
-| Lantern | 8 blocks | Mörker avoidance, creature calming |
-| Ember Lantern | 12 blocks | Mörker damage, strong avoidance |
-| Glyph Lamp | 20 blocks | Mörker exclusion, Lyktgubbe attraction |
-
-Light zones affect creature AI pathfinding: Mörker won't path through lit zones, Lyktgubbar are attracted to glyph lamp zones.
-
-Computed by maintaining a spatial index of light-emitting blocks (updated on place/remove) and querying during creature AI updates.
-
-## Decay System
-
-Unvisited structures slowly lose integrity:
-
-```
-integrity -= DECAY_RATE * dt  (when player is > DECAY_DISTANCE away)
-integrity = min(1.0, integrity + REPAIR_RATE * dt)  (when player is nearby)
-```
-
-At integrity thresholds:
-- 0.8: Moss blocks start appearing on surfaces
-- 0.5: Some blocks replaced with cracked variants
-- 0.2: Structure deactivates (workstation stops working)
-- 0.0: Structure collapses (blocks replaced with rubble/moss)
-
-**Runsten Seal** (Jätten boss drop): Structures within radius of a placed Runsten Seal never decay. Your saga endures.
-
-## Rune Wards
-
-Rune wards are a special structure type — a single Runestone block inscribed with a rune:
-
-- **ᛉ Algiz (Protection)**: Hostile creatures won't enter 10-block radius
-- **ᚱ Raido (Journey)**: Fast-travel anchor when activated from the Kartan
-- **ᚲ Kenaz (Craft)**: Workstations within 5 blocks operate at +50% speed
-- **ᛗ Mannaz (Humanity)**: Neutral creatures within 10 blocks become friendly
-
-Wards are structure entities with a single-block pattern and a rune-specific effect.
-
-## Implementation Order
-
-1. **StructurePattern registry + detection on block place/remove** — core system
-2. **Crafting Bench pattern** — simplest workstation, proves the system
-3. **Shelter detection** — volume-based, independent of patterns
-4. **Forge + Scriptorium patterns** — more complex patterns
-5. **Territory field** — density computation
-6. **Light zones** — spatial index of emitters
-7. **Decay** — integrity over time
-8. **Rune wards** — single-block special structures
-9. **Persistence table** — optimize load times for large worlds
+Shelter detection (enclosed volume → bonus) remains as described — it's a spatial property of block arrangement, not a signal behavior. Territory strength (density field from player blocks) also remains as a separate spatial system. These are complementary to the runic computation, not replaced by it.
