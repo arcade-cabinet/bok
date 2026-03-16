@@ -5,6 +5,65 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Computational Rune System Architecture
+The computational rune system adds logic gates (Naudiz/Isa/Hagalaz) for circuit-building, following the pure-data ↔ ECS bridge separation:
+- `computational-rune-data.ts` — Constants for all three gates (output strengths, delay ticks, particle colors). `isComputationalRune()` for category filtering. Pure data, no ECS/Three.js.
+- `naudiz-not.ts` — NOT gate: `computeNaudizOutput()` (outputs 5 when input is 0, silent when powered), `evaluateNaudiz()` returns SignalEmitter or null. `maxSignalAtBlock()` shared helper. Pure math.
+- `isa-delay.ts` — DELAY gate: module-level delay buffer (`Map<posKey, DelayedSignal[]>`), `pushIsaInput()`/`popIsaOutput()` for tick-based delay, `evaluateIsa()` with crystal detection (N=1 default, N=2 crystal). Pure math with state.
+- `hagalaz-gate.ts` — AND gate: `analyzeAdjacentSignals()` checks 6 neighbors grouped by axis, `evaluateHagalaz()` opens gate when 2+ perpendicular axes have signal. Pure math.
+- `computational-rune-system.ts` — ECS system: throttled at INTERACTION_TICK_INTERVAL (0.25s), chunk-based rune collection, dispatches to per-rune evaluators, produces SignalEmitter[] for next tick.
+- Key patterns:
+- **One-tick delay feedback loop**: Computational rune system runs AFTER emitter system. It reads `getSignalMap()`, evaluates gates, produces emitters. Emitter system on the NEXT tick includes these via `getComputationalEmitters()`. This one-tick delay is essential for circuit stability — without it, feedback loops would oscillate infinitely within a single tick.
+- **Naudiz as conditional emitter**: Unlike Kenaz/Sowilo (always emit), Naudiz conditionally emits based on signal absence. Emits SignalType.Force at strength 5 when unpowered.
+- **Isa tick buffer**: Ring buffer per position, indexed by tick number. `popIsaOutput()` checks if oldest entry is `delayTicks` old. Crystal blocks double the delay for longer sequential logic chains.
+- **Hagalaz adjacent-block proxy**: Signal map loses per-face direction data after axis-pair combining. Hagalaz works around this by checking adjacent blocks for signal presence on different axes. If neighbors on 2+ perpendicular axes have signal, the gate opens.
+- **Composite gates emerge naturally**: NAND = Hagalaz → Naudiz. OR = two signals at same conductor (signal combining). Clock = Naudiz + Isa loop (period = 2 × delay ticks). No special composite code needed.
+
+### Archetype Recognition & Settlement System Architecture
+The archetype/settlement system detects functional patterns from rune builds and recognizes settlements:
+- `archetype-data.ts` — Archetype IDs (Hearth/Workshop/Beacon/Ward/Trap/Farm/Gate), detection thresholds, founding requirements. Pure data, no ECS/Three.js.
+- `archetype-helpers.ts` — Shared utilities (posKey, distSq, toChunk, signal helpers), Farm/Gate detectors, groupByChunk. Pure math.
+- `archetype-detect.ts` — Per-archetype detection logic (Hearth, Workshop, Beacon, Ward, Trap), combined `detectAllArchetypes()`. Pure math.
+- `settlement-data.ts` — Settlement levels (None/Hamlet/Village/Town), Swedish name generation (prefix+suffix from seed), founding/growth prose templates. Pure data.
+- `settlement-detect.ts` — `detectSettlements()` from colocated archetypes, `diffSettlements()` for founding/growth event detection. Pure math.
+- `settlement-system.ts` — ECS system: throttled 2s scan, collects all rune blocks near player, runs archetype detection + settlement recognition, diffs for saga entries, exposes `getActiveSettlements()` module-level cache.
+- Key patterns:
+- **Two-tier detection**: Rune blocks → archetypes (per-rune-type detectors) → settlements (per-chunk grouping + threshold). This separates concern cleanly.
+- **Founding trio**: Hearth + Workshop + Ward colocated in one chunk = settlement. Growth adds Farm/Gate/Beacon/Trap.
+- **Beacon as aggregate metric**: Signal strength caps at 15, but acceptance criteria specifies `light strength >20`. Resolved by summing total Sowilo light output per chunk — requires 2-3 Sowilo emitters.
+- **Diff-based saga entries**: `diffSettlements(prev, next)` detects founding events and growth level-ups by comparing cached vs newly detected settlements. Only triggers saga entries on state changes.
+- **Module-level settlement cache**: `getActiveSettlements()` exposes read-only array for creature AI behavior shifts near settlements. Same pattern as `getActiveWards()` and `getSignalMap()`.
+- **Deterministic naming**: `chunkNameSeed(cx, cz)` via golden ratio hash → `generateSettlementName(seed)` combines Swedish prefix (Björk, Sten, Kvarn...) + suffix (by, holm, borg...).
+
+### Interaction Rune System Architecture
+The interaction rune system processes Jera/Fehu/Ansuz/Thurisaz runes, following the pure-data ↔ ECS bridge separation:
+- `interaction-rune-data.ts` — Constants for all four runes (radii, speeds, thresholds, damage caps). Pure data, no ECS/Three.js.
+- `jera-transform.ts` — Transformation recipe table: (inputId + signalType + minStrength) → outputId. `findJeraRecipe()` returns matching recipe or undefined. Pure data.
+- `fehu-pull.ts` — Item attraction math: `computePullVelocity()` (normalized direction × speed), `isInPullRange()`, `isAtSource()` for collect distance. Pure math.
+- `ansuz-sense.ts` — Creature detection: `detectsEntity()`, `countDetectedEntities()`, `computeAnsuzSignalStrength()` (binary: emit or not). Pure math.
+- `thurisaz-damage.ts` — Signal-to-damage: `computeThurisazDamage()` (strength × rate, capped), `isInDamageRadius()`. Pure math.
+- `interaction-rune-system.ts` — ECS system: throttled at INTERACTION_TICK_INTERVAL (0.25s), chunk-based rune collection, dispatches to per-rune processors, Ansuz emitters cached for next propagation tick.
+- Key patterns:
+- **Read-after-write data flow**: Interaction rune system runs AFTER emitter system in game.ts. It reads `getSignalMap()` to determine signal strength at Jera/Thurisaz blocks. Ansuz produces `SignalEmitter[]` cached for the NEXT emitter tick (one-tick delay is acceptable for sensor → effector chains).
+- **Side-effect callbacks for all world mutations**: `InteractionRuneEffects` interface has 6 callbacks (spawnItemDrop, collectNearbyItem, spawnParticles, damageCreature, getItemDropsNear, moveItemDrop). Game.ts wires real implementations; tests can mock.
+- **Jera recipe table**: Pure data array of `{inputId, signalType, minStrength, outputId, outputQty}`. `findJeraRecipe()` returns first match. New recipes added by extending the array — no code changes needed.
+- **Thurisaz uses max signal of any type**: Instead of requiring a specific signal type, Thurisaz checks all signal types at its block and uses the strongest. This means both Heat (from Kenaz) and Detection (from Ansuz) can power traps.
+- **Fehu pull on throttled tick, not per-frame**: Item movement at 4 ticks/second is sufficient for the building-block aesthetic. Avoids duplicate chunk scanning.
+
+### Protection Rune System Architecture
+The protection rune system processes Algiz/Mannaz/Berkanan runes, following the pure-data ↔ ECS bridge separation:
+- `algiz-ward.ts` — Ward exclusion zone: `computeWardRadius()` (base + signal × scale, capped), `isInWardZone()`, `isBlockedByWard()` (multi-zone OR). Pure math.
+- `mannaz-calm.ts` — Creature calming: `computeCalmRadius()`, `isAiTypeCalmable()` (only neutral), `isCalmedByZone()`. Pure math.
+- `berkanan-grow.ts` — Growth acceleration: `computeGrowthRadius()`, `computeGrowthMultiplier()` (base + signal × scale, capped), `getBestGrowthMultiplier()` (multi-zone max). Pure math.
+- `interaction-rune-data.ts` — Extended with protection rune constants (base/max radii, per-strength scales, particle colors). `isProtectionRune()` for category filtering.
+- `protection-rune-system.ts` — ECS system: separate from interaction rune system, same throttled tick, chunk-based scanning, module-level zone caches.
+- Key patterns:
+- **Separate system for separate category**: Protection runes don't share processing with interaction runes — they produce zone caches instead of direct effects. Separate `protectionRuneSystem` keeps both files under 200 LOC.
+- **Module-level zone caches**: `getActiveWards()`, `getActiveCalmZones()`, `getActiveGrowthZones()` expose read-only arrays for creature AI and growth systems. Same pattern as `getSignalMap()` and `getAnsuzEmitters()`.
+- **Max signal of any type**: Like Thurisaz, protection runes read the strongest signal of any type at their block. Any emitter (Kenaz Heat or Sowilo Light) can power protection runes.
+- **Radius = base + strength × scale**: All three runes have a useful base radius even without signal infrastructure, but become much more powerful when connected to signal networks. Formula: `min(BASE + strength * PER_STRENGTH, MAX)`.
+- **Particle timer separate from zone computation**: Ward boundary particles spawn at 1s intervals (not every 0.25s tick) to avoid visual noise while zones update at full tick speed.
+
 ### Emitter Rune System Architecture
 The emitter rune system bridges rune inscription with signal propagation, following the pure-data ↔ ECS bridge separation:
 - `emitter-runes.ts` — Emitter config map (RuneId → signal type, strength, glow color, continuous flag). Pure data, no ECS/Three.js.
@@ -1094,3 +1153,100 @@ The light system separates pure data from ECS state management, following the cr
   - **Sowilo glyph ᛊ (U+16CA)**: The Sowilo rune uses Unicode codepoint U+16CA from the Runic block. Care needed: some fonts don't render all Elder Futhark glyphs, but the RuneWheel component renders glyphs as text so missing font support falls back gracefully.
 ---
 
+
+## 2026-03-16 - US-035
+- Interaction Runes: Jera (Transform), Fehu (Pull), Ansuz (Sense), Thurisaz (Damage) — four interaction runes that read from the signal propagation network and produce world effects
+- Files created:
+  - `src/ecs/systems/interaction-rune-data.ts` (NEW, ~55 LOC) — Pure data: `isInteractionRune()`, constants for all four runes (radii, speeds, thresholds, damage caps), tick interval matching signal propagation
+  - `src/ecs/systems/jera-transform.ts` (NEW, ~75 LOC) — Pure data: transformation recipe table (inputId + signalType + minStrength → outputId/qty), `findJeraRecipe()`, `isJeraInput()`, smelting product item IDs (IRON_INGOT=301, COPPER_INGOT=302, CHARCOAL=303)
+  - `src/ecs/systems/fehu-pull.ts` (NEW, ~80 LOC) — Pure math: item attraction toward Fehu-inscribed faces, `computePullVelocity()` (normalized direction × FEHU_PULL_SPEED), `isInPullRange()`, `isAtSource()` (collect distance check)
+  - `src/ecs/systems/ansuz-sense.ts` (NEW, ~75 LOC) — Pure math: creature detection within configurable radius, `detectsEntity()`, `countDetectedEntities()`, `computeAnsuzSignalStrength()` (binary: emit ANSUZ_EMIT_STRENGTH when any creature detected, 0 otherwise)
+  - `src/ecs/systems/thurisaz-damage.ts` (NEW, ~65 LOC) — Pure math: signal-to-damage conversion, `computeThurisazDamage()` (strength × DAMAGE_PER_STRENGTH capped at MAX), `isInDamageRadius()`, `findEntitiesInDamageRadius()`
+  - `src/ecs/systems/interaction-rune-system.ts` (NEW, ~200 LOC) — ECS system: throttled tick matching emitter system, chunk-based rune collection, dispatches to Jera/Fehu/Ansuz/Thurisaz processors, Ansuz emitters cached for next propagation tick, side-effect callbacks for world mutations
+  - `src/ecs/systems/interaction-rune-data.test.ts` (NEW, ~13 tests) — isInteractionRune recognition/rejection, INTERACTION_RUNE_IDS contents, constant validation
+  - `src/ecs/systems/jera-transform.test.ts` (NEW, ~15 tests) — Recipe matching for all 4 recipes, strength thresholds, wrong signal type, non-recipe inputs, isJeraInput, recipe validation
+  - `src/ecs/systems/fehu-pull.test.ts` (NEW, ~14 tests) — Pull range checks, pull velocity direction/magnitude, at-source detection, constant validation
+  - `src/ecs/systems/ansuz-sense.test.ts` (NEW, ~14 tests) — Entity detection (empty/in-range/out-of-range), count, signal strength (binary), constant validation
+  - `src/ecs/systems/thurisaz-damage.test.ts` (NEW, ~14 tests) — Damage computation (below threshold/at threshold/linear scaling/cap), damage radius checks, entity finding, constant validation
+- Files modified:
+  - `src/ecs/systems/rune-data.ts` — Added Jera (RuneId=10, glyph ᛃ U+16C3, color #228B22), added to PLACEABLE_RUNES
+  - `src/ecs/systems/rune-data.test.ts` — Updated placeable runes count from 9 to 10
+  - `src/ecs/systems/index.ts` — Exported all new modules (interaction-rune-data, interaction-rune-system, jera-transform, fehu-pull, ansuz-sense, thurisaz-damage)
+  - `src/engine/game.ts` — Added `runInteractionRuneSystem()` method in update loop (after emitterSystem, before explorationSystem), wired `damageCreature()` from creature.ts for Thurisaz damage, added `resetInteractionRuneState()` in destroyGame, TODO stubs for item drop integration
+- **Learnings:**
+  - **Ansuz as conditional emitter**: Ansuz creates a sensor→propagation→effector pipeline. When creatures enter detection radius, it produces SignalEmitter entries cached in `cachedAnsuzEmitters`, which can be fed into the next emitter system tick. This enables the defensive perimeter pattern from structures.md (Ansuz detects → signal propagates → Thurisaz damages).
+  - **Signal map as read-only data flow**: The interaction rune system reads `getSignalMap()` after the emitter system runs, creating a clean data dependency: emitters produce → signals propagate → interaction runes consume. No circular dependency.
+  - **Item drop system as future integration point**: The effects callbacks `spawnItemDrop`/`collectNearbyItem`/`getItemDropsNear`/`moveItemDrop` are stubbed as TODO in game.ts. When a world item drop system is implemented, Jera transform and Fehu pull will activate simply by filling in these callbacks. The logic is complete and tested — only the world integration is deferred.
+  - **THURISAZ_DAMAGE_RADIUS must be imported from interaction-rune-data.ts, not thurisaz-damage.ts**: The constant is defined in the data module and only imported (not re-exported) by the logic module. The system file needs to import it from the source.
+  - **Adding new RuneId values breaks existing count tests**: rune-data.test.ts had a hardcoded `toHaveLength(9)` for PLACEABLE_RUNES. After adding Jera (RuneId=10), this needed updating to 10. Always check for count assertions when extending enums.
+---
+
+## 2026-03-16 - US-036
+- What was implemented: Protection Runes — Algiz (ward exclusion zone), Mannaz (creature calming), Berkanan (growth acceleration)
+- Files created:
+  - `src/ecs/systems/algiz-ward.ts` (NEW, ~59 LOC) — Pure math: ward radius from signal, exclusion zone distance check, multi-zone blocked check
+  - `src/ecs/systems/mannaz-calm.ts` (NEW, ~68 LOC) — Pure math: calm radius from signal, AI type filtering (neutral only), multi-zone calm check
+  - `src/ecs/systems/berkanan-grow.ts` (NEW, ~78 LOC) — Pure math: growth radius + multiplier from signal, growth zone distance check, best multiplier across overlapping zones
+  - `src/ecs/systems/protection-rune-system.ts` (NEW, ~194 LOC) — ECS system: throttled tick, chunk-based protection rune scanning, zone cache computation, ward boundary particle spawning
+  - `src/ecs/systems/algiz-ward.test.ts` (NEW, ~100 LOC) — Ward radius computation, zone checks, multi-ward blocking, constant validation
+  - `src/ecs/systems/mannaz-calm.test.ts` (NEW, ~120 LOC) — Calm radius, zone checks, AI type calmability, multi-zone calming, constant validation
+  - `src/ecs/systems/berkanan-grow.test.ts` (NEW, ~130 LOC) — Growth radius, multiplier computation, zone checks, best multiplier selection, constant validation
+- Files modified:
+  - `src/ecs/systems/rune-data.ts` — Added Mannaz (RuneId=11, glyph ᛐ U+16D0, color #E0C068), added to PLACEABLE_RUNES
+  - `src/ecs/systems/rune-data.test.ts` — Updated placeable runes count from 10 to 11
+  - `src/ecs/systems/interaction-rune-data.ts` — Added `isProtectionRune()`, `PROTECTION_RUNE_IDS`, constants for all three protection runes (radii, scales, multipliers, colors)
+  - `src/ecs/systems/interaction-rune-data.test.ts` — Added Mannaz to interaction rune rejection, added protection rune recognition/rejection/constant tests
+  - `src/ecs/systems/index.ts` — Exported all new modules and protection rune constants
+  - `src/engine/game.ts` — Added `runProtectionRuneSystem()` in update loop (after interactionRuneSystem, before explorationSystem), added `resetProtectionRuneState()` in destroyGame
+- **Learnings:**
+  - **Separate system for separate category**: Protection runes produce zone caches (not direct effects like damage or item movement), so they warrant their own ECS system. This keeps both interaction-rune-system.ts and protection-rune-system.ts under 200 LOC.
+  - **Three composition patterns for zones**: Wards use OR (any zone blocks = blocked), calm uses OR (any zone calms = calmed), growth uses MAX (overlapping zones pick best multiplier). The composition pattern depends on whether the effect is binary or scalar.
+  - **Adding new RuneId values breaks existing count tests (again)**: rune-data.test.ts had `toHaveLength(10)` which broke after adding Mannaz. Pattern confirmed from US-035 learnings — always check count assertions.
+  - **Protection rune radius formula**: `min(BASE + strength * PER_STRENGTH, MAX)` gives useful base radius without signal (Algiz: 3 blocks, Mannaz: 4 blocks) but scales to 9-12 blocks with full signal (strength 15). This makes them useful immediately after inscription but rewards building signal infrastructure.
+  - **Particle spawning on separate timer**: Ward boundary particles at 1s vs zone computation at 0.25s prevents visual noise. The dual-timer pattern (fast computation + slow visuals) is new to this codebase.
+---
+
+## 2026-03-16 - US-037
+- What was implemented: Archetype recognition (7 functional archetypes from rune builds) and settlement founding (chunk-level colocation detection, procedural Swedish naming, saga integration, module-level settlement cache for creature AI)
+- Files changed:
+  - `src/ecs/systems/archetype-data.ts` (NEW) — Archetype IDs, detection thresholds, founding requirements
+  - `src/ecs/systems/archetype-detect.ts` (NEW) — Per-archetype detection (Hearth, Workshop, Beacon, Ward, Trap) + combined detector
+  - `src/ecs/systems/archetype-helpers.ts` (NEW) — Shared helpers, Farm/Gate detectors, groupByChunk
+  - `src/ecs/systems/settlement-data.ts` (NEW) — Settlement levels, Swedish name generation, prose templates
+  - `src/ecs/systems/settlement-detect.ts` (NEW) — Settlement recognition + diff for event detection
+  - `src/ecs/systems/settlement-system.ts` (NEW) — ECS bridge: throttled scan, saga entry, cache
+  - `src/ecs/systems/archetype-detect.test.ts` (NEW) — 23 tests for archetype detection
+  - `src/ecs/systems/settlement-detect.test.ts` (NEW) — 24 tests for settlement + naming
+  - `src/ecs/systems/index.ts` — Added exports for archetype/settlement systems
+  - `src/engine/game.ts` — Added `runSettlementSystem()` + `resetSettlementState()` in destroyGame
+- **Learnings:**
+  - **Beacon threshold vs signal cap**: MAX_SIGNAL_STRENGTH=15 but spec says "light strength >20". Resolved by interpreting as total Sowilo output per chunk (summing all emitters), not per-block. Requires 2-3 Sowilo runes to activate.
+  - **LOC decomposition trigger at ~200**: archetype-detect.ts initially had 259 LOC. Split shared helpers + Farm/Gate detectors into archetype-helpers.ts (130 LOC) leaving archetype-detect.ts at 160 LOC. Re-export pattern keeps public API unchanged.
+  - **Biome lint catches re-export + import duplication**: If you import `groupByChunk` from helpers AND re-export it via `export { groupByChunk } from "./archetype-helpers.ts"`, Biome flags the import as unused. Only re-export.
+  - **Enclosure approximation**: Settlement system approximates enclosed positions using player ShelterState + radius, not per-rune-block enclosure checks. This is a simplification — a future refinement could BFS each Kenaz block's enclosure independently.
+  - **Two-second scan interval**: Settlements change rarely (rune placement + block placement), so 2s is sufficient vs the 0.25s tick used by signal propagation. Keeps the scan cost low.
+---
+
+## 2026-03-16 - US-038
+- Implemented Naudiz (NOT gate), Isa (DELAY gate), Hagalaz (AND gate) computational runes
+- Files changed:
+  - `src/ecs/systems/rune-data.ts` — Added Naudiz (12) and Hagalaz (13) to RuneId, updated Isa description, extended PLACEABLE_RUNES to 13
+  - `src/ecs/systems/rune-data.test.ts` — Updated placeable runes count assertion
+  - `src/ecs/systems/computational-rune-data.ts` (NEW) — Constants for all three gates, `isComputationalRune()`
+  - `src/ecs/systems/naudiz-not.ts` (NEW) — NOT gate logic, `maxSignalAtBlock()` shared helper
+  - `src/ecs/systems/naudiz-not.test.ts` (NEW) — 9 tests: NOT truth table, signal map helpers, evaluateNaudiz
+  - `src/ecs/systems/isa-delay.ts` (NEW) — DELAY gate with module-level tick buffer, crystal detection
+  - `src/ecs/systems/isa-delay.test.ts` (NEW) — 13 tests: delay timing, crystal delay, evaluate integration
+  - `src/ecs/systems/hagalaz-gate.ts` (NEW) — AND gate with adjacent-block axis analysis
+  - `src/ecs/systems/hagalaz-gate.test.ts` (NEW) — 22 tests: AND truth table, NAND composition, clock oscillator, flip-flop, face utilities
+  - `src/ecs/systems/computational-rune-system.ts` (NEW) — ECS bridge: throttled scan, dispatch to per-rune evaluators
+  - `src/ecs/systems/emitter-system.ts` — Added `getComputationalEmitters()` integration for next-tick feedback
+  - `src/ecs/systems/index.ts` — Added barrel exports for all new modules
+  - `src/engine/game.ts` — Added `runComputationalRuneSystem()` + `resetComputationalRuneState()` in destroyGame
+- **Learnings:**
+  - **One-tick delay is essential for circuits**: Computational runes evaluate AFTER propagation and produce emitters for the NEXT tick. This mirrors Ansuz's pattern and prevents infinite oscillation within a single tick. Clock oscillator period = 2 × Isa delay ticks × 250ms.
+  - **Hagalaz adjacent-block proxy**: SignalMap loses per-face direction data after axis-pair combining. Checking adjacent blocks for signal on different axes is a correct proxy for "perpendicular face input" in typical circuit builds.
+  - **Isa reuses existing RuneId (6)**: Isa was already defined but had no system behavior. Repurposing it as DELAY gate is backward-compatible since no existing systems process Isa blocks.
+  - **Cross-coupled NOT gates oscillate, not stabilize**: Two Naudiz gates cross-connected without delay oscillate in sync (both on, both off). True flip-flop requires Isa delays in the feedback path. Test was corrected to verify oscillation rather than complementary stability.
+  - **Naudiz emits Force signal type**: Since Naudiz is a logic gate (not a sensor/heater), it emits SignalType.Force. This differentiates gate outputs from environmental signals.
+---

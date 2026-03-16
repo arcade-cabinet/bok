@@ -15,7 +15,10 @@ import { loadRuntime, Runtime } from "@jolly-pixel/runtime";
 import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
+import type { ComputationalRuneEffects } from "../ecs/systems/computational-rune-system.ts";
+import { computationalRuneSystem, resetComputationalRuneState } from "../ecs/systems/computational-rune-system.ts";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
+import { damageCreature } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
 import type { EmitterEffects } from "../ecs/systems/emitter-system.ts";
 import { emitterSystem, resetEmitterState } from "../ecs/systems/emitter-system.ts";
@@ -39,11 +42,17 @@ import {
 	workstationProximitySystem,
 	worldEventSystem,
 } from "../ecs/systems/index.ts";
+import type { InteractionRuneEffects } from "../ecs/systems/interaction-rune-system.ts";
+import { interactionRuneSystem, resetInteractionRuneState } from "../ecs/systems/interaction-rune-system.ts";
 import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import type { ProtectionRuneEffects } from "../ecs/systems/protection-rune-system.ts";
+import { protectionRuneSystem, resetProtectionRuneState } from "../ecs/systems/protection-rune-system.ts";
 import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
+import type { SettlementEffects } from "../ecs/systems/settlement-system.ts";
+import { resetSettlementState, settlementSystem } from "../ecs/systems/settlement-system.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
@@ -169,6 +178,10 @@ class GameBridge extends Behavior {
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		this.runEmitterSystem(dt);
+		this.runInteractionRuneSystem(dt);
+		this.runProtectionRuneSystem(dt);
+		this.runComputationalRuneSystem(dt);
+		this.runSettlementSystem(dt);
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		codexSystem(kootaWorld, dt);
@@ -300,6 +313,53 @@ class GameBridge extends Behavior {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
 		};
 		emitterSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
+	}
+
+	private runInteractionRuneSystem(dt: number) {
+		const effects: InteractionRuneEffects = {
+			spawnItemDrop: (_x, _y, _z, _itemId, _qty) => {
+				// TODO: integrate with world item drop system when available
+			},
+			collectNearbyItem: (_runeX, _runeY, _runeZ, _itemId) => {
+				// TODO: integrate with world item drop system when available
+				return false;
+			},
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+			damageCreature: (entityId, damage) => {
+				damageCreature(kootaWorld, entityId, damage, {
+					spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+				});
+			},
+			getItemDropsNear: (_x, _y, _z, _radius) => {
+				// TODO: integrate with world item drop system when available
+				return [];
+			},
+			moveItemDrop: (_index, _vx, _vy, _vz, _dt) => {
+				// TODO: integrate with world item drop system when available
+			},
+		};
+		interactionRuneSystem(kootaWorld, dt, effects);
+	}
+
+	private runProtectionRuneSystem(dt: number) {
+		const effects: ProtectionRuneEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		protectionRuneSystem(kootaWorld, dt, effects);
+	}
+
+	private runComputationalRuneSystem(dt: number) {
+		const effects: ComputationalRuneEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		computationalRuneSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
+	}
+
+	private runSettlementSystem(dt: number) {
+		const effects: SettlementEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		settlementSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
 	}
 
 	private runRuneInscriptionSystem(dt: number) {
@@ -910,6 +970,10 @@ export function destroyGame(): void {
 	combatDrainTimer = 0;
 	resetRuneIndex();
 	resetEmitterState();
+	resetInteractionRuneState();
+	resetProtectionRuneState();
+	resetComputationalRuneState();
+	resetSettlementState();
 	resetLightState();
 	resetExplorationState();
 	resetSagaState();

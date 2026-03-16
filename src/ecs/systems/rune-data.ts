@@ -29,6 +29,10 @@ export const RuneId = {
 	Berkanan: 7,
 	Algiz: 8,
 	Sowilo: 9,
+	Jera: 10,
+	Mannaz: 11,
+	Naudiz: 12,
+	Hagalaz: 13,
 } as const;
 
 export type RuneIdValue = (typeof RuneId)[keyof typeof RuneId];
@@ -76,7 +80,7 @@ export const RUNES: Record<number, RuneDef> = {
 		name: "Isa",
 		glyph: "\u16C1",
 		color: "#ADD8E6",
-		description: "Ice — slows creatures passing through",
+		description: "Ice — delays signal by N ticks before releasing",
 	},
 	[RuneId.Berkanan]: {
 		name: "Berkanan",
@@ -96,6 +100,30 @@ export const RUNES: Record<number, RuneDef> = {
 		color: "#c9a84c",
 		description: "Sun — emits light in facing direction, repels Mörker",
 	},
+	[RuneId.Jera]: {
+		name: "Jera",
+		glyph: "\u16C3",
+		color: "#228B22",
+		description: "Harvest — transforms resources when signal present",
+	},
+	[RuneId.Mannaz]: {
+		name: "Mannaz",
+		glyph: "\u16D0",
+		color: "#E0C068",
+		description: "Humanity — calms nearby creatures",
+	},
+	[RuneId.Naudiz]: {
+		name: "Naudiz",
+		glyph: "\u16BE",
+		color: "#8B0000",
+		description: "Need — inverts signal, outputs when unpowered",
+	},
+	[RuneId.Hagalaz]: {
+		name: "Hagalaz",
+		glyph: "\u16BA",
+		color: "#708090",
+		description: "Hail — gates signal, passes only when two inputs present",
+	},
 };
 
 /** All placeable rune IDs (excludes None). */
@@ -109,6 +137,10 @@ export const PLACEABLE_RUNES: RuneIdValue[] = [
 	RuneId.Berkanan,
 	RuneId.Algiz,
 	RuneId.Sowilo,
+	RuneId.Jera,
+	RuneId.Mannaz,
+	RuneId.Naudiz,
+	RuneId.Hagalaz,
 ];
 
 /** Get rune definition, or undefined for None/invalid. */

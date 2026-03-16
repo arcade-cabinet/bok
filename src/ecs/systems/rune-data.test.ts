@@ -18,8 +18,8 @@ describe("rune-data", () => {
 			expect(RuneId.None).toBe(0);
 		});
 
-		it("has 9 placeable runes", () => {
-			expect(PLACEABLE_RUNES).toHaveLength(9);
+		it("has 13 placeable runes", () => {
+			expect(PLACEABLE_RUNES).toHaveLength(13);
 		});
 
 		it("placeable runes exclude None", () => {

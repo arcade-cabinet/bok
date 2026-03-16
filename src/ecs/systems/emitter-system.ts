@@ -5,6 +5,7 @@
 
 import type { World } from "koota";
 import { PlayerTag, Position } from "../traits/index.ts";
+import { getComputationalEmitters } from "./computational-rune-system.ts";
 import { getEmitterConfig, hexToNumber } from "./emitter-runes.ts";
 import { type FaceIndex, unpackFaceKey } from "./rune-data.ts";
 import { getRuneIndex } from "./rune-index.ts";
@@ -150,15 +151,19 @@ export function emitterSystem(
 	// Collect emitters from nearby chunks
 	const collected = collectEmitters(playerCx, playerCz);
 	const emitters = collected.map((c) => c.emitter);
-	cachedEmitters = emitters;
 
-	if (emitters.length === 0) {
+	// Include computational rune emitters from the previous tick (one-tick delay)
+	const compEmitters = getComputationalEmitters();
+	const allEmitters = compEmitters.length > 0 ? [...emitters, ...compEmitters] : emitters;
+	cachedEmitters = allEmitters;
+
+	if (allEmitters.length === 0) {
 		cachedSignalMap = new Map();
 		return;
 	}
 
 	// Run signal propagation
-	cachedSignalMap = propagateSignals(emitters, getBlock);
+	cachedSignalMap = propagateSignals(allEmitters, getBlock);
 
 	// Spawn particle effects at emitter faces
 	spawnEmitterParticles(collected, effects);
