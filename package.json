@@ -13,13 +13,18 @@
 		"typecheck": "tsc -b --dry"
 	},
 	"dependencies": {
+		"@capacitor-community/sqlite": "^8.0.1",
+		"@capacitor/cli": "^8.2.0",
+		"@capacitor/core": "^8.2.0",
 		"@dimforge/rapier3d-compat": "^0.14.0",
 		"@jolly-pixel/engine": "^2.5.0",
 		"@jolly-pixel/runtime": "^3.3.0",
 		"@jolly-pixel/voxel.renderer": "^1.4.0",
+		"jeep-sqlite": "^2.8.0",
 		"koota": "^0.6.5",
 		"react": "^19.2.4",
 		"react-dom": "^19.2.4",
+		"sql.js": "^1.14.1",
 		"three": "^0.182.0"
 	},
 	"devDependencies": {

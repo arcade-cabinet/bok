@@ -28,9 +28,10 @@ function ParticleField() {
 
 interface TitleScreenProps {
 	onStartGame: (seed: string) => void;
+	onContinueGame?: () => void;
 }
 
-export function TitleScreen({ onStartGame }: TitleScreenProps) {
+export function TitleScreen({ onStartGame, onContinueGame }: TitleScreenProps) {
 	const [seed, setSeed] = useState(generateRandomSeedString);
 
 	const handleReroll = useCallback(() => {
@@ -114,20 +115,35 @@ export function TitleScreen({ onStartGame }: TitleScreenProps) {
 				</button>
 			</div>
 
-			{/* Start button */}
-			<button
-				type="button"
-				onClick={handleStart}
-				className="btn btn-lg border-none font-display text-lg tracking-[0.2em] uppercase transition-all duration-300 hover:scale-105"
-				style={{
-					background: "var(--color-bok-parchment)",
-					color: "var(--color-bok-ink)",
-					boxShadow: "0 0 30px rgba(224,213,193,0.15)",
-					animation: "subtitle-fade 2s ease-out 1.5s both",
-				}}
-			>
-				Awaken
-			</button>
+			{/* Action buttons */}
+			<div className="flex flex-col items-center gap-3" style={{ animation: "subtitle-fade 2s ease-out 1.5s both" }}>
+				{onContinueGame && (
+					<button
+						type="button"
+						onClick={onContinueGame}
+						className="btn btn-lg border-none font-display text-lg tracking-[0.2em] uppercase transition-all duration-300 hover:scale-105"
+						style={{
+							background: "var(--color-bok-gold)",
+							color: "var(--color-bok-ink)",
+							boxShadow: "0 0 30px rgba(201,168,76,0.2)",
+						}}
+					>
+						Continue
+					</button>
+				)}
+				<button
+					type="button"
+					onClick={handleStart}
+					className="btn btn-lg border-none font-display text-lg tracking-[0.2em] uppercase transition-all duration-300 hover:scale-105"
+					style={{
+						background: "var(--color-bok-parchment)",
+						color: "var(--color-bok-ink)",
+						boxShadow: "0 0 30px rgba(224,213,193,0.15)",
+					}}
+				>
+					Awaken
+				</button>
+			</div>
 
 			{/* Controls hint */}
 			<div

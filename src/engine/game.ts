@@ -55,7 +55,7 @@ import {
 	WORLD_HEIGHT,
 } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
-import { getVoxelAt, registerVoxelAccessors, setVoxelAt } from "../world/voxel-helpers.ts";
+import { getVoxelAt, registerVoxelAccessors, setVoxelAt, setVoxelDeltaListener } from "../world/voxel-helpers.ts";
 import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
@@ -434,39 +434,88 @@ export function placeBlock() {
 	});
 }
 
-export function saveGameState(): string {
-	const voxelData = voxelRenderer?.save();
+import type { PlayerSaveData } from "../persistence/db.ts";
 
-	let playerData: Record<string, unknown> = {};
+/** Read current ECS state for persistence. */
+export function readPlayerStateForSave(): PlayerSaveData | null {
+	let result: PlayerSaveData | null = null;
+
 	kootaWorld
 		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress)
 		.readEach(([pos, health, hunger, stamina, inv, hotbar, quest]) => {
-			playerData = {
-				position: { x: pos.x, y: pos.y, z: pos.z },
+			let timeOfDay = 0.25;
+			let dayCount = 1;
+			kootaWorld.query(WorldTime).readEach(([time]) => {
+				timeOfDay = time.timeOfDay;
+				dayCount = time.dayCount;
+			});
+
+			result = {
+				posX: pos.x,
+				posY: pos.y,
+				posZ: pos.z,
 				health: health.current,
 				hunger: hunger.current,
 				stamina: stamina.current,
+				questStep: quest.step,
+				questProgress: quest.progress,
+				timeOfDay,
+				dayCount,
+				hotbar: [...hotbar.slots],
 				inventory: { ...inv },
-				hotbar: { slots: [...hotbar.slots], activeSlot: hotbar.activeSlot },
-				quest: { step: quest.step, progress: quest.progress },
 			};
 		});
 
-	let worldTimeData: Record<string, unknown> = {};
-	kootaWorld.query(WorldTime, WorldSeed).readEach(([time, seedTrait]) => {
-		worldTimeData = {
-			timeOfDay: time.timeOfDay,
-			dayCount: time.dayCount,
-			seed: seedTrait.seed,
-		};
-	});
+	return result;
+}
 
-	return JSON.stringify({
-		version: 1,
-		voxelWorld: voxelData,
-		player: playerData,
-		worldTime: worldTimeData,
+/** Restore player ECS state from save data. */
+export function restorePlayerState(data: PlayerSaveData): void {
+	kootaWorld
+		.query(PlayerTag, Position, Health, Hunger, Stamina, Inventory, Hotbar, QuestProgress)
+		.updateEach(([pos, health, hunger, stamina, inv, hotbar, quest]) => {
+			pos.x = data.posX;
+			pos.y = data.posY;
+			pos.z = data.posZ;
+			health.current = data.health;
+			hunger.current = data.hunger;
+			stamina.current = data.stamina;
+			quest.step = data.questStep;
+			quest.progress = data.questProgress;
+
+			const savedHotbar = data.hotbar as (null | { id: number; type: "block" | "item" })[];
+			for (let i = 0; i < hotbar.slots.length; i++) {
+				hotbar.slots[i] = savedHotbar[i] ?? null;
+			}
+
+			const savedInv = data.inventory as Record<string, number>;
+			const invAny = inv as unknown as Record<string, number>;
+			for (const key of Object.keys(savedInv)) {
+				invAny[key] = savedInv[key];
+			}
+		});
+
+	kootaWorld.query(WorldTime).updateEach(([time]) => {
+		time.timeOfDay = data.timeOfDay;
+		time.dayCount = data.dayCount;
 	});
+}
+
+/** Apply voxel deltas from the database onto the live world. */
+export function applyVoxelDeltas(deltas: Array<{ x: number; y: number; z: number; blockId: number }>): void {
+	for (const d of deltas) {
+		setVoxelAt("Ground", d.x, d.y, d.z, d.blockId);
+	}
+}
+
+/** Enable voxel delta tracking — calls listener on every setVoxelAt. */
+export function enableVoxelDeltaTracking(listener: (x: number, y: number, z: number, blockId: number) => void): void {
+	setVoxelDeltaListener(listener);
+}
+
+/** Disable voxel delta tracking. */
+export function disableVoxelDeltaTracking(): void {
+	setVoxelDeltaListener(null);
 }
 
 export function destroyGame(): void {

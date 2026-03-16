@@ -29,8 +29,16 @@ export function getVoxelAt(x: number, y: number, z: number): number {
 	return _getVoxel(x, y, z);
 }
 
+type VoxelDeltaListener = (x: number, y: number, z: number, blockId: number) => void;
+let _deltaListener: VoxelDeltaListener | null = null;
+
+export function setVoxelDeltaListener(listener: VoxelDeltaListener | null): void {
+	_deltaListener = listener;
+}
+
 export function setVoxelAt(layerName: string, x: number, y: number, z: number, blockId: number): void {
 	_setVoxel(layerName, x, y, z, blockId);
+	_deltaListener?.(x, y, z, blockId);
 }
 
 export function isBlockSolid(blockId: number): boolean {

@@ -13,8 +13,25 @@ import {
 	Stamina,
 	WorldTime,
 } from "./ecs/traits/index.ts";
-import { initGame, kootaWorld } from "./engine/game.ts";
+import {
+	applyVoxelDeltas,
+	disableVoxelDeltaTracking,
+	enableVoxelDeltaTracking,
+	initGame,
+	kootaWorld,
+	readPlayerStateForSave,
+	restorePlayerState,
+} from "./engine/game.ts";
 import { setupInputHandlers } from "./engine/input-handler.ts";
+import {
+	createSaveSlot,
+	initDatabase,
+	listSaveSlots,
+	loadPlayerState,
+	loadVoxelDeltas,
+	savePlayerState,
+	saveVoxelDelta,
+} from "./persistence/db.ts";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
 import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
@@ -29,13 +46,17 @@ import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import { RECIPES } from "./world/blocks.ts";
 
 const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 type GamePhase = "title" | "playing" | "dead";
 
 export default function App() {
 	const [phase, setPhase] = useState<GamePhase>("title");
 	const [craftingOpen, setCraftingOpen] = useState(false);
+	const [hasSaveSlot, setHasSaveSlot] = useState(false);
 	const cleanupRef = useRef<(() => void) | null>(null);
+	const saveSlotRef = useRef<number | null>(null);
+	const saveSeedRef = useRef<string>("");
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -55,6 +76,14 @@ export default function App() {
 		dayCount: 1,
 		isDead: false,
 	});
+
+	// Init database + check for existing saves on mount
+	useEffect(() => {
+		initDatabase()
+			.then(() => listSaveSlots())
+			.then((slots) => setHasSaveSlot(slots.length > 0))
+			.catch((err) => console.error("DB init failed:", err));
+	}, []);
 
 	// HUD polling loop — single setHudState per frame
 	useEffect(() => {
@@ -95,7 +124,6 @@ export default function App() {
 						isDead: state.isDead,
 					};
 
-					// Check death from fresh ECS state (no stale closure)
 					if (state.isDead) {
 						setPhase("dead");
 					}
@@ -120,15 +148,39 @@ export default function App() {
 		return () => cancelAnimationFrame(raf);
 	}, [phase]);
 
+	const performSave = useCallback(async (): Promise<void> => {
+		const slotId = saveSlotRef.current;
+		if (slotId === null) return;
+		const data = readPlayerStateForSave();
+		if (!data) return;
+		try {
+			await savePlayerState(slotId, data);
+		} catch (err) {
+			console.error("Auto-save failed:", err);
+		}
+	}, []);
+
+	// Auto-save every 60 seconds while playing
+	useEffect(() => {
+		if (phase !== "playing") return;
+
+		const interval = setInterval(() => {
+			performSave();
+		}, AUTO_SAVE_INTERVAL_MS);
+		return () => clearInterval(interval);
+	}, [phase, performSave]);
+
 	// Cleanup input handlers when leaving playing phase or unmounting
 	useEffect(() => {
 		if (phase !== "playing") {
 			cleanupRef.current?.();
 			cleanupRef.current = null;
+			disableVoxelDeltaTracking();
 		}
 		return () => {
 			cleanupRef.current?.();
 			cleanupRef.current = null;
+			disableVoxelDeltaTracking();
 		};
 	}, [phase]);
 
@@ -151,11 +203,60 @@ export default function App() {
 
 		try {
 			await initGame(canvas, seed);
+			saveSeedRef.current = seed;
+
+			// Create save slot and wire delta tracking
+			const slotId = await createSaveSlot(seed);
+			saveSlotRef.current = slotId;
+			enableVoxelDeltaTracking((x, y, z, blockId) => {
+				saveVoxelDelta(slotId, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
+			});
+
 			cleanupRef.current?.();
 			cleanupRef.current = setupInputHandlers(canvas);
 			setPhase("playing");
 		} catch (err) {
 			console.error("Failed to start game:", err);
+		}
+	}, []);
+
+	const handleContinueGame = useCallback(async () => {
+		const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+		if (!canvas) return;
+
+		try {
+			const slots = await listSaveSlots();
+			if (slots.length === 0) return;
+
+			// Load most recent save
+			const slot = slots[0];
+			const playerData = await loadPlayerState(slot.id);
+			if (!playerData) return;
+
+			await initGame(canvas, slot.seed);
+			saveSeedRef.current = slot.seed;
+			saveSlotRef.current = slot.id;
+
+			// Apply voxel deltas from DB
+			const deltas = await loadVoxelDeltas(slot.id);
+			if (deltas.length > 0) {
+				// Temporarily disable delta tracking to avoid re-saving loaded deltas
+				applyVoxelDeltas(deltas);
+			}
+
+			// Restore player state
+			restorePlayerState(playerData);
+
+			// Wire delta tracking for new changes
+			enableVoxelDeltaTracking((x, y, z, blockId) => {
+				saveVoxelDelta(slot.id, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
+			});
+
+			cleanupRef.current?.();
+			cleanupRef.current = setupInputHandlers(canvas);
+			setPhase("playing");
+		} catch (err) {
+			console.error("Failed to continue game:", err);
 		}
 	}, []);
 
@@ -178,7 +279,6 @@ export default function App() {
 		if (!recipe) return;
 
 		kootaWorld.query(PlayerTag, Inventory, Hotbar).updateEach(([inv, hotbar]) => {
-			// Check cost
 			const invAny = inv as unknown as Record<string, number>;
 			const canAfford = Object.entries(recipe.cost).every(([res, amount]) => (invAny[res] || 0) >= amount);
 			if (!canAfford) return;
@@ -194,7 +294,6 @@ export default function App() {
 				}
 			}
 
-			// Add to hotbar
 			const emptySlot = hotbar.slots.indexOf(null);
 			if (emptySlot >= 0) {
 				hotbar.slots[emptySlot] = { id: recipe.result.id, type: recipe.result.type };
@@ -222,18 +321,16 @@ export default function App() {
 
 			{/* UI Layer */}
 			<div className="absolute inset-0 z-10 pointer-events-none">
-				{phase === "title" && <TitleScreen onStartGame={handleStartGame} />}
+				{phase === "title" && (
+					<TitleScreen onStartGame={handleStartGame} onContinueGame={hasSaveSlot ? handleContinueGame : undefined} />
+				)}
 				{phase === "dead" && <DeathScreen onRespawn={handleRespawn} />}
 
 				{phase === "playing" && (
 					<>
-						{/* Crosshair (hidden on mobile) */}
 						{!IS_MOBILE && <Crosshair isMining={hudState.miningActive} miningProgress={hudState.miningProgress} />}
-
-						{/* Mobile Controls */}
 						{IS_MOBILE && <MobileControls onCraftToggle={() => setCraftingOpen((prev) => !prev)} />}
 
-						{/* Top HUD */}
 						<div
 							className="absolute top-4 left-4 right-4 flex justify-between items-start"
 							style={{ textShadow: "1px 1px 2px #000, 0 0 4px #000" }}
@@ -242,7 +339,6 @@ export default function App() {
 							<QuestTracker step={hudState.questStep} progress={hudState.questProgress} />
 						</div>
 
-						{/* Bottom HUD */}
 						<div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
 							<VitalsBar health={hudState.health} hunger={hudState.hunger} stamina={hudState.stamina} />
 							<HotbarDisplay
@@ -253,7 +349,6 @@ export default function App() {
 							/>
 						</div>
 
-						{/* Crafting Menu */}
 						<CraftingMenu
 							isOpen={craftingOpen}
 							inventory={hudState.inventory}
