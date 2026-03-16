@@ -22,7 +22,7 @@ pnpm dev
 | `pnpm preview` | Preview production build |
 | `pnpm test` | Run unit tests (Vitest) |
 | `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test-ct` | Run Playwright component tests |
+| `pnpm test-ct` | Run browser component tests (Vitest Browser Mode + Chromium) |
 | `pnpm lint` | Lint with Biome |
 | `pnpm lint:fix` | Lint + auto-fix with Biome |
 | `pnpm typecheck` | TypeScript type check only |
@@ -34,6 +34,7 @@ pnpm dev
 | Document | Description |
 |----------|-------------|
 | [ECS Architecture](architecture/ecs.md) | Koota traits, systems, execution order, side-effect pattern |
+| [Custom Engine](architecture/custom-engine.md) | **Marching cubes, SDF runes, living rune viz. Replaces JP.** |
 | [Rendering Pipeline](architecture/rendering.md) | Jolly Pixel engine, behaviors, Three.js integration |
 | [Persistence](architecture/persistence.md) | SQLite save/load, voxel delta tracking, save slots |
 | [Structures & Runes](architecture/structures.md) | Workstations, shelters, territory, light zones, runic computation |
@@ -54,6 +55,8 @@ pnpm dev
 
 Technical architecture and system design documentation.
 
+- [Custom Engine](architecture/custom-engine.md) -- **Engine rewrite: marching cubes terrain,
+  SDF rune glyphs, living rune visualization, custom game loop. Replaces all Jolly Pixel.**
 - [ECS Architecture](architecture/ecs.md) -- Koota integration, trait definitions, system
   execution order, the side-effect pattern for bridging ECS to rendering
 - [Rendering Pipeline](architecture/rendering.md) -- Jolly Pixel engine setup, behavior
@@ -119,8 +122,8 @@ Lore, creatures, and biome definitions.
 | Layer | Technology | Version |
 |-------|-----------|---------|
 | Runtime | React | 19 |
-| 3D Engine | Jolly Pixel | 2.5 / 3.3 |
-| Voxel Renderer | @jolly-pixel/voxel.renderer | 1.4 |
+| 3D Engine | Custom (replacing Jolly Pixel) | -- |
+| Voxel Renderer | Custom marching cubes (replacing JP) | -- |
 | ECS | Koota | 0.6 |
 | Physics | Rapier3D | 0.14 |
 | Persistence | sql.js + Capacitor SQLite | 1.14 / 8.x |
@@ -129,7 +132,7 @@ Lore, creatures, and biome definitions.
 | Language | TypeScript | 5.9 |
 | Lint/Fmt | Biome | 2.4 |
 | Package | pnpm | -- |
-| Testing | Vitest + Playwright CT | 4.x / 1.58 |
+| Testing | Vitest + Vitest Browser Mode | 4.x |
 | Mobile | Capacitor | 8 |
 | 3D Math | Three.js | 0.182 |
 

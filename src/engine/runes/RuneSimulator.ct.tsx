@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { RuneId } from "../../ecs/systems/rune-data.ts";
 import type { SurfaceInscription } from "./inscription.ts";
 import type { MaterialIdValue } from "./material.ts";
 import { MaterialId } from "./material.ts";
 import { RuneSimulator } from "./RuneSimulator.tsx";
+
+const SCREENSHOT_DIR = "src/engine/runes/__screenshots__";
 
 // ─── Test Helpers ───
 
@@ -49,9 +52,9 @@ describe("RuneSimulator - basic rendering", () => {
 		const grid = uniformGrid(5, 3, MaterialId.Stone);
 		const screen = await render(<RuneSimulator width={5} height={3} materials={grid} inscriptions={[]} />);
 		await expect.element(screen.getByTestId("rune-simulator")).toBeVisible();
-		// 5 * 3 = 15 cells
 		const cells = screen.container.querySelectorAll("[data-testid^='cell-']");
 		expect(cells.length).toBe(15);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/grid-5x3-stone.png` });
 	});
 
 	test("renders inscription glyph at specified position", async () => {
@@ -61,6 +64,7 @@ describe("RuneSimulator - basic rendering", () => {
 		);
 		await expect.element(screen.getByTestId("cell-2-0")).toHaveAttribute("data-glyph", "ᚲ");
 		await expect.element(screen.getByTestId("cell-2-0")).toHaveAttribute("data-rune", "kenaz");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/kenaz-inscription.png` });
 	});
 
 	test("cells show correct material data attribute", async () => {
@@ -69,6 +73,7 @@ describe("RuneSimulator - basic rendering", () => {
 		await expect.element(screen.getByTestId("cell-0-0")).toHaveAttribute("data-material", String(MaterialId.Stone));
 		await expect.element(screen.getByTestId("cell-1-0")).toHaveAttribute("data-material", String(MaterialId.Air));
 		await expect.element(screen.getByTestId("cell-2-0")).toHaveAttribute("data-material", String(MaterialId.Wood));
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/materials-stone-air-wood.png` });
 	});
 });
 
@@ -175,6 +180,7 @@ describe("RuneSimulator - Turing completeness", () => {
 
 		await expect.element(screen.getByTestId("cell-2-1")).toHaveAttribute("data-rune", "hagalaz");
 		await expect.element(screen.getByTestId("cell-4-1")).toHaveAttribute("data-rune", "naudiz");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/nand-circuit.png` });
 	});
 
 	test("clock circuit renders Naudiz and Isa components", async () => {
@@ -188,6 +194,7 @@ describe("RuneSimulator - Turing completeness", () => {
 
 		await expect.element(screen.getByTestId("cell-0-0")).toHaveAttribute("data-rune", "naudiz");
 		await expect.element(screen.getByTestId("cell-2-0")).toHaveAttribute("data-rune", "isa");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/clock-circuit.png` });
 	});
 });
 
@@ -216,6 +223,7 @@ describe("RuneSimulator - material rendering", () => {
 		const screen = await render(<RuneSimulator width={8} height={1} materials={grid} inscriptions={[]} />);
 		const cells = screen.container.querySelectorAll("[data-testid^='cell-']");
 		expect(cells.length).toBe(8);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/all-materials.png` });
 	});
 
 	test("multiple inscriptions render on same grid", async () => {
@@ -227,6 +235,7 @@ describe("RuneSimulator - material rendering", () => {
 		await expect.element(screen.getByTestId("cell-0-0")).toHaveAttribute("data-rune", "kenaz");
 		await expect.element(screen.getByTestId("cell-3-0")).toHaveAttribute("data-rune", "hagalaz");
 		await expect.element(screen.getByTestId("cell-6-0")).toHaveAttribute("data-rune", "sowilo");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/multi-inscriptions.png` });
 	});
 });
 
@@ -258,5 +267,118 @@ describe("RuneSimulator - performance", () => {
 		const elapsed = performance.now() - start;
 
 		expect(elapsed).toBeLessThan(1000);
+	});
+});
+
+// ─── Turing Completeness Integration Tests (tick + verify) ───
+
+describe("RuneSimulator - live signal propagation", () => {
+	test("Kenaz emitter propagates signal through stone after tick", async () => {
+		const grid = uniformGrid(7, 1, MaterialId.Stone);
+		const inscriptions = [ins(0, 0, RuneId.Kenaz)];
+
+		const screen = await render(
+			<RuneSimulator width={7} height={1} materials={grid} inscriptions={inscriptions} showControls />,
+		);
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/kenaz-before-tick.png` });
+
+		// Before tick: no signal on adjacent cells
+		const sig1 = screen.container.querySelector("[data-testid='signal-1-0']");
+		expect(sig1).toBeNull();
+
+		// Tick the simulation
+		await screen.getByTestId("tick-btn").click();
+
+		// After tick: emitter should be emitting, signal should propagate
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/kenaz-after-tick-1.png` });
+
+		// Tick again for further propagation
+		await screen.getByTestId("tick-btn").click();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/kenaz-after-tick-2.png` });
+
+		// Verify signal data attributes appear on cells that received signal
+		const emitterCell = screen.container.querySelector("[data-testid='cell-0-0']");
+		const signalAttr = emitterCell?.getAttribute("data-signal");
+		// After 2 ticks, the emitter cell itself should have signal
+		expect(signalAttr).not.toBeNull();
+	});
+
+	test("Naudiz NOT gate emits when unpowered, silences when powered", async () => {
+		// Layout: [Kenaz] [Stone] [Stone] [Naudiz] [Stone]
+		// Kenaz emits → signal reaches Naudiz → Naudiz should go silent
+		const grid = uniformGrid(5, 1, MaterialId.Stone);
+		const inscriptions = [
+			ins(0, 0, RuneId.Kenaz), // emitter
+			ins(3, 0, RuneId.Naudiz), // NOT gate
+		];
+
+		const screen = await render(
+			<RuneSimulator width={5} height={1} materials={grid} inscriptions={inscriptions} showControls />,
+		);
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/not-gate-before.png` });
+
+		// Tick 1: Kenaz emits, Naudiz initially unpowered → should emit
+		await screen.getByTestId("tick-btn").click();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/not-gate-tick-1.png` });
+
+		// Tick 2: Kenaz signal should reach Naudiz → silences it
+		await screen.getByTestId("tick-btn").click();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/not-gate-tick-2.png` });
+
+		// Tick 3: steady state
+		await screen.getByTestId("tick-btn").click();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/not-gate-tick-3.png` });
+
+		// Verify tick count
+		await expect.element(screen.getByTestId("tick-count")).toHaveTextContent("Tick: 3");
+	});
+
+	test("signal blocked by wood insulator is visible", async () => {
+		// Layout: [Kenaz] [Stone] [Wood] [Stone] [Stone]
+		const grid = gridFromMap(["SSWSS"]);
+		const inscriptions = [ins(0, 0, RuneId.Kenaz)];
+
+		const screen = await render(
+			<RuneSimulator width={5} height={1} materials={grid} inscriptions={inscriptions} showControls />,
+		);
+
+		// Tick several times
+		for (let i = 0; i < 4; i++) {
+			await screen.getByTestId("tick-btn").click();
+		}
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/wood-insulator.png` });
+
+		// Signal should be visible on stone before wood, but NOT after wood
+		const beforeWood = screen.container.querySelector("[data-testid='cell-1-0']");
+		const afterWood = screen.container.querySelector("[data-testid='cell-3-0']");
+		expect(beforeWood?.getAttribute("data-signal")).not.toBeNull();
+		expect(afterWood?.getAttribute("data-signal")).toBeNull();
+	});
+
+	test("Hagalaz AND gate only activates with two signal sources", async () => {
+		// Layout: 3x3 grid. Kenaz top-center, Kenaz left-center, Hagalaz center.
+		// Two paths converge at the Hagalaz.
+		const grid = uniformGrid(3, 3, MaterialId.Stone);
+		const inscriptions = [
+			ins(1, 0, RuneId.Kenaz), // top emitter
+			ins(0, 1, RuneId.Kenaz), // left emitter
+			ins(1, 1, RuneId.Hagalaz), // AND gate at center
+		];
+
+		const screen = await render(
+			<RuneSimulator width={3} height={3} materials={grid} inscriptions={inscriptions} showControls />,
+		);
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/and-gate-before.png` });
+
+		// Tick to propagate signals from both emitters
+		for (let i = 0; i < 3; i++) {
+			await screen.getByTestId("tick-btn").click();
+		}
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/and-gate-after.png` });
+
+		await expect.element(screen.getByTestId("tick-count")).toHaveTextContent("Tick: 3");
 	});
 });

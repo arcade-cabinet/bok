@@ -27,6 +27,8 @@ export interface RuneSimulatorProps {
 	inscriptions: SurfaceInscription[];
 	/** Cell size in pixels (default 24). */
 	cellSize?: number;
+	/** Show tick button for testing (default false). */
+	showControls?: boolean;
 }
 
 export interface RuneSimulatorHandle {
@@ -54,7 +56,7 @@ const MAT_COLORS: Record<MaterialIdValue, string> = {
 // ─── Component ───
 
 export const RuneSimulator = forwardRef<RuneSimulatorHandle, RuneSimulatorProps>(function RuneSimulator(props, ref) {
-	const { width, height, materials, inscriptions, cellSize = 24 } = props;
+	const { width, height, materials, inscriptions, cellSize = 24, showControls = false } = props;
 
 	const [tickCount, setTickCount] = useState(0);
 	const [field, setField] = useState<SignalField>(new Map());
@@ -132,69 +134,79 @@ export const RuneSimulator = forwardRef<RuneSimulatorHandle, RuneSimulatorProps>
 	}, [width, height]);
 
 	return (
-		<div
-			data-testid="rune-simulator"
-			style={{
-				display: "grid",
-				gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
-				gap: 1,
-				padding: 4,
-				background: "#0d0d1a",
-				width: "fit-content",
-			}}
-		>
-			{cells.map((cell) => {
-				const mat = getMaterial(cell.x, 0, cell.z);
-				const signal = getSignalAt(field, cell.x, 0, cell.z);
-				const insAt = insIndex.at(cell.x, 0, cell.z);
-				const inscription = insAt.length > 0 ? insAt[0] : null;
-				const runeDef = inscription ? RUNES[inscription.glyph as number] : null;
-				const glow = Math.min(signal / 10, 1);
+		<>
+			<div
+				data-testid="rune-simulator"
+				style={{
+					display: "grid",
+					gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
+					gap: 1,
+					padding: 4,
+					background: "#0d0d1a",
+					width: "fit-content",
+				}}
+			>
+				{cells.map((cell) => {
+					const mat = getMaterial(cell.x, 0, cell.z);
+					const signal = getSignalAt(field, cell.x, 0, cell.z);
+					const insAt = insIndex.at(cell.x, 0, cell.z);
+					const inscription = insAt.length > 0 ? insAt[0] : null;
+					const runeDef = inscription ? RUNES[inscription.glyph as number] : null;
+					const glow = Math.min(signal / 10, 1);
 
-				return (
-					<div
-						key={cell.id}
-						data-testid={`cell-${cell.id}`}
-						data-material={mat}
-						data-signal={signal > 0 ? signal.toFixed(1) : undefined}
-						data-glyph={runeDef?.glyph}
-						data-rune={runeDef?.name.toLowerCase()}
-						data-emitting={
-							inscription
-								? insStates.get(`${inscription.x},${inscription.y},${inscription.z},${inscription.glyph}`)?.emitting
-									? "true"
+					return (
+						<div
+							key={cell.id}
+							data-testid={`cell-${cell.id}`}
+							data-material={mat}
+							data-signal={signal > 0 ? signal.toFixed(1) : undefined}
+							data-glyph={runeDef?.glyph}
+							data-rune={runeDef?.name.toLowerCase()}
+							data-emitting={
+								inscription
+									? insStates.get(`${inscription.x},${inscription.y},${inscription.z},${inscription.glyph}`)?.emitting
+										? "true"
+										: undefined
 									: undefined
-								: undefined
-						}
-						style={{
-							width: cellSize,
-							height: cellSize,
-							backgroundColor: MAT_COLORS[mat],
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							fontSize: cellSize * 0.6,
-							color: runeDef?.color ?? "#fff",
-							position: "relative",
-							boxShadow: glow > 0 ? `inset 0 0 ${glow * 8}px ${runeDef?.color ?? "#ff0"}` : undefined,
-							opacity: mat === MaterialId.Air ? 0.3 : 1,
-						}}
-					>
-						{runeDef?.glyph}
-						{signal > 0 && (
-							<div
-								data-testid={`signal-${cell.id}`}
-								style={{
-									position: "absolute",
-									inset: 0,
-									background: `rgba(255, 200, 0, ${glow * 0.4})`,
-									pointerEvents: "none",
-								}}
-							/>
-						)}
-					</div>
-				);
-			})}
-		</div>
+							}
+							style={{
+								width: cellSize,
+								height: cellSize,
+								backgroundColor: MAT_COLORS[mat],
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								fontSize: cellSize * 0.6,
+								color: runeDef?.color ?? "#fff",
+								position: "relative",
+								boxShadow: glow > 0 ? `inset 0 0 ${glow * 8}px ${runeDef?.color ?? "#ff0"}` : undefined,
+								opacity: mat === MaterialId.Air ? 0.3 : 1,
+							}}
+						>
+							{runeDef?.glyph}
+							{signal > 0 && (
+								<div
+									data-testid={`signal-${cell.id}`}
+									style={{
+										position: "absolute",
+										inset: 0,
+										background: `rgba(255, 200, 0, ${glow * 0.4})`,
+										pointerEvents: "none",
+									}}
+								/>
+							)}
+						</div>
+					);
+				})}
+			</div>
+			{showControls && (
+				<div data-testid="sim-controls" style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
+					<button type="button" data-testid="tick-btn" onClick={tick} style={{ padding: "4px 12px" }}>
+						Tick
+					</button>
+					<span data-testid="tick-count">Tick: {tickCount}</span>
+				</div>
+			)}
+		</>
 	);
 });
