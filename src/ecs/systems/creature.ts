@@ -47,7 +47,7 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 	});
 
 	// Spawn
-	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects);
+	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects, timeOfDay);
 
 	// Update AI by archetype
 	const ctx: CreatureUpdateContext = {
@@ -56,6 +56,7 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		playerZ: pz,
 		playerAlive,
 		isDaytime,
+		timeOfDay,
 	};
 
 	updateHostileAI(world, dt, ctx, effects);

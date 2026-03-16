@@ -70,6 +70,15 @@ const SPECIES_CONFIGS: Partial<Record<SpeciesId, AnimConfig>> = {
 		walkBobFreq: 1.5,
 		walkSwingAmp: 0.0, // segments use follow-the-leader instead
 	},
+	lyktgubbe: {
+		breathAmp: 0.06,
+		breathFreq: 0.6,
+		idleSwayAmp: 0.0, // no head to sway
+		idleSwayFreq: 0.0,
+		walkBobAmp: 0.08,
+		walkBobFreq: 0.4,
+		walkSwingAmp: 0.0, // no arms
+	},
 };
 
 /** Look up animation config for a species. Falls back to default. */

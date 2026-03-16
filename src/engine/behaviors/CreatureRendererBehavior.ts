@@ -247,4 +247,8 @@ function disposeAssembled(assembled: AssembledCreature) {
 			assembled.lodMesh.material.dispose();
 		}
 	}
+	// Dispose point light
+	if (assembled.pointLight) {
+		assembled.pointLight.dispose();
+	}
 }

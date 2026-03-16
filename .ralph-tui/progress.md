@@ -92,6 +92,17 @@ Underground cave carving and ore veins are in `cave-generator.ts`, separate from
 ### Tileset Draw Function Testing Pattern
 Testing procedural canvas draw functions in Node (no DOM) uses a mock CanvasRenderingContext2D that intercepts property assignments. `Object.defineProperty` on `fillStyle`/`strokeStyle` captures every color value used during drawing. Tests then assert that specific palette colors appear in the captured arrays. This tests drawing _intent_ (what colors are painted) without needing real canvas rendering. The mock also stubs all canvas methods (`fillRect`, `beginPath`, `stroke`, etc.) with `vi.fn()` for call-count assertions.
 
+### Passive Creature AI Pattern (Lyktgubbe)
+The first passive creature demonstrates the pattern for adding non-hostile creatures:
+- `lyktgubbe-drift.ts` — Pure math module (no Three.js). Drift offsets (sine patterns), scatter/reform state machine, time-of-day window checks, biome validation, color interpolation. Pattern follows `procedural-anim.ts` and `ik-solver.ts`.
+- `creature-ai.ts` `updatePassiveAI` — Species dispatch within archetype function. Each passive species gets a dedicated function (`updateLyktgubbeAI`).
+- `creature-spawner.ts` — Species-specific spawn function (`spawnLyktgubbe`) with biome-gating via injected resolver. `registerBiomeResolver()` avoids circular dependency.
+- `creature-parts.ts` — `additive` flag on `CreaturePartDef` for glowing effects. `AssembledCreature.pointLight` for creatures that emit light.
+- Key patterns:
+- **Injected biome resolver**: `registerBiomeResolver(biomeAt)` called in game.ts breaks the circular dependency: creature-spawner needs biome lookup, but importing from terrain-generator would create a cycle.
+- **Time-gated spawning**: `isLyktgubbeTime(timeOfDay)` checks against twilight (0.7–0.85) and dawn (0.15–0.3) windows. Creatures despawn outside their window.
+- **Scatter with drag**: Exponential drag `vel * exp(-3*dt)` produces smooth deceleration for scatter burst → reform pattern.
+
 ### Landmark Generation Architecture
 Landmarks follow the same decomposition as trees and caves:
 - `landmark-types.ts` — Pure structure builders (placeStenhog, placeRunsten, placeFornlamning, biome-specific). Each pushes VoxelSetOptions onto an entries array. No side effects.
@@ -350,5 +361,28 @@ Key patterns:
   - State blending via `prevAnimState + blendProgress` is cheaper than maintaining a full animation state machine graph — only two states are ever active simultaneously
   - Per-species config as `Partial<Record<SpeciesId, AnimConfig>>` with fallback keeps the API simple: new species get the default config automatically, override only when needed
   - Oscillator composition (breathing freq + bob freq) produces organic motion because two incommensurate frequencies create quasi-periodic patterns that never exactly repeat
+---
+
+## 2026-03-16 - US-013
+- Lyktgubbar (Will-o'-the-Wisps): first passive creature in the game
+- New file `src/ecs/systems/lyktgubbe-drift.ts` (200 LOC): Pure-math drift/scatter/reform logic. Sine drift patterns, scatter velocity with exponential drag, reform lerp, time-of-day window check, biome check, color interpolation (amber #ffd700 ↔ blue #88ccff based on surface height).
+- New file `src/ecs/systems/lyktgubbe-drift.test.ts` (210 LOC): 24 tests covering time windows (twilight/dawn boundaries), biome validation, drift offset bounds/phases, scatter velocity direction/magnitude/zero-distance, scatter→reform state transitions, reform threshold snapping, color interpolation at land/water/transition.
+- Updated `src/ecs/systems/creature-ai.ts` (226 LOC): `updatePassiveAI` implemented with species dispatch. Lyktgubbe AI: drift in sine patterns when idle, scatter away from player within SCATTER_RANGE, despawn outside spawn time window. Added `timeOfDay` to `CreatureUpdateContext`.
+- Updated `src/ecs/systems/creature-spawner.ts` (189 LOC): `spawnLyktgubbe` function for twilight/dawn spawning with biome-gating via injected resolver. `registerBiomeResolver` avoids circular dependency with terrain-generator. Lyktgubbar float 1.5 blocks above surface.
+- Updated `src/engine/creature-parts.ts` (256 LOC): Lyktgubbe part definition (single glowing sphere), `additive` flag on `CreaturePartDef` for additive blending, `pointLight` field on `AssembledCreature` for ambient glow, point light creation in assembly for additive creatures.
+- Updated `src/engine/procedural-anim.ts` (148 LOC): Lyktgubbe animation config (slow breathing, gentle bob, no arm swing).
+- Updated `src/engine/behaviors/CreatureRendererBehavior.ts` (254 LOC): Point light disposal in cleanup.
+- Updated `src/engine/game.ts`: Registered biomeAt resolver for spawner biome checks.
+- Updated existing tests: Added `timeOfDay` to all `CreatureUpdateContext` objects, updated fallback tests for species that now have configs.
+- All 328 vitest tests pass (24 new), typecheck clean, lint clean (only pre-existing errors)
+- **Learnings:**
+  - Passive creature AI fills the previously-empty `updatePassiveAI` archetype function — the dispatch-by-archetype pattern scales well to new creature types
+  - Biome-gated spawning requires knowing biome at spawn position, but terrain-generator → creature-spawner would create circular imports. Solution: injected resolver function registered from game.ts at init time
+  - Additive blending (`THREE.AdditiveBlending + transparent + depthWrite=false`) is the standard Three.js recipe for glowing ethereal effects — the orb appears to emit light additively onto the scene
+  - PointLight on AssembledCreature makes lyktgubbar actual light sources that illuminate nearby terrain, not just visual glow
+  - Per-entity phase offset (`entity.id() * 1.37`) ensures each lyktgubbe drifts independently — irrational multiplier avoids phase alignment between nearby wisps
+  - Scatter uses exponential drag (`vel * exp(-3*dt)`) for smooth deceleration rather than linear, producing a more natural-looking burst→fade motion
+  - CreatureUpdateContext needed `timeOfDay` extension for passive AI time-based despawning — this required updating all existing test contexts
+  - Tests that used newly-configured species (lyktgubbe) as "unknown species" for fallback testing needed updating to use genuinely unconfigured species (vittra)
 ---
 

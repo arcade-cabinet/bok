@@ -14,11 +14,14 @@ import {
 	CreatureAnimation,
 	CreatureHealth,
 	CreatureTag,
+	CreatureType,
 	Health,
 	PlayerState,
 	PlayerTag,
 	Position,
+	Species,
 } from "../traits/index.ts";
+import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
 
 const GRAVITY = 28;
 
@@ -28,6 +31,7 @@ export interface CreatureUpdateContext {
 	playerZ: number;
 	playerAlive: boolean;
 	isDaytime: boolean;
+	timeOfDay: number;
 }
 
 /** Run hostile AI (Mörker behavior): chase + attack + burn in daylight. */
@@ -80,9 +84,64 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 		});
 }
 
-/** Run passive AI: wander, flee from player. */
-export function updatePassiveAI(_world: World, _dt: number, _ctx: CreatureUpdateContext, _effects?: CreatureEffects) {
-	// Passive creatures (Lyktgubbe, Skogssnigel, Trana) — placeholder for future species
+/** Run passive AI: Lyktgubbe drift/scatter, other passives placeholder. */
+export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
+	world
+		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
+		.updateEach(([ai, hp, anim, cType, pos], entity) => {
+			if (ai.aiType !== "passive") return;
+
+			if (cType.species === Species.Lyktgubbe) {
+				updateLyktgubbeAI(pos, ai, hp, anim, entity, dt, ctx, effects);
+			}
+		});
+}
+
+/** Lyktgubbe-specific AI: drift in sine patterns, scatter on approach. */
+function updateLyktgubbeAI(
+	pos: { x: number; y: number; z: number },
+	ai: { detectionRange: number; moveSpeed: number; behaviorState: BehaviorStateId },
+	hp: { hp: number; velY: number },
+	anim: { animState: AnimStateId; animTimer: number },
+	entity: { id: () => number; destroy: () => void },
+	dt: number,
+	ctx: CreatureUpdateContext,
+	effects?: CreatureEffects,
+) {
+	// Despawn outside spawn window
+	if (!isLyktgubbeTime(ctx.timeOfDay)) {
+		effects?.onCreatureDied(entity.id());
+		entity.destroy();
+		return;
+	}
+
+	const dx = ctx.playerX - pos.x;
+	const dz = ctx.playerZ - pos.z;
+	const dist = Math.sqrt(dx * dx + dz * dz);
+
+	if (dist < SCATTER_RANGE) {
+		// Scatter away from player
+		ai.behaviorState = BehaviorState.Flee;
+		anim.animState = AnimState.Flee;
+		const invDist = dist > 0.01 ? 1 / dist : 0;
+		pos.x -= dx * invDist * SCATTER_SPEED * dt;
+		pos.z -= dz * invDist * SCATTER_SPEED * dt;
+	} else {
+		// Drift in sine pattern
+		ai.behaviorState = BehaviorState.Idle;
+		anim.animState = AnimState.Idle;
+		const t = anim.animTimer;
+		const phase = entity.id() * 1.37;
+		const drift = driftOffset(t, phase);
+		pos.x += drift.dx * dt * 0.5;
+		pos.y += drift.dy * dt * 0.5;
+		pos.z += drift.dz * dt * 0.5;
+	}
+
+	anim.animTimer += dt;
+
+	// No gravity for floating wisps
+	hp.velY = 0;
 }
 
 /** Run neutral AI: passive until provoked, then hostile. */

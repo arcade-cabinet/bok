@@ -77,6 +77,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: true,
 			isDaytime: false,
+			timeOfDay: 0.75,
 		});
 
 		expect(creature.get(CreatureAI).behaviorState).toBe(BehaviorState.Chase);
@@ -97,6 +98,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: true,
 			isDaytime: false,
+			timeOfDay: 0.75,
 		});
 
 		expect(creature.get(CreatureAI).behaviorState).toBe(BehaviorState.Attack);
@@ -117,6 +119,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: true,
 			isDaytime: false,
+			timeOfDay: 0.75,
 		});
 
 		expect(creature.get(CreatureAI).behaviorState).toBe(BehaviorState.Idle);
@@ -140,6 +143,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: true,
 			isDaytime: false,
+			timeOfDay: 0.75,
 		});
 
 		expect(player.get(Health).current).toBe(85);
@@ -160,6 +164,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: true,
 			isDaytime: true,
+			timeOfDay: 0.25,
 		});
 
 		expect(creature.get(CreatureHealth).hp).toBe(4);
@@ -185,6 +190,7 @@ describe("hostile AI", () => {
 				playerZ: 0,
 				playerAlive: true,
 				isDaytime: true,
+				timeOfDay: 0.25,
 			},
 			effects,
 		);
@@ -217,6 +223,7 @@ describe("hostile AI", () => {
 			playerZ: 0,
 			playerAlive: false,
 			isDaytime: false,
+			timeOfDay: 0.75,
 		});
 
 		expect(player.get(Health).current).toBe(100);

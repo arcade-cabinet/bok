@@ -55,9 +55,16 @@ describe("getAnimConfig", () => {
 	});
 
 	it("falls back to default for unknown species", () => {
-		const config = getAnimConfig("lyktgubbe");
+		const config = getAnimConfig("vittra");
 		expect(config.breathAmp).toBe(0.03);
 		expect(config.breathFreq).toBe(1.5);
+	});
+
+	it("returns lyktgubbe config for lyktgubbe", () => {
+		const config = getAnimConfig("lyktgubbe");
+		expect(config.breathAmp).toBe(0.06);
+		expect(config.breathFreq).toBe(0.6);
+		expect(config.walkSwingAmp).toBe(0);
 	});
 
 	it("all configs have positive breathAmp and breathFreq", () => {

@@ -16,6 +16,7 @@ import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
+import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
 import {
 	creatureSystem,
 	miningSystem,
@@ -52,6 +53,7 @@ import {
 
 import { createBlockDefinitions } from "../world/block-definitions.ts";
 import { BlockId } from "../world/blocks.ts";
+import { biomeAt } from "../world/landmark-generator.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
 import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
@@ -374,6 +376,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	}
 
 	initNoise(seed);
+	registerBiomeResolver(biomeAt);
 
 	jpRuntime = new Runtime(canvas, {
 		includePerformanceStats: false,

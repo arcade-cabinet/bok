@@ -121,11 +121,25 @@ vi.mock("three", () => {
 		},
 		MeshBasicMaterial: class {
 			color: MockColor;
+			blending = 0;
+			transparent = false;
+			depthWrite = true;
 			constructor(opts?: { color?: number }) {
 				this.color = new MockColor();
 				if (opts?.color != null) this.color.setHex(opts.color);
 			}
 		},
+		Material: class {},
+		PointLight: class {
+			position = new MockVector3();
+			constructor(
+				public color = 0,
+				public intensity = 1,
+				public distance = 0,
+			) {}
+			dispose() {}
+		},
+		AdditiveBlending: 2,
 		Color: MockColor,
 	};
 });
@@ -151,8 +165,16 @@ describe("part definitions", () => {
 
 	it("falls back to Mörker for unknown species", () => {
 		const morkerParts = getPartDefs("morker");
-		const fallback = getPartDefs("lyktgubbe");
+		const fallback = getPartDefs("vittra");
 		expect(fallback).toBe(morkerParts);
+	});
+
+	it("returns Lyktgubbe parts for lyktgubbe species", () => {
+		const parts = getPartDefs("lyktgubbe");
+		expect(parts.length).toBe(1);
+		expect(parts[0].geometry).toBe("sphere");
+		expect(parts[0].emissive).toBe(0xffd700);
+		expect(parts[0].additive).toBe(true);
 	});
 
 	it("validates Mörker part defs", () => {

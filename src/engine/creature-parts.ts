@@ -20,12 +20,16 @@ export interface CreaturePartDef {
 	jointAxis: JointAxis;
 	color: number;
 	emissive?: number;
+	/** Use additive blending (for glowing effects like lyktgubbar). */
+	additive?: boolean;
 }
 
 export interface AssembledCreature {
 	root: THREE.Group;
 	parts: THREE.Group[];
 	lodMesh: THREE.Mesh;
+	/** Optional point light for glowing creatures (e.g. Lyktgubbe). */
+	pointLight: THREE.PointLight | null;
 }
 
 // ─── Constants ───
@@ -81,8 +85,23 @@ const MORKER_PARTS: CreaturePartDef[] = [
 	},
 ];
 
+const LYKTGUBBE_PARTS: CreaturePartDef[] = [
+	// 0: glowing orb — single sphere, fully emissive with additive blend
+	{
+		geometry: "sphere",
+		size: [0.2, 0.2, 0.2],
+		offset: [0, 0.4, 0],
+		jointParent: -1,
+		jointAxis: null,
+		color: 0xffd700,
+		emissive: 0xffd700,
+		additive: true,
+	},
+];
+
 const SPECIES_PARTS: Partial<Record<SpeciesId, CreaturePartDef[]>> = {
 	morker: MORKER_PARTS,
+	lyktgubbe: LYKTGUBBE_PARTS,
 };
 
 // ─── Variation ───
@@ -177,6 +196,12 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 			(mat as THREE.MeshBasicMaterial).color.setHex(applyHueVariation(def.emissive, variant));
 		}
 
+		if (def.additive) {
+			mat.blending = THREE.AdditiveBlending;
+			mat.transparent = true;
+			mat.depthWrite = false;
+		}
+
 		const mesh = new THREE.Mesh(geo, mat);
 		mesh.castShadow = !def.emissive;
 		group.add(mesh);
@@ -194,7 +219,16 @@ export function assembleCreature(species: SpeciesId, variant: number): Assembled
 	lodMesh.visible = false;
 	root.add(lodMesh);
 
-	return { root, parts: partGroups, lodMesh };
+	// Add point light for creatures with additive-blended parts (lyktgubbar)
+	let pointLight: THREE.PointLight | null = null;
+	if (defs.some((d) => d.additive)) {
+		const lightColor = defs[0].emissive ?? defs[0].color;
+		pointLight = new THREE.PointLight(applyHueVariation(lightColor, variant), 1.5, 8);
+		pointLight.position.set(0, 0.5, 0);
+		root.add(pointLight);
+	}
+
+	return { root, parts: partGroups, lodMesh, pointLight };
 }
 
 /** Create a single-box LOD mesh using the first part's color. */
