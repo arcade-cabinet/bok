@@ -17,6 +17,8 @@ import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import { registerBiomeResolver } from "../ecs/systems/creature-spawner.ts";
+import type { EmitterEffects } from "../ecs/systems/emitter-system.ts";
+import { emitterSystem, resetEmitterState } from "../ecs/systems/emitter-system.ts";
 import { registerLandmarkResolver, resetExplorationState } from "../ecs/systems/exploration.ts";
 import {
 	codexSystem,
@@ -29,6 +31,7 @@ import {
 	movementSystem,
 	physicsSystem,
 	questSystem,
+	runeInscriptionSystem,
 	sagaSystem,
 	structureSystem,
 	survivalSystem,
@@ -38,11 +41,14 @@ import {
 } from "../ecs/systems/index.ts";
 import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
+import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
 import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
 import {
+	ChiselState,
 	Codex,
 	CookingState,
 	CreatureAnimation,
@@ -63,6 +69,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	RuneFaces,
 	SagaLog,
 	ShelterState,
 	Stamina,
@@ -161,6 +168,7 @@ class GameBridge extends Behavior {
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
+		this.runEmitterSystem(dt);
 		explorationSystem(kootaWorld, dt);
 		this.runCreatureSystem(dt);
 		codexSystem(kootaWorld, dt);
@@ -171,6 +179,7 @@ class GameBridge extends Behavior {
 		this.syncPlayerToCamera(dt);
 		this.syncViewModelState();
 		this.syncEnvironmentState();
+		this.runRuneInscriptionSystem(dt);
 		this.runMiningSystem(dt);
 		streamChunks();
 	}
@@ -286,11 +295,39 @@ class GameBridge extends Behavior {
 		worldEventSystem(kootaWorld, dt, cosmeticRng, effects);
 	}
 
+	private runEmitterSystem(dt: number) {
+		const effects: EmitterEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		emitterSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), effects);
+	}
+
+	private runRuneInscriptionSystem(dt: number) {
+		const hit = blockHighlightBehavior?.lastHit ?? null;
+		const prev = blockHighlightBehavior?.lastPrev ?? null;
+		const faceHit: FaceHit | null =
+			hit && prev
+				? {
+						blockX: hit.x,
+						blockY: hit.y,
+						blockZ: hit.z,
+						prevX: prev.x,
+						prevY: prev.y,
+						prevZ: prev.z,
+					}
+				: null;
+		const effects: RuneInscriptionEffects = {
+			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+		};
+		runeInscriptionSystem(kootaWorld, dt, faceHit, effects);
+	}
+
 	private runMiningSystem(dt: number) {
 		const hit: BlockHit | null = blockHighlightBehavior?.lastHit ?? null;
 		const effects: MiningSideEffects = {
 			removeBlock: (x, y, z) => {
 				setVoxelAt("Ground", x, y, z, 0);
+				getRuneIndex().removeBlock(x, y, z);
 				// Screen shake on block break
 				kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
 					state.shakeX = (cosmeticRng() - 0.5) * 0.06;
@@ -640,6 +677,8 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		ExploredChunks,
 		Codex,
 		SagaLog,
+		RuneFaces,
+		ChiselState(),
 	);
 
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 240, dayCount: 1 }), WorldSeed({ seed }));
@@ -813,6 +852,30 @@ export function getAllVoxelDeltas(): Array<{ x: number; y: number; z: number; bl
 	return result;
 }
 
+/** Get all rune entries from the spatial index for persistence. */
+export function getRuneIndexEntries(): Array<{ x: number; y: number; z: number; face: number; runeId: number }> {
+	return getRuneIndex().getAllEntries();
+}
+
+/** Restore rune entries into the spatial index (and ECS RuneFaces trait). */
+export function applyRuneEntries(
+	entries: Array<{ x: number; y: number; z: number; face: number; runeId: number }>,
+): void {
+	const idx = getRuneIndex();
+	idx.loadEntries(entries as import("../ecs/systems/rune-index.ts").RuneEntry[]);
+
+	// Sync to RuneFaces ECS trait for backward compat
+	kootaWorld.query(PlayerTag, RuneFaces).updateEach(([runeFaces]) => {
+		for (const e of entries) {
+			const key = `${e.x},${e.y},${e.z}`;
+			if (!runeFaces.faces[key]) {
+				runeFaces.faces[key] = new Array(6).fill(0);
+			}
+			runeFaces.faces[key][e.face] = e.runeId;
+		}
+	});
+}
+
 /** Enable voxel delta tracking — calls listener on every setVoxelAt. */
 export function enableVoxelDeltaTracking(listener: (x: number, y: number, z: number, blockId: number) => void): void {
 	setVoxelDeltaListener(listener);
@@ -845,6 +908,8 @@ export function destroyGame(): void {
 	loadedChunks.clear();
 	chunkData.clear();
 	combatDrainTimer = 0;
+	resetRuneIndex();
+	resetEmitterState();
 	resetLightState();
 	resetExplorationState();
 	resetSagaState();

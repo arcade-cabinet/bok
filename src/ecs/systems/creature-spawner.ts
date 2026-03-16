@@ -160,7 +160,7 @@ function spawnEntity(
 }
 
 /** Spawn at a random position around the player. */
-function spawnAt(
+function _spawnAt(
 	world: World,
 	px: number,
 	pz: number,

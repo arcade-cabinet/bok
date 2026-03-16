@@ -20,16 +20,18 @@ export async function initDatabase(): Promise<void> {
 	initPromise = (async () => {
 		if (initialized) return;
 
+		sqlite = new SQLiteConnection(CapacitorSQLite);
+
 		// Register jeep-sqlite web component for browser platform
 		if (Capacitor.getPlatform() === "web") {
 			jeepSqliteElements(window);
 			const jeepEl = document.createElement("jeep-sqlite");
+			jeepEl.setAttribute("wasmPath", `${import.meta.env.BASE_URL}assets`);
 			document.body.appendChild(jeepEl);
 			await customElements.whenDefined("jeep-sqlite");
-			await (jeepEl as unknown as JeepSqliteElement).initWebStore();
+			await sqlite.initWebStore();
 		}
 
-		sqlite = new SQLiteConnection(CapacitorSQLite);
 		db = await sqlite.createConnection(DB_NAME, false, "no-encryption", 1, false);
 		await db.open();
 
@@ -70,6 +72,23 @@ export async function initDatabase(): Promise<void> {
 		);
 
 		CREATE INDEX IF NOT EXISTS idx_voxel_deltas_slot ON voxel_deltas(slot_id);
+
+		CREATE TABLE IF NOT EXISTS rune_faces (
+			slot_id INTEGER NOT NULL REFERENCES save_slots(id) ON DELETE CASCADE,
+			x INTEGER NOT NULL,
+			y INTEGER NOT NULL,
+			z INTEGER NOT NULL,
+			face INTEGER NOT NULL,
+			rune_id INTEGER NOT NULL,
+			PRIMARY KEY (slot_id, x, y, z, face)
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_rune_faces_slot ON rune_faces(slot_id);
+
+		CREATE TABLE IF NOT EXISTS user_settings (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
+		);
 	`);
 
 		initialized = true;
@@ -108,19 +127,12 @@ export async function listSaveSlots(): Promise<SaveSlotMeta[]> {
 
 export async function createSaveSlot(seed: string): Promise<number> {
 	if (!db) throw new Error("Database not initialized");
-	await db.run("BEGIN TRANSACTION");
-	try {
-		const result = await db.run("INSERT INTO save_slots (seed) VALUES (?)", [seed]);
-		const slotId = result.changes?.lastId;
-		if (slotId === undefined) throw new Error("Failed to create save slot");
-		await db.run("INSERT INTO player_state (slot_id) VALUES (?)", [slotId]);
-		await db.run("COMMIT");
-		await persistWebStore();
-		return slotId;
-	} catch (error) {
-		await db.run("ROLLBACK");
-		throw error;
-	}
+	const result = await db.run("INSERT INTO save_slots (seed) VALUES (?)", [seed]);
+	const slotId = result.changes?.lastId;
+	if (slotId === undefined) throw new Error("Failed to create save slot");
+	await db.run("INSERT INTO player_state (slot_id) VALUES (?)", [slotId]);
+	await persistWebStore();
+	return slotId;
 }
 
 export async function deleteSaveSlot(slotId: number): Promise<void> {
@@ -307,7 +319,70 @@ export async function closeDatabase(): Promise<void> {
 	initialized = false;
 }
 
-// Type declaration for jeep-sqlite web component
-interface JeepSqliteElement {
-	initWebStore(): Promise<void>;
+// ─── Rune Faces ───
+
+export interface RuneFaceDelta {
+	x: number;
+	y: number;
+	z: number;
+	face: number;
+	runeId: number;
+}
+
+/** Batch-save rune face inscriptions. Replaces all data for the slot. */
+export async function saveRuneFaces(slotId: number, entries: RuneFaceDelta[]): Promise<void> {
+	if (!db) return;
+	await db.run("DELETE FROM rune_faces WHERE slot_id = ?", [slotId]);
+	if (entries.length > 0) {
+		const statements = entries.map((e) => ({
+			statement: "INSERT INTO rune_faces (slot_id, x, y, z, face, rune_id) VALUES (?, ?, ?, ?, ?, ?)",
+			values: [slotId, e.x, e.y, e.z, e.face, e.runeId],
+		}));
+		await db.executeSet(statements);
+	}
+	await persistWebStore();
+}
+
+/** Load all rune face inscriptions for a save slot. */
+export async function loadRuneFaces(slotId: number): Promise<RuneFaceDelta[]> {
+	if (!db) return [];
+	const result = await db.query("SELECT x, y, z, face, rune_id FROM rune_faces WHERE slot_id = ?", [slotId]);
+	return (result.values ?? []).map((r) => ({
+		x: r.x as number,
+		y: r.y as number,
+		z: r.z as number,
+		face: r.face as number,
+		runeId: r.rune_id as number,
+	}));
+}
+
+// ─── User Settings ───
+
+/** Get a setting value. Returns defaultValue if not found or DB not ready. */
+export async function getSetting(key: string, defaultValue: string): Promise<string> {
+	if (!db) return defaultValue;
+	const result = await db.query("SELECT value FROM user_settings WHERE key = ?", [key]);
+	return (result.values?.[0]?.value as string) ?? defaultValue;
+}
+
+/** Set a setting value (upsert). */
+export async function setSetting(key: string, value: string): Promise<void> {
+	if (!db) return;
+	await db.run("INSERT INTO user_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?", [
+		key,
+		value,
+		value,
+	]);
+	await persistWebStore();
+}
+
+/** Load all settings as a Record. */
+export async function loadAllSettings(): Promise<Record<string, string>> {
+	if (!db) return {};
+	const result = await db.query("SELECT key, value FROM user_settings");
+	const settings: Record<string, string> = {};
+	for (const r of result.values ?? []) {
+		settings[r.key as string] = r.value as string;
+	}
+	return settings;
 }

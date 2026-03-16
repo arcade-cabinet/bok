@@ -7,6 +7,9 @@
 		"indentStyle": "tab",
 		"lineWidth": 120
 	},
+	"css": {
+		"parser": { "tailwindDirectives": true }
+	},
 	"javascript": {
 		"formatter": { "quoteStyle": "double", "semicolons": "always" }
 	},

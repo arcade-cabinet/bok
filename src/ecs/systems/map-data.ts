@@ -12,12 +12,12 @@ import { Biome } from "../../world/biomes.ts";
 
 /** Pack chunk coords into a single number for Set storage. */
 export function packChunk(cx: number, cz: number): number {
-	return ((cx + 32768) << 16) | ((cz + 32768) & 0xffff);
+	return (((cx + 32768) << 16) | ((cz + 32768) & 0xffff)) >>> 0;
 }
 
 /** Unpack a packed chunk key back to [cx, cz]. */
 export function unpackChunk(key: number): [number, number] {
-	const cx = (key >> 16) - 32768;
+	const cx = (key >>> 16) - 32768;
 	const cz = (key & 0xffff) - 32768;
 	return [cx, cz];
 }

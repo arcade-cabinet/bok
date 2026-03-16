@@ -307,6 +307,33 @@ export const SagaLog = trait(
 	}),
 );
 
+// ─── Rune Inscription ───
+
+/**
+ * Stores rune inscriptions on block faces.
+ * Key: "x,y,z" block position → array of 6 rune IDs (index = face).
+ * Value 0 = blank (no rune). Non-zero = RuneId from rune-data.ts.
+ */
+export const RuneFaces = trait((): { faces: Record<string, number[]> } => ({
+	faces: {},
+}));
+
+/** Tracks chisel interaction state for rune inscription. */
+export const ChiselState = trait({
+	/** Whether the player is holding a chisel in the active slot. */
+	active: false,
+	/** Selected face index (0-5) or -1 for none. */
+	selectedFace: -1 as number,
+	/** Block position of selected face. */
+	selectedX: 0,
+	selectedY: 0,
+	selectedZ: 0,
+	/** Whether x-ray view is active (long-press with chisel). */
+	xrayActive: false,
+	/** Whether the rune wheel is currently open. */
+	wheelOpen: false,
+});
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

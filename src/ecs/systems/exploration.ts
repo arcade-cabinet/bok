@@ -26,6 +26,8 @@ export function getDiscoveredLandmarks(): readonly LandmarkMarker[] {
 /** Reset module state (for game restart). */
 export function resetExplorationState(): void {
 	discoveredLandmarks = [];
+	prevCx = Number.NaN;
+	prevCz = Number.NaN;
 }
 
 /** Previous chunk coords to detect transitions. */

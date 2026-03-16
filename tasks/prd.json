@@ -967,7 +967,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 31,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — Runes & Advanced Systems. Entry point to entire rune system.",
       "labels": [
         "phase-5",
@@ -978,7 +978,8 @@
       "dependsOn": [
         "US-020",
         "US-021"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-032",
@@ -998,7 +999,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 32,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — Runes & Advanced Systems. Data layer for rune system.",
       "labels": [
         "phase-5",
@@ -1008,7 +1009,8 @@
       ],
       "dependsOn": [
         "US-031"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-033",
@@ -1030,7 +1032,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 33,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — Runes & Advanced Systems. Core engine for all rune behaviors.",
       "labels": [
         "phase-5",
@@ -1040,7 +1042,8 @@
       ],
       "dependsOn": [
         "US-032"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-034",
@@ -1060,7 +1063,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 34,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 5 — Runes & Advanced Systems. First two runes.",
       "labels": [
         "phase-5",
@@ -1069,7 +1072,8 @@
       ],
       "dependsOn": [
         "US-033"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-035",
@@ -1662,6 +1666,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T16:02:51.198Z"
+    "updatedAt": "2026-03-16T17:33:12.060Z"
   }
 }

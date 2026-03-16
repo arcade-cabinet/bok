@@ -19,7 +19,7 @@ const TIER_DURABILITY: Record<string, number> = {
 	[ToolTier.Crystal]: 1000,
 };
 
-/** Tool item ID → tier. Only tool-type items (axe, pickaxe, sword) have entries. */
+/** Tool item ID → tier. Only tool-type items (axe, pickaxe, sword, chisel) have entries. */
 const TOOL_TIER: Record<number, ToolTierId> = {
 	101: ToolTier.Wood, // Wood Axe
 	102: ToolTier.Wood, // Wood Pickaxe
@@ -28,6 +28,7 @@ const TOOL_TIER: Record<number, ToolTierId> = {
 	105: ToolTier.Iron, // Iron Pickaxe
 	106: ToolTier.Iron, // Iron Axe
 	107: ToolTier.Iron, // Iron Sword
+	110: ToolTier.Iron, // Chisel
 };
 
 /** Whether an item ID is a tool with durability. */

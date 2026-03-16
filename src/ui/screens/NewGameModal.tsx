@@ -46,10 +46,18 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 			aria-label="New Game"
 		>
 			<div
-				className="glass-panel p-8 w-full max-w-md mx-4 flex flex-col items-center gap-6"
+				className="bok-panel p-8 w-full max-w-md mx-4 flex flex-col items-center gap-6"
 				style={{ animation: "title-emerge 0.4s ease-out" }}
 			>
-				{/* Header */}
+				{/* Rune border top */}
+				<div
+					className="text-center text-xs tracking-[0.6em] opacity-30 select-none"
+					style={{ color: "var(--color-bok-gold)" }}
+					aria-hidden="true"
+				>
+					&#5765; &#5765; &#5765;
+				</div>
+
 				<h2
 					className="font-display text-2xl tracking-[0.15em] uppercase"
 					style={{ color: "var(--color-bok-parchment)" }}
@@ -76,7 +84,7 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 							type="text"
 							value={seed}
 							onChange={(e) => setSeed(e.target.value)}
-							className="glass-panel flex-1 px-4 py-3 bg-transparent border-none outline-none text-center font-mono text-lg font-bold"
+							className="bok-panel flex-1 px-4 py-3 bg-transparent border-none outline-none text-center font-mono text-lg font-bold"
 							style={{ color: "var(--color-bok-gold)" }}
 							spellCheck={false}
 							autoComplete="off"
@@ -84,7 +92,7 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 						<button
 							type="button"
 							onClick={handleShuffle}
-							className="btn glass-panel px-3 py-3 text-xl"
+							className="btn bok-panel px-3 py-3 text-xl"
 							style={{ color: "var(--color-bok-gold)" }}
 							title="Shuffle seed"
 							aria-label="Shuffle seed"
@@ -92,6 +100,15 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 							&#x21BB;
 						</button>
 					</div>
+				</div>
+
+				{/* Rune border bottom */}
+				<div
+					className="text-center text-xs tracking-[0.6em] opacity-30 select-none"
+					style={{ color: "var(--color-bok-gold)" }}
+					aria-hidden="true"
+				>
+					&#5765; &#5765; &#5765;
 				</div>
 
 				{/* Actions */}

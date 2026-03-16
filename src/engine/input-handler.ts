@@ -1,40 +1,38 @@
 /**
  * Input handler — captures keyboard and mouse input and writes to Koota ECS traits.
+ * Reads keybindings from input-config.ts (configurable via Settings).
  */
 
 import { Hotbar, MiningState, MoveInput, PlayerState, PlayerTag, Rotation, ToolSwing } from "../ecs/traits/index.ts";
 import { kootaWorld, placeBlock } from "./game.ts";
+import { actionForKey, getBindings } from "./input-config.ts";
 
 const keys: Record<string, boolean> = {};
 
+/** Set of KeyboardEvent.code values used for gameplay (derived from bindings). */
+function isGameplayKey(code: string): boolean {
+	const b = getBindings();
+	return Object.values(b).includes(code);
+}
+
 export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	const onKeyDown = (e: KeyboardEvent) => {
-		// Prevent default for gameplay keys
-		if (
-			e.code === "KeyW" ||
-			e.code === "KeyA" ||
-			e.code === "KeyS" ||
-			e.code === "KeyD" ||
-			e.code === "Space" ||
-			e.code === "ArrowUp" ||
-			e.code === "ArrowDown" ||
-			e.code === "ArrowLeft" ||
-			e.code === "ArrowRight" ||
-			(e.key >= "1" && e.key <= "5")
-		) {
+		if (isGameplayKey(e.code) || (e.key >= "1" && e.key <= "5")) {
 			e.preventDefault();
 		}
 
 		keys[e.code] = true;
 		syncKeysToECS();
 
-		if (e.key >= "1" && e.key <= "5") {
+		const action = actionForKey(e.code);
+		if (action?.startsWith("hotbar")) {
+			const slot = Number.parseInt(action.slice(6), 10) - 1;
 			kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
-				hotbar.activeSlot = parseInt(e.key, 10) - 1;
+				hotbar.activeSlot = slot;
 			});
 		}
 
-		if (e.code === "KeyF") {
+		if (action === "eat") {
 			kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
 				state.wantsEat = true;
 			});
@@ -42,19 +40,7 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	};
 
 	const onKeyUp = (e: KeyboardEvent) => {
-		// Prevent default for gameplay keys
-		if (
-			e.code === "KeyW" ||
-			e.code === "KeyA" ||
-			e.code === "KeyS" ||
-			e.code === "KeyD" ||
-			e.code === "Space" ||
-			e.code === "ArrowUp" ||
-			e.code === "ArrowDown" ||
-			e.code === "ArrowLeft" ||
-			e.code === "ArrowRight" ||
-			(e.key >= "1" && e.key <= "5")
-		) {
+		if (isGameplayKey(e.code) || (e.key >= "1" && e.key <= "5")) {
 			e.preventDefault();
 		}
 
@@ -164,13 +150,14 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 }
 
 function syncKeysToECS() {
+	const b = getBindings();
 	kootaWorld.query(PlayerTag, MoveInput).updateEach(([input]) => {
-		input.forward = keys.KeyW || false;
-		input.backward = keys.KeyS || false;
-		input.left = keys.KeyA || false;
-		input.right = keys.KeyD || false;
-		input.jump = keys.Space || false;
-		input.sprint = keys.ShiftLeft || keys.ShiftRight || false;
+		input.forward = keys[b.forward] || false;
+		input.backward = keys[b.backward] || false;
+		input.left = keys[b.left] || false;
+		input.right = keys[b.right] || false;
+		input.jump = keys[b.jump] || false;
+		input.sprint = keys[b.sprint] || false;
 	});
 }
 

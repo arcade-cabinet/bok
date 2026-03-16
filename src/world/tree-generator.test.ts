@@ -18,7 +18,7 @@ function blockIds(entries: Entry[]): Set<number> {
 	return new Set(entries.map((e) => e.blockId));
 }
 
-function trunks(entries: Entry[]): Entry[] {
+function _trunks(entries: Entry[]): Entry[] {
 	return entries.filter((e) => e.position.x === 0 && e.position.z === 0 && e.position.y > 10);
 }
 

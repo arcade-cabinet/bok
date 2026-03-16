@@ -95,32 +95,32 @@ describe("computeActiveObjective", () => {
 	it("returns shelter objective first", () => {
 		const obj = computeActiveObjective(1, false, false, empty);
 		expect(obj).not.toBeNull();
-		expect(obj!.text).toContain("shelter");
+		expect(obj?.text).toContain("shelter");
 	});
 
 	it("returns creature kill after shelter achieved", () => {
 		const achieved = new Set([MilestoneId.FirstShelter]);
 		const obj = computeActiveObjective(1, true, false, achieved);
 		expect(obj).not.toBeNull();
-		expect(obj!.text).toContain("creature");
+		expect(obj?.text).toContain("creature");
 	});
 
 	it("returns day survival after kill achieved", () => {
 		const achieved = new Set([MilestoneId.FirstShelter, MilestoneId.FirstCreatureKill]);
 		const obj = computeActiveObjective(1, true, true, achieved);
 		expect(obj).not.toBeNull();
-		expect(obj!.text).toContain("Survive 3 days");
-		expect(obj!.progress).toBe(1);
-		expect(obj!.target).toBe(3);
+		expect(obj?.text).toContain("Survive 3 days");
+		expect(obj?.progress).toBe(1);
+		expect(obj?.target).toBe(3);
 	});
 
 	it("progresses to next day threshold", () => {
 		const achieved = new Set([MilestoneId.FirstShelter, MilestoneId.FirstCreatureKill, MilestoneId.Day3]);
 		const obj = computeActiveObjective(5, true, true, achieved);
 		expect(obj).not.toBeNull();
-		expect(obj!.text).toContain("Survive 7 days");
-		expect(obj!.progress).toBe(5);
-		expect(obj!.target).toBe(7);
+		expect(obj?.text).toContain("Survive 7 days");
+		expect(obj?.progress).toBe(5);
+		expect(obj?.target).toBe(7);
 	});
 
 	it("returns boss objective after all day milestones", () => {
@@ -134,7 +134,7 @@ describe("computeActiveObjective", () => {
 		]);
 		const obj = computeActiveObjective(35, true, true, achieved);
 		expect(obj).not.toBeNull();
-		expect(obj!.text).toContain("Jätten");
+		expect(obj?.text).toContain("Jätten");
 	});
 
 	it("returns null when all objectives complete", () => {

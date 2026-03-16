@@ -312,14 +312,14 @@ describe("nearestLightFleeDir", () => {
 		const sources: LightSource[] = [{ x: 0, y: 0, z: 0, radius: 8 }];
 		const dir = nearestLightFleeDir(3, 0, 0, sources);
 		expect(dir).not.toBeNull();
-		expect(dir!.dx).toBeGreaterThan(0); // flee away from origin (positive x)
+		expect(dir?.dx).toBeGreaterThan(0); // flee away from origin (positive x)
 	});
 
 	it("returns normalized direction", () => {
 		const sources: LightSource[] = [{ x: 0, y: 0, z: 0, radius: 8 }];
 		const dir = nearestLightFleeDir(3, 0, 4, sources);
 		expect(dir).not.toBeNull();
-		const len = Math.sqrt(dir!.dx * dir!.dx + dir!.dz * dir!.dz);
+		const len = Math.sqrt(dir?.dx * dir?.dx + dir?.dz * dir?.dz);
 		expect(len).toBeCloseTo(1, 3);
 	});
 
@@ -332,7 +332,7 @@ describe("nearestLightFleeDir", () => {
 		// Should flee from source1 (nearest), away from x=5 → negative x
 		const dir = nearestLightFleeDir(4, 0, 0, sources);
 		expect(dir).not.toBeNull();
-		expect(dir!.dx).toBeLessThan(0);
+		expect(dir?.dx).toBeLessThan(0);
 	});
 
 	it("handles zero-distance case", () => {
@@ -340,7 +340,7 @@ describe("nearestLightFleeDir", () => {
 		const dir = nearestLightFleeDir(5, 0, 5, sources);
 		expect(dir).not.toBeNull();
 		// Should return a default direction, not NaN
-		expect(Number.isNaN(dir!.dx)).toBe(false);
+		expect(Number.isNaN(dir?.dx)).toBe(false);
 	});
 });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FULL_OBSERVE_DURATION } from "./codex-data.ts";
-import { isCreatureInView, OBSERVE_MAX_RANGE, OBSERVE_VIEW_THRESHOLD, tickObservation } from "./observation.ts";
+import { isCreatureInView, OBSERVE_MAX_RANGE, tickObservation } from "./observation.ts";
 
 describe("observation", () => {
 	// ─── isCreatureInView ───

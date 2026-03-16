@@ -142,7 +142,7 @@ export function isSoft(blockId: number): boolean {
 
 export interface ItemDef {
 	name: string;
-	type: "axe" | "pickaxe" | "sword" | "food" | "light";
+	type: "axe" | "pickaxe" | "sword" | "food" | "light" | "chisel";
 	target: string;
 	power: number;
 	color: string;
@@ -163,6 +163,8 @@ export const ITEMS: Record<number, ItemDef> = {
 	108: { name: "Lantern", type: "light", target: "Light", power: 1, color: "#FFD700" },
 	// Light items (tier 2 — forge)
 	109: { name: "Ember Lantern", type: "light", target: "Light", power: 2, color: "#FF6600" },
+	// Chisel (tier 2 — forge)
+	110: { name: "Chisel", type: "chisel", target: "Block", power: 1, color: "#707070" },
 	// Food
 	201: { name: "Raw Meat", type: "food", target: "Hunger", power: 10, color: "#8B4513" },
 	202: { name: "Cooked Meat", type: "food", target: "Hunger", power: 35, color: "#CD853F" },
@@ -322,6 +324,13 @@ export const RECIPES: CraftRecipe[] = [
 		name: "Scriptorium",
 		result: { type: "block", id: BlockId.Scriptorium, qty: 1 },
 		cost: { [BlockId.TreatedPlanks]: 4, [BlockId.Crystal]: 2, [BlockId.RuneStone]: 1 },
+		tier: 2,
+	},
+	{
+		id: "chisel",
+		name: "Chisel",
+		result: { type: "item", id: 110, qty: 1 },
+		cost: { [BlockId.IronOre]: 3, [BlockId.Crystal]: 1 },
 		tier: 2,
 	},
 ];

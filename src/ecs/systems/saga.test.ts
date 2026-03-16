@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTestWorld, spawnPlayer, spawnWorldTime } from "../../test-utils.ts";
-import { SagaLog, ShelterState, WorldTime } from "../traits/index.ts";
+import { SagaLog } from "../traits/index.ts";
 import { recordBossDefeat, recordCreatureKill, resetSagaState, sagaSystem } from "./saga.ts";
 import { MilestoneId } from "./saga-data.ts";
 
@@ -38,7 +38,7 @@ describe("sagaSystem", () => {
 		});
 		const shelterEntry = entries.find((e) => e.milestoneId === MilestoneId.FirstShelter);
 		expect(shelterEntry).toBeDefined();
-		expect(shelterEntry!.day).toBe(5);
+		expect(shelterEntry?.day).toBe(5);
 	});
 
 	it("does not re-trigger achieved milestones", () => {

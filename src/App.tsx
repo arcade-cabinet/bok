@@ -3,10 +3,13 @@ import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
 import { getDiscoveredLandmarks } from "./ecs/systems/exploration.ts";
 import { worldToChunk } from "./ecs/systems/map-data.ts";
+import type { FaceIndex, RuneIdValue } from "./ecs/systems/rune-data.ts";
+import { placeRune } from "./ecs/systems/rune-inscription.ts";
 import { computeActiveObjective, computeSagaStats } from "./ecs/systems/saga-data.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
+	ChiselState,
 	Codex,
 	ExploredChunks,
 	Health,
@@ -27,9 +30,11 @@ import {
 	WorldTime,
 } from "./ecs/traits/index.ts";
 import {
+	applyRuneEntries,
 	applyVoxelDeltas,
 	disableVoxelDeltaTracking,
 	enableVoxelDeltaTracking,
+	getRuneIndexEntries,
 	initGame,
 	kootaWorld,
 	readPlayerStateForSave,
@@ -41,11 +46,14 @@ import {
 	initDatabase,
 	listSaveSlots,
 	loadPlayerState,
+	loadRuneFaces,
 	loadVoxelDeltas,
 	savePlayerState,
+	saveRuneFaces,
 	saveVoxelDelta,
 } from "./persistence/db.ts";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
+import { RuneWheel } from "./ui/components/RuneWheel.tsx";
 import { BokIndicator } from "./ui/hud/BokIndicator.tsx";
 import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
@@ -115,6 +123,11 @@ export default function App() {
 		isDead: false,
 		workstationTier: 0 as RecipeTier,
 		sagaEntryCount: 0,
+		chiselWheelOpen: false,
+		chiselSelectedX: 0,
+		chiselSelectedY: 0,
+		chiselSelectedZ: 0,
+		chiselSelectedFace: -1 as number,
 	});
 
 	// Init database + check for existing saves on mount
@@ -171,6 +184,14 @@ export default function App() {
 						setPhase("dead");
 					}
 				});
+
+			kootaWorld.query(PlayerTag, ChiselState).readEach(([chisel]) => {
+				playerUpdate.chiselWheelOpen = chisel.wheelOpen;
+				playerUpdate.chiselSelectedX = chisel.selectedX;
+				playerUpdate.chiselSelectedY = chisel.selectedY;
+				playerUpdate.chiselSelectedZ = chisel.selectedZ;
+				playerUpdate.chiselSelectedFace = chisel.selectedFace;
+			});
 
 			kootaWorld.query(WorldTime).readEach(([time]) => {
 				timeUpdate = {
@@ -238,7 +259,7 @@ export default function App() {
 		};
 		raf = requestAnimationFrame(poll);
 		return () => cancelAnimationFrame(raf);
-	}, [phase, bokOpen]);
+	}, [phase, bokOpen, hudState.dayCount]);
 
 	const performSave = useCallback(async (): Promise<void> => {
 		const slotId = saveSlotRef.current;
@@ -247,6 +268,7 @@ export default function App() {
 		if (!data) return;
 		try {
 			await savePlayerState(slotId, data);
+			await saveRuneFaces(slotId, getRuneIndexEntries());
 		} catch (err) {
 			console.error("Auto-save failed:", err);
 		}
@@ -330,6 +352,7 @@ export default function App() {
 		if (!canvas) return;
 
 		try {
+			await initDatabase();
 			await initGame(canvas, seed);
 			saveSeedRef.current = seed;
 
@@ -353,6 +376,7 @@ export default function App() {
 		if (!canvas) return;
 
 		try {
+			await initDatabase();
 			const slots = await listSaveSlots();
 			if (slots.length === 0) return;
 
@@ -374,6 +398,12 @@ export default function App() {
 
 			// Restore player state
 			restorePlayerState(playerData);
+
+			// Restore rune inscriptions
+			const runeEntries = await loadRuneFaces(slot.id);
+			if (runeEntries.length > 0) {
+				applyRuneEntries(runeEntries);
+			}
 
 			// Wire delta tracking for new changes
 			enableVoxelDeltaTracking((x, y, z, blockId) => {
@@ -425,6 +455,31 @@ export default function App() {
 			} else {
 				hotbar.slots[hotbar.activeSlot] = newSlot;
 			}
+		});
+	}, []);
+
+	const handleRuneSelect = useCallback(
+		(runeId: RuneIdValue) => {
+			const { chiselSelectedX, chiselSelectedY, chiselSelectedZ, chiselSelectedFace } = hudState;
+			if (chiselSelectedFace < 0) return;
+			const effects = { spawnParticles: () => {} };
+			placeRune(
+				kootaWorld,
+				chiselSelectedX,
+				chiselSelectedY,
+				chiselSelectedZ,
+				chiselSelectedFace as FaceIndex,
+				runeId,
+				effects,
+			);
+		},
+		[hudState],
+	);
+
+	const handleRuneWheelClose = useCallback(() => {
+		kootaWorld.query(PlayerTag, ChiselState).updateEach(([chisel]) => {
+			chisel.wheelOpen = false;
+			chisel.selectedFace = -1;
 		});
 	}, []);
 
@@ -519,6 +574,12 @@ export default function App() {
 								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
 								canvas?.requestPointerLock();
 							}}
+						/>
+
+						<RuneWheel
+							isOpen={hudState.chiselWheelOpen}
+							onSelectRune={handleRuneSelect}
+							onClose={handleRuneWheelClose}
 						/>
 
 						<BokScreen

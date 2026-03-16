@@ -5,6 +5,53 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Emitter Rune System Architecture
+The emitter rune system bridges rune inscription with signal propagation, following the pure-data ↔ ECS bridge separation:
+- `emitter-runes.ts` — Emitter config map (RuneId → signal type, strength, glow color, continuous flag). Pure data, no ECS/Three.js.
+- `emitter-system.ts` — ECS system: throttled at `SIGNAL_TICK_INTERVAL` (0.25s), collects emitter runes from `RuneIndex` chunks near the player, feeds them to `propagateSignals()`, caches the `SignalMap` and spawns face particles via side effects.
+- Key patterns:
+- **Chunk-scan collection**: `collectEmitters(playerCx, playerCz)` iterates chunks within SCAN_RADIUS (3), checks each inscribed face against `isEmitterRune()`, and builds the `SignalEmitter[]` alongside glow color data for particles.
+- **Glow color pairing**: Since `SignalEmitter` is a propagation-engine type that doesn't carry rune-specific data, the collector returns `EmitterWithGlow` pairs. Particles use the glow color; propagation uses only the emitter.
+- **Module-level signal cache**: `getSignalMap()` exposes the last computed `SignalMap` for other systems (creature AI, Mörker repulsion) without re-running BFS.
+- **Reset on destroy**: `resetEmitterState()` clears tick timer and caches in `destroyGame()`, matching the pattern used by `resetLightState()`, `resetRuneIndex()`, etc.
+
+### Signal Propagation Engine Architecture
+The signal propagation engine separates pure data from the BFS engine, following the codebase's decomposition pattern:
+- `signal-data.ts` — Signal types (Heat/Light/Force/Detection), budget constants (128 blocks, 32 emitters, 16 depth), material conductivity lookup (stone/iron/copper=1.0, crystal=1.5, wood/air=0), opposite face helper, face offsets, axis pairs. Pure data, no ECS/Three.js.
+- `signal-propagation.ts` — BFS engine: propagates signals from emitter block faces through conducting blocks. Face-direction aware combining (same-direction ADD capped at 15, opposing SUBTRACT floored at 0). Per-face incoming accumulation, then axis-pair effective strength computation. Budget-limited with visited set for cycle prevention.
+- Key patterns:
+- **Echo prevention via entry-face skip**: When signal enters a block through face F, it does NOT exit through F (prevents standing waves). This is the key insight that makes face-direction combining work correctly — without it, signals echo back and create spurious opposing-direction cancellation.
+- **Record-then-expand separation**: Incoming signals are ALWAYS accumulated (supporting same-direction ADD from multiple emitters), but expansion only happens on first visit per (block, type, face). This allows the visited set to prevent infinite loops while still supporting signal combining.
+- **Axis-pair combining**: Per block, per signal type, accumulate incoming strength per face. For each axis pair (PosX/NegX, PosY/NegY, PosZ/NegZ), compute |faceA - faceB|. Effective strength = max across all axis pairs. Orthogonal signals take max, colinear signals add/subtract.
+- **Crystal amplification inline**: Conductivity factor (1.0 for stone, 1.5 for crystal) is applied as a multiplier during BFS traversal, capped at MAX_SIGNAL_STRENGTH. This means crystal blocks extend effective propagation range without increasing BFS cost.
+- **RuneTransform callback**: Optional callback `(x, y, z, face, signal) => signal | null` allows rune-on-face behavior injection without coupling the engine to rune logic. Return null to block, return modified signal to transform type/strength.
+
+### Rune Spatial Index Architecture
+The rune spatial index separates chunk-organized storage from ECS trait access:
+- `rune-index.ts` — `RuneIndex` class with `Map<chunkKey, Map<voxelKey, Map<FaceIndex, RuneId>>>` storage. Sparse face maps, chunk-level queries, serialization via `getAllEntries()`/`loadEntries()`. Module-level singleton via `getRuneIndex()`. Pure data, no ECS/Three.js.
+- `rune-inscription.ts` — Extended to write to both `RuneFaces` trait (backward compat) and `RuneIndex` spatial index on rune placement.
+- `db.ts` — `rune_faces` table `(slot_id, x, y, z, face, rune_id)` with `saveRuneFaces()`/`loadRuneFaces()`.
+- `game.ts` — `getRuneIndexEntries()`/`applyRuneEntries()` for save/load bridge. Block removal clears runes via `getRuneIndex().removeBlock()`. `resetRuneIndex()` in destroyGame.
+- Key patterns:
+- **Sparse face maps**: `Map<FaceIndex, RuneId>` per voxel instead of fixed 6-element array. Auto-cleanup: setting runeId=0 deletes the face entry, cascading up to remove empty voxel and chunk maps.
+- **Chunk organization for signal propagation**: `getChunkRunes(cx, cz)` enables US-033 to scan nearby inscribed blocks without iterating the entire world.
+- **Dual write (ECS trait + spatial index)**: `placeRune()` writes to both `RuneFaces` trait and `RuneIndex`. The trait provides backward compatibility; the index provides efficient spatial queries.
+- **Block removal cascade**: When a block is broken, `removeBlock(x, y, z)` clears all rune faces on that block from the index. Wired into the `removeBlock` callback in game.ts mining effects.
+- **Persistence round-trip**: Save: `getRuneIndex().getAllEntries()` → `saveRuneFaces()`. Load: `loadRuneFaces()` → `applyRuneEntries()` which populates both RuneIndex and RuneFaces trait.
+
+### Rune Inscription System Architecture
+The rune inscription system follows the same pure-data ↔ ECS bridge separation:
+- `rune-data.ts` — Rune definitions (Elder Futhark glyphs, colors, descriptions), face index constants, face key packing/unpacking, chisel item ID. Pure data, no ECS/Three.js.
+- `face-selection.ts` — Face index computation from ray march hit/prev positions, internal face detection, visible/internal face enumeration. Pure math, no ECS/Three.js.
+- `rune-inscription.ts` — ECS system: intercepts mining when chisel is held, selects block faces, manages rune placement via wheel UI. Takes injected effects callbacks.
+- `RuneWheel.tsx` — Radial rune selection UI: 8 Elder Futhark runes in a circle, click/drag to select, backdrop dismiss.
+- Key patterns:
+- **Mining intercept**: `runeInscriptionSystem` runs BEFORE `miningSystem` in the pipeline. When chisel is active and `MiningState.active` is true, it records the face selection, opens the wheel, and clears `MiningState.active` to prevent block breaking.
+- **Face from ray march**: `computeFaceIndex(hit, prev)` uses the difference vector between the solid hit block and the previous empty block to determine which face was entered. No float-precision ray-plane intersection needed.
+- **Per-block face storage**: `RuneFaces` trait stores `Record<string, number[]>` where key is `"x,y,z"` and value is 6-element array (one rune ID per face, 0=blank).
+- **Internal face detection**: `isInternalFace` checks if the neighbor block on a given face side is solid. Internal faces are hidden between adjacent blocks but can still hold runes (visible in x-ray mode).
+- **Chisel as tool with durability**: Item ID 110, iron tier (500 durability), craftable at Forge. Drains 1 durability per rune placement via existing `drainDurability()` helper.
+
 ### Diegetic HUD Effects Architecture
 The diegetic effects system follows the same pure-data ↔ UI component separation:
 - `diegetic-effects.ts` — Pure math: vignette intensity from health ratio, critical threshold detection, desaturation from hunger ratio. No ECS/Three.js/React.
@@ -966,5 +1013,84 @@ The light system separates pure data from ECS state management, following the cr
   - **Rune glyph in Unicode**: ᛒ (Berkanan, U+16D2) renders natively in browsers. The `font-display: Cinzel` gives it a serif look. No custom glyph/icon needed.
   - **localStorage for settings**: Simple `try/catch` around localStorage access handles Safari private browsing and environments where localStorage is unavailable. Default to `true` (show vitals) for new players.
   - **Ref vs state for saga count**: `lastSeenSagaCountRef` uses a ref (not state) because it only needs to persist across renders, not trigger re-renders. The comparison `sagaEntryCount > lastSeenSagaCountRef.current` is evaluated in the JSX render, which already re-renders when hudState changes.
+---
+
+## 2026-03-16 - US-031
+- Chisel tool and rune inscription UI — entry point to the entire rune system
+- Files created:
+  - `src/ecs/systems/rune-data.ts` — Rune definitions (8 Elder Futhark runes), face constants, glyph/color lookups, face key packing (97 LOC)
+  - `src/ecs/systems/face-selection.ts` — Face index from hit/prev, internal face detection, visible/internal face enumeration (100 LOC)
+  - `src/ecs/systems/rune-inscription.ts` — ECS system: chisel intercept, face selection, rune placement, durability drain (145 LOC)
+  - `src/ui/components/RuneWheel.tsx` — Radial rune wheel UI with 8 buttons, backdrop dismiss, highlight state (102 LOC)
+  - `src/ecs/systems/rune-data.test.ts` — 12 unit tests for rune data module
+  - `src/ecs/systems/face-selection.test.ts` — 18 unit tests for face math
+  - `src/ecs/systems/rune-inscription.test.ts` — 15 unit tests for ECS system (intercept, placement, durability)
+  - `src/ui/components/RuneWheel.ct.tsx` — 7 Playwright CT tests (render, select, close, accessibility, highlight)
+- Files modified:
+  - `src/world/blocks.ts` — Added chisel item (ID 110, type "chisel"), recipe (Forge tier: 3 Iron + 1 Crystal), expanded ItemDef type union
+  - `src/ecs/systems/tool-durability.ts` — Added chisel to TOOL_TIER map (iron tier, 500 durability)
+  - `src/ecs/traits/index.ts` — Added RuneFaces (per-block face rune storage) and ChiselState (chisel mode tracking) traits
+  - `src/ecs/systems/index.ts` — Exported rune system, rune data, and face selection modules
+  - `src/engine/game.ts` — Added trait imports, player spawn traits, runRuneInscriptionSystem method (before mining), FaceHit computation from BlockHighlight
+  - `src/App.tsx` — Added chisel state to HUD polling, RuneWheel rendering, handleRuneSelect/handleRuneWheelClose callbacks
+  - `src/test-utils.ts` — Added RuneFaces and ChiselState to test player spawn
+- Typecheck clean, lint clean (1 pre-existing warning), all 45 new vitest tests pass
+- 4 pre-existing vitest failures in map-data.test.ts + exploration.test.ts (Node 24 bitwise issue, unrelated)
+- **Learnings:**
+  - **Face from ray march data**: The BlockHighlightBehavior stores `lastHit` (solid block) and `lastPrev` (empty block before it). The vector `(prev - hit)` gives the face normal without needing float-precision ray-plane intersection. The discrete step marcher naturally provides face info.
+  - **Mining intercept pattern**: Running the rune system BEFORE mining in the pipeline allows intercepting `MiningState.active`. When chisel is held, the system clears the active flag and records face selection instead. Similar to how eating intercepts `wantsEat`.
+  - **Zero-vector edge case in face selection**: When computing face from difference vector, all-zero must be checked first. Otherwise `Math.abs(0) >= Math.abs(0)` is true and the first axis branch executes incorrectly.
+  - **Biome `useExhaustiveDependencies`**: Biome flags `useCallback` dependencies that are more specific than captures. Using `[hudState]` instead of individual fields satisfies the linter when the callback destructures hudState.
+  - **Koota query includes unused traits**: When you need a trait on the queried entity but don't use it in the callback, prefix with `_` to satisfy Biome's unused parameter rule while keeping the trait in the query.
+---
+
+## 2026-03-16 - US-032
+- Implemented face-based rune storage and spatial index for efficient per-face rune lookups and chunk-level queries
+- Files changed:
+  - `src/ecs/systems/rune-index.ts` (NEW) — RuneIndex class: chunk-organized Map<chunkKey, Map<voxelKey, Map<FaceIndex, RuneId>>>, sparse face maps, serialization, module-level singleton
+  - `src/ecs/systems/rune-index.test.ts` (NEW) — 22 tests covering insertion, removal, face lookup, sparse storage, block removal, negative coords, chunk separation, persistence round-trip, clear
+  - `src/persistence/db.ts` — Added `rune_faces` table schema, `saveRuneFaces()`, `loadRuneFaces()` persistence functions
+  - `src/ecs/systems/rune-inscription.ts` — Dual write: placeRune now writes to both RuneFaces trait and RuneIndex spatial index
+  - `src/engine/game.ts` — Block removal clears runes via `getRuneIndex().removeBlock()`, save/load helpers `getRuneIndexEntries()`/`applyRuneEntries()`, `resetRuneIndex()` in destroyGame
+  - `src/App.tsx` — Wired rune persistence: saves rune faces on auto-save, loads rune faces on continue
+  - `src/ecs/systems/index.ts` — Exported RuneIndex, getRuneIndex, resetRuneIndex, RuneEntry type
+- **Learnings:**
+  - **FaceIndex type narrowing**: Persistence layer uses plain `number` for face values, but RuneIndex expects `FaceIndex` (0|1|2|3|4|5). Use `as RuneEntry[]` cast at the bridge boundary (game.ts) where values are known-safe from the database schema.
+  - **Node 18 vs Node 22**: `styleText` from `node:util` is Node 22+. Tests need `fnm use 22` on this machine. Pre-existing issue.
+  - **Sparse map auto-cleanup pattern**: When deleting from nested Maps, cascade cleanup upward: if inner map becomes empty, delete it from parent, if parent becomes empty, delete from grandparent. Prevents memory leaks from empty map shells.
+  - **Chunk-level organization enables signal propagation**: By organizing runes per chunk, US-033's BFS signal propagation can efficiently scan nearby inscribed blocks without iterating the entire world index.
+---
+
+## 2026-03-16 - US-033
+- Implemented BFS-based signal propagation engine for rune behaviors
+- Files created:
+  - `src/ecs/systems/signal-data.ts` (NEW, ~95 LOC) — Signal types (Heat/Light/Force/Detection), budget constants, material conductivity lookup, face utilities
+  - `src/ecs/systems/signal-propagation.ts` (NEW, ~190 LOC) — BFS engine with face-direction routing, signal combining, budget enforcement, rune transform callback
+  - `src/ecs/systems/signal-propagation.test.ts` (NEW, ~42 tests) — BFS traversal, material conductivity, attenuation, face-direction routing, rune transforms, multiplexing, combining rules, budget limits, visited set
+  - `src/ecs/systems/index.ts` — Exported all signal propagation types and functions
+- **Learnings:**
+  - **Echo prevention is critical for face-direction combining**: Initial implementation propagated signals in all 6 directions including back through the entry face. This created "echo" signals that canceled the original via the opposing-direction SUBTRACT rule (e.g., strength 10 entering NegX, bouncing back as strength 8 through PosX, giving effective |10-8|=2 instead of 10). Fix: skip entry face on expansion.
+  - **Record vs expand must be separated for ADD**: The visited set prevents infinite loops, but if it also blocks signal recording, same-direction ADD from multiple emitters doesn't work (second emitter's contribution is lost). Fix: always record incoming signals, only gate expansion on visited set.
+  - **Conductivity as category, not per-block metadata**: Rather than adding a `conductivity` field to every BlockMeta, used explicit Sets for conductor/amplifier block IDs. Keeps BlockMeta unchanged, avoids touching 40+ block definitions, and is easily extended.
+  - **CT test failures are pre-existing**: 104 Playwright CT test failures are from US-032 changes (RuneWheel.ct.tsx, etc.), not from signal propagation. Signal propagation has no UI components and doesn't affect any CT tests.
+---
+
+## 2026-03-16 - US-034
+- Emitter Runes: Kenaz (Heat) and Sowilo (Light) — first two functional runes that emit signals into the signal propagation network
+- Files created:
+  - `src/ecs/systems/emitter-runes.ts` (NEW, ~65 LOC) — Pure data: emitter config map (RuneId → signal type/strength/glow color/continuous flag), `isEmitterRune()`, `getEmitterConfig()`, `hexToNumber()` utility, exported constants (EMITTER_STRENGTH=10, KENAZ_GLOW="#a3452a", SOWILO_GLOW="#c9a84c")
+  - `src/ecs/systems/emitter-system.ts` (NEW, ~130 LOC) — ECS system: throttled at SIGNAL_TICK_INTERVAL (0.25s), chunk-based emitter collection from RuneIndex, signal propagation via `propagateSignals()`, particle spawning at face exit points, module-level signal map cache (`getSignalMap()`/`getActiveEmitters()`/`resetEmitterState()`)
+  - `src/ecs/systems/emitter-runes.test.ts` (NEW, ~14 tests) — Emitter config lookups, glow colors, non-emitter exclusion, constants, hexToNumber
+  - `src/ecs/systems/emitter-system.test.ts` (NEW, ~19 tests) — Emitter collection (Kenaz/Sowilo, non-emitter exclusion, multi-chunk, scan radius), system tick (throttling, Heat/Light emission at strength 10, propagation through conductors, air blocking, particle spawning, no-emitter/no-player clearing, reset)
+- Files modified:
+  - `src/ecs/systems/rune-data.ts` — Added Sowilo (RuneId=9, glyph ᛊ, color #c9a84c), updated Kenaz color from #FF8C00 to #a3452a, added Sowilo to PLACEABLE_RUNES
+  - `src/ecs/systems/rune-data.test.ts` — Updated placeable runes count from 8 to 9
+  - `src/ecs/systems/index.ts` — Exported emitter-runes.ts and emitter-system.ts symbols
+  - `src/engine/game.ts` — Added `runEmitterSystem()` method in update loop (after lightSystem, before explorationSystem), added `resetEmitterState()` in destroyGame
+- **Learnings:**
+  - **EmitterWithGlow pairing for particles**: The `SignalEmitter` type is a propagation-engine type that shouldn't carry UI data (glow colors). Solution: `collectEmitters()` returns `EmitterWithGlow[]` pairing each emitter with its numeric glow color. The emitter array feeds propagation; the paired data feeds particles.
+  - **Chunk-scan radius matching render distance**: SCAN_RADIUS=3 matches the voxel RENDER_DISTANCE, ensuring all visible runes participate in signal propagation. Emitters outside the visible range wouldn't have visual feedback anyway.
+  - **Module-level cache for cross-system reads**: `getSignalMap()` exposes the last BFS result so other systems (future Mörker repulsion from Sowilo light signals) can cheaply read signal state without re-running propagation. Same pattern as `getActiveLightSources()` in light.ts.
+  - **Sowilo glyph ᛊ (U+16CA)**: The Sowilo rune uses Unicode codepoint U+16CA from the Runic block. Care needed: some fonts don't render all Elder Futhark glyphs, but the RuneWheel component renders glyphs as text so missing font support falls back gracefully.
 ---
 

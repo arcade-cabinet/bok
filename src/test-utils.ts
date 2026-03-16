@@ -5,6 +5,7 @@ import {
 	AiType,
 	AnimState,
 	BehaviorState,
+	ChiselState,
 	Codex,
 	CookingState,
 	CreatureAI,
@@ -26,6 +27,7 @@ import {
 	Position,
 	QuestProgress,
 	Rotation,
+	RuneFaces,
 	SagaLog,
 	ShelterState,
 	Species,
@@ -117,6 +119,8 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		ExploredChunks,
 		Codex,
 		SagaLog,
+		RuneFaces,
+		ChiselState(),
 	);
 }
 
