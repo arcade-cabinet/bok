@@ -4,7 +4,7 @@
  */
 
 import type { World } from "koota";
-import { worldRng } from "../../world/noise.ts";
+import { cosmeticRng, worldRng } from "../../world/noise.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
 import {
 	AiType,
@@ -57,10 +57,13 @@ export function spawnCreatures(
 	const spawnY = findSurfaceSpawn(spawnX, spawnZ);
 	if (spawnY < 0) return;
 
+	const variant = cosmeticRng();
+	const species = Species.Morker;
+
 	const entity = world.spawn(
 		CreatureTag,
 		Position({ x: spawnX, y: spawnY, z: spawnZ }),
-		CreatureType({ species: Species.Morker }),
+		CreatureType({ species }),
 		CreatureAI({
 			aiType: MORKER_DEFAULTS.aiType,
 			behaviorState: BehaviorState.Idle,
@@ -75,7 +78,7 @@ export function spawnCreatures(
 		CreatureAnimation({
 			animState: AnimState.Idle,
 			animTimer: 0,
-			variant: 0,
+			variant,
 		}),
 		CreatureHealth({
 			hp: MORKER_DEFAULTS.hp,
@@ -85,7 +88,7 @@ export function spawnCreatures(
 		}),
 	);
 
-	effects?.onCreatureSpawned(entity.id());
+	effects?.onCreatureSpawned(entity.id(), species, variant);
 }
 
 /** Find a valid Y position on the terrain surface. Returns -1 if none found. */

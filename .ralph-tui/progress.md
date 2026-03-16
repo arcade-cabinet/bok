@@ -5,6 +5,16 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Creature Part System Architecture
+The multi-part creature renderer separates pure data from Three.js construction:
+- `creature-parts.ts` — Part definitions (arrays of `{ geometry, size, offset, jointParent, jointAxis, color }`), assembly functions (creates Three.js Group hierarchies), variation (±10% scale, ±5% hue), LOD switching.
+- `CreatureRendererBehavior.ts` — Pool management, position interpolation, joint animation, camera-based LOD.
+- Key patterns:
+- **Joint hierarchy via scene graph**: Each part is a Group containing a Mesh. Children nested under parent Groups get automatic transform propagation — rotating a Group rotates all descendants. No manual matrix math.
+- **Variation from ECS**: `CreatureAnimation.variant` (0–1) seeds both scale and hue variation. `cosmeticRng()` sets variant at spawn time.
+- **LOD distance squared**: Compare `distSq > LOD_DISTANCE_SQ` (no sqrt) for performance. Beyond 30 blocks, swap all part Groups invisible and show single LOD box.
+- **Effects chain extension**: `CreatureEffects.onCreatureSpawned(entityId, species, variant)` carries species + variant from spawner → game.ts → renderer.
+
 ### ECS System Testing Pattern
 ECS systems are pure functions `(world: World, dt: number) => void`. To test:
 1. `createTestWorld()` — fresh Koota world per test
@@ -290,5 +300,24 @@ Key patterns:
   - `withOreSparke` layers metallic highlights AFTER ore veins — order matters because later draws overlay earlier ones, creating the sparkle effect on top of the ore color
   - Extracting draw helpers to separate file naturally keeps tileset-tiles.ts focused on the data array while helpers are independently testable
   - `addWarmNoise` vs `addNoise` distinction: warm noise uses `rgba(255,240,230,0.1)` for light pixels instead of pure white, creating subtle warm shift across the entire texture
+---
+
+## 2026-03-16 - US-011
+- Multi-part creature renderer with joint hierarchy, per-individual variation, and LOD
+- New file `src/engine/creature-parts.ts` (222 LOC): `CreaturePartDef` interface, Mörker 6-part definition (body/head/2 eyes/2 arms), `assembleCreature()` builds Three.js Group hierarchy from defs, `applyScaleVariation()` ±10%, `applyHueVariation()` ±5% HSL shift, `updateLod()` with 30-block threshold, `validatePartDefs()`, `buildJointHierarchy()`, geometry factory (box/sphere/cone)
+- New file `src/engine/creature-parts.test.ts` (405 LOC): 31 tests covering part definitions (validation, positive dimensions, fallback), joint hierarchy (parent-child adjacency, root isolation, axis assignments), scale variation (center/extreme/range), hue variation (identity/shift/achromatic), LOD threshold (constants, switching, exact boundary), assembly (root structure, nesting, userData, LOD mesh hidden)
+- Updated `src/engine/behaviors/CreatureRendererBehavior.ts` (233 LOC): Refactored from hardcoded single-mesh to multi-part assembly. Pool entries now hold `AssembledCreature`. `assignMesh()` creates per-creature assembly with variant. `update()` computes LOD via camera distance. `animateJoints()` drives body bob, head look, arm swing, eye aggro glow, daytime tint. `setCameraPosition()` receives camera coords from game.ts. `disposeAssembled()` recursively cleans up geometries/materials.
+- Updated `src/ecs/systems/creature-spawner.ts`: `cosmeticRng()` sets `CreatureAnimation.variant` at spawn time (was hardcoded 0). Passes species + variant through effects callback.
+- Updated `src/ecs/systems/creature-ai.ts`: `CreatureEffects.onCreatureSpawned` signature extended with `species: SpeciesId` and `variant: number`.
+- Updated `src/engine/game.ts`: Passes species/variant to `assignMesh()`, calls `setCameraPosition()` in camera sync loop.
+- All 243 vitest tests pass, typecheck clean, lint clean (only pre-existing errors)
+- CT test failures are all pre-existing 30s mount timeouts (environment-specific)
+- **Learnings:**
+  - Three.js scene graph propagation makes joint hierarchies trivial — nest Groups for parent-child transforms, no manual matrix multiplication needed
+  - Per-creature variation prevents pooling of shared geometries (each creature gets unique sized meshes via `applyScaleVariation`), but the pool still manages lifecycle and max count
+  - HSL hue shift is more perceptually uniform than RGB channel manipulation for color variation — `Color.getHSL()` / `Color.setHSL()` handles the conversion
+  - Mocking Three.js for Node tests requires a full mock class hierarchy (Group, Mesh, Color with getHSL/setHSL, Vector3) but enables testing assembly logic without DOM or WebGL
+  - `userData` on Three.js objects is the clean way to store metadata (jointAxis, originalY) that animation functions need without extending class types
+  - LOD distance squared comparison (`distSq > LOD_DISTANCE_SQ`) avoids per-creature `Math.sqrt()` calls in the hot update loop
 ---
 

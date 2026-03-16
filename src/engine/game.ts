@@ -138,6 +138,8 @@ class GameBridge extends Behavior {
 				cam.rotation.order = "YXZ";
 				cam.rotation.set(rot.pitch, rot.yaw, 0);
 
+				creatureRendererBehavior?.setCameraPosition(pos.x, pos.y, pos.z);
+
 				// Push to view model behavior
 				if (viewModelBehavior) {
 					const isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
@@ -198,7 +200,8 @@ class GameBridge extends Behavior {
 	private runCreatureSystem(dt: number) {
 		const effects: CreatureEffects = {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			onCreatureSpawned: (entityId) => creatureRendererBehavior?.assignMesh(entityId),
+			onCreatureSpawned: (entityId, species, variant) =>
+				creatureRendererBehavior?.assignMesh(entityId, species, variant),
 			onCreatureDied: (entityId) => creatureRendererBehavior?.releaseMesh(entityId),
 		};
 		creatureSystem(kootaWorld, dt, effects);

@@ -327,7 +327,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 2 — Building-Block Creatures. Rendering infrastructure for all creatures.",
       "labels": [
         "phase-2",
@@ -336,7 +336,8 @@
       ],
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-012",
@@ -1642,6 +1643,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T10:01:27.832Z"
+    "updatedAt": "2026-03-16T10:14:56.651Z"
   }
 }

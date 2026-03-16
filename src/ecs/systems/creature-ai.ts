@@ -6,7 +6,7 @@
 import type { World } from "koota";
 import { cosmeticRng } from "../../world/noise.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
-import type { AnimStateId, BehaviorStateId } from "../traits/index.ts";
+import type { AnimStateId, BehaviorStateId, SpeciesId } from "../traits/index.ts";
 import {
 	AnimState,
 	BehaviorState,
@@ -162,6 +162,6 @@ export function behaviorToAnim(state: BehaviorStateId): AnimStateId {
 
 export interface CreatureEffects {
 	spawnParticles: (x: number, y: number, z: number, color: string | number, count: number) => void;
-	onCreatureSpawned: (entityId: number) => void;
+	onCreatureSpawned: (entityId: number, species: SpeciesId, variant: number) => void;
 	onCreatureDied: (entityId: number) => void;
 }
