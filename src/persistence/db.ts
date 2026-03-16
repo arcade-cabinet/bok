@@ -206,7 +206,6 @@ export interface VoxelDelta {
  * blockId=0 means the block was removed.
  */
 export async function saveVoxelDelta(slotId: number, x: number, y: number, z: number, blockId: number): Promise<void> {
-export async function saveVoxelDelta(slotId: number, x: number, y: number, z: number, blockId: number): Promise<void> {
 	if (!db) return;
 	await db.run(
 		`INSERT OR REPLACE INTO voxel_deltas (slot_id, x, y, z, block_id)

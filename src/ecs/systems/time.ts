@@ -5,8 +5,7 @@ export type TimePhase = "Morning" | "Midday" | "Dusk" | "Night";
 
 export function timeSystem(world: World, dt: number) {
 	world.query(WorldTime).updateEach(([time]) => {
-		const dayDuration =
-			Number.isFinite(time.dayDuration) && time.dayDuration > 0 ? time.dayDuration : 240;
+		const dayDuration = Number.isFinite(time.dayDuration) && time.dayDuration > 0 ? time.dayDuration : 240;
 		const total = time.timeOfDay + dt / dayDuration;
 		const rollover = Math.floor(total);
 		time.dayCount += rollover;
