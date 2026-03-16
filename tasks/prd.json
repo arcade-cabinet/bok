@@ -297,7 +297,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 1 — The Swedish Landscape. Polish pass on block textures.",
       "labels": [
         "phase-1",
@@ -306,7 +306,8 @@
       ],
       "dependsOn": [
         "US-004"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-011",
@@ -1641,6 +1642,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T09:50:03.555Z"
+    "updatedAt": "2026-03-16T10:01:27.832Z"
   }
 }

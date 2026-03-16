@@ -67,6 +67,9 @@ Underground cave carving and ore veins are in `cave-generator.ts`, separate from
 - **Ore priority**: ORE_BANDS are iterated in order; first match wins in overlap zones (iron > copper at y 10–15).
 - **Seed name generator** extracted to `seed-names.ts` from noise.ts to keep noise module focused on noise algorithms.
 
+### Tileset Draw Function Testing Pattern
+Testing procedural canvas draw functions in Node (no DOM) uses a mock CanvasRenderingContext2D that intercepts property assignments. `Object.defineProperty` on `fillStyle`/`strokeStyle` captures every color value used during drawing. Tests then assert that specific palette colors appear in the captured arrays. This tests drawing _intent_ (what colors are painted) without needing real canvas rendering. The mock also stubs all canvas methods (`fillRect`, `beginPath`, `stroke`, etc.) with `vi.fn()` for call-count assertions.
+
 ### Landmark Generation Architecture
 Landmarks follow the same decomposition as trees and caves:
 - `landmark-types.ts` — Pure structure builders (placeStenhog, placeRunsten, placeFornlamning, biome-specific). Each pushes VoxelSetOptions onto an entries array. No side effects.
@@ -263,5 +266,29 @@ Key patterns:
   - Biome boundary detection reuses the same BLEND_CHECK radius concept as terrain blending but only needs boolean result, not weight distribution — much cheaper
   - `as const` array destructuring in loops (e.g., `for (const [dx, dz] of [...] as const)`) gets reformatted by Biome into multi-line arrays — the result is more readable anyway
   - Tileset grid expansion (5→6 rows) requires updating both `tileset-generator.ts` ROWS constant and the existing "all tiles fit within grid" test assertion
+---
+
+## 2026-03-16 - US-010
+- Tileset texture polish pass for Swedish art direction compliance
+- New file `src/world/tileset-draw-helpers.ts` (235 LOC): Extracted drawing primitives + 14 new species-specific and biome texture functions
+- Species-specific wood textures: `drawBirchBark` (horizontal lenticels), `drawBirchRings`, `drawBeechGrain` (smooth subtle), `drawBeechRings`, `drawPineGrain` (dark pronounced + resin knots), `drawPineRings`
+- Ore metallic sparkle: `withOreSparke` replaces `withOre`, adds bright white/gold pixel highlights after ore veins
+- Biome ground textures: `drawMossTexture` (deep green multi-shade blotches), `drawPeatTexture` (fibrous horizontal streaks + organic flecks), `drawSootTexture` (ashy particles + ember specks)
+- `addWarmNoise` helper: warm-tinted light pixels `rgba(255,240,230,0.1)` instead of pure white, used for stone/dirt
+- Palette compliance: Grass `#4CAF50`→`#4a7a42` (muted Mossa-adjacent), Leaves `#2E7D32`→`#3a5a40` (exact Mossa), Snow `#FFFFFF`→`#f0eae4` (warm, no pure white), Birch `#d4c4a8`→`#ddd0ba` (closer to Björk)
+- Warm bias applied: Stone `#9E9E9E`→`#a6989a` (+8 red), Dirt `#795548`→`#7f5b4e`, StoneBricks `#757575`→`#7d7577`, SmoothStone `#6b6b6b`→`#736b6b`, Ore baseColors to warm stone
+- 20 new unit tests in `tileset-tiles.test.ts` covering: palette compliance (warm bias, no pure white, Mossa greens), species-specific draw functions (birch lenticels, beech subtlety, pine grain + knots), ore sparkle highlights, biome textures (moss green shades, peat fibrous streaks, soot ash + ember), warm noise helper, leaf factory
+- blocks.ts BLOCKS metadata colors updated to match tileset changes
+- All 212 vitest tests pass, typecheck clean, lint clean (only pre-existing CSS parse error + unused `trunks`)
+- CT test failures are all pre-existing 30s mount timeouts (environment-specific)
+- Files created: src/world/tileset-draw-helpers.ts, src/world/tileset-tiles.test.ts
+- Files modified: src/world/tileset-tiles.ts, src/world/blocks.ts
+- **Learnings:**
+  - Mock `CanvasRenderingContext2D` with property interceptors (`Object.defineProperty` on fillStyle/strokeStyle) enables "color sampling" tests in Node environment without real canvas
+  - Warm bias is applied by adding +5-10 to the red channel of neutral greys: `#9E9E9E` → `#A6989A`. The green/blue channels shift slightly too for a natural warm tone rather than pure red tint
+  - Species-specific wood textures differentiate by stroke opacity and pattern: birch uses horizontal rects (lenticels), beech uses opacity 0.08 (smooth), pine uses opacity 0.25 with 1.5px lineWidth (pronounced)
+  - `withOreSparke` layers metallic highlights AFTER ore veins — order matters because later draws overlay earlier ones, creating the sparkle effect on top of the ore color
+  - Extracting draw helpers to separate file naturally keeps tileset-tiles.ts focused on the data array while helpers are independently testable
+  - `addWarmNoise` vs `addNoise` distinction: warm noise uses `rgba(255,240,230,0.1)` for light pixels instead of pure white, creating subtle warm shift across the entire texture
 ---
 

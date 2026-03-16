@@ -57,22 +57,23 @@ export interface BlockMeta {
 }
 
 // Colors drawn from the Scandinavian palette (docs/design/art-direction.md)
+// Stone/dirt variants include warm bias (+5-10 red channel) per art direction
 export const BLOCKS: Record<number, BlockMeta> = {
 	[BlockId.Air]: { name: "Air", color: "#000000", solid: false, hardness: 0 },
-	[BlockId.Grass]: { name: "Grass", color: "#4CAF50", solid: true, hardness: 0.8 },
-	[BlockId.Dirt]: { name: "Dirt", color: "#795548", solid: true, hardness: 0.6 },
-	[BlockId.Stone]: { name: "Stone", color: "#9E9E9E", solid: true, hardness: 4.0 },
+	[BlockId.Grass]: { name: "Grass", color: "#4a7a42", solid: true, hardness: 0.8 },
+	[BlockId.Dirt]: { name: "Dirt", color: "#7f5b4e", solid: true, hardness: 0.6 },
+	[BlockId.Stone]: { name: "Stone", color: "#a6989a", solid: true, hardness: 4.0 },
 	[BlockId.Wood]: { name: "Wood", color: "#5D4037", solid: true, hardness: 2.5 },
-	[BlockId.Leaves]: { name: "Leaves", color: "#2E7D32", solid: true, transparent: true, hardness: 0.2 },
+	[BlockId.Leaves]: { name: "Leaves", color: "#3a5a40", solid: true, transparent: true, hardness: 0.2 },
 	[BlockId.Planks]: { name: "Planks", color: "#8D6E63", solid: true, hardness: 1.5 },
 	[BlockId.Water]: { name: "Water", color: "#1E90FF", solid: false, transparent: true, fluid: true, hardness: 0 },
 	[BlockId.Torch]: { name: "Torch", color: "#FFD700", solid: false, emissive: true, hardness: 0.1 },
 	[BlockId.Sand]: { name: "Sand", color: "#E2C275", solid: true, hardness: 0.7 },
-	[BlockId.Snow]: { name: "Snow", color: "#FFFFFF", solid: true, hardness: 0.5 },
-	[BlockId.StoneBricks]: { name: "Stonebricks", color: "#757575", solid: true, hardness: 4.0 },
+	[BlockId.Snow]: { name: "Snow", color: "#f0eae4", solid: true, hardness: 0.5 },
+	[BlockId.StoneBricks]: { name: "Stonebricks", color: "#7d7577", solid: true, hardness: 4.0 },
 	[BlockId.Glass]: { name: "Glass", color: "#88CCFF", solid: true, transparent: true, hardness: 1.0 },
 	// Biome-specific blocks — Björk palette for birch, Mossa for forest greens, Sten for stone variants
-	[BlockId.BirchWood]: { name: "Birch Wood", color: "#d4c4a8", solid: true, hardness: 2.0 },
+	[BlockId.BirchWood]: { name: "Birch Wood", color: "#ddd0ba", solid: true, hardness: 2.0 },
 	[BlockId.BirchLeaves]: { name: "Birch Leaves", color: "#5a8a4a", solid: true, transparent: true, hardness: 0.2 },
 	[BlockId.BeechWood]: { name: "Beech Wood", color: "#6e5439", solid: true, hardness: 3.0 },
 	[BlockId.BeechLeaves]: { name: "Beech Leaves", color: "#3a5a40", solid: true, transparent: true, hardness: 0.2 },
@@ -84,11 +85,11 @@ export const BLOCKS: Record<number, BlockMeta> = {
 	[BlockId.Mushroom]: { name: "Mushroom", color: "#a3452a", solid: false, hardness: 0.1 },
 	[BlockId.Peat]: { name: "Peat", color: "#3a2a20", solid: true, bouncy: true, hardness: 0.4 },
 	[BlockId.Ice]: { name: "Ice", color: "#b0d8ef", solid: true, transparent: true, slippery: true, hardness: 1.5 },
-	[BlockId.SmoothStone]: { name: "Smooth Stone", color: "#6b6b6b", solid: true, hardness: 5.0 },
+	[BlockId.SmoothStone]: { name: "Smooth Stone", color: "#736b6b", solid: true, hardness: 5.0 },
 	[BlockId.Soot]: { name: "Soot", color: "#2a2a3e", solid: true, hardness: 0.5 },
 	[BlockId.CorruptedStone]: { name: "Corrupted Stone", color: "#4a3a5a", solid: true, hardness: 6.0 },
-	[BlockId.IronOre]: { name: "Iron Ore", color: "#6b6050", solid: true, hardness: 5.0 },
-	[BlockId.CopperOre]: { name: "Copper Ore", color: "#5b6b5b", solid: true, hardness: 4.5 },
+	[BlockId.IronOre]: { name: "Iron Ore", color: "#a6989a", solid: true, hardness: 5.0 },
+	[BlockId.CopperOre]: { name: "Copper Ore", color: "#a6989a", solid: true, hardness: 4.5 },
 	[BlockId.Crystal]: {
 		name: "Crystal",
 		color: "#c9a84c",
