@@ -80,6 +80,7 @@ export default function App() {
 		loreEntryIds: string[];
 		discoveredRecipeCount: number;
 	} | null>(null);
+	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -182,6 +183,9 @@ export default function App() {
 						loreEntryIds: [...codex.loreEntries],
 						discoveredRecipeCount: codex.discoveredRecipes.size,
 					});
+				});
+				kootaWorld.query(PlayerTag, Inventory).readEach(([inv]) => {
+					setLedgerItems({ ...inv.items });
 				});
 			}
 
@@ -461,6 +465,7 @@ export default function App() {
 							}}
 							mapData={mapData ?? undefined}
 							codexData={codexData ?? undefined}
+							ledgerData={ledgerItems ? { items: ledgerItems } : undefined}
 						/>
 					</>
 				)}

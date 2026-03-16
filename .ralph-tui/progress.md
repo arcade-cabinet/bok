@@ -870,3 +870,21 @@ The light system separates pure data from ECS state management, following the cr
   - All 42 unit tests pass. CT tests follow correct patterns but Playwright CT environment has pre-existing headless rendering issues (all CT tests including unrelated ones fail with mount timeout).
 ---
 
+## 2026-03-16 - US-028
+- Implemented Listan (Ledger/Inventory) page for the Bok journal
+- Files created:
+  - `src/ui/ledger-data.ts` (96 LOC) — Pure data: resource categorization (blocks/tools/materials/food), sorted entry building, category grouping, recipe-by-ingredient lookup
+  - `src/ui/components/BokLedger.tsx` (156 LOC) — React UI: categorized resource list with color swatches + counts, tap-to-inspect recipe panel, parchment aesthetic
+  - `src/ui/components/BokLedger.ct.tsx` (120 LOC) — 9 Playwright CT tests: empty state, resource counts, category grouping, tool classification, recipe lookup on tap, no-recipe message, deselect toggle, recipe details with costs/tier, category sort order
+- Files modified:
+  - `src/ui/screens/BokScreen.tsx` — Added `ledgerData` prop, renders BokLedger on "listan" tab
+  - `src/App.tsx` — Added `ledgerItems` state, polls Inventory trait when bok is open, passes to BokScreen as `ledgerData`
+- Typecheck clean, build clean, lint clean on new files (pre-existing errors only)
+- All 824 vitest tests pass (4 pre-existing failures in map-data.test.ts and exploration.test.ts unrelated to this change)
+- **Learnings:**
+  - **Resource classification from existing data**: Categories derive from existing type systems — `isTool()` + `ITEMS[id].type === "light"` for tools, `isFood()` for food, a curated `MATERIAL_IDS` set for ores/crystals, and everything else as blocks. No new data structures needed.
+  - **Recipe lookup by ingredient**: `findRecipesUsingResource(id)` filters `RECIPES` by checking `id in recipe.cost`. Simple `in` operator works because `cost` is a `Record<number, number>` keyed by resource ID.
+  - **Inventory poll pattern**: Same conditional-on-bokOpen pattern as map/codex data polling. `{ ...inv.items }` shallow copy prevents React from skipping re-renders due to Koota's stable object reference.
+  - **Tap-to-inspect toggle**: `selectedId` state in BokLedger.tsx. Second tap on same resource deselects (sets null). Recipe panel only renders when `selectedId !== null`.
+---
+

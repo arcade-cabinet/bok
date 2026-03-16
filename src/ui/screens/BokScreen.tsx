@@ -8,6 +8,8 @@ import type { LandmarkMarker } from "../../ecs/systems/map-data.ts";
 import type { BiomeId } from "../../world/biomes.ts";
 import type { BokCodexProps } from "../components/BokCodex.tsx";
 import { BokCodex } from "../components/BokCodex.tsx";
+import type { BokLedgerProps } from "../components/BokLedger.tsx";
+import { BokLedger } from "../components/BokLedger.tsx";
 import { BokMap } from "../components/BokMap.tsx";
 import { BokPage } from "../components/BokPage.tsx";
 
@@ -40,11 +42,12 @@ interface BokScreenProps {
 	onClose: () => void;
 	mapData?: MapData;
 	codexData?: BokCodexProps;
+	ledgerData?: BokLedgerProps;
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function BokScreen({ isOpen, onClose, mapData, codexData }: BokScreenProps) {
+export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData }: BokScreenProps) {
 	const [activeTab, setActiveTab] = useState<BokTabId>("kartan");
 	const [closing, setClosing] = useState(false);
 	const touchStartRef = useRef<number>(0);
@@ -133,6 +136,7 @@ export function BokScreen({ isOpen, onClose, mapData, codexData }: BokScreenProp
 							landmarks={mapData.landmarks}
 						/>
 					)}
+					{activeTab === "listan" && ledgerData && <BokLedger items={ledgerData.items} />}
 					{activeTab === "kunskapen" && codexData && (
 						<BokCodex
 							creatureProgress={codexData.creatureProgress}
