@@ -1,0 +1,85 @@
+/**
+ * Creature system — main entry point replacing enemySystem.
+ * Dispatches spawning by species and AI updates by archetype.
+ */
+
+import type { World } from "koota";
+import { CreatureHealth, CreatureTag, PlayerState, PlayerTag, Position, WorldTime } from "../traits/index.ts";
+import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
+import { updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
+import { spawnCreatures } from "./creature-spawner.ts";
+
+const DESPAWN_DISTANCE = 50;
+
+export type { CreatureEffects };
+
+export function creatureSystem(world: World, dt: number, effects?: CreatureEffects) {
+	let timeOfDay = 0.25;
+	world.query(WorldTime).readEach(([time]) => {
+		timeOfDay = time.timeOfDay;
+	});
+	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
+
+	// Get player position
+	let px = 0,
+		py = 0,
+		pz = 0;
+	let playerAlive = false;
+	world.query(PlayerTag, Position, PlayerState).readEach(([pos, state]) => {
+		px = pos.x;
+		py = pos.y;
+		pz = pos.z;
+		playerAlive = !state.isDead;
+	});
+
+	// Count + despawn distant creatures
+	let creatureCount = 0;
+	world.query(CreatureTag, Position).updateEach(([pos], entity) => {
+		const dx = px - pos.x;
+		const dz = pz - pos.z;
+		const dist = Math.sqrt(dx * dx + dz * dz);
+		if (dist > DESPAWN_DISTANCE) {
+			effects?.onCreatureDied(entity.id());
+			entity.destroy();
+			return;
+		}
+		creatureCount++;
+	});
+
+	// Spawn
+	spawnCreatures(world, px, pz, playerAlive, isDaytime, creatureCount, effects);
+
+	// Update AI by archetype
+	const ctx: CreatureUpdateContext = {
+		playerX: px,
+		playerY: py,
+		playerZ: pz,
+		playerAlive,
+		isDaytime,
+	};
+
+	updateHostileAI(world, dt, ctx, effects);
+	updatePassiveAI(world, dt, ctx, effects);
+	updateNeutralAI(world, dt, ctx, effects);
+}
+
+/**
+ * Damage a creature by entity ID. Called from combat system.
+ */
+export function damageCreature(
+	world: World,
+	entityId: number,
+	damage: number,
+	effects?: { spawnParticles: (x: number, y: number, z: number, color: string | number, count: number) => void },
+) {
+	world.query(CreatureTag, CreatureHealth, Position).updateEach(([hp, pos], entity) => {
+		if (entity.id() === entityId) {
+			hp.hp -= damage;
+			effects?.spawnParticles(pos.x, pos.y, pos.z, 0xff0000, 5);
+		}
+	});
+}
+
+export type { CreatureEffects as EnemySideEffects };
+// ─── Legacy aliases ───
+export { creatureSystem as enemySystem, damageCreature as damageEnemy };

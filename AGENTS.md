@@ -95,13 +95,54 @@ src/
 
 ## Code Standards
 
+### Formatting & Language
 - **TypeScript strict mode** — no `any` unless truly necessary (cast through `unknown`)
-- **Biome** for formatting and linting — `npx biome check --write .`
+- **Biome** for formatting and linting — `pnpm biome check --write .`
 - **Tabs** for indentation, **double quotes**, **always semicolons**
 - **No unused imports** — Biome enforces this
 - **120 char line width**
 - Prefer `const` over `let`. Never use `var`.
 - Use `type` imports for type-only imports: `import type { Foo } from ...`
+
+### File Size & Decomposition
+- **Max ~200 LOC per file.** If a file exceeds 200 lines, decompose it. Extract utilities, sub-components, or split responsibilities.
+- **No monolith components.** Every React component should do one thing. Extract sub-components, custom hooks, and utilities aggressively.
+- **App.tsx is the ceiling** — it's the only file allowed to be large (as the root orchestrator). Every other file should be focused and small.
+
+### Separation of Concerns
+- **`.tsx` files = UI rendering only.** No game logic, no ECS queries, no physics, no pathfinding in `.tsx` files. They receive data via props and emit events via callbacks.
+- **`.ts` files = logic and state.** ECS systems, game bridge, persistence, world generation — all pure TypeScript with no JSX.
+- **Koota (ECS) owns ALL gameplay state.** No React `useState` for game state. React state is only for UI state (which menu is open, which tab is active).
+- **Jolly Pixel owns ALL rendering.** Behaviors manage Three.js objects. React never creates or manipulates Three.js objects directly.
+- **Side-effect callbacks bridge ECS → rendering.** ECS systems never import Three.js. When a system needs visual feedback, it calls a callback that the GameBridge provides.
+
+### Library Spheres of Influence
+| Library | Owns | Does NOT Touch |
+|---------|------|----------------|
+| **Koota** | All gameplay state (traits, systems) | Three.js, DOM, React |
+| **Jolly Pixel** | Scene graph, actors, behaviors, rendering | ECS mutations, persistence |
+| **React** | UI overlays, HUD, menus, screens | Three.js objects, ECS systems |
+| **Three.js** | 3D math, meshes, materials, cameras | Used only inside Behaviors |
+| **SQLite** | Save/load, voxel deltas, player state | Runtime game state |
+| **Tailwind/DaisyUI** | CSS utility classes, component styles | Inline styles (use sparingly) |
+
+### Testing
+- **Playwright Component Testing (CT)** for all React components — visual testing of individual components in isolation before full e2e.
+- **Test files live next to source:** `Component.ct.tsx` beside `Component.tsx`.
+- **Run component tests:** `pnpm test-ct`
+- **Write tests before or alongside new UI components** — TDD for UI.
+- **Every `.tsx` component should have a `.ct.tsx` test** covering: renders correctly, handles props, responds to user interaction, accessibility attributes.
+
+### PRNG
+- **Never use `Math.random()` anywhere.** Use `worldRng()` for deterministic game logic (terrain, spawns, drops). Use `cosmeticRng()` for non-deterministic visual-only effects (particles, screen shake).
+- Both RNGs are defined in `src/world/noise.ts`.
+
+### Accessibility
+- All interactive elements must have `type="button"` on `<button>` elements.
+- Decorative elements get `aria-hidden="true"`.
+- Modal overlays get `role="dialog"` and `aria-modal="true"`.
+- Support `prefers-reduced-motion` via CSS (already global in index.css).
+- Never lock viewport zoom (`user-scalable=no`).
 
 ## Build & Dev
 
@@ -116,7 +157,7 @@ pnpm lint:fix         # biome check --write .
 
 ## CI/CD
 
-- **CI** (`ci.yml`): Runs on PRs to main — typecheck, lint, build
+- **CI** (`ci.yml`): Runs on PRs to main — typecheck, lint, build, component tests
 - **CD** (`cd.yml`): Runs on push to main — typecheck, lint, build + deploy to GitHub Pages
 - **Dependabot**: Weekly pnpm + GitHub Actions updates
 - **Automerge**: Minor/patch dependabot PRs auto-squash-merge

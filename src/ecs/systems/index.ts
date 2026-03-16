@@ -1,4 +1,4 @@
-export { enemySystem } from "./enemy.ts";
+export { creatureSystem, damageCreature } from "./creature.ts";
 export { miningSystem } from "./mining.ts";
 export { movementSystem } from "./movement.ts";
 export { physicsSystem } from "./physics.ts";

@@ -120,17 +120,104 @@ export const WorldTime = trait({
 
 export const WorldSeed = trait({ seed: "" });
 
-// ─── Enemy Traits ───
-export const EnemyTag = trait();
-export const EnemyState = trait({
+// ─── Creature Traits ───
+
+/** All creature species in the game, from Swedish folklore. */
+export const Species = {
+	Morker: "morker",
+	Lyktgubbe: "lyktgubbe",
+	Skogssnigle: "skogssnigle",
+	Trana: "trana",
+	Vittra: "vittra",
+	Nacken: "nacken",
+	Runvaktare: "runvaktare",
+	Lindorm: "lindorm",
+	Draug: "draug",
+	Jatten: "jatten",
+} as const;
+export type SpeciesId = (typeof Species)[keyof typeof Species];
+
+/** AI archetype controlling base behavior tree. */
+export const AiType = {
+	Passive: "passive",
+	Neutral: "neutral",
+	Hostile: "hostile",
+	Boss: "boss",
+} as const;
+export type AiTypeId = (typeof AiType)[keyof typeof AiType];
+
+/** Behavior state for AI state machine. */
+export const BehaviorState = {
+	Idle: 0,
+	Chase: 1,
+	Attack: 2,
+	Flee: 3,
+} as const;
+export type BehaviorStateId = (typeof BehaviorState)[keyof typeof BehaviorState];
+
+/** Animation states for creature visual feedback. */
+export const AnimState = {
+	Idle: "idle",
+	Walk: "walk",
+	Chase: "chase",
+	Attack: "attack",
+	Flee: "flee",
+	Burn: "burn",
+} as const;
+export type AnimStateId = (typeof AnimState)[keyof typeof AnimState];
+
+export const CreatureTag = trait();
+
+export const CreatureType = trait((): { species: SpeciesId } => ({
+	species: Species.Morker,
+}));
+
+export const CreatureAI = trait(
+	(): {
+		aiType: AiTypeId;
+		behaviorState: BehaviorStateId;
+		targetEntity: number;
+		aggroRange: number;
+		attackRange: number;
+		attackDamage: number;
+		attackCooldown: number;
+		moveSpeed: number;
+		detectionRange: number;
+	} => ({
+		aiType: AiType.Hostile,
+		behaviorState: BehaviorState.Idle,
+		targetEntity: -1,
+		aggroRange: 15,
+		attackRange: 1.5,
+		attackDamage: 15,
+		attackCooldown: 0,
+		moveSpeed: 2.5,
+		detectionRange: 15,
+	}),
+);
+
+export const CreatureAnimation = trait(
+	(): {
+		animState: AnimStateId;
+		animTimer: number;
+		variant: number;
+	} => ({
+		animState: AnimState.Idle,
+		animTimer: 0,
+		variant: 0,
+	}),
+);
+
+export const CreatureHealth = trait({
 	hp: 6,
+	maxHp: 6,
 	velY: 0,
-	/** AI state: "idle" | "chase" | "attack" */
-	aiState: 0, // 0=idle, 1=chase, 2=attack
-	attackCooldown: 0,
-	/** Three.js mesh instance index for rendering (-1 = unassigned) */
 	meshIndex: -1,
 });
+
+// ─── Legacy aliases (kept for backward compatibility during migration) ───
+export const EnemyTag = CreatureTag;
+export const EnemyState = CreatureHealth;
 
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({

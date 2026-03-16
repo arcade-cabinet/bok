@@ -15,9 +15,9 @@ import { loadRuntime, Runtime } from "@jolly-pixel/runtime";
 import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
-import type { EnemySideEffects } from "../ecs/systems/enemy.ts";
+import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import {
-	enemySystem,
+	creatureSystem,
 	miningSystem,
 	movementSystem,
 	physicsSystem,
@@ -26,10 +26,11 @@ import {
 	timeSystem,
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
-import type { HotbarSlot } from "../ecs/traits/index.ts";
+import type { AnimStateId, HotbarSlot } from "../ecs/traits/index.ts";
 import {
-	EnemyState,
-	EnemyTag,
+	CreatureAnimation,
+	CreatureHealth,
+	CreatureTag,
 	Health,
 	Hotbar,
 	Hunger,
@@ -63,7 +64,7 @@ import { getVoxelAt, registerVoxelAccessors, setVoxelAt, setVoxelDeltaListener }
 import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
-import { EnemyRendererBehavior } from "./behaviors/EnemyRendererBehavior.ts";
+import { CreatureRendererBehavior } from "./behaviors/CreatureRendererBehavior.ts";
 import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
 import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
 
@@ -95,7 +96,7 @@ let celestialBehavior: CelestialBehavior | null = null;
 let blockHighlightBehavior: BlockHighlightBehavior | null = null;
 let particlesBehavior: ParticlesBehavior | null = null;
 let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
-let enemyRendererBehavior: EnemyRendererBehavior | null = null;
+let creatureRendererBehavior: CreatureRendererBehavior | null = null;
 
 // Shared references for the bridge
 let ambientLight: THREE.AmbientLight | null = null;
@@ -120,7 +121,7 @@ class GameBridge extends Behavior {
 		survivalSystem(kootaWorld, dt);
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
-		this.runEnemySystem(dt);
+		this.runCreatureSystem(dt);
 
 		// Sync Koota player state -> Three.js camera + Behaviors
 		this.syncPlayerToCamera(dt);
@@ -198,23 +199,30 @@ class GameBridge extends Behavior {
 		}
 	}
 
-	private runEnemySystem(dt: number) {
-		const effects: EnemySideEffects = {
+	private runCreatureSystem(dt: number) {
+		const effects: CreatureEffects = {
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
-			onEnemySpawned: (entityId) => enemyRendererBehavior?.assignMesh(entityId),
-			onEnemyDied: (entityId) => enemyRendererBehavior?.releaseMesh(entityId),
+			onCreatureSpawned: (entityId) => creatureRendererBehavior?.assignMesh(entityId),
+			onCreatureDied: (entityId) => creatureRendererBehavior?.releaseMesh(entityId),
 		};
-		enemySystem(kootaWorld, dt, effects);
+		creatureSystem(kootaWorld, dt, effects);
 
-		// Sync enemy positions to renderer
+		// Sync creature positions to renderer
 		let timeOfDay = 0.25;
 		kootaWorld.query(WorldTime).readEach(([time]) => {
 			timeOfDay = time.timeOfDay;
 		});
 		const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
-		kootaWorld.query(EnemyTag, EnemyState, Position).readEach(([enemy, pos], entity) => {
-			enemyRendererBehavior?.updatePosition(entity.id(), pos.x, pos.y, pos.z, enemy.aiState, isDaytime);
+		kootaWorld.query(CreatureTag, CreatureAnimation, Position).readEach(([anim, pos], entity) => {
+			creatureRendererBehavior?.updatePosition(
+				entity.id(),
+				pos.x,
+				pos.y,
+				pos.z,
+				anim.animState as AnimStateId,
+				isDaytime,
+			);
 		});
 	}
 
@@ -261,14 +269,14 @@ class GameBridge extends Behavior {
 
 		if (!isMining) return;
 
-		// Check all enemies within 3 blocks
-		kootaWorld.query(EnemyTag, EnemyState, Position).updateEach(([enemy, pos]) => {
+		// Check all creatures within 3 blocks
+		kootaWorld.query(CreatureTag, CreatureHealth, Position).updateEach(([hp, pos]) => {
 			const dx = pos.x - px;
 			const dy = pos.y - py;
 			const dz = pos.z - pz;
 			const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			if (dist < 3) {
-				enemy.hp -= toolPower * 0.03 * dt; // Damage scaled by delta time
+				hp.hp -= toolPower * 0.03 * dt;
 				particlesBehavior?.spawn(pos.x, pos.y + 0.9, pos.z, 0xff0000, 2);
 			}
 		});
@@ -413,10 +421,10 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	particlesBehavior = particlesActor.addComponentAndGet(ParticlesBehavior);
 	particlesBehavior.setup(threeScene);
 
-	// ─── Enemy Renderer Actor ───
-	const enemyActor = jpWorld.createActor("EnemyRenderer");
-	enemyRendererBehavior = enemyActor.addComponentAndGet(EnemyRendererBehavior);
-	enemyRendererBehavior.setup(threeScene);
+	// ─── Creature Renderer Actor ───
+	const creatureActor = jpWorld.createActor("CreatureRenderer");
+	creatureRendererBehavior = creatureActor.addComponentAndGet(CreatureRendererBehavior);
+	creatureRendererBehavior.setup(threeScene);
 
 	// ─── Block Highlight Actor ───
 	const highlightActor = jpWorld.createActor("BlockHighlight");
@@ -731,7 +739,7 @@ export function destroyGame(): void {
 	blockHighlightBehavior = null;
 	particlesBehavior = null;
 	ambientParticlesBehavior = null;
-	enemyRendererBehavior = null;
+	creatureRendererBehavior = null;
 	ambientLight = null;
 	sunLight = null;
 	loadedChunks.clear();
