@@ -19,6 +19,7 @@ Before making any change, understand the relevant domain:
 | **Art Direction** | [docs/design/art-direction.md](docs/design/art-direction.md) | Visuals, colors, creatures, lighting |
 | **ECS** | [docs/architecture/ecs.md](docs/architecture/ecs.md) | Any ECS trait, system, or entity work |
 | **Rendering** | [docs/architecture/rendering.md](docs/architecture/rendering.md) | Any Three.js, Jolly Pixel, or visual work |
+| **Structures** | [docs/architecture/structures.md](docs/architecture/structures.md) | Workstations, shelter, territory, light zones, decay |
 | **Persistence** | [docs/architecture/persistence.md](docs/architecture/persistence.md) | Save/load, database, delta tracking |
 
 ## Core Principles
