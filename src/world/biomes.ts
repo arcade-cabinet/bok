@@ -59,9 +59,19 @@ export const BIOME_SURFACE_RULES: Record<BiomeId, SurfaceRule> = {
 	[Biome.Angen]: { surface: BlockId.Grass, subsurface: BlockId.Dirt, depth: 4, waterBlock: BlockId.Water },
 	[Biome.Bokskogen]: { surface: BlockId.Moss, subsurface: BlockId.Dirt, depth: 5, waterBlock: BlockId.Water },
 	[Biome.Fjallen]: { surface: BlockId.Snow, subsurface: BlockId.Stone, depth: 2, waterBlock: BlockId.Water },
-	[Biome.Skargarden]: { surface: BlockId.Stone, subsurface: BlockId.Stone, depth: 3, waterBlock: BlockId.Water },
-	[Biome.Myren]: { surface: BlockId.Grass, subsurface: BlockId.Dirt, depth: 3, waterBlock: BlockId.Water },
-	[Biome.Blothogen]: { surface: BlockId.Dirt, subsurface: BlockId.Stone, depth: 3, waterBlock: 0 },
+	[Biome.Skargarden]: {
+		surface: BlockId.SmoothStone,
+		subsurface: BlockId.Stone,
+		depth: 3,
+		waterBlock: BlockId.Water,
+	},
+	[Biome.Myren]: { surface: BlockId.Moss, subsurface: BlockId.Peat, depth: 4, waterBlock: BlockId.Water },
+	[Biome.Blothogen]: {
+		surface: BlockId.Soot,
+		subsurface: BlockId.CorruptedStone,
+		depth: 3,
+		waterBlock: 0,
+	},
 };
 
 // ─── Tree Types ───
@@ -139,4 +149,24 @@ export function blendTreeType(weights: BiomeWeight[], hash: number): TreeTypeId 
 		}
 	}
 	return getBiomeTrees(weights[0].biome)[0];
+}
+
+// ─── Biome-Specific Resources ───
+
+/** Blocks exclusive to specific biomes. Used to enforce resource availability. */
+export const BIOME_RESOURCES: Record<BiomeId, number[]> = {
+	[Biome.Angen]: [BlockId.Grass, BlockId.Wildflower],
+	[Biome.Bokskogen]: [BlockId.Moss, BlockId.Mushroom],
+	[Biome.Fjallen]: [BlockId.Snow, BlockId.Ice],
+	[Biome.Skargarden]: [BlockId.SmoothStone],
+	[Biome.Myren]: [BlockId.Peat, BlockId.Cranberry],
+	[Biome.Blothogen]: [BlockId.Soot, BlockId.CorruptedStone],
+};
+
+/** Check if a block is exclusive to a specific biome (not available in others). */
+export function isBiomeExclusive(blockId: number): BiomeId | null {
+	for (const [biome, resources] of Object.entries(BIOME_RESOURCES)) {
+		if (resources.includes(blockId)) return Number(biome) as BiomeId;
+	}
+	return null;
 }

@@ -53,15 +53,10 @@ import {
 import { createBlockDefinitions } from "../world/block-definitions.ts";
 import { BlockId } from "../world/blocks.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
-import {
-	CHUNK_SIZE,
-	findSurfaceY,
-	generateChunkTerrain,
-	generateSpawnShrine,
-	WORLD_HEIGHT,
-} from "../world/terrain-generator.ts";
+import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
 import { getVoxelAt, registerVoxelAccessors, setVoxelAt, setVoxelDeltaListener } from "../world/voxel-helpers.ts";
+import { findSurfaceY, generateSpawnShrine } from "../world/world-utils.ts";
 import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
 import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
 import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";

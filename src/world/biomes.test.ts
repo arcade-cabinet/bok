@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	BIOME_RESOURCES,
 	BIOME_SURFACE_RULES,
 	Biome,
 	type BiomeWeight,
@@ -7,6 +8,7 @@ import {
 	blendTreeType,
 	getBiomeTrees,
 	ICE_LINE,
+	isBiomeExclusive,
 	selectBiome,
 	TREE_LINE,
 	TreeType,
@@ -116,6 +118,22 @@ describe("BIOME_SURFACE_RULES", () => {
 		const rule = BIOME_SURFACE_RULES[Biome.Fjallen];
 		expect(rule.surface).toBe(BlockId.Snow);
 		expect(rule.subsurface).toBe(BlockId.Stone);
+	});
+
+	it("Skärgården surface is SmoothStone (granite shores)", () => {
+		expect(BIOME_SURFACE_RULES[Biome.Skargarden].surface).toBe(BlockId.SmoothStone);
+	});
+
+	it("Myren surface is Moss with Peat subsurface", () => {
+		const rule = BIOME_SURFACE_RULES[Biome.Myren];
+		expect(rule.surface).toBe(BlockId.Moss);
+		expect(rule.subsurface).toBe(BlockId.Peat);
+	});
+
+	it("Blothögen surface is Soot with CorruptedStone subsurface", () => {
+		const rule = BIOME_SURFACE_RULES[Biome.Blothogen];
+		expect(rule.surface).toBe(BlockId.Soot);
+		expect(rule.subsurface).toBe(BlockId.CorruptedStone);
 	});
 });
 
@@ -278,5 +296,43 @@ describe("noise determinism", () => {
 		initNoise("seed-beta");
 		const b = noise2D(50 / 150, 50 / 150);
 		expect(a).not.toBe(b);
+	});
+});
+
+// ─── Biome-Specific Resources ───
+
+describe("BIOME_RESOURCES", () => {
+	it("every biome has at least one exclusive resource", () => {
+		for (const biome of Object.values(Biome)) {
+			expect(BIOME_RESOURCES[biome].length).toBeGreaterThan(0);
+		}
+	});
+
+	it("Peat is exclusive to Myren", () => {
+		expect(BIOME_RESOURCES[Biome.Myren]).toContain(BlockId.Peat);
+		expect(isBiomeExclusive(BlockId.Peat)).toBe(Biome.Myren);
+	});
+
+	it("Soot is exclusive to Blothögen", () => {
+		expect(BIOME_RESOURCES[Biome.Blothogen]).toContain(BlockId.Soot);
+		expect(isBiomeExclusive(BlockId.Soot)).toBe(Biome.Blothogen);
+	});
+
+	it("CorruptedStone is exclusive to Blothögen", () => {
+		expect(isBiomeExclusive(BlockId.CorruptedStone)).toBe(Biome.Blothogen);
+	});
+
+	it("Cranberry is exclusive to Myren", () => {
+		expect(BIOME_RESOURCES[Biome.Myren]).toContain(BlockId.Cranberry);
+		expect(isBiomeExclusive(BlockId.Cranberry)).toBe(Biome.Myren);
+	});
+
+	it("SmoothStone is exclusive to Skärgården", () => {
+		expect(isBiomeExclusive(BlockId.SmoothStone)).toBe(Biome.Skargarden);
+	});
+
+	it("non-exclusive blocks return null", () => {
+		expect(isBiomeExclusive(BlockId.Stone)).toBeNull();
+		expect(isBiomeExclusive(BlockId.Wood)).toBeNull();
 	});
 });

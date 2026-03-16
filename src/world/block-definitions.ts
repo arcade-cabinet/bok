@@ -7,7 +7,7 @@
  * Row 1: Water, Torch, Sand, SnowTop, SnowSide, StoneBricks, Glass, BirchWoodSide
  * Row 2: BirchWoodTop, BirchLeaves, BeechWoodSide, BeechWoodTop, BeechLeaves, PineWoodSide, PineWoodTop, PineLeaves
  * Row 3: SpruceLeaves, DeadWoodSide, DeadWoodTop, Moss, Mushroom, Peat, Ice, SmoothStone
- * Row 4: Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed, Wildflower
+ * Row 4: Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed, Wildflower, Cranberry
  */
 
 import { type BlockDefinition, Face } from "@jolly-pixel/voxel.renderer";
@@ -133,6 +133,14 @@ export function createBlockDefinitions(): BlockDefinition[] {
 			collidable: false,
 			faceTextures: {},
 			defaultTexture: tile(6, 4),
+		},
+		{
+			id: BlockId.Cranberry,
+			name: "Cranberry",
+			shapeId: "poleY",
+			collidable: false,
+			faceTextures: {},
+			defaultTexture: tile(7, 4),
 		},
 	];
 }

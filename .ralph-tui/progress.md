@@ -51,6 +51,14 @@ Key patterns:
 ### Tree Generator Decomposition
 Species-specific tree placement lives in `tree-generator.ts`, separate from `terrain-generator.ts`. The `placeTree()` function dispatches by `TreeTypeId` via switch/case (using break, not return, due to Biome's `noVoidTypeReturn` rule). Each species function receives the entries array and pushes blocks directly. Terrain generator imports `placeTree` and calls it with the species resolved from `getBiomeTrees()` or `blendTreeType()`.
 
+### Biome-Specific Terrain Adjustments
+Biome terrain differentiation uses `adjustBiomeHeight(h, biome, gx, gz)` which modifies height per-biome after biome selection but before column placement. Key patterns:
+- **Island generation (Skärgården)**: Noise thresholding at smaller scale creates binary land/water topology — values above threshold become peaks, rest submerges below water level.
+- **Waterlogging (Myren)**: Height compression `WATER_LEVEL + (h - WATER_LEVEL) * 0.2` flattens terrain near water, creating natural shallow pools.
+- **Edge-biased corruption (Blothögen)**: Distance-from-origin modulates corruption noise threshold: `noise + min(1, dist/500) * 0.2 > 0.65`.
+- **Resource enforcement**: `BIOME_RESOURCES` in biomes.ts maps each biome to its exclusive blocks; `isBiomeExclusive(blockId)` returns the owning biome.
+- **World utilities**: `generateSpawnShrine` and `findSurfaceY` live in `world-utils.ts`, separate from terrain generation.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -169,5 +177,28 @@ Species-specific tree placement lives in `tree-generator.ts`, separate from `ter
   - Species-specific tree density (treeSpawnRate) is a simple switch returning a probability — no need for data tables since it's biome-keyed and unlikely to grow
   - posHash-based ground feature scatter (mushrooms, wildflowers) achieves deterministic decoration without extra noise layers — threshold on the same hash used for trees but at different probability ranges (> 0.92 vs < 0.07)
   - Elevation thresholds (TREE_LINE, ICE_LINE) exported from biomes.ts keeps terrain-generator from hardcoding magic numbers and makes the values testable
+---
+
+## 2026-03-16 - US-007
+- Skärgården (archipelago), Myren (bog), and Blothögen (corrupted) biomes fully differentiated with terrain-specific generation
+- New block: Cranberry (BlockId 33) — poleY ground feature for Myren bogs, tileset at (7,4)
+- Updated surface rules: Skärgården→SmoothStone/Stone, Myren→Moss/Peat, Blothögen→Soot/CorruptedStone
+- Skärgården island generation: secondary noise layer at /30 scale (offset +4000) creates island clusters; values > 0.6 threshold become peaks, rest submerged
+- Myren waterlogging: height compressed via `WATER_LEVEL + (h - WATER_LEVEL) * 0.2`, flattening terrain near water level to create natural shallow pools
+- Blothögen edge-biased corruption: `sqrt(gx² + gz²) / 500` provides 0→1 gradient added to corruption noise threshold, making corruption more frequent at world edges
+- Cranberry ground feature scatter in Myren (hash > 0.90) following existing mushroom/wildflower pattern
+- `BIOME_RESOURCES` map + `isBiomeExclusive()` function for biome-specific resource availability enforcement
+- Extracted `generateSpawnShrine` and `findSurfaceY` to `world-utils.ts` to keep terrain-generator.ts under ~200 LOC
+- 21 new unit tests: island generation (3), waterlogging (4), corruption edge bias (3), passthrough (1), surface rules (3), resource availability (7)
+- All 146 vitest tests pass, typecheck clean, lint clean (only pre-existing index.css parse error + unused `trunks` fn)
+- Files created: src/world/terrain-biomes.test.ts, src/world/world-utils.ts
+- Files modified: src/world/biomes.ts, src/world/terrain-generator.ts, src/world/biomes.test.ts, src/world/blocks.ts, src/world/block-definitions.ts, src/world/tileset-tiles.ts, src/engine/game.ts
+- **Learnings:**
+  - Noise thresholding (island > 0.6 → peak, else submerge) is the simplest way to create binary topology (land vs water) from continuous noise — the 0.6 threshold controls island density
+  - Height compression `WATER_LEVEL + (h - WATER_LEVEL) * factor` where factor < 1 naturally creates waterlogged terrain: columns near water stay near water, columns far above get pulled toward it
+  - Edge-biased corruption uses the same noise layer with a distance-dependent threshold shift — no new noise needed, just `noise + edgeBias > constant` where edgeBias grows with distance from origin
+  - `adjustBiomeHeight` must be applied AFTER biome selection but BEFORE column placement — the biome is chosen from the raw (pre-adjusted) height's temperature, but blocks are placed at the adjusted height
+  - Extracting world utilities (`generateSpawnShrine`, `findSurfaceY`) to a separate file is a clean decomposition since they operate on VoxelRenderer directly and are called from game.ts, not from the chunk generation loop
+  - `BIOME_RESOURCES` as `Record<BiomeId, number[]>` + `isBiomeExclusive` provides a queryable resource-availability API that other systems (crafting, mining) can use without hardcoding biome knowledge
 ---
 

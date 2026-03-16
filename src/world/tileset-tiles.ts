@@ -353,4 +353,19 @@ export const tiles: TileDef[] = [
 			}
 		},
 	},
+	{
+		col: 7,
+		row: 4,
+		baseColor: "#3a5a40",
+		draw: (ctx, s, rng) => {
+			ctx.fillStyle = "#2a4a30";
+			ctx.fillRect(s * 0.45, s * 0.45, s * 0.1, s * 0.55);
+			ctx.fillStyle = "#8a2030";
+			for (let i = 0; i < 4; i++) {
+				ctx.beginPath();
+				ctx.arc(s * 0.3 + rng() * s * 0.4, s * 0.2 + rng() * s * 0.3, 3, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		},
+	},
 ];

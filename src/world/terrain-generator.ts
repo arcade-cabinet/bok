@@ -36,6 +36,7 @@ const OFF_EROS = 1000;
 const OFF_TEMP = 2000;
 const OFF_MOIS = 3000;
 const OFF_CORR = 5000;
+const OFF_ISLE = 4000;
 
 // ─── Noise Layers ───
 
@@ -68,8 +69,24 @@ function adjustTemperature(rawTemp: number, height: number): number {
 	return Math.max(0, Math.min(1, rawTemp - heightNorm * 0.3));
 }
 
-function isCorrupted(gx: number, gz: number): boolean {
-	return noise2D(gx / 80 + OFF_CORR, gz / 80 + OFF_CORR) > 0.65;
+/** Biome-specific height adjustments: islands (Skärgården) and waterlogging (Myren). */
+export function adjustBiomeHeight(h: number, biome: BiomeId, gx: number, gz: number): number {
+	if (biome === Biome.Skargarden) {
+		const island = noise2D(gx / 30 + OFF_ISLE, gz / 30 + OFF_ISLE) * 0.5 + 0.5;
+		if (island > 0.6) return WATER_LEVEL + Math.floor((island - 0.6) * 20) + 1;
+		return WATER_LEVEL - 2;
+	}
+	if (biome === Biome.Myren) {
+		return WATER_LEVEL + Math.floor((h - WATER_LEVEL) * 0.2);
+	}
+	return h;
+}
+
+/** Corruption biased toward world edges — further from origin = more corruption. */
+export function isCorrupted(gx: number, gz: number): boolean {
+	const dist = Math.sqrt(gx * gx + gz * gz);
+	const edgeBias = Math.min(1, dist / 500) * 0.2;
+	return noise2D(gx / 80 + OFF_CORR, gz / 80 + OFF_CORR) + edgeBias > 0.65;
 }
 
 /** Resolve biome at a world position (noise + height-adjusted temperature). */
@@ -135,9 +152,10 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 			const gx = cx * CHUNK_SIZE + lx;
 			const gz = cz * CHUNK_SIZE + lz;
 			const layers = sampleNoiseLayers(gx, gz);
-			const h = computeHeight(layers);
-			const temp = adjustTemperature(layers.temperature, h);
+			const rawH = computeHeight(layers);
+			const temp = adjustTemperature(layers.temperature, rawH);
 			const biome = isCorrupted(gx, gz) ? Biome.Blothogen : selectBiome(temp, layers.moisture);
+			const h = adjustBiomeHeight(rawH, biome, gx, gz);
 			const hash = posHash(gx, gz);
 			const weights = blendWeights(gx, gz, biome);
 			const rule: SurfaceRule = weights ? blendSurfaceBlock(weights, hash) : BIOME_SURFACE_RULES[biome];
@@ -160,6 +178,8 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 					entries.push({ position: { x: gx, y: h + 1, z: gz }, blockId: BlockId.Mushroom });
 				} else if (biome === Biome.Angen && hash > 0.94) {
 					entries.push({ position: { x: gx, y: h + 1, z: gz }, blockId: BlockId.Wildflower });
+				} else if (biome === Biome.Myren && hash > 0.9) {
+					entries.push({ position: { x: gx, y: h + 1, z: gz }, blockId: BlockId.Cranberry });
 				}
 			}
 
@@ -176,32 +196,6 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 	}
 
 	vr.setVoxelBulk(layerName, entries);
-}
-
-export function generateSpawnShrine(vr: VoxelRenderer, layerName: string, surfaceY: number): void {
-	const entries: VoxelSetOptions[] = [];
-	for (let x = 6; x <= 10; x++) {
-		for (let z = 6; z <= 10; z++) {
-			entries.push({ position: { x, y: surfaceY, z }, blockId: BlockId.StoneBricks });
-			for (let y = surfaceY + 1; y <= surfaceY + 4; y++) {
-				vr.removeVoxel(layerName, { position: { x, y, z } });
-			}
-		}
-	}
-	entries.push({ position: { x: 6, y: surfaceY + 1, z: 6 }, blockId: BlockId.Torch });
-	entries.push({ position: { x: 10, y: surfaceY + 1, z: 6 }, blockId: BlockId.Torch });
-	entries.push({ position: { x: 6, y: surfaceY + 1, z: 10 }, blockId: BlockId.Torch });
-	entries.push({ position: { x: 10, y: surfaceY + 1, z: 10 }, blockId: BlockId.Torch });
-	entries.push({ position: { x: 8, y: surfaceY, z: 8 }, blockId: BlockId.Glass });
-	vr.setVoxelBulk(layerName, entries);
-}
-
-export function findSurfaceY(vr: VoxelRenderer, x: number, z: number): number {
-	for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
-		const entry = vr.getVoxel({ x, y, z });
-		if (entry && entry.blockId !== BlockId.Air && entry.blockId !== BlockId.Water) return y;
-	}
-	return WATER_LEVEL;
 }
 
 export { CHUNK_SIZE, WATER_LEVEL, WORLD_HEIGHT };
