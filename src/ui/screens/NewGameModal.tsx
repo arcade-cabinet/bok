@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { generateRandomSeedString } from "../../world/noise.ts";
+import { generateRandomSeedString } from "../../world/seed-names.ts";
 
 interface NewGameModalProps {
 	onStart: (seed: string) => void;

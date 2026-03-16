@@ -22,6 +22,7 @@ import {
 	TREE_LINE,
 } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
+import { applyCaveToStone } from "./cave-generator.ts";
 import { noise2D } from "./noise.ts";
 import { placeTree } from "./tree-generator.ts";
 
@@ -169,6 +170,8 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 				else if (y < h && y > h - rule.depth) blockId = rule.subsurface;
 				else if (y <= h - rule.depth) blockId = BlockId.Stone;
 				else if (y > h && y <= WATER_LEVEL && rule.waterBlock) blockId = rule.waterBlock;
+				// Cave carving + ore veins in stone layer
+				if (blockId === BlockId.Stone) blockId = applyCaveToStone(gx, y, gz, h);
 				if (blockId !== 0) entries.push({ position: { x: gx, y, z: gz }, blockId });
 			}
 

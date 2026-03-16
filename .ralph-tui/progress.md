@@ -59,6 +59,14 @@ Biome terrain differentiation uses `adjustBiomeHeight(h, biome, gx, gz)` which m
 - **Resource enforcement**: `BIOME_RESOURCES` in biomes.ts maps each biome to its exclusive blocks; `isBiomeExclusive(blockId)` returns the owning biome.
 - **World utilities**: `generateSpawnShrine` and `findSurfaceY` live in `world-utils.ts`, separate from terrain generation.
 
+### Cave & Ore Generation Architecture
+Underground cave carving and ore veins are in `cave-generator.ts`, separate from `terrain-generator.ts`:
+- **3D simplex noise** (`noise3D` in noise.ts) enables volumetric carving — 2D noise creates height maps, 3D noise creates cave tunnels.
+- **Single integration point**: `applyCaveToStone(gx, y, gz, surfaceY)` is the only function terrain-generator calls. It computes cave noise once and uses it for both cave carving and water pool decisions.
+- **Surface protection**: `CAVE_SURFACE_BUFFER` (3 blocks) + stone-only carving means caves never breach the surface layer.
+- **Ore priority**: ORE_BANDS are iterated in order; first match wins in overlap zones (iron > copper at y 10–15).
+- **Seed name generator** extracted to `seed-names.ts` from noise.ts to keep noise module focused on noise algorithms.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -200,5 +208,26 @@ Biome terrain differentiation uses `adjustBiomeHeight(h, biome, gx, gz)` which m
   - `adjustBiomeHeight` must be applied AFTER biome selection but BEFORE column placement — the biome is chosen from the raw (pre-adjusted) height's temperature, but blocks are placed at the adjusted height
   - Extracting world utilities (`generateSpawnShrine`, `findSurfaceY`) to a separate file is a clean decomposition since they operate on VoxelRenderer directly and are called from game.ts, not from the chunk generation loop
   - `BIOME_RESOURCES` as `Record<BiomeId, number[]>` + `isBiomeExclusive` provides a queryable resource-availability API that other systems (crafting, mining) can use without hardcoding biome knowledge
+---
+
+## 2026-03-16 - US-008
+- Underground cave system using 3D simplex noise (scale 30, threshold 0.35) for volumetric carving
+- Cave networks form naturally from continuous 3D noise thresholding — connected tunnels, not isolated pockets
+- Ore vein placement by depth band: Iron (y 5–15), Copper (y 10–20), Crystal (y 20+) using independent 3D noise clusters (scale 8)
+- Underground water pools at cave intersections below CAVE_WATER_LEVEL (y ≤ 8) where cave noise is strongest
+- Surface protection: 3-block buffer below surface + stone-only carving prevents caves from breaching terrain
+- `applyCaveToStone()` provides single integration point — terrain-generator adds one line to its y-loop
+- Seed name generator extracted from noise.ts to seed-names.ts for decomposition
+- 20 new unit tests: cave noise (range, determinism, 3D variation), cave carving (bedrock, surface buffer, underground carving, connectivity, threshold), ore bands (iron/copper/crystal depth limits, determinism, clusters, config), water pools (level cap, deep placement), integration (air/ore/stone/water)
+- All 166 vitest tests pass, typecheck clean, lint clean (only pre-existing errors)
+- Files created: src/world/cave-generator.ts (120 LOC), src/world/cave-generator.test.ts, src/world/seed-names.ts (52 LOC)
+- Files modified: src/world/noise.ts (added noise3D + grad3, removed seed names), src/world/terrain-generator.ts (added import + 1-line integration), src/ui/screens/NewGameModal.tsx (updated import)
+- **Learnings:**
+  - 3D simplex noise with moderate threshold (~0.35) on continuous noise naturally creates connected cave networks — the iso-surface at the threshold forms worm-like passages that are inherently connected
+  - noise3D must share the Perm table with noise2D (both read from the same permutation array initialized in initNoise), so they must co-locate in noise.ts
+  - Biome formatter expands inline multi-assignments (i1=1; j1=0; k1=0) to separate lines, making 3D simplex noise ~90 LOC after formatting — this is irreducible for the algorithm
+  - `applyCaveToStone` computing caveNoise once and reusing for both cave carving and water pool decisions avoids redundant 3D noise evaluations in the hot terrain generation loop
+  - Ore depth band overlap (iron y 5–15, copper y 10–20) is handled by iteration order in ORE_BANDS — first match wins, with independent noise offsets ensuring both ores can appear in the overlap zone
+  - The `grad3` function for 3D noise uses a 12-direction gradient set (cube edges) encoded as bit operations on the hash, compared to the simpler 8-direction set in 2D
 ---
 
