@@ -475,7 +475,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 2 — Building-Block Creatures. Three hostile creatures with unique mechanics.",
       "labels": [
         "phase-2",
@@ -484,7 +484,8 @@
       ],
       "dependsOn": [
         "US-012"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-017",
@@ -1647,6 +1648,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T11:20:19.667Z"
+    "updatedAt": "2026-03-16T11:35:36.293Z"
   }
 }

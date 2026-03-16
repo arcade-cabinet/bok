@@ -4,7 +4,7 @@
  */
 
 import type { World } from "koota";
-import { CreatureHealth, CreatureTag, PlayerState, PlayerTag, Position, WorldTime } from "../traits/index.ts";
+import { CreatureHealth, CreatureTag, PlayerState, PlayerTag, Position, Rotation, WorldTime } from "../traits/index.ts";
 import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
 import { cleanupCreatureState, updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
 import { spawnCreatures } from "./creature-spawner.ts";
@@ -20,15 +20,17 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 	});
 	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
-	// Get player position
+	// Get player position and yaw
 	let px = 0,
 		py = 0,
-		pz = 0;
+		pz = 0,
+		pYaw = 0;
 	let playerAlive = false;
-	world.query(PlayerTag, Position, PlayerState).readEach(([pos, state]) => {
+	world.query(PlayerTag, Position, PlayerState, Rotation).readEach(([pos, state, rot]) => {
 		px = pos.x;
 		py = pos.y;
 		pz = pos.z;
+		pYaw = rot.yaw;
 		playerAlive = !state.isDead;
 	});
 
@@ -55,6 +57,7 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		playerX: px,
 		playerY: py,
 		playerZ: pz,
+		playerYaw: pYaw,
 		playerAlive,
 		isDaytime,
 		timeOfDay,

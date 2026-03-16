@@ -88,6 +88,24 @@ const SPECIES_CONFIGS: Partial<Record<SpeciesId, AnimConfig>> = {
 		walkBobFreq: 1.0,
 		walkSwingAmp: 0.15, // stubby leg waddle
 	},
+	runvaktare: {
+		breathAmp: 0.01,
+		breathFreq: 0.4,
+		idleSwayAmp: 0.0, // stone column doesn't sway
+		idleSwayFreq: 0.0,
+		walkBobAmp: 0.02,
+		walkBobFreq: 0.8,
+		walkSwingAmp: 0.3, // arm swing for slam
+	},
+	draug: {
+		breathAmp: 0.02,
+		breathFreq: 0.6,
+		idleSwayAmp: 0.05,
+		idleSwayFreq: 0.3,
+		walkBobAmp: 0.03,
+		walkBobFreq: 2.0,
+		walkSwingAmp: 0.2,
+	},
 };
 
 /** Look up animation config for a species. Falls back to default. */

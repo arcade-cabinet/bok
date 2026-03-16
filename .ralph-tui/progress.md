@@ -127,6 +127,18 @@ The Mörker system introduces pack-coordinated hostile AI following the same pur
 - **Flanking geometry**: `flankPosition()` places flankers in a semicircle on the opposite side of the player from the alpha, using `atan2` + angular spread.
 - **Amorphous mesh via overlapping spheres**: Multiple sphere parts with Y/X rotational joints create shifting silhouette. Eyes on different parent joints orbit independently via procedural animation.
 
+### Hostile Species Dispatch Pattern (US-016)
+Three new hostile creatures (Runväktare, Lindorm, Draugar) each follow the established pure-math ↔ ECS bridge separation:
+- `runvaktare-ai.ts` — Dormant/active state machine, post tracking, slam attack geometry. `creature-ai-runvaktare.ts` bridges to ECS.
+- `lindorm-tunnel.ts` — Underground/breach/dive phase cycle, breach arc parabola, soft-block tunneling, mining vibration attraction. `creature-ai-lindorm.ts` bridges to ECS.
+- `draugar-gaze.ts` — Dot-product observation check (player look direction vs. creature direction), dawn teleport, contact damage. `creature-ai-draugar.ts` bridges to ECS.
+- Key patterns:
+- **Species dispatch within archetype**: `updateHostileAI` in creature-ai.ts now adds `CreatureType` to its ECS query and dispatches by `species` within the hostile archetype loop. Each species calls its own ECS bridge function.
+- **Dot product observation**: `isObserved(playerX, playerZ, playerYaw, creatureX, creatureZ)` computes `lookDir · normalize(toCreature)`. If > 0.5 (within ~60° cone), creature freezes.
+- **Breach arc parabola**: `breachArcY(progress, surfaceY) = surfaceY + 4 * height * progress * (1 - progress)` produces symmetric arc peaking at `progress = 0.5`.
+- **Context extension for Draugar**: `CreatureUpdateContext` extended with `playerYaw` (from `Rotation` trait). `creature.ts` queries `Rotation` alongside `Position` and `PlayerState`.
+- **Spawner decomposition**: New species spawning extracted to `creature-spawner-hostile.ts` via function injection (passes `spawnEntity` and `findSurfaceSpawn` from the parent module).
+
 ---
 
 ## 2026-03-16 - US-001
@@ -439,5 +451,28 @@ The Mörker system introduces pack-coordinated hostile AI following the same pur
   - **Amorphous building-block aesthetic**: Overlapping sphere parts with rotational joints (Y on upper mass, X on lower tendril) create shifting silhouette through procedural animation — no vertex displacement needed
   - When changing creature mesh topology (e.g., replacing arms with spheres), tests that index specific parts by number break — always check creature-parts.test.ts after mesh changes
   - `creature-ai-hostile.ts` parallels `creature-ai-passive.ts` as an ECS bridge, keeping creature-ai.ts as a dispatcher rather than growing it past 200 LOC
+---
+
+## 2026-03-16 - US-016
+- Implemented three hostile creatures: Runväktare (ruin guardian), Lindorm (tunneling wyrm), Draugar (observation-gated undead)
+- Pure math modules: `runvaktare-ai.ts` (165 LOC), `lindorm-tunnel.ts` (188 LOC), `draugar-gaze.ts` (143 LOC)
+- ECS bridge modules: `creature-ai-runvaktare.ts` (131 LOC), `creature-ai-lindorm.ts` (129 LOC), `creature-ai-draugar.ts` (108 LOC)
+- Spawner: `creature-spawner-hostile.ts` (148 LOC) — new species spawning extracted from creature-spawner.ts
+- Part definitions: `creature-part-defs-hostile.ts` (171 LOC) — Runväktare (11 parts: stone column body, slab head, ember eyes, rune glow planes, segmented stone arms), Lindorm (17 parts: 12-segment chain with head/snout/horns), Draugar (8 parts: frost-blue emissive humanoid with dark eye voids)
+- Animation configs added to procedural-anim.ts for `runvaktare` and `draug` (lindorm already existed)
+- Extended `CreatureUpdateContext` with `playerYaw` for Draugar observation check
+- Updated `creature-ai.ts` with species dispatch in `updateHostileAI` and cleanup for all three new species
+- Updated `creature.ts` to query `Rotation` trait for player yaw
+- 59 new unit tests across 3 test files covering: activation triggers, slam attack geometry, tunneling pathfinding, breach arc parabola, mining vibration attraction, observation dot product, dawn teleport, state management
+- All 488 vitest tests pass, typecheck clean, lint clean on new files
+- Files created: `runvaktare-ai.ts`, `runvaktare-ai.test.ts`, `lindorm-tunnel.ts`, `lindorm-tunnel.test.ts`, `draugar-gaze.ts`, `draugar-gaze.test.ts`, `creature-ai-runvaktare.ts`, `creature-ai-lindorm.ts`, `creature-ai-draugar.ts`, `creature-spawner-hostile.ts`, `creature-part-defs-hostile.ts`
+- Files modified: `creature-ai.ts`, `creature-spawner.ts`, `creature.ts`, `creature-part-defs.ts`, `procedural-anim.ts`
+- **Learnings:**
+  - **Species dispatch within archetype**: Adding `CreatureType` to the hostile query enables species branching inside the archetype loop. Each species has its own ECS bridge file, keeping per-file LOC manageable.
+  - **Dot product observation mechanic**: `lookDir · toCreature > 0.5` gives a ~120° total observation cone. The key insight: player yaw directly gives `lookDir = (sin(yaw), cos(yaw))` — no matrix math needed.
+  - **Parabolic breach arc**: `4*h*p*(1-p)` is the simplest arc formula — symmetric, peaks at p=0.5, returns to 0 at p=0 and p=1. Combined with linear XZ advancement, this creates convincing serpent breach animations.
+  - **Spawner decomposition via function injection**: Rather than exporting `spawnEntity` and `findSurfaceSpawn` directly, passing them as function parameters avoids circular dependencies while keeping the spawner interface clean.
+  - **Context extension**: Adding `playerYaw` to `CreatureUpdateContext` required touching both `creature-ai.ts` (interface) and `creature.ts` (Rotation query). This is the pattern for any new player data that creature AI needs.
+  - Pre-existing files `creature-ai.ts` (260 LOC) and `creature-spawner.ts` (253 LOC) are both over the 200 LOC limit from previous stories — consider decomposing in a future refactoring story.
 ---
 

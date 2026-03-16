@@ -22,10 +22,16 @@ import {
 	Species,
 } from "../traits/index.ts";
 import type { BoidAgent } from "./boids.ts";
+import { updateDraugarAI } from "./creature-ai-draugar.ts";
 import { cleanupMorkerState, type MorkerInfo, updateMorkerAI } from "./creature-ai-hostile.ts";
+import { updateLindormAI } from "./creature-ai-lindorm.ts";
 import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI } from "./creature-ai-passive.ts";
+import { updateRunvaktareAI } from "./creature-ai-runvaktare.ts";
+import { cleanupDraugarState } from "./draugar-gaze.ts";
+import { cleanupLindormState } from "./lindorm-tunnel.ts";
 import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
 import type { TargetPos } from "./morker-pack.ts";
+import { cleanupRunvaktareState } from "./runvaktare-ai.ts";
 
 const GRAVITY = 28;
 
@@ -33,18 +39,22 @@ const GRAVITY = 28;
 export function cleanupCreatureState(entityId: number): void {
 	cleanupPassiveState(entityId);
 	cleanupMorkerState(entityId);
+	cleanupRunvaktareState(entityId);
+	cleanupLindormState(entityId);
+	cleanupDraugarState(entityId);
 }
 
 export interface CreatureUpdateContext {
 	playerX: number;
 	playerY: number;
 	playerZ: number;
+	playerYaw: number;
 	playerAlive: boolean;
 	isDaytime: boolean;
 	timeOfDay: number;
 }
 
-/** Run hostile AI (Mörker pack behavior): coordinate pursuit, light-averse, hunt Lyktgubbar. */
+/** Run hostile AI: dispatch by species (Mörker, Runväktare, Lindorm, Draugar). */
 export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
 	const DAYTIME_DPS = 2;
 
@@ -59,31 +69,40 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 		}
 	});
 
+	const dmg = (damage: number) => applyDamageToPlayer(world, damage);
+
 	world
-		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, Position)
-		.updateEach(([ai, hp, anim, pos], entity) => {
+		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
+		.updateEach(([ai, hp, anim, cType, pos], entity) => {
 			if (ai.aiType !== "hostile") return;
 
-			if (ctx.isDaytime) {
-				hp.hp -= DAYTIME_DPS * dt;
-				anim.animState = AnimState.Burn;
+			if (cType.species === Species.Morker) {
+				if (ctx.isDaytime) {
+					hp.hp -= DAYTIME_DPS * dt;
+					anim.animState = AnimState.Burn;
+				}
+				updateMorkerAI(
+					pos,
+					ai,
+					hp,
+					anim,
+					entity.id(),
+					dt,
+					ctx,
+					morkerList,
+					lyktgubbar,
+					applyGravity,
+					chase,
+					dmg,
+					effects,
+				);
+			} else if (cType.species === Species.Runvaktare) {
+				updateRunvaktareAI(pos, ai, hp, anim, entity.id(), dt, ctx, applyGravity, dmg, effects);
+			} else if (cType.species === Species.Lindorm) {
+				updateLindormAI(pos, ai, hp, anim, entity.id(), dt, ctx, simpleSurfaceY, dmg, effects);
+			} else if (cType.species === Species.Draug) {
+				updateDraugarAI(pos, ai, hp, anim, entity.id(), dt, ctx, applyGravity, dmg, effects);
 			}
-
-			updateMorkerAI(
-				pos,
-				ai,
-				hp,
-				anim,
-				entity.id(),
-				dt,
-				ctx,
-				morkerList,
-				lyktgubbar,
-				applyGravity,
-				chase,
-				(damage: number) => applyDamageToPlayer(world, damage),
-				effects,
-			);
 
 			if (hp.hp <= 0) {
 				cleanupCreatureState(entity.id());
@@ -92,6 +111,15 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 				entity.destroy();
 			}
 		});
+}
+
+/** Simple surface Y lookup for Lindorm breach arc. */
+function simpleSurfaceY(x: number, z: number): number {
+	for (let y = 60; y >= 0; y--) {
+		const v = getVoxelAt(Math.floor(x), y, Math.floor(z));
+		if (v > 0 && isBlockSolid(v)) return y + 1;
+	}
+	return 0;
 }
 
 /** Run passive AI: Lyktgubbe drift/scatter, Skogssnigel wander/graze/retract, Trana wade/fish/flee. */

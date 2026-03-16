@@ -21,6 +21,7 @@ import {
 	Species,
 } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
+import { spawnHostileCreatures } from "./creature-spawner-hostile.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
 import { PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
 import { isSnailBiome } from "./snail-behavior.ts";
@@ -84,7 +85,6 @@ const TRANA: SpawnDefaults = {
 	moveSpeed: 0.6,
 	detectionRange: 10,
 };
-
 let biomeResolver: ((gx: number, gz: number) => number) | null = null;
 
 export function registerBiomeResolver(resolver: (gx: number, gz: number) => number): void {
@@ -115,6 +115,7 @@ export function spawnCreatures(
 	if (!isDaytime && worldRng() < SPAWN_CHANCE) {
 		spawnMorkerPack(world, playerX, playerZ, effects);
 	}
+	spawnHostileCreatures(world, playerX, playerZ, isDaytime, effects, spawnEntity, findSurfaceSpawn);
 }
 
 /** Spawn a single creature entity with given defaults. Returns entity ID. */
