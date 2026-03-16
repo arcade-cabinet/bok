@@ -35,7 +35,7 @@ export const BLOCKS: Record<number, BlockMeta> = {
   [BlockId.Leaves]: { name: "Leaves", color: "#2E7D32", solid: true, transparent: true, hardness: 0.2 },
   [BlockId.Planks]: { name: "Planks", color: "#8D6E63", solid: true, hardness: 1.5 },
   [BlockId.Water]: { name: "Water", color: "#1E90FF", solid: false, transparent: true, fluid: true, hardness: 0 },
-  [BlockId.Torch]: { name: "Torch", color: "#FFD700", solid: true, emissive: true, hardness: 0.1 },
+  [BlockId.Torch]: { name: "Torch", color: "#FFD700", solid: false, emissive: true, hardness: 0.1 },
   [BlockId.Sand]: { name: "Sand", color: "#E2C275", solid: true, hardness: 0.7 },
   [BlockId.Snow]: { name: "Snow", color: "#FFFFFF", solid: true, hardness: 0.5 },
   [BlockId.StoneBricks]: { name: "Stonebricks", color: "#757575", solid: true, hardness: 4.0 },

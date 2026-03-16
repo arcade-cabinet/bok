@@ -78,7 +78,11 @@ export function saveToSlot(slotId: number, data: GameSaveData): void {
     localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}`, JSON.stringify(data));
     localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}_ts`, Date.now().toString());
   } catch (error) {
-    console.error("Failed to save game:", error);
+    if (error instanceof DOMException && error.name === "QuotaExceededError") {
+      console.error("Save failed: localStorage quota exceeded. Try deleting old saves.");
+    } else {
+      console.error("Failed to save game:", error);
+    }
   }
 }
 
@@ -99,6 +103,7 @@ export function loadFromSlot(slotId: number): GameSaveData | null {
  * Delete a save slot.
  */
 export function deleteSlot(slotId: number): void {
+  if (slotId < 0 || slotId >= MAX_SAVE_SLOTS) return;
   localStorage.removeItem(`${SAVE_KEY_PREFIX}${slotId}`);
   localStorage.removeItem(`${SAVE_KEY_PREFIX}${slotId}_ts`);
 }

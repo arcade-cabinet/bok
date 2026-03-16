@@ -24,6 +24,7 @@ export function DeathScreen({ onRespawn }: DeathScreenProps) {
         The wilderness claims another soul. But the land remembers.
       </p>
       <button
+        type="button"
         onClick={onRespawn}
         className="btn btn-lg border-none font-display text-lg tracking-[0.2em] uppercase transition-all duration-300 hover:scale-105"
         style={{

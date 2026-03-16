@@ -136,7 +136,8 @@ export function generateTilesetDataURL(): string {
   const canvas = document.createElement("canvas");
   canvas.width = COLS * TILE_SIZE;
   canvas.height = ROWS * TILE_SIZE;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get 2D canvas context for tileset generation");
 
   // Clear to transparent
   ctx.clearRect(0, 0, canvas.width, canvas.height);

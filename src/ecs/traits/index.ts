@@ -1,4 +1,5 @@
 import { trait } from "koota";
+import { BlockId } from "../../world/blocks.ts";
 
 // ─── Player Traits ───
 export const PlayerTag = trait();
@@ -74,11 +75,11 @@ export interface HotbarSlot {
 
 export const Hotbar = trait((): { slots: (HotbarSlot | null)[]; activeSlot: number } => ({
   slots: [
-    { id: 4, type: "block" },
-    { id: 9, type: "block" },
-    { id: 11, type: "block" },
-    { id: 12, type: "block" },
-    { id: 8, type: "block" },
+    { id: BlockId.Wood, type: "block" },
+    { id: BlockId.Sand, type: "block" },
+    { id: BlockId.StoneBricks, type: "block" },
+    { id: BlockId.Glass, type: "block" },
+    { id: BlockId.Torch, type: "block" },
   ],
   activeSlot: 0,
 }));
@@ -113,6 +114,7 @@ export const WorldSeed = trait({ seed: "" });
 export const EnemyTag = trait();
 export const EnemyState = trait({
   hp: 6,
+  /** Vertical velocity for enemy gravity/jumping */
   velY: 0,
 });
 

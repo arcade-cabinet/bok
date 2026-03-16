@@ -9,6 +9,11 @@ interface HotbarDisplayProps {
 }
 
 const PLACEABLE_BLOCKS: Record<string, keyof InventoryData> = {
+  Wood: "wood",
+  Dirt: "dirt",
+  Grass: "grass",
+  Sand: "sand",
+  Stone: "stone",
   Planks: "planks",
   Torch: "torches",
   Stonebricks: "stonebricks",

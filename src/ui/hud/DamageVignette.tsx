@@ -12,7 +12,7 @@ export function DamageVignette({ health, damageFlash }: DamageVignetteProps) {
         isLowHealth ? "animate-low-health" : ""
       }`}
       style={{
-        opacity: isLowHealth ? undefined : Math.max(0, damageFlash),
+        opacity: isLowHealth ? undefined : Math.max(0, Math.min(1, damageFlash)),
       }}
     />
   );

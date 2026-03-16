@@ -9,8 +9,15 @@ import { BLOCKS } from "./blocks.ts";
 type VoxelGetter = (x: number, y: number, z: number) => number;
 type VoxelSetter = (layerName: string, x: number, y: number, z: number, blockId: number) => void;
 
-let _getVoxel: VoxelGetter = () => 0;
-let _setVoxel: VoxelSetter = () => {};
+let _registered = false;
+
+let _getVoxel: VoxelGetter = () => {
+  if (!_registered) console.warn("getVoxelAt called before registerVoxelAccessors");
+  return 0;
+};
+let _setVoxel: VoxelSetter = () => {
+  if (!_registered) console.warn("setVoxelAt called before registerVoxelAccessors");
+};
 
 export function registerVoxelAccessors(
   getter: VoxelGetter,
@@ -18,6 +25,7 @@ export function registerVoxelAccessors(
 ): void {
   _getVoxel = getter;
   _setVoxel = setter;
+  _registered = true;
 }
 
 export function getVoxelAt(x: number, y: number, z: number): number {

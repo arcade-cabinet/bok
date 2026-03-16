@@ -13,7 +13,7 @@ A narrative voxel survival game built on **Jolly Pixel**, **Koota ECS**, and **R
 
 ## Project Structure
 
-```
+```text
 src/
 ├── ecs/
 │   ├── traits/       # Koota traits (Position, Health, Inventory, etc.)

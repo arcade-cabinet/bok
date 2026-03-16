@@ -3,7 +3,7 @@
  * Ported from box.html's mobile control system.
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { kootaWorld } from "../../engine/game.ts";
 import { PlayerTag, MoveInput, Rotation, ToolSwing, MiningState } from "../../ecs/traits/index.ts";
 

@@ -14,8 +14,14 @@ export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMe
   return (
     <div
       className="absolute inset-0 z-20 flex items-center justify-center pointer-events-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Crafting menu"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
       }}
     >
       <div
@@ -87,6 +93,7 @@ function CraftButton({
 
   return (
     <button
+      type="button"
       disabled={!canAfford}
       onClick={() => onCraft(recipe.id)}
       className={`

@@ -111,12 +111,16 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, [phase]);
 
-  // Cleanup input handlers when leaving playing phase
+  // Cleanup input handlers when leaving playing phase or unmounting
   useEffect(() => {
     if (phase !== "playing") {
       cleanupRef.current?.();
       cleanupRef.current = null;
     }
+    return () => {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+    };
   }, [phase]);
 
   // Keyboard listener for crafting toggle
@@ -138,6 +142,7 @@ export default function App() {
 
     try {
       await initGame(canvas, seed);
+      cleanupRef.current?.();
       cleanupRef.current = setupInputHandlers(canvas);
       setPhase("playing");
     } catch (err) {

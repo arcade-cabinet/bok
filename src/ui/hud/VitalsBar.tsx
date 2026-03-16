@@ -13,7 +13,7 @@ export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
           <div
             className="h-full transition-[width] duration-200 rounded-full"
             style={{
-              width: `${Math.max(0, health)}%`,
+              width: `${Math.max(0, Math.min(100, health))}%`,
               background: "linear-gradient(90deg, #c62828, #ff5252)",
             }}
           />
@@ -22,7 +22,7 @@ export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
           <div
             className="h-full transition-[width] duration-200 rounded-full"
             style={{
-              width: `${Math.max(0, hunger)}%`,
+              width: `${Math.max(0, Math.min(100, hunger))}%`,
               background: "linear-gradient(90deg, #ef6c00, #ffa726)",
             }}
           />
@@ -33,7 +33,7 @@ export function VitalsBar({ health, hunger, stamina }: VitalsBarProps) {
         <div
           className="h-full transition-[width] duration-100 rounded-full"
           style={{
-            width: `${Math.max(0, stamina)}%`,
+            width: `${Math.max(0, Math.min(100, stamina))}%`,
             background: "linear-gradient(90deg, #1565c0, #4fc3f7)",
           }}
         />

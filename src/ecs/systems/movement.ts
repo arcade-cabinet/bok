@@ -49,7 +49,7 @@ export function movementSystem(world: World, dt: number) {
       vel.x = moveX * speed;
       vel.z = moveZ * speed;
 
-      if (input.sprint && len > 0) {
+      if (canSprint && len > 0) {
         stamina.current = Math.max(0, stamina.current - dt * 15);
       }
 

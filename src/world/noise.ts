@@ -119,7 +119,11 @@ const nouns = [
 export function generateRandomSeedString(): string {
   const a1 = adjectives[Math.floor(Math.random() * adjectives.length)];
   let a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
-  while (a1 === a2) a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+  let attempts = 0;
+  while (a1 === a2 && attempts < 20) {
+    a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    attempts++;
+  }
   const n = nouns[Math.floor(Math.random() * nouns.length)];
   return `${a1} ${a2} ${n}`;
 }

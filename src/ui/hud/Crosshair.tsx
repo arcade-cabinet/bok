@@ -4,12 +4,13 @@ interface CrosshairProps {
 }
 
 export function Crosshair({ isMining, miningProgress }: CrosshairProps) {
+  const clamped = Math.max(0, Math.min(1, miningProgress));
   const circumference = 2 * Math.PI * 14;
-  const offset = circumference - miningProgress * circumference;
+  const offset = circumference - clamped * circumference;
 
   return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center">
-      <svg className="absolute -rotate-90 w-8 h-8" viewBox="0 0 30 30">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center" aria-hidden="true">
+      <svg className="absolute -rotate-90 w-8 h-8" viewBox="0 0 30 30" aria-hidden="true">
         <circle
           cx="15"
           cy="15"

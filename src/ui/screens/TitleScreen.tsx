@@ -1,6 +1,30 @@
 import { useState, useCallback } from "react";
 import { generateRandomSeedString } from "../../world/noise.ts";
 
+const PARTICLES = Array.from({ length: 20 }, () => ({
+  left: Math.random() * 100,
+  duration: 8 + Math.random() * 12,
+  delay: Math.random() * 8,
+}));
+
+function ParticleField() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {PARTICLES.map((p, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-amber-200 opacity-20"
+          style={{
+            left: `${p.left}%`,
+            bottom: `-5%`,
+            animation: `float-up ${p.duration}s linear ${p.delay}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface TitleScreenProps {
   onStartGame: (seed: string) => void;
 }
@@ -24,19 +48,7 @@ export function TitleScreen({ onStartGame }: TitleScreenProps) {
       }}
     >
       {/* Atmospheric particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-amber-200 opacity-20"
-            style={{
-              left: `${Math.random() * 100}%`,
-              bottom: `-5%`,
-              animation: `float-up ${8 + Math.random() * 12}s linear ${Math.random() * 8}s infinite`,
-            }}
-          />
-        ))}
-      </div>
+      <ParticleField />
 
       {/* Title */}
       <div className="text-center mb-8" style={{ animation: "title-emerge 2s ease-out" }}>
@@ -91,6 +103,7 @@ export function TitleScreen({ onStartGame }: TitleScreenProps) {
           aria-label="World seed"
         />
         <button
+          type="button"
           onClick={handleReroll}
           className="btn btn-ghost btn-xs text-xs tracking-wider opacity-60 hover:opacity-100"
           style={{ color: "var(--color-bok-parchment)" }}
@@ -101,6 +114,7 @@ export function TitleScreen({ onStartGame }: TitleScreenProps) {
 
       {/* Start button */}
       <button
+        type="button"
         onClick={handleStart}
         className="btn btn-lg border-none font-display text-lg tracking-[0.2em] uppercase transition-all duration-300 hover:scale-105"
         style={{

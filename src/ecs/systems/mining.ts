@@ -13,7 +13,7 @@ import { getVoxelAt } from "../../world/voxel-helpers.ts";
 export function miningSystem(world: World, dt: number) {
   world
     .query(PlayerTag, MiningState, Inventory, Hotbar, ToolSwing, QuestProgress)
-    .updateEach(([mining, _inventory, hotbar, toolSwing, _quest]) => {
+    .updateEach(([mining, , hotbar, toolSwing]) => {
       if (!mining.active) {
         mining.progress = 0;
         return;

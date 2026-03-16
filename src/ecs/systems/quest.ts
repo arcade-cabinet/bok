@@ -9,7 +9,7 @@ export function questSystem(world: World, _dt: number) {
         quest.step = 1;
         quest.progress = 0;
       } else if (quest.step === 1) {
-        const hasAxe = hotbar.slots.some((s) => s && s.id === 101);
+        const hasAxe = hotbar.slots.some((s) => s && s.type === "item" && s.id === 101);
         if (hasAxe) {
           quest.step = 2;
           quest.progress = 0;

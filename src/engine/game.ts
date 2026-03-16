@@ -114,7 +114,7 @@ class GameBridge extends Behavior {
     streamChunks();
   }
 
-  private syncPlayerToCamera(dt: number) {
+  private syncPlayerToCamera(_dt: number) {
     if (!threeCamera) return;
 
     kootaWorld
@@ -253,6 +253,8 @@ class GameBridge extends Behavior {
   }
 }
 
+const UNLOAD_DISTANCE = RENDER_DISTANCE + 2;
+
 function streamChunks() {
   if (!voxelRenderer) return;
 
@@ -265,6 +267,7 @@ function streamChunks() {
   const pCx = Math.floor(px / CHUNK_SIZE);
   const pCz = Math.floor(pz / CHUNK_SIZE);
 
+  // Load nearby chunks
   for (let dx = -RENDER_DISTANCE; dx <= RENDER_DISTANCE; dx++) {
     for (let dz = -RENDER_DISTANCE; dz <= RENDER_DISTANCE; dz++) {
       const cx = pCx + dx;
@@ -274,6 +277,25 @@ function streamChunks() {
         loadedChunks.add(key);
         generateChunkTerrain(voxelRenderer!, "Ground", cx, cz);
       }
+    }
+  }
+
+  // Unload distant chunks
+  for (const key of loadedChunks) {
+    const [cxStr, czStr] = key.split(",");
+    const cx = parseInt(cxStr, 10);
+    const cz = parseInt(czStr, 10);
+    if (Math.abs(cx - pCx) > UNLOAD_DISTANCE || Math.abs(cz - pCz) > UNLOAD_DISTANCE) {
+      for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+        for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+          const gx = cx * CHUNK_SIZE + lx;
+          const gz = cz * CHUNK_SIZE + lz;
+          for (let y = 0; y < WORLD_HEIGHT; y++) {
+            voxelRenderer!.removeVoxel("Ground", { position: { x: gx, y, z: gz } });
+          }
+        }
+      }
+      loadedChunks.delete(key);
     }
   }
 }
