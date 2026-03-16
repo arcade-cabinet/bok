@@ -24,8 +24,9 @@ import type { CreatureEffects } from "./creature-ai.ts";
 import { spawnHostileCreatures } from "./creature-spawner-hostile.ts";
 import { spawnNeutralCreatures } from "./creature-spawner-neutral.ts";
 import { getSpawnRateMultiplier } from "./inscription-level.ts";
+import { getActiveLightSources } from "./light.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
-import { PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
+import { isSpawnBlockedByLight, PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
 import { isSnailBiome } from "./snail-behavior.ts";
 import { isTranaBiome, isTranaSpawnHeight } from "./trana-behavior.ts";
 
@@ -237,12 +238,13 @@ function spawnMorkerPack(world: World, px: number, pz: number, effects?: Creatur
 	const bx = px + Math.cos(angle) * 20;
 	const bz = pz + Math.sin(angle) * 20;
 	const entityIds: number[] = [];
+	const lights = getActiveLightSources();
 
 	for (let i = 0; i < packSize; i++) {
 		const sx = bx + (worldRng() - 0.5) * 4;
 		const sz = bz + (worldRng() - 0.5) * 4;
 		const sy = findSurfaceSpawn(sx, sz);
-		if (sy >= 0) {
+		if (sy >= 0 && !isSpawnBlockedByLight(sx, sy, sz, lights)) {
 			entityIds.push(spawnEntity(world, sx, sy, sz, Species.Morker, MORKER, effects));
 		}
 	}

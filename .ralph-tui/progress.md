@@ -228,6 +228,17 @@ The inscription level system follows the same pure-data ↔ ECS bridge separatio
 - **Threshold gating**: `isThresholdReached(level, threshold)` gates species spawning: Runväktare at 100+, Lindormar at 300+, Jätten at 1000+. Checked in creature-spawner-hostile.ts and creature-spawner-neutral.ts.
 - **Read-once per frame**: `creature.ts` reads `InscriptionLevel` once per frame, computes the level, and passes it down to spawners as a plain number — spawners don't touch ECS.
 
+### Light as Mechanic System Architecture
+The light system separates pure data from ECS state management, following the creature pattern:
+- `light-sources.ts` — Pure math: light radii per block/item type, intensity falloff, boolean in-light checks, damage computation. No ECS/Three.js.
+- `light.ts` — ECS system: throttled block scanning (0.5s interval, 24-block radius), per-frame player hotbar light, combined source list for creature systems.
+- Key patterns:
+- **Hybrid scan frequency**: Block light sources change rarely (torch placement), so 0.5s throttle is sufficient. Player hotbar light moves every frame, so it's computed per-frame and appended. Avoids expensive scans while keeping mobile lantern responsive.
+- **Module-level source cache**: `getActiveLightSources()` returns the cached list computed by `lightSystem()`. Creature AI and spawners call this without re-scanning. Same pattern as morker-pack.ts module maps.
+- **Existing Mörker AI extension**: Added `lightSources` parameter to `updateMorkerAI()` with default `[]` for backward compat. Light source damage replaces the old single-torch distance check. `nearestLightFleeDir()` provides flee direction from the nearest light source (not just the player).
+- **Spawn avoidance via light check**: `isSpawnBlockedByLight()` prevents Mörker from spawning inside any light radius. Called per-entity in `spawnMorkerPack()` — individual spawn positions are checked, not the entire pack.
+- **Held item as mobile light**: Player hotbar slot type `"item"` checks `ITEM_LIGHT_RADIUS`, type `"block"` checks `emissive` metadata + `BLOCK_LIGHT_RADIUS`. Ember Lantern (item 109, radius 12) creates a large mobile safe zone.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -734,5 +745,29 @@ The inscription level system follows the same pure-data ↔ ECS bridge separatio
   - **Separate query for backward compat**: Reading `ShelterState` in a separate `world.query(PlayerTag, ShelterState).readEach()` before the main player query means the system works even if the player entity doesn't have `ShelterState` — the query simply doesn't match, and the default `inShelter=false` holds. No existing survival.test.ts changes needed.
   - **Position-keyed deduplication**: Using a 4-block grid hash for the `countedPositions` set prevents double-counting the same structure while allowing nearby but distinct structures to each be counted. Module-level set cleared on game restart via `resetStructureState()`.
   - **Dual Falu red scan**: Enclosure flood-fill naturally discovers Falu red wall blocks, but `countFaluRedNearby()` catches Falu red when the player is outside a structure. `Math.max()` of both counts provides correct behavior in both cases.
+---
+
+## 2026-03-16 - US-024
+- Light as Mechanic: light sources affect gameplay beyond visibility — strategic survival through light management
+- New file `src/ecs/systems/light-sources.ts` (~100 LOC): Pure math module — block light radii (Torch=4, Forge=4, Crystal=6), item light radii (Lantern=8, Ember Lantern=12), 3D intensity falloff, max-intensity queries, boolean in-light check, Mörker light damage computation, block/item radius lookups
+- New file `src/ecs/systems/light.ts` (~110 LOC): ECS system — throttled 0.5s block scanning (24-block radius, ±8 vertical), per-frame player hotbar light, combined source cache via `getActiveLightSources()`, `resetLightState()` for game restart
+- New file `src/ecs/systems/light-sources.test.ts` (~130 LOC): 20 unit tests — block/item radii constants, intensity falloff (outside/center/half/boundary/Y), max intensity from multiple sources, isInLight (inside/outside/empty), Mörker damage (zero/full/scale), lookup helpers
+- New file `src/ecs/systems/light.test.ts` (~140 LOC): 10 unit tests — block scanning (torch detection, empty world, throttling), hotbar light (ember lantern, lantern, torch block, non-light item, position tracking), reset
+- Updated `src/ecs/systems/morker-pack.ts`: Added `lightSourceDamage()` (multi-source damage), `isSpawnBlockedByLight()` (spawn avoidance), `nearestLightFleeDir()` (flee direction from nearest light source). Imports from light-sources.ts
+- Updated `src/ecs/systems/morker-pack.test.ts`: 16 new tests for light source damage (outside/inside/proximity/dt scaling), spawn blocking (inside/outside/empty/multiple), flee direction (outside/away/normalized/nearest/zero-distance)
+- Updated `src/ecs/systems/creature-ai-hostile.ts`: Replaced single-torch damage/flee with multi-source light system. `updateMorkerAI` takes optional `lightSources` parameter (default `[]` for backward compat). Flee uses `nearestLightFleeDir()` for directional flee from nearest light source
+- Updated `src/ecs/systems/creature-ai.ts`: Imports `getActiveLightSources()`, passes to `updateMorkerAI` in hostile AI dispatch
+- Updated `src/ecs/systems/creature-spawner.ts`: Imports `getActiveLightSources()` and `isSpawnBlockedByLight()`. Mörker pack spawn checks each position against all light sources
+- Updated `src/ecs/systems/index.ts`: Exports lightSystem, getActiveLightSources, and all light-sources.ts utilities
+- Updated `src/engine/game.ts`: Runs `lightSystem` in update loop before creature system. Imports `resetLightState` for game restart cleanup
+- All 760 vitest tests pass (46 new, 38 test files), typecheck clean, lint clean on new files
+- Files created: `light-sources.ts`, `light.ts`, `light-sources.test.ts`, `light.test.ts`
+- Files modified: `morker-pack.ts`, `morker-pack.test.ts`, `creature-ai-hostile.ts`, `creature-ai.ts`, `creature-spawner.ts`, `index.ts`, `game.ts`
+- **Learnings:**
+  - **Hybrid scan frequency**: Block sources rarely change, so 0.5s throttle is enough. Player hotbar light needs per-frame updates since the player moves. Appending the hotbar light after block scan avoids re-scanning while keeping mobile light responsive.
+  - **Backward-compatible function extension**: Adding `lightSources: LightSource[] = []` as last parameter with default empty array means all existing callers (including tests that don't pass light sources) continue working unchanged. New callers can opt into the light system.
+  - **Flee direction from nearest source**: Previous Mörker code fled from the player's torch (single point). The new system finds the nearest light source via distance-squared comparison and flees away from it. This handles static torches, lanterns, and forge blocks correctly — Mörker flee from the actual light, not just the player.
+  - **Spawn check per-entity not per-pack**: Checking `isSpawnBlockedByLight()` per-entity (not per-pack-center) is important because the pack spawns entities in a 4-block scatter radius around the base position. Some positions might be in light while others aren't.
+  - **Held block vs held item**: Torch as block (`type: "block"`) needs to check `BLOCKS[id].emissive` + `BLOCK_LIGHT_RADIUS`. Lantern as item (`type: "item"`) checks `ITEM_LIGHT_RADIUS` directly. The dual check in `getPlayerHotbarLight()` handles both namespaces.
 ---
 

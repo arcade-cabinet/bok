@@ -21,6 +21,7 @@ import {
 	cookingSystem,
 	creatureSystem,
 	eatingSystem,
+	lightSystem,
 	miningSystem,
 	movementSystem,
 	physicsSystem,
@@ -31,6 +32,7 @@ import {
 	workstationProximitySystem,
 	worldEventSystem,
 } from "../ecs/systems/index.ts";
+import { resetLightState } from "../ecs/systems/light.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { WorldEventEffects } from "../ecs/systems/world-event.ts";
@@ -143,6 +145,7 @@ class GameBridge extends Behavior {
 		timeSystem(kootaWorld, dt);
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
+		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		this.runCreatureSystem(dt);
 		this.runWorldEventSystem(dt);
 
@@ -819,5 +822,6 @@ export function destroyGame(): void {
 	loadedChunks.clear();
 	chunkData.clear();
 	combatDrainTimer = 0;
+	resetLightState();
 	kootaWorld.reset();
 }

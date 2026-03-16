@@ -4,12 +4,14 @@
  * Consumed by creature-ai-hostile.ts.
  */
 
+import { type LightSource, lightDamageToMorker, maxLightIntensity } from "./light-sources.ts";
+
 // ─── Constants ───
 
-/** Torch light radius in blocks. */
+/** Torch light radius in blocks (legacy fallback when no light sources available). */
 export const TORCH_RADIUS = 6;
 
-/** Damage per second within torch radius. */
+/** Damage per second within torch radius (legacy). */
 export const TORCH_DPS = 3;
 
 /** Pack size range. */
@@ -161,6 +163,70 @@ export function flankPosition(
 		x: playerX + Math.cos(angle) * FLANK_RADIUS,
 		z: playerZ + Math.sin(angle) * FLANK_RADIUS,
 	};
+}
+
+// ─── Light Source Integration ───
+
+/**
+ * Compute Mörker damage from all nearby light sources.
+ * Replaces legacy torch-only damage when light sources are available.
+ */
+export function lightSourceDamage(
+	morkerX: number,
+	morkerY: number,
+	morkerZ: number,
+	sources: LightSource[],
+	dt: number,
+): number {
+	const intensity = maxLightIntensity(sources, morkerX, morkerY, morkerZ);
+	return lightDamageToMorker(intensity, dt);
+}
+
+/**
+ * Check if a spawn position is within any light source radius.
+ * Used by creature spawner to prevent Mörker from spawning in lit areas.
+ */
+export function isSpawnBlockedByLight(x: number, y: number, z: number, sources: LightSource[]): boolean {
+	for (const s of sources) {
+		const dx = x - s.x;
+		const dy = y - s.y;
+		const dz = z - s.z;
+		if (dx * dx + dy * dy + dz * dz < s.radius * s.radius) return true;
+	}
+	return false;
+}
+
+/**
+ * Find the nearest light source and compute flee direction.
+ * Returns null if not in any light. Used for flee behavior.
+ */
+export function nearestLightFleeDir(
+	morkerX: number,
+	morkerY: number,
+	morkerZ: number,
+	sources: LightSource[],
+): { dx: number; dz: number } | null {
+	let nearest: LightSource | null = null;
+	let bestDistSq = Number.POSITIVE_INFINITY;
+
+	for (const s of sources) {
+		const dx = morkerX - s.x;
+		const dy = morkerY - s.y;
+		const dz = morkerZ - s.z;
+		const distSq = dx * dx + dy * dy + dz * dz;
+		if (distSq < s.radius * s.radius && distSq < bestDistSq) {
+			bestDistSq = distSq;
+			nearest = s;
+		}
+	}
+
+	if (!nearest) return null;
+
+	const dx = morkerX - nearest.x;
+	const dz = morkerZ - nearest.z;
+	const dist = Math.sqrt(dx * dx + dz * dz);
+	if (dist < 0.01) return { dx: 1, dz: 0 };
+	return { dx: dx / dist, dz: dz / dist };
 }
 
 // ─── Lyktgubbe Hunting ───

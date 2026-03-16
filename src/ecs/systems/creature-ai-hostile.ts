@@ -7,6 +7,7 @@
 import type { AnimStateId, BehaviorStateId } from "../traits/index.ts";
 import { AnimState, BehaviorState } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
+import type { LightSource } from "./light-sources.ts";
 import {
 	ALPHA_SPEED_MULT,
 	cleanupMorkerState,
@@ -14,10 +15,10 @@ import {
 	flankPosition,
 	getMorkerState,
 	getPackMemberCount,
-	lightDamage,
+	lightSourceDamage,
+	nearestLightFleeDir,
 	nearestLyktgubbe,
 	type TargetPos,
-	TORCH_RADIUS,
 } from "./morker-pack.ts";
 
 export { cleanupMorkerState };
@@ -81,6 +82,7 @@ export function updateMorkerAI(
 	chase: (pos: PosRef, hp: HpRef, dx: number, dz: number, dist: number, speed: number, dt: number) => void,
 	applyDamageToPlayer: (damage: number) => void,
 	effects?: CreatureEffects,
+	lightSources: LightSource[] = [],
 ) {
 	const dx = ctx.playerX - pos.x;
 	const dz = ctx.playerZ - pos.z;
@@ -94,9 +96,9 @@ export function updateMorkerAI(
 		effects?.spawnParticles(pos.x, pos.y, pos.z, 0x1a1a2e, 3);
 	}
 
-	// Torch damage — light aversion (always applies)
-	const torchDmg = lightDamage(dist, dt);
-	if (torchDmg > 0) hp.hp -= torchDmg;
+	// Light source damage — continuous DPS within any light radius
+	const lsDmg = lightSourceDamage(pos.x, pos.y, pos.z, lightSources, dt);
+	if (lsDmg > 0) hp.hp -= lsDmg;
 
 	ai.attackCooldown = Math.max(0, ai.attackCooldown - dt);
 
@@ -112,13 +114,13 @@ export function updateMorkerAI(
 		return;
 	}
 
-	// Flee from torch when within torch radius but outside attack range
-	if (dist < TORCH_RADIUS && !ctx.isDaytime) {
+	// Flee from light sources when inside any light radius
+	const fleeDir = nearestLightFleeDir(pos.x, pos.y, pos.z, lightSources);
+	if (fleeDir && !ctx.isDaytime) {
 		ai.behaviorState = BehaviorState.Flee;
 		anim.animState = AnimState.Flee;
-		const invDist = dist > 0.01 ? 1 / dist : 0;
-		pos.x -= dx * invDist * ai.moveSpeed * dt;
-		pos.z -= dz * invDist * ai.moveSpeed * dt;
+		pos.x += fleeDir.dx * ai.moveSpeed * dt;
+		pos.z += fleeDir.dz * ai.moveSpeed * dt;
 		applyGravity(hp, pos, dt);
 		return;
 	}

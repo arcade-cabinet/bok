@@ -7,6 +7,16 @@ export {
 	INSCRIPTION_TIERS,
 	isThresholdReached,
 } from "./inscription-level.ts";
+export { getActiveLightSources, lightSystem } from "./light.ts";
+export {
+	getBlockLightRadius,
+	getItemLightRadius,
+	ITEM_LIGHT_RADIUS,
+	isInLight,
+	lightDamageToMorker,
+	lightIntensityAt,
+	maxLightIntensity,
+} from "./light-sources.ts";
 export { miningSystem } from "./mining.ts";
 export { movementSystem } from "./movement.ts";
 export { physicsSystem } from "./physics.ts";

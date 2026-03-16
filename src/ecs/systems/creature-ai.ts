@@ -29,6 +29,7 @@ import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI
 import { updateRunvaktareAI } from "./creature-ai-runvaktare.ts";
 import { cleanupDraugarState } from "./draugar-gaze.ts";
 import { cleanupJattenState } from "./jatten-boss.ts";
+import { getActiveLightSources } from "./light.ts";
 import { cleanupLindormState } from "./lindorm-tunnel.ts";
 import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
 import type { TargetPos } from "./morker-pack.ts";
@@ -76,6 +77,7 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 	});
 
 	const dmg = (damage: number) => applyDamageToPlayer(world, damage);
+	const lightSources = getActiveLightSources();
 
 	world
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
@@ -101,6 +103,7 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 					chase,
 					dmg,
 					effects,
+					lightSources,
 				);
 			} else if (cType.species === Species.Runvaktare) {
 				updateRunvaktareAI(pos, ai, hp, anim, entity.id(), dt, ctx, applyGravity, dmg, effects);
