@@ -46,12 +46,12 @@ import {
 	saveVoxelDelta,
 } from "./persistence/db.ts";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
+import { BokIndicator } from "./ui/hud/BokIndicator.tsx";
 import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
 import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
+import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
 import { MobileControls } from "./ui/hud/MobileControls.tsx";
-import { QuestTracker } from "./ui/hud/QuestTracker.tsx";
-import { TimeDisplay } from "./ui/hud/TimeDisplay.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -86,6 +86,14 @@ export default function App() {
 	} | null>(null);
 	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
 	const [sagaData, setSagaData] = useState<import("./ui/components/BokSaga.tsx").BokSagaProps | null>(null);
+	const [showVitalsBars, setShowVitalsBars] = useState(() => {
+		try {
+			return localStorage.getItem("bok-show-vitals") !== "false";
+		} catch {
+			return true;
+		}
+	});
+	const lastSeenSagaCountRef = useRef(0);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -106,6 +114,7 @@ export default function App() {
 		dayCount: 1,
 		isDead: false,
 		workstationTier: 0 as RecipeTier,
+		sagaEntryCount: 0,
 	});
 
 	// Init database + check for existing saves on mount
@@ -168,6 +177,11 @@ export default function App() {
 					timeOfDay: time.timeOfDay,
 					dayCount: time.dayCount,
 				};
+			});
+
+			// Saga entry count — read every frame for rune glow indicator
+			kootaWorld.query(PlayerTag, SagaLog).readEach(([saga]) => {
+				playerUpdate.sagaEntryCount = saga.entries.length;
 			});
 
 			// Map + codex data — only read when bok is open
@@ -287,6 +301,7 @@ export default function App() {
 					const next = !prev;
 					if (next) {
 						document.exitPointerLock();
+						lastSeenSagaCountRef.current = hudState.sagaEntryCount;
 					} else {
 						const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
 						canvas?.requestPointerLock();
@@ -294,10 +309,21 @@ export default function App() {
 					return next;
 				});
 			}
+			if (e.code === "KeyV") {
+				setShowVitalsBars((prev) => {
+					const next = !prev;
+					try {
+						localStorage.setItem("bok-show-vitals", String(next));
+					} catch {
+						/* localStorage unavailable */
+					}
+					return next;
+				});
+			}
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
-	}, [phase]);
+	}, [phase, hudState.sagaEntryCount]);
 
 	const handleStartGame = useCallback(async (seed: string) => {
 		const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
@@ -418,6 +444,7 @@ export default function App() {
 			{/* Overlays */}
 			{phase === "playing" && (
 				<>
+					<HungerOverlay hunger={hudState.hunger} />
 					<DamageVignette health={hudState.health} damageFlash={hudState.damageFlash} />
 					<UnderwaterOverlay isUnderwater={hudState.isSwimming} />
 				</>
@@ -446,12 +473,24 @@ export default function App() {
 							/>
 						)}
 
-						<div
-							className="absolute top-4 left-4 right-4 flex justify-between items-start"
-							style={{ textShadow: "1px 1px 2px #000, 0 0 4px #000" }}
-						>
-							<TimeDisplay timeOfDay={hudState.timeOfDay} dayCount={hudState.dayCount} />
-							<QuestTracker step={hudState.questStep} progress={hudState.questProgress} />
+						<div className="absolute top-4 right-4 flex items-center gap-3">
+							<BokIndicator
+								hasNewInfo={hudState.sagaEntryCount > lastSeenSagaCountRef.current}
+								onOpen={() => {
+									setCraftingOpen(false);
+									lastSeenSagaCountRef.current = hudState.sagaEntryCount;
+									setBokOpen((prev) => {
+										const next = !prev;
+										if (next) {
+											document.exitPointerLock();
+										} else {
+											const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
+											canvas?.requestPointerLock();
+										}
+										return next;
+									});
+								}}
+							/>
 						</div>
 
 						<div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
@@ -460,6 +499,7 @@ export default function App() {
 								hunger={hudState.hunger}
 								stamina={hudState.stamina}
 								hungerSlowed={hudState.hungerSlowed}
+								visible={showVitalsBars}
 							/>
 							<HotbarDisplay
 								slots={hudState.hotbarSlots}

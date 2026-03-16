@@ -5,6 +5,19 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Diegetic HUD Effects Architecture
+The diegetic effects system follows the same pure-data ↔ UI component separation:
+- `diegetic-effects.ts` — Pure math: vignette intensity from health ratio, critical threshold detection, desaturation from hunger ratio. No ECS/Three.js/React.
+- `DamageVignette.tsx` — Enhanced with health-based persistent vignette (not just damage flash). Uses `computeVignetteIntensity` for base opacity, `isHealthCritical` for pulse animation, damage flash overlaid via `Math.max`.
+- `HungerOverlay.tsx` — CSS `backdropFilter: saturate()` driven by `computeDesaturation`. Early null return when saturation is 1.0 (well-fed).
+- `BokIndicator.tsx` — Berkanan rune (ᛒ) that glows when `sagaEntryCount > lastSeenSagaCount`. Replaces non-diegetic QuestTracker.
+- `VitalsBar.tsx` — Added `visible` prop gated by `showVitalsBars` settings toggle (persisted in localStorage).
+- Key patterns:
+- **Layered overlay z-ordering**: HungerOverlay (z-[2]) → DamageVignette (z-[3]) → UnderwaterOverlay. Effects compose without interference.
+- **Settings toggle via localStorage**: `showVitalsBars` state initialized from `localStorage.getItem("bok-show-vitals")`, toggled with `KeyV`. Persists across sessions.
+- **Saga entry tracking for rune glow**: `lastSeenSagaCountRef` updated when bok opens. `sagaEntryCount` polled every frame via lightweight `SagaLog` query (separate from full saga data which is only read when bok is open).
+- **Early null return optimization**: HungerOverlay returns null when saturation >= 1.0; VitalsBar returns null when visible=false. Zero DOM cost for common cases.
+
 ### Saga / Journal System Architecture
 The saga system follows the same pure-data ↔ ECS bridge separation:
 - `saga-data.ts` — Milestone definitions, prose templates, objective computation, stats aggregation. Pure data, no ECS/Three.js.
@@ -924,5 +937,34 @@ The light system separates pure data from ECS state management, following the cr
   - **Module-level scan timer**: `scanTimer` in saga.ts follows the same pattern as workstation-proximity.ts and structure.ts for throttled systems.
   - **Entries as plain objects**: `SagaLog.entries` stores `{ milestoneId, day, text }` objects rather than class instances. This ensures they copy cleanly with spread operator for React props, avoiding the Set serialization gotcha documented in codex patterns.
   - **Derived active objective**: Following inscription-level pattern — `computeActiveObjective()` derives the current objective from achieved milestones on demand rather than storing it. Keeps the trait lean.
+---
+
+## 2026-03-16 - US-030
+- HUD diegetification: replaced floating HUD elements with world-based/meta feedback
+- Health → persistent vignette intensity (red = low, pulsing = critical)
+- Hunger → screen desaturation via CSS `backdropFilter: saturate()`
+- Time → removed from HUD (player reads sky via sun/moon position)
+- Quest → replaced QuestTracker with BokIndicator rune glyph that glows when new saga entries available
+- Settings toggle (V key + localStorage persistence) to show/hide explicit vitals bars
+- Files created:
+  - `src/ecs/systems/diegetic-effects.ts` — Pure math: vignette intensity, critical detection, desaturation (45 LOC)
+  - `src/ecs/systems/diegetic-effects.test.ts` — 19 unit tests for all pure functions (90 LOC)
+  - `src/ui/hud/HungerOverlay.tsx` — Desaturation overlay component (27 LOC)
+  - `src/ui/hud/BokIndicator.tsx` — Rune glow quest indicator (28 LOC)
+  - `src/ui/hud/DamageVignette.ct.tsx` — 6 Playwright CT tests for enhanced vignette (46 LOC)
+- Files modified:
+  - `src/ui/hud/DamageVignette.tsx` — Enhanced with health-based persistent vignette, data-testid, aria-hidden
+  - `src/ui/hud/VitalsBar.tsx` — Added `visible` prop and data-testid
+  - `src/ui/hud/VitalsBar.ct.tsx` — Added 2 new tests for show/hide settings toggle
+  - `src/App.tsx` — Wired HungerOverlay, BokIndicator, showVitalsBars toggle, sagaEntryCount tracking; removed TimeDisplay/QuestTracker from render
+  - `src/index.css` — Added rune-glow-pulse keyframes and .rune-glow class
+- Typecheck clean, build clean, all 19 new vitest tests pass
+- 4 pre-existing vitest failures in map-data.test.ts (unrelated)
+- Playwright CT has pre-existing global timeout issue (all tests timeout at mount, not code failure)
+- **Learnings:**
+  - **backdropFilter for desaturation**: CSS `backdropFilter: saturate()` applies a post-process effect to everything beneath the overlay without needing a full-screen canvas or shader. Much simpler than a custom Three.js post-processing pass.
+  - **Rune glyph in Unicode**: ᛒ (Berkanan, U+16D2) renders natively in browsers. The `font-display: Cinzel` gives it a serif look. No custom glyph/icon needed.
+  - **localStorage for settings**: Simple `try/catch` around localStorage access handles Safari private browsing and environments where localStorage is unavailable. Default to `true` (show vitals) for new players.
+  - **Ref vs state for saga count**: `lastSeenSagaCountRef` uses a ref (not state) because it only needs to persist across renders, not trigger re-renders. The comparison `sagaEntryCount > lastSeenSagaCountRef.current` is evaluated in the JSX render, which already re-renders when hudState changes.
 ---
 

@@ -3,11 +3,15 @@ interface VitalsBarProps {
 	hunger: number;
 	stamina: number;
 	hungerSlowed?: boolean;
+	/** When false, hides the numeric bars (diegetic mode). Defaults to true. */
+	visible?: boolean;
 }
 
-export function VitalsBar({ health, hunger, stamina, hungerSlowed = false }: VitalsBarProps) {
+export function VitalsBar({ health, hunger, stamina, hungerSlowed = false, visible = true }: VitalsBarProps) {
+	if (!visible) return null;
+
 	return (
-		<div className="flex flex-col items-center gap-2 mb-3">
+		<div className="flex flex-col items-center gap-2 mb-3" data-testid="vitals-bar">
 			{/* Health & Hunger */}
 			<div className="flex gap-4 w-72 justify-center">
 				<div className="w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg">

@@ -1,19 +1,23 @@
+import { computeVignetteIntensity, isHealthCritical } from "../../ecs/systems/diegetic-effects.ts";
+
 interface DamageVignetteProps {
 	health: number;
+	maxHealth?: number;
 	damageFlash: number;
 }
 
-export function DamageVignette({ health, damageFlash }: DamageVignetteProps) {
-	const isLowHealth = health < 20 && health > 0;
+export function DamageVignette({ health, maxHealth = 100, damageFlash }: DamageVignetteProps) {
+	const baseIntensity = computeVignetteIntensity(health, maxHealth);
+	const critical = isHealthCritical(health, maxHealth);
+	// Merge: persistent health vignette + transient damage flash
+	const opacity = Math.min(1, Math.max(baseIntensity, damageFlash));
 
 	return (
 		<div
-			className={`absolute inset-0 pointer-events-none z-[3] vignette-damage ${
-				isLowHealth ? "animate-low-health" : ""
-			}`}
-			style={{
-				opacity: isLowHealth ? undefined : Math.max(0, Math.min(1, damageFlash)),
-			}}
+			data-testid="damage-vignette"
+			className={`absolute inset-0 pointer-events-none z-[3] vignette-damage ${critical ? "animate-low-health" : ""}`}
+			style={{ opacity: critical ? undefined : opacity }}
+			aria-hidden="true"
 		/>
 	);
 }
