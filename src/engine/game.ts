@@ -40,12 +40,14 @@ import {
   movementSystem,
   physicsSystem,
   survivalSystem,
+  miningSystem,
   questSystem,
   timeSystem,
   enemySystem,
 } from "../ecs/systems/index.ts";
+import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
 
-import { createBlockDefinitions, BLOCKS, ITEMS } from "../world/blocks.ts";
+import { createBlockDefinitions, BLOCKS } from "../world/blocks.ts";
 import { initNoise } from "../world/noise.ts";
 import { registerVoxelAccessors, getVoxelAt, setVoxelAt } from "../world/voxel-helpers.ts";
 import {
@@ -110,7 +112,7 @@ class GameBridge extends Behavior {
     this.syncPlayerToCamera(dt);
     this.syncViewModelState();
     this.syncEnvironmentState();
-    this.syncMiningToHighlight(dt);
+    this.runMiningSystem(dt);
     streamChunks();
   }
 
@@ -175,81 +177,13 @@ class GameBridge extends Behavior {
     }
   }
 
-  private syncMiningToHighlight(dt: number) {
-    if (!blockHighlightBehavior) return;
-
-    const hit = blockHighlightBehavior.lastHit;
-
-    kootaWorld
-      .query(PlayerTag, MiningState, Inventory, Hotbar, ToolSwing, QuestProgress)
-      .updateEach(([mining, inv, hotbar, toolSwing, quest]) => {
-        // Update mining target from raycaster
-        if (hit) {
-          mining.targetX = hit.x;
-          mining.targetY = hit.y;
-          mining.targetZ = hit.z;
-        }
-
-        if (!mining.active || !hit) {
-          mining.progress = 0;
-          return;
-        }
-
-        const targetKey = `${hit.x},${hit.y},${hit.z}`;
-        if (mining.targetKey !== targetKey) {
-          mining.progress = 0;
-          mining.targetKey = targetKey;
-        }
-
-        // Tool multiplier
-        const slot = hotbar.slots[hotbar.activeSlot];
-        let speedMult = 1;
-        if (slot && slot.type === "item") {
-          const item = ITEMS[slot.id];
-          if (item) {
-            const blockDef = BLOCKS[hit.id];
-            if (blockDef && item.target === blockDef.name) {
-              speedMult = item.power;
-            }
-          }
-        }
-
-        const blockDef = BLOCKS[hit.id];
-        const hardness = blockDef?.hardness ?? 1.0;
-        const mineTime = Math.max(0.1, hardness / speedMult);
-        mining.progress += dt / mineTime;
-
-        // Periodic mining hit particles + swing
-        if (mining.progress < 1.0) {
-          toolSwing.progress = 1.0;
-          if (particlesBehavior && blockDef) {
-            particlesBehavior.spawn(hit.x, hit.y, hit.z, blockDef.color, 2);
-          }
-        }
-
-        // Block broken
-        if (mining.progress >= 1.0) {
-          setVoxelAt("Ground", hit.x, hit.y, hit.z, 0);
-
-          if (particlesBehavior && blockDef) {
-            particlesBehavior.spawn(hit.x, hit.y, hit.z, blockDef.color, 15);
-          }
-
-          // Add to inventory
-          const bName = (blockDef?.name ?? "").toLowerCase();
-          const invAny = inv as unknown as Record<string, number>;
-          if (bName in invAny) {
-            invAny[bName] += 1;
-          }
-
-          // Quest tracking
-          if (quest.step === 0 && bName === "wood") quest.progress++;
-          if (quest.step === 2 && bName === "stone") quest.progress++;
-
-          mining.progress = 0;
-          mining.active = false;
-        }
-      });
+  private runMiningSystem(dt: number) {
+    const hit: BlockHit | null = blockHighlightBehavior?.lastHit ?? null;
+    const effects: MiningSideEffects = {
+      removeBlock: (x, y, z) => setVoxelAt("Ground", x, y, z, 0),
+      spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
+    };
+    miningSystem(kootaWorld, dt, hit, effects);
   }
 }
 

@@ -5,7 +5,7 @@
 
 import * as THREE from "three";
 import { Behavior } from "@jolly-pixel/engine";
-import { BLOCKS, ITEMS, type ItemDef } from "../../world/blocks.ts";
+import { BLOCKS, ITEMS, BlockId, type ItemDef } from "../../world/blocks.ts";
 
 export class ViewModelBehavior extends Behavior {
   private viewModelGroup = new THREE.Group();
@@ -75,7 +75,7 @@ export class ViewModelBehavior extends Behavior {
       if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
     }
 
-    this.handLight.intensity = this.slotData?.id === 8 ? 1.5 : 0;
+    this.handLight.intensity = this.slotData?.id === BlockId.Torch ? 1.5 : 0;
 
     if (!this.slotData) return;
 
@@ -89,7 +89,7 @@ export class ViewModelBehavior extends Behavior {
         roughness: 0.8,
       });
       const blockMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), bMat);
-      if (this.slotData.id === 8) blockMesh.position.set(0, 0.1, 0);
+      if (this.slotData.id === BlockId.Torch) blockMesh.position.set(0, 0.1, 0);
       this.viewModelGroup.add(blockMesh);
     } else if (this.slotData.type === "item") {
       const itemDef: ItemDef | undefined = ITEMS[this.slotData.id];

@@ -63,13 +63,15 @@ export class AmbientParticlesBehavior extends Behavior {
       partOp = 0.6;
     }
 
-    this.mat.color.lerp(partColor, dt);
-    this.mat.opacity = THREE.MathUtils.lerp(this.mat.opacity, partOp, dt);
+    const lerpFactor = Math.min(1, dt * 2);
+    this.mat.color.lerp(partColor, lerpFactor);
+    this.mat.opacity = THREE.MathUtils.lerp(this.mat.opacity, partOp, lerpFactor);
 
     const positions = this.particles.geometry.attributes.position.array as Float32Array;
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       positions[i * 3 + 1] += dt * 0.5;
       if (positions[i * 3 + 1] - this.playerY > 20) positions[i * 3 + 1] -= 40;
+      if (positions[i * 3 + 1] - this.playerY < -20) positions[i * 3 + 1] += 40;
       if (positions[i * 3] - this.playerX > 20) positions[i * 3] -= 40;
       if (positions[i * 3] - this.playerX < -20) positions[i * 3] += 40;
       if (positions[i * 3 + 2] - this.playerZ > 20) positions[i * 3 + 2] -= 40;

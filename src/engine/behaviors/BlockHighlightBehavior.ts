@@ -5,6 +5,7 @@
 
 import * as THREE from "three";
 import { Behavior } from "@jolly-pixel/engine";
+import { BlockId } from "../../world/blocks.ts";
 
 export class BlockHighlightBehavior extends Behavior {
   private highlight!: THREE.LineSegments;
@@ -60,7 +61,7 @@ export class BlockHighlightBehavior extends Behavior {
       const vy = Math.floor(pos.y);
       const vz = Math.floor(pos.z);
       const blockId = this.getVoxelFn(vx, vy, vz);
-      if (blockId > 0 && blockId !== 7) {
+      if (blockId > 0 && blockId !== BlockId.Water) {
         this.lastHit = { x: vx, y: vy, z: vz, id: blockId };
         break;
       }

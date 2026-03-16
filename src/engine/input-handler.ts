@@ -102,7 +102,7 @@ function syncKeysToECS() {
     input.left = keys["KeyA"] || false;
     input.right = keys["KeyD"] || false;
     input.jump = keys["Space"] || false;
-    input.sprint = keys["ShiftLeft"] || false;
+    input.sprint = keys["ShiftLeft"] || keys["ShiftRight"] || false;
   });
 }
 

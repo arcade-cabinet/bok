@@ -112,6 +112,7 @@ export function MobileControls({ onCraftToggle }: MobileControlsProps) {
         onTouchStart={onLeftTouchStart}
         onTouchMove={onLeftTouchMove}
         onTouchEnd={onLeftTouchEnd}
+        onTouchCancel={onLeftTouchEnd}
       />
 
       {/* Right touch zone - camera look */}
@@ -120,6 +121,7 @@ export function MobileControls({ onCraftToggle }: MobileControlsProps) {
         onTouchStart={onRightTouchStart}
         onTouchMove={onRightTouchMove}
         onTouchEnd={onRightTouchEnd}
+        onTouchCancel={onRightTouchEnd}
       />
 
       {/* Joystick visual */}
@@ -146,14 +148,17 @@ export function MobileControls({ onCraftToggle }: MobileControlsProps) {
       {/* Action buttons */}
       <div className="absolute bottom-[120px] right-5 flex flex-col gap-4 pointer-events-auto">
         <button
+          type="button"
           className="w-[65px] h-[65px] rounded-full bg-black/60 border-2 border-white/30 text-white text-sm font-bold flex items-center justify-center"
           style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.5)" }}
           onTouchStart={onJumpStart}
           onTouchEnd={onJumpEnd}
+          onTouchCancel={onJumpEnd}
         >
           JUMP
         </button>
         <button
+          type="button"
           className="w-[65px] h-[65px] rounded-full bg-black/60 border-2 border-white/30 text-white text-sm font-bold flex items-center justify-center"
           style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.5)" }}
           onTouchStart={onCraftToggle}
