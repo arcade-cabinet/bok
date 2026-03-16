@@ -2,27 +2,31 @@
 
 ## Visual Identity
 
-Bok's aesthetic is **ancient manuscript meets living world**. The game looks like a voxel world drawn in ink on parchment that has come to life. This is expressed through:
+Bok's aesthetic is **Swedish craft tradition meets building-block playground**. The game looks like a handcrafted wooden diorama of Scandinavia — birch bark, rune stones, and evergreen forests rendered in chunky, tactile blocks. Think Dala horse meets Lego meets Viking runestone.
 
-1. **Voxels** — the world is blocky, but not Minecraft-copy blocky. Blocks have noise-textured faces, subtle color variation, and procedural detail that suggests handcraft.
-2. **Palette** — warm, muted, literary. No neon. No pure white. Everything looks like it was drawn with natural pigments.
-3. **Light** — golden hour as the baseline. The world is warmest at the safest times. Night is deep ink-blue, not grey.
-4. **UI** — parchment textures, serif fonts (Cinzel), ink-weight borders. Glass panels with blur, not flat boxes.
+1. **Voxels as building blocks** — the world is blocky in the way Scandinavian wooden toys are blocky. Satisfying, tactile, handcrafted. Blocks have noise-textured faces with subtle wood-grain and stone-crack detail that suggests they were carved, not generated.
+2. **Palette** — Scandinavian natural pigments. Birch white, pine green, granite grey, amber gold. Muted, warm, grounded. No neon. No pure white. Falu red (`#8b2500`) for structures, like the iconic Swedish red cottages.
+3. **Light** — the famous Scandinavian light. Long golden hours. Blue twilight that lingers. Deep winter-night blue, never grey-black. Aurora greens and purples at night.
+4. **UI** — birch-bark textures, rune-inspired borders, serif fonts (Cinzel). Glass panels with blur, not flat boxes. Every UI element should feel like it was carved from wood or drawn on bark.
 
 ## Color Palette
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| Parchment | `#e0d5c1` | UI backgrounds, blank pages, safe spaces |
-| Ink | `#1a1a2e` | Text, darkness, deep shadows, the unknown |
-| Gold | `#c9a84c` | Highlights, crafted items, discovery, value |
-| Ember | `#a3452a` | Danger, fire, damage, hostile creatures |
-| Moss | `#3a5a40` | Nature, growth, healing, vegetation |
-| Sky | `#87ceeb` | Daytime, openness, possibility |
-| Night | `#050510` | Night sky, void, deepest darkness |
-| Stone | `#6b6b6b` | Neutral, foundations, Remnants |
+Grounded in the Swedish landscape and craft tradition:
 
-These are CSS custom properties in `src/index.css`, used consistently throughout UI and available for shader tinting.
+| Token | Hex | Swedish Source | Use |
+|-------|-----|----------------|-----|
+| Björk (Birch) | `#e0d5c1` | Birch bark | UI backgrounds, safe spaces, the Bok |
+| Bläck (Ink) | `#1a1a2e` | Iron gall ink on parchment | Text, darkness, the unknown |
+| Guld (Gold) | `#c9a84c` | Amber, mead, candlelight | Discovery, craft, value, rune glow |
+| Glöd (Ember) | `#a3452a` | Hearthfire, Falu red | Danger, fire, hostile creatures, structures |
+| Mossa (Moss) | `#3a5a40` | Forest floor, lichen | Nature, growth, healing |
+| Himmel (Sky) | `#87ceeb` | Summer sky over Gotland | Daytime, openness, possibility |
+| Natt (Night) | `#050510` | Midwinter darkness | Night sky, void, the space between |
+| Sten (Stone) | `#6b6b6b` | Granite, runestones | Foundations, landmarks, endurance |
+| Falu | `#8b2500` | Falu red paint (iconic Swedish cottage red) | Player-built structures, warmth, home |
+| Norrsken (Aurora) | `#88ff88` | Northern lights | Rare events, enchantment, wonder |
+
+These are CSS custom properties in `src/index.css`, used consistently throughout UI and available for shader tinting. The addition of **Falu** and **Norrsken** extends the palette for Swedish-specific elements.
 
 ## Block Textures
 
@@ -56,18 +60,20 @@ See [creatures.md](../world/creatures.md) for individual designs. General princi
   - Spring physics for floppy parts (Crane neck, Bindling legs)
 - **State-driven**: Each animation state (idle, walk, chase, attack, flee) has a procedural behavior, blended on transition
 
-### Creature Color Assignments
+### Creature Color Assignments (Swedish Folklore)
 | Creature | Primary | Secondary | Emissive |
 |----------|---------|-----------|----------|
-| Dustmotes | — | — | Warm yellow `#ffd700` |
-| Thornbacks | Moss `#3a5a40` | Stone `#6b6b6b` | — |
-| Papyrus Cranes | Parchment `#e0d5c1` | Ink `#1a1a2e` | — |
-| Inklings | Ink `#1a1a2e` | — | Ember red `#ff4444` (eyes) |
-| Glyphwardens | Stone `#6b6b6b` | Gold `#c9a84c` | Ember `#a3452a` (eyes) |
-| Bindlings | Ink `#2a2a3e` | Moss `#3a5a40` | — |
-| Pagewyrms | Parchment `#c9b896` | Ember `#a3452a` | — |
-| Hollowfolk | — (wireframe) | — | Ink `#1a1a2e` (anti-emissive) |
-| The Colophon | World blocks | — | Gold `#c9a84c` (core) |
+| Lyktgubbar | — | — | Amber `#ffd700` / Blue `#88ccff` over water |
+| Skogssniglar | Mossa `#3a5a40` | Sten `#6b6b6b` | — |
+| Tranor | Björk `#e0d5c1` | Bläck `#1a1a2e` (wingtips) | Red crown spot |
+| Vittra | Earth brown `#8b7355` | Mossa `#3a5a40` | — (semi-transparent) |
+| Näcken | — | — | Water green-blue `#44aaaa` |
+| Runväktare | Sten `#6b6b6b` | Guld `#c9a84c` (runes) | Glöd `#a3452a` (eyes) |
+| Mörker | Bläck `#1a1a2e` | — | Glöd red `#ff4444` (eyes) |
+| Lindormar | Björk `#c9b896` | Glöd `#a3452a` (rune marks) | — |
+| Draugar | — (wireframe) | — | Frost blue `#aaccee` |
+| Jätten | World blocks | — | Guld `#c9a84c` (core runsten) |
+| Norrsken | — | — | Green/purple/blue cycling |
 
 ## Lighting Model
 

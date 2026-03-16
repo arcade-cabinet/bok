@@ -1,10 +1,11 @@
 # Bok
 
-**A mobile-first 4X voxel survival game.**
+**A mobile-first 4X voxel survival game rooted in Swedish folklore and craft.**
 
+> *En värld minns de som formar den.*
 > *A world remembers those who shape it.*
 
-"Bok" means *book* in Swedish. The world is a living text — every block placed is a word, every structure a sentence, every settlement a chapter. You awaken on stone with no memory. The land stretches endlessly, carved by forces older than memory. What you build here will echo.
+**Bok** carries three meanings in Swedish: *book*, *beech tree*, and — through Proto-Germanic roots — the act of carving runes into bark. The world is a living saga carved in wood and stone. You awaken in a land that feels like Scandinavia dreaming of itself — birch forests, rocky archipelagos, mountain lakes, and the long dark of midwinter. What you build here becomes part of the story.
 
 ## Play
 
@@ -50,23 +51,26 @@ src/
 
 ## The Four Pillars
 
-Bok is a 4X game disguised as a voxel sandbox:
+Bok is a 4X game disguised as a Scandinavian voxel sandbox:
 
-- **eXplore** — Procedural biomes, Remnant ruins, creature observation, lore fragments
-- **eXpand** — Settlement building, territory effects, workstations, light perimeters
-- **eXploit** — Resource chains, creature harvesting, mining depth, crafting tiers
-- **eXterminate** — Night threats, territorial creatures, boss events, light as weapon
+- **eXplore** — Six Swedish biomes from meadow to mountain, Fornlämningar (ancient ruins), runestone lore
+- **eXpand** — Build your stuga (cottage), attract wildlife, defend with light and rune wards
+- **eXploit** — Resource chains rooted in Swedish craft (slöjd), creature harvesting, deep mining
+- **eXterminate** — Survive the long dark with light as your weapon, face the Jätten to prove your saga
 
-## Creatures
+## Creatures from Swedish Folklore
 
-Creatures are not boxes. They are articulated multi-part beings with procedural animation:
+Creatures are building-block constructions inspired by Scandinavian tradition:
 
-- **Inklings** — Shadow pack hunters, light-averse, dissolve in sunlight
-- **Thornbacks** — Armored grazers, curl into defensive balls
-- **Pagewyrms** — Tunneling serpents that reshape terrain
-- **Glyphwardens** — Ruin sentinels that protect the world's history
-- **Hollowfolk** — Spectral watchers that advance only when unobserved
-- **The Colophon** — A boss assembled from the world itself
+- **Mörker** — The winter darkness given form. Shadow packs that hunt at night, flee from light.
+- **Lyktgubbar** — Will-o'-the-wisps that guide (or mislead) through twilight marshes.
+- **Skogssniglar** — Armored forest snails with segmented shells. Peaceful grazers.
+- **Lindormar** — Wyrms from runestone carvings, tunneling through the earth.
+- **Runväktare** — Stone sentinels guarding the old saga's ruins.
+- **Draugar** — The restless dead. They advance only when you look away.
+- **Vittra** — Underground folk who punish greed and reward offerings.
+- **Näcken** — The water spirit. Dangerous to approach, but teaches runes to the respectful.
+- **Jätten** — The giant that shaped the land. Your endgame reckoning.
 
 See [docs/world/creatures.md](docs/world/creatures.md) for the full bestiary.
 

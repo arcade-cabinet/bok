@@ -1,6 +1,6 @@
 # Agent Instructions for Bok
 
-> Bok is a mobile-first 4X voxel survival game. "Bok" means "book" — the world is a living text the player writes into. Read the docs before changing the code.
+> Bok is a mobile-first 4X voxel survival game rooted in Swedish folklore and craft. "Bok" = book, beech tree, and rune-carving — the world is a living saga. Building-block aesthetic, Scandinavian landscape, creatures from Nordic tradition. Read the docs before changing the code.
 
 ## Required Reading
 
@@ -29,14 +29,14 @@ Every feature starts with "how does this work on a phone?" Touch is primary inpu
 ### 2. Diegetic Over Non-Diegetic
 Prefer world-based feedback over floating UI. Damage is felt through screen effects, not read from numbers. Time is shown by the sky, not a clock. See [diegetic-ui.md](docs/design/diegetic-ui.md).
 
-### 3. The World is a Book
-Everything connects to the core metaphor. Creatures are fragments of a broken text. Building is writing. Mining is editing. The player's inventory is a physical book called the Bok. See [lore.md](docs/world/lore.md).
+### 3. The World is a Swedish Saga
+Everything connects to the core metaphor. "Bok" = book = beech tree = rune-carved bark. Creatures are from Swedish folklore (Mörker, Vittra, Lindormar, Draugar). Biomes are Swedish landscapes (Ängen, Bokskogen, Fjällen, Skärgården). Building is rune-carving. The player's inventory is a physical birch-bark book called the Bok. Swedish concepts (allemansrätten, lagom, fika, slöjd) inform gameplay design. See [lore.md](docs/world/lore.md).
 
 ### 4. 4X Underpinning
 Every feature should serve at least one pillar: eXplore, eXpand, eXploit, eXterminate. If a feature doesn't serve a pillar, question whether it belongs. See [4x-pillars.md](docs/gameplay/4x-pillars.md).
 
-### 5. Creatures Are Not Boxes
-Enemies and creatures are articulated multi-part beings built from composed primitives with procedural animation. Never add a new creature as a single box mesh. See [creatures.md](docs/world/creatures.md).
+### 5. Creatures Are Building Blocks, Not Boxes
+Creatures are assembled from geometric primitives like Scandinavian wooden toys — articulated, multi-part, procedurally animated. They draw from Swedish folklore (Mörker, Vittra, Lindormar, etc.), not generic fantasy. Never add a creature as a single box mesh. See [creatures.md](docs/world/creatures.md).
 
 ## Architecture Rules
 
