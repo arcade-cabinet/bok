@@ -130,8 +130,12 @@ export function generateSpawnShrine(vr: VoxelRenderer, layerName: string, surfac
 export function findSurfaceY(vr: VoxelRenderer, x: number, z: number): number {
 	for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
 		const entry = vr.getVoxel({ x, y, z });
-		if (entry && entry.blockId !== BlockId.Air) {
+		if (entry && entry.blockId !== BlockId.Air && entry.blockId !== BlockId.Water) {
 			return y;
+		}
+	}
+	return WATER_LEVEL;
+}
 		}
 	}
 	return WATER_LEVEL;
