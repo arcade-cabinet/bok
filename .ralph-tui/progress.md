@@ -48,6 +48,9 @@ Key patterns:
 - **Fast-path blending**: Check 4 cardinal neighbors at blend radius first — skip expensive blend computation for interior positions (the common case).
 - **Deterministic blend selection**: `posHash(gx, gz)` provides a stable [0,1) hash for weighted biome block selection, keeping chunk generation deterministic from seed.
 
+### Tree Generator Decomposition
+Species-specific tree placement lives in `tree-generator.ts`, separate from `terrain-generator.ts`. The `placeTree()` function dispatches by `TreeTypeId` via switch/case (using break, not return, due to Biome's `noVoidTypeReturn` rule). Each species function receives the entries array and pushes blocks directly. Terrain generator imports `placeTree` and calls it with the species resolved from `getBiomeTrees()` or `blendTreeType()`.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -146,5 +149,25 @@ Key patterns:
   - Recipe costs as `Record<number, number>` with computed property keys (`{ [BlockId.Wood]: 1 }`) preserve type safety while making the inventory key consistent across the entire chain
   - JSON.parse always produces string keys even for numeric Record keys — the deserializer must `Number(k)` when rebuilding `Record<number, number>`
   - Removing name-based mapping tables (PLACEABLE_BLOCKS, craftableKeys, getInventoryKeyForBlock) eliminates an entire class of bugs where adding a new block requires updating multiple mapping tables
+---
+
+## 2026-03-16 - US-006
+- Ängen, Bokskogen, and Fjällen biomes fully differentiated with species-specific terrain generation
+- New file `src/world/tree-generator.ts` (114 LOC): species-specific tree placement — Birch (BirchWood, 5×5 canopy), Beech (BeechWood, 2×2 thick trunk, 7×7 canopy), Pine (PineWood, triangular canopy), Spruce (SpruceLeaves, narrow 3×3), DeadBirch (DeadWood, no leaves)
+- New file `src/world/tree-generator.test.ts` (124 LOC): 13 tests covering species block types, tree shapes, canopy dimensions
+- Updated `src/world/biomes.ts` (142 LOC): Bokskogen surface rule changed to Moss (moss floor), added `TREE_LINE` (18) and `ICE_LINE` (22) elevation thresholds
+- Updated `src/world/terrain-generator.ts` (207 LOC): extracted old placeTree → tree-generator.ts, added Fjällen ice surface above ICE_LINE, Fjällen tree line cutoff (no trees ≥ TREE_LINE), Bokskogen mushroom scatter (hash > 0.92), Ängen wildflower accents (hash > 0.94), biome-specific tree density via `treeSpawnRate()` (Bokskogen 7%, Ängen 3%, Fjällen/Myren/Skärgården 2%)
+- Added Wildflower block (BlockId 32) to blocks.ts, block-definitions.ts (poleY shape), tileset-tiles.ts (colorful flower drawing)
+- Extended biomes.test.ts with 7 new tests: per-biome surface block selection (Ängen=Grass, Bokskogen=Moss, Fjällen=Snow/Stone), elevation thresholds (TREE_LINE < ICE_LINE > WATER_LEVEL), tree spawn rate ordering (Bokskogen densest, all positive)
+- All 125 vitest tests pass, typecheck clean, lint clean (only pre-existing index.css parse error)
+- CT test failures are all pre-existing 30s timeouts on mount (environment-specific, unrelated to world/ changes)
+- Files created: src/world/tree-generator.ts, src/world/tree-generator.test.ts
+- Files modified: src/world/biomes.ts, src/world/terrain-generator.ts, src/world/blocks.ts, src/world/block-definitions.ts, src/world/tileset-tiles.ts, src/world/biomes.test.ts
+- **Learnings:**
+  - Biome's `noVoidTypeReturn` rule disallows `return voidFn()` in void functions — must use statement + break in switch/case dispatchers instead of `return` shorthand
+  - Extracting tree placement to its own module keeps terrain-generator focused on column/chunk logic while tree shapes can grow independently
+  - Species-specific tree density (treeSpawnRate) is a simple switch returning a probability — no need for data tables since it's biome-keyed and unlikely to grow
+  - posHash-based ground feature scatter (mushrooms, wildflowers) achieves deterministic decoration without extra noise layers — threshold on the same hash used for trees but at different probability ranges (> 0.92 vs < 0.07)
+  - Elevation thresholds (TREE_LINE, ICE_LINE) exported from biomes.ts keeps terrain-generator from hardcoding magic numbers and makes the values testable
 ---
 

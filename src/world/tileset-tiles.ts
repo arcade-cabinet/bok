@@ -339,4 +339,18 @@ export const tiles: TileDef[] = [
 			ctx.stroke();
 		},
 	},
+	{
+		col: 6,
+		row: 4,
+		baseColor: "#4CAF50",
+		draw: (ctx, s, rng) => {
+			ctx.fillStyle = "#3a7a3a";
+			ctx.fillRect(s * 0.45, s * 0.4, s * 0.1, s * 0.6);
+			const colors = ["#d4a0d4", "#e8c840", "#e06040", "#80a0e0"];
+			for (let i = 0; i < 5; i++) {
+				ctx.fillStyle = colors[Math.floor(rng() * colors.length)];
+				ctx.fillRect(s * 0.25 + rng() * s * 0.5, s * 0.15 + rng() * s * 0.35, 4, 4);
+			}
+		},
+	},
 ];

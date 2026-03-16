@@ -57,7 +57,7 @@ export interface SurfaceRule {
 
 export const BIOME_SURFACE_RULES: Record<BiomeId, SurfaceRule> = {
 	[Biome.Angen]: { surface: BlockId.Grass, subsurface: BlockId.Dirt, depth: 4, waterBlock: BlockId.Water },
-	[Biome.Bokskogen]: { surface: BlockId.Grass, subsurface: BlockId.Dirt, depth: 5, waterBlock: BlockId.Water },
+	[Biome.Bokskogen]: { surface: BlockId.Moss, subsurface: BlockId.Dirt, depth: 5, waterBlock: BlockId.Water },
 	[Biome.Fjallen]: { surface: BlockId.Snow, subsurface: BlockId.Stone, depth: 2, waterBlock: BlockId.Water },
 	[Biome.Skargarden]: { surface: BlockId.Stone, subsurface: BlockId.Stone, depth: 3, waterBlock: BlockId.Water },
 	[Biome.Myren]: { surface: BlockId.Grass, subsurface: BlockId.Dirt, depth: 3, waterBlock: BlockId.Water },
@@ -95,6 +95,14 @@ export function getBiomeTrees(biome: BiomeId): TreeTypeId[] {
 			return [TreeType.Pine];
 	}
 }
+
+// ─── Elevation Thresholds ───
+
+/** Above this height, Fjällen biome suppresses tree generation. */
+export const TREE_LINE = 18;
+
+/** Above this height, Fjällen uses Ice instead of Snow on the surface. */
+export const ICE_LINE = 22;
 
 // ─── Boundary Blending ───
 

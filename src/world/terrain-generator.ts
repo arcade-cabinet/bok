@@ -10,18 +10,20 @@
  */
 
 import type { VoxelRenderer, VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
-import type { BiomeId, BiomeWeight, SurfaceRule, TreeTypeId } from "./biomes.ts";
+import type { BiomeId, BiomeWeight, SurfaceRule } from "./biomes.ts";
 import {
 	BIOME_SURFACE_RULES,
 	Biome,
 	blendSurfaceBlock,
 	blendTreeType,
 	getBiomeTrees,
+	ICE_LINE,
 	selectBiome,
-	TreeType,
+	TREE_LINE,
 } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
 import { noise2D } from "./noise.ts";
+import { placeTree } from "./tree-generator.ts";
 
 const CHUNK_SIZE = 16;
 const WORLD_HEIGHT = 32;
@@ -104,22 +106,22 @@ function blendWeights(gx: number, gz: number, center: BiomeId): BiomeWeight[] | 
 	return weights;
 }
 
-// ─── Tree Placement ───
+// ─── Tree Spawn Rates ───
 
-function placeTree(entries: VoxelSetOptions[], gx: number, h: number, gz: number, tree: TreeTypeId): void {
-	const trunk = tree === TreeType.DeadBirch ? 5 : 4;
-	for (let ty = 1; ty <= trunk; ty++) {
-		entries.push({ position: { x: gx, y: h + ty, z: gz }, blockId: BlockId.Wood });
-	}
-	if (tree === TreeType.DeadBirch) return;
-	for (let tlx = -2; tlx <= 2; tlx++) {
-		for (let tlz = -2; tlz <= 2; tlz++) {
-			for (let ly = 3; ly <= 5; ly++) {
-				if (Math.abs(tlx) === 2 && Math.abs(tlz) === 2 && ly === 5) continue;
-				if (tlx === 0 && tlz === 0 && ly <= 4) continue;
-				entries.push({ position: { x: gx + tlx, y: h + ly, z: gz + tlz }, blockId: BlockId.Leaves });
-			}
-		}
+/** Biome-specific tree density. Bokskogen is dense forest; Myren/Skärgården are sparse. */
+export function treeSpawnRate(biome: BiomeId): number {
+	switch (biome) {
+		case Biome.Bokskogen:
+			return 0.07;
+		case Biome.Angen:
+			return 0.03;
+		case Biome.Fjallen:
+			return 0.02;
+		case Biome.Myren:
+		case Biome.Skargarden:
+			return 0.02;
+		default:
+			return 0.04;
 	}
 }
 
@@ -140,18 +142,31 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 			const weights = blendWeights(gx, gz, biome);
 			const rule: SurfaceRule = weights ? blendSurfaceBlock(weights, hash) : BIOME_SURFACE_RULES[biome];
 
+			// Fjällen: ice surface above ICE_LINE
+			const surface = biome === Biome.Fjallen && h >= ICE_LINE ? BlockId.Ice : rule.surface;
+
 			for (let y = 0; y < WORLD_HEIGHT; y++) {
 				let blockId = 0;
-				if (y === h) blockId = rule.surface;
+				if (y === h) blockId = surface;
 				else if (y < h && y > h - rule.depth) blockId = rule.subsurface;
 				else if (y <= h - rule.depth) blockId = BlockId.Stone;
 				else if (y > h && y <= WATER_LEVEL && rule.waterBlock) blockId = rule.waterBlock;
 				if (blockId !== 0) entries.push({ position: { x: gx, y, z: gz }, blockId });
 			}
 
-			// Trees — biome-specific spawn rate and type
+			// Biome ground features (placed above surface)
+			if (h > WATER_LEVEL) {
+				if (biome === Biome.Bokskogen && hash > 0.92) {
+					entries.push({ position: { x: gx, y: h + 1, z: gz }, blockId: BlockId.Mushroom });
+				} else if (biome === Biome.Angen && hash > 0.94) {
+					entries.push({ position: { x: gx, y: h + 1, z: gz }, blockId: BlockId.Wildflower });
+				}
+			}
+
+			// Trees — biome-specific spawn rate, tree line cutoff for Fjällen
 			if (h > WATER_LEVEL + 1 && lx >= 2 && lx <= 13 && lz >= 2 && lz <= 13) {
-				const rate = biome === Biome.Myren || biome === Biome.Skargarden ? 0.02 : 0.04;
+				if (biome === Biome.Fjallen && h >= TREE_LINE) continue;
+				const rate = treeSpawnRate(biome);
 				if (hash < rate) {
 					const tree = weights ? blendTreeType(weights, hash / rate) : getBiomeTrees(biome)[0];
 					placeTree(entries, gx, h, gz, tree);

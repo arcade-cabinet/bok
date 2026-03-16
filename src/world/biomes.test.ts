@@ -6,11 +6,14 @@ import {
 	blendSurfaceBlock,
 	blendTreeType,
 	getBiomeTrees,
+	ICE_LINE,
 	selectBiome,
+	TREE_LINE,
 	TreeType,
 } from "./biomes.ts";
+import { BlockId } from "./blocks.ts";
 import { initNoise, noise2D } from "./noise.ts";
-import { computeHeight, type NoiseLayers, sampleNoiseLayers } from "./terrain-generator.ts";
+import { computeHeight, type NoiseLayers, sampleNoiseLayers, treeSpawnRate } from "./terrain-generator.ts";
 
 // ─── Biome Selection ───
 
@@ -98,6 +101,52 @@ describe("BIOME_SURFACE_RULES", () => {
 	it("other biomes have water", () => {
 		for (const biome of [Biome.Angen, Biome.Bokskogen, Biome.Fjallen, Biome.Skargarden, Biome.Myren]) {
 			expect(BIOME_SURFACE_RULES[biome].waterBlock).toBeGreaterThan(0);
+		}
+	});
+
+	it("Ängen surface is Grass", () => {
+		expect(BIOME_SURFACE_RULES[Biome.Angen].surface).toBe(BlockId.Grass);
+	});
+
+	it("Bokskogen surface is Moss (moss floor)", () => {
+		expect(BIOME_SURFACE_RULES[Biome.Bokskogen].surface).toBe(BlockId.Moss);
+	});
+
+	it("Fjällen surface is Snow with Stone subsurface", () => {
+		const rule = BIOME_SURFACE_RULES[Biome.Fjallen];
+		expect(rule.surface).toBe(BlockId.Snow);
+		expect(rule.subsurface).toBe(BlockId.Stone);
+	});
+});
+
+// ─── Elevation Thresholds ───
+
+describe("elevation thresholds", () => {
+	it("TREE_LINE is below ICE_LINE", () => {
+		expect(TREE_LINE).toBeLessThan(ICE_LINE);
+	});
+
+	it("TREE_LINE is above WATER_LEVEL", () => {
+		expect(TREE_LINE).toBeGreaterThan(10);
+	});
+});
+
+// ─── Tree Spawn Rates ───
+
+describe("treeSpawnRate", () => {
+	it("Bokskogen has highest tree density", () => {
+		const rates = Object.values(Biome).map((b) => treeSpawnRate(b));
+		expect(treeSpawnRate(Biome.Bokskogen)).toBe(Math.max(...rates));
+	});
+
+	it("Myren and Skärgården are sparse", () => {
+		expect(treeSpawnRate(Biome.Myren)).toBeLessThanOrEqual(0.02);
+		expect(treeSpawnRate(Biome.Skargarden)).toBeLessThanOrEqual(0.02);
+	});
+
+	it("all biomes have positive spawn rate", () => {
+		for (const biome of Object.values(Biome)) {
+			expect(treeSpawnRate(biome)).toBeGreaterThan(0);
 		}
 	});
 });

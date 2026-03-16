@@ -7,7 +7,7 @@
  * Row 1: Water, Torch, Sand, SnowTop, SnowSide, StoneBricks, Glass, BirchWoodSide
  * Row 2: BirchWoodTop, BirchLeaves, BeechWoodSide, BeechWoodTop, BeechLeaves, PineWoodSide, PineWoodTop, PineLeaves
  * Row 3: SpruceLeaves, DeadWoodSide, DeadWoodTop, Moss, Mushroom, Peat, Ice, SmoothStone
- * Row 4: Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed
+ * Row 4: Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed, Wildflower
  */
 
 import { type BlockDefinition, Face } from "@jolly-pixel/voxel.renderer";
@@ -126,5 +126,13 @@ export function createBlockDefinitions(): BlockDefinition[] {
 		simpleCube(BlockId.CopperOre, "Copper Ore", 3, 4),
 		simpleCube(BlockId.Crystal, "Crystal", 4, 4),
 		simpleCube(BlockId.FaluRed, "Falu Red", 5, 4),
+		{
+			id: BlockId.Wildflower,
+			name: "Wildflower",
+			shapeId: "poleY",
+			collidable: false,
+			faceTextures: {},
+			defaultTexture: tile(6, 4),
+		},
 	];
 }

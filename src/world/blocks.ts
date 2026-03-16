@@ -36,6 +36,7 @@ export const BlockId = {
 	CopperOre: 29,
 	Crystal: 30,
 	FaluRed: 31,
+	Wildflower: 32,
 } as const;
 
 export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
@@ -95,6 +96,7 @@ export const BLOCKS: Record<number, BlockMeta> = {
 		hardness: 3.0,
 	},
 	[BlockId.FaluRed]: { name: "Falu Red", color: "#8b2500", solid: true, hardness: 2.0 },
+	[BlockId.Wildflower]: { name: "Wildflower", color: "#d4a0d4", solid: false, hardness: 0.1 },
 };
 
 export function getBlockHardness(blockId: number): number {
