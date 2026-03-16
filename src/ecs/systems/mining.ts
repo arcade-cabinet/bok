@@ -81,7 +81,7 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 				}
 
 				// Add to inventory + quest tracking (only if block is known)
-				if (blockDef && blockDef.name) {
+				if (blockDef?.name) {
 					addToInventory(inv as unknown as Record<string, number>, blockDef.name);
 					const bName = blockDef.name.toLowerCase();
 					if (quest.step === 0 && bName === "wood") quest.progress++;

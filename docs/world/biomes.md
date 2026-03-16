@@ -93,7 +93,7 @@ Terrain tainted by the saga's unraveling — dark-tinted blocks, inverted day/ni
 
 ## Terrain Generation Architecture
 
-```
+```text
 Seed → Simplex Noise → Height Map → Temperature/Moisture → Biome Selection → Block Placement → Feature Generation
 ```
 
@@ -112,7 +112,7 @@ Each chunk (16x16x32) is generated independently. The noise function is determin
 
 ### Biome Selection
 
-```
+```text
                     Dry                          Wet
            ┌─────────────────────┬─────────────────────┐
     Cold   │     Fjällen         │     Fjällen          │

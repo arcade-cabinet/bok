@@ -39,21 +39,21 @@ A diegetic interface is one that exists **within the game world**. The player ch
 
 ### Quest Progress
 - **Current**: Text in top-right HUD (non-diegetic)
-- **Target**: **The Bok's Chronicle page** (diegetic). Quest info is written in the player's book. Environmental hints replace objective markers: "gather wood" is communicated by the spawn shrine being made of stone (contrast implies need for wood). Lore inscriptions hint at next steps.
+- **Target**: **The Bok's Sagan page** (diegetic). Quest info is written in the player's book. Environmental hints replace objective markers: "gather wood" is communicated by the spawn shrine being made of stone (contrast implies need for wood). Lore inscriptions hint at next steps.
 
 ### Inventory
 - **Current**: Grid overlay in crafting menu (non-diegetic)
-- **Target**: **The Bok's Ledger page** (diegetic). Opening the Bok shows a hand-drawn inventory on parchment. Items are ink illustrations. Counts are tally marks. The Bok is a physical object the player holds up.
+- **Target**: **The Bok's Listan page** (diegetic). Opening the Bok shows a hand-drawn inventory on parchment. Items are ink illustrations. Counts are tally marks. The Bok is a physical object the player holds up.
 
 ### Enemy Awareness
 - **Current**: Enemies visible in 3D world, no indicators
-- **Target**: **Environmental tells** (spatial/diegetic). Inklings dim nearby light (spatial). Pagewyrms cause ground tremors (camera shake + audio). Hollowfolk dim ambient sound. The player detects enemies through the world's behavior, not through UI markers.
+- **Target**: **Environmental tells** (spatial/diegetic). Mörker dim nearby light (spatial). Lindormar cause ground tremors (camera shake + audio). Draugar dim ambient sound. The player detects enemies through the world's behavior, not through UI markers.
 
 ## The Bok (The Book)
 
 The central UI element is the **Bok** itself — a physical book the player carries. Opening it is a full-screen experience with tabbed pages:
 
-### Atlas (Map)
+### Kartan (Map)
 - Parchment background with ink-drawn terrain
 - Only shows explored areas (fog of war = blank parchment)
 - Landmarks drawn as small illustrations (not icons)
@@ -61,23 +61,23 @@ The central UI element is the **Bok** itself — a physical book the player carr
 - No grid, no coordinates — just the drawn landscape
 - Pinch to zoom on mobile
 
-### Ledger (Inventory)
+### Listan (Inventory)
 - Items as ink illustrations on parchment
 - Quantities as tally marks (||||| = 5)
 - Drag to hotbar from here
 - Organized by material type, not grid position
 
-### Codex (Knowledge)
+### Kunskapen (Knowledge)
 - Creature entries: hand-drawn illustration, behavior notes, weaknesses
 - Starts blank, fills in through observation and combat
 - Recipe entries: ingredient diagrams, discoverable
-- Lore entries: transcribed inscriptions from Remnants
+- Lore entries: transcribed inscriptions from Fornlämningar
 
-### Chronicle (Journal)
+### Sagan (Journal)
 - Auto-written narrative of player actions
-- "Day 3 — Found the northern ruin. The Glyphwarden stirred."
+- "Day 3 — Found the northern ruin. The Runväktare stirred."
 - Quest hints woven into narrative prose
-- Reading the Chronicle IS reading the quest log
+- Reading the Sagan IS reading the quest log
 
 ## Transition Plan
 

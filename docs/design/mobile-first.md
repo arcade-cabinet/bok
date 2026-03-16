@@ -87,7 +87,7 @@ All status information uses **visual metaphors, not numbers**:
 
 ## Performance Budget
 
-### Target: 30fps on mid-range phones (2022 hardware)
+### Target: 60fps on mid-range phones (2022 hardware)
 
 | System | Budget |
 |--------|--------|
@@ -105,10 +105,16 @@ Detect device capability on startup and adjust:
 - **Medium**: Simple shadows, 2 chunks, 200 particles, reduced ambient
 - **High**: Full shadows, 3 chunks, 500 particles, full ambient (desktop default)
 
-### Battery Awareness
-- Reduce frame rate to 24fps when battery < 20%
+### Battery Awareness (Capacitor Native Only)
+Battery-aware throttling requires the native Battery Status API, available only through Capacitor native builds:
+- Reduce frame rate to 30fps when battery < 20%
 - Disable ambient particles when battery < 15%
 - Auto-save and suggest break when battery < 10%
+
+On web (GitHub Pages), battery status is unavailable. Fall back to:
+- Respect `document.visibilityState` — pause rendering when backgrounded
+- Offer a "power saver" toggle in settings (reduces to 30fps, disables ambient particles)
+- Use reduced defaults on mobile user agents detected via `navigator.userAgent`
 
 ## Offline-First Architecture
 

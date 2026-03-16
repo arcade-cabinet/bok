@@ -29,6 +29,7 @@ The aesthetic is **handcrafted wooden toy meets living creature**. Think Scandin
 ## Tier 1 — Ambient Life (Passive)
 
 ### Lyktgubbe (Will-o'-the-Wisps)
+
 *From Swedish folklore: the lantern-carriers, lights that lead travelers astray in marshes.*
 
 Small floating orbs of warm light that drift near the ground at skymning (twilight) and morgon (dawn). They scatter when approached, reform when left alone. In Swedish tradition, they mark the graves of unbaptized children or lost treasures. In Bok, they mark places where the old saga is close to the surface.
@@ -39,6 +40,7 @@ Small floating orbs of warm light that drift near the ground at skymning (twilig
 - **Purpose**: Atmosphere, navigation hints, light source near landmarks
 
 ### Skogssnigel (Forest Snails)
+
 *Inspired by the quiet, slow-paced life of Swedish forest floors.*
 
 Chunky, low creatures with a segmented shell of angular plates — like a stack of wooden blocks on a rounded base. They graze on grass blocks, slowly converting them to mycel (mushroom blocks) over time. Harmless unless cornered — when threatened, they retract into their shell and become an immovable block. Shell fragments are a crafting material.
@@ -50,6 +52,7 @@ Chunky, low creatures with a segmented shell of angular plates — like a stack 
 - **Drops**: Shell Plates (crafting material for armor)
 
 ### Tranor (Cranes)
+
 *Sweden's iconic cranes — they gather at Lake Hornborga every spring in one of Europe's great wildlife spectacles.*
 
 Tall, elegant wading birds found near water. Long neck (chain of block-like segments), angular folding wings. They fish in shallow water and flee on approach. Travel in flocks of 3-5, honking in formation.
@@ -66,6 +69,7 @@ Tall, elegant wading birds found near water. Long neck (chain of block-like segm
 ## Tier 2 — Territorial (Neutral-Hostile)
 
 ### Vittra (Underground Folk)
+
 *From Swedish folklore: the invisible people who live in mounds and underground. Disturb their home and they bring sickness and misfortune.*
 
 Small, hunched humanoid figures that live in underground warrens near Fornlämningar (ruins). They are invisible until the player breaks blocks near their home — then they shimmer into visibility, angry. They don't deal direct damage but inflict **otur** (bad luck) — increased hunger decay, reduced tool durability, creatures aggro from further away. Leaving offerings (food items placed near their mound) appeases them.
@@ -76,6 +80,7 @@ Small, hunched humanoid figures that live in underground warrens near Fornlämni
 - **Mechanic**: Anti-greed mechanic. Punishes mindless strip-mining near ruins. Rewards respectful play (lagom).
 
 ### Näcken (The Water Spirit)
+
 *From Swedish folklore: the beautiful, dangerous fiddler who sits on rocks in streams and plays music that lures people into the water.*
 
 A humanoid figure that sits on rocks near deep water, playing an instrument. Approaching it directly is dangerous — the music debuff disorients (camera sway, reversed controls for 3 seconds). But if the player throws a piece of iron into the water (an offering from the real folklore), Näcken teaches a rune — unlocking a recipe or lore entry.
@@ -87,6 +92,7 @@ A humanoid figure that sits on rocks near deep water, playing an instrument. App
 - **Purpose**: Exploration reward, lore delivery, teaches respect for water
 
 ### Runväktare (Rune Wardens)
+
 *The guardians of the old saga. Standing stones that remember what they protect.*
 
 Tall, monolithic sentinel figures found near Runsten (runestones) and Fornlämningar (ruins). They stand motionless like the standing stones that dot the Swedish countryside. Their surfaces are inscribed with runes that glow faintly. If the player takes blocks from their ruin, they activate — slow but devastating. They are the world protecting its own history.
@@ -103,6 +109,7 @@ Tall, monolithic sentinel figures found near Runsten (runestones) and Fornlämni
 ## Tier 3 — Predators (Hostile)
 
 ### Mörker (The Darkness)
+
 *Not a specific folklore creature but the universal Scandinavian experience: the deep, pressing darkness of winter nights that feels alive.*
 
 The primary night threat. Not individual creatures but a **collective presence** — small, fast shadow-forms that spawn in groups of 3-5 and hunt in coordinated packs. In torchlight they shrink and burn. In darkness they swell and strengthen. They are the long Swedish winter night given form.
@@ -114,6 +121,7 @@ The primary night threat. Not individual creatures but a **collective presence**
 - **Weakness**: Light. Torches, lanterns, fire. The deeper mechanic: mörker are the absence of story. Light — knowledge, craft, warmth — defeats them.
 
 ### Lindorm (Wyrm)
+
 *From Swedish folklore: the serpent-dragon of Scandinavian legend, depicted on runestones coiled around the edges of the carved text.*
 
 Large serpentine creatures that tunnel through soft terrain (dirt, sand, grass — not stone). They breach the surface near the player, arcing overhead before diving back in. They destroy blocks as they tunnel, reshaping the landscape — literally **unwriting** what was written.
@@ -125,6 +133,7 @@ Large serpentine creatures that tunnel through soft terrain (dirt, sand, grass �
 - **Drops**: Lindorm Scales (armor crafting), Lindorm Fang (weapon crafting)
 
 ### Draugar (The Restless Dead)
+
 *From Norse mythology: the undead who guard their burial mounds, possessing superhuman strength.*
 
 Night-only spectral humanoids that emerge from burial mounds. They don't chase — they stand at the edge of torchlight and watch. If the player turns away, they advance. If looked at, they freeze. When you face them, they are just standing stones. When you look away, they move.
@@ -139,6 +148,7 @@ Night-only spectral humanoids that emerge from burial mounds. They don't chase �
 ## Tier 4 — Legendary / World Events
 
 ### Jätten (The Giant)
+
 *From Swedish folklore: the giants who shaped the landscape, throwing boulders that became islands, carving valleys with their footsteps.*
 
 A massive creature that appears when the player has carved extensively into the world (inscription level 1000+). It is the world's response to being overwritten — a giant assembled from the terrain itself. It tears up the ground to rebuild its body when damaged. Defeating it doesn't destroy it — it yields the **Runsten Seal**, accepting the player as a saga-worthy builder.
@@ -150,6 +160,7 @@ A massive creature that appears when the player has carved extensively into the 
 - **Lore**: The jättar were the original builders. Your saga must prove worthy of their land.
 
 ### Norrsken (The Northern Lights)
+
 *Not a creature but a world event — the aurora borealis as a living phenomenon.*
 
 When norrsken appear in the night sky, the world changes:

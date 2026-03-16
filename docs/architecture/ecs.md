@@ -4,7 +4,7 @@
 
 Bok uses **Koota** for entity-component-system (ECS) state management. All gameplay state lives in the Koota world — the rendering layer (Jolly Pixel / Three.js) reads from it but never owns game state.
 
-```
+```text
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │  ECS World   │────>│  Game Bridge │────>│  Three.js    │
 │  (Koota)     │     │  (Behavior)  │     │  (Rendering) │
@@ -53,7 +53,7 @@ Traits are defined in `src/ecs/traits/index.ts`. Every trait is created with `tr
 Systems are pure functions: `(world: World, dt: number, ...sideEffects) => void`. They run every frame in the GameBridge.
 
 ### Execution Order
-```
+```text
 1. movementSystem    — Process input → velocity
 2. physicsSystem     — Apply gravity, collision, swimming
 3. survivalSystem    — Hunger decay, stamina regen, damage flash decay, shake decay

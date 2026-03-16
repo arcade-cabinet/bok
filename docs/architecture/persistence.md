@@ -4,7 +4,7 @@
 
 Bok uses **@capacitor-community/sqlite** for all persistence. On web, this wraps sql.js (SQLite compiled to WASM) with IndexedDB storage via jeep-sqlite. On native (iOS/Android), it uses the platform's native SQLite.
 
-```
+```text
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │  Game State   │────>│  db.ts       │────>│  SQLite      │
 │  (ECS)       │     │  (queries)   │     │  (storage)   │
@@ -70,7 +70,7 @@ This means:
 - Storage grows linearly with player modifications, not world size
 
 ### Delta Tracking Flow
-```
+```text
 Player places/removes block
   → setVoxelAt() in voxel-helpers.ts
     → VoxelRenderer updates visual
@@ -83,7 +83,7 @@ The delta listener is registered by `enableVoxelDeltaTracking()` in game.ts and 
 ## Save/Load Flow
 
 ### New Game
-```
+```text
 1. initGame(canvas, seed)         — Generate world, spawn ECS entities
 2. createSaveSlot(seed)           — Insert save_slots + player_state rows
 3. enableVoxelDeltaTracking()     — Wire delta listener
@@ -91,7 +91,7 @@ The delta listener is registered by `enableVoxelDeltaTracking()` in game.ts and 
 ```
 
 ### Continue Game
-```
+```text
 1. listSaveSlots()                — Find most recent save
 2. loadPlayerState(slotId)        — Read player_state row
 3. initGame(canvas, slot.seed)    — Regenerate world from seed
@@ -102,7 +102,7 @@ The delta listener is registered by `enableVoxelDeltaTracking()` in game.ts and 
 ```
 
 ### Auto-Save
-```
+```text
 setInterval(() => {
   readPlayerStateForSave()        — Read ECS state
   savePlayerState(slotId, data)   — UPDATE player_state row

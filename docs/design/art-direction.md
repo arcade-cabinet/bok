@@ -61,6 +61,7 @@ See [creatures.md](../world/creatures.md) for individual designs. General princi
 - **State-driven**: Each animation state (idle, walk, chase, attack, flee) has a procedural behavior, blended on transition
 
 ### Creature Color Assignments (Swedish Folklore)
+
 | Creature | Primary | Secondary | Emissive |
 |----------|---------|-----------|----------|
 | Lyktgubbar | — | — | Amber `#ffd700` / Blue `#88ccff` over water |

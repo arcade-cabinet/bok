@@ -7,7 +7,7 @@
 | Category | Count | Details |
 |----------|-------|---------|
 | ECS Systems | 7 | movement, physics, survival, quest, time, enemy, mining |
-| ECS Traits | 17 | Player (15), World (2), Enemy (2) |
+| ECS Traits | 19 | Player (15), World (2), Enemy (2) |
 | Behaviors | 6 | BlockHighlight, AmbientParticles, Celestial, Particles, ViewModel, EnemyRenderer |
 | Block Types | 13 | Air, Grass, Dirt, Stone, Wood, Leaves, Planks, Water, Torch, Sand, Snow, StoneBricks, Glass |
 | Items | 4 | Wood Axe, Wood Pickaxe, Stone Pickaxe, Stone Sword |
@@ -45,7 +45,8 @@ Everything documented in `docs/` but not yet in code:
 ### 0.1 — Creature Entity Framework
 Generalize the enemy system into a creature framework that supports multiple species with different behaviors.
 
-- [ ] **New trait: `CreatureType`** — species enum (Morker, Lyktgubbe, Skogssnigle, Trana, Vittra, Nacken, Runvaktare, Lindorm, Draug, Jatten, Norrsken)
+- [ ] **New trait: `CreatureType`** — species enum (Morker, Lyktgubbe, Skogssnigle, Trana, Vittra, Nacken, Runvaktare, Lindorm, Draug, Jatten)
+  - Note: Norrsken is a world event, not a creature species. It should be implemented as a `WorldEvent` system with its own rendering flow, separate from creature AI/renderer.
 - [ ] **New trait: `CreatureAI`** — aiType (passive/neutral/hostile/boss), behaviorState, targetEntity, aggroRange, attackRange, attackDamage, attackCooldown, moveSpeed, detectionRange
 - [ ] **New trait: `CreatureAnimation`** — animState (idle/walk/chase/attack/flee/burn), animTimer, variant (size/color offsets)
 - [ ] **Refactor `enemySystem` → `creatureSystem`** — dispatch AI based on CreatureType, support passive/neutral/hostile behavior trees
@@ -70,10 +71,10 @@ Replace height-only terrain with multi-noise biome selection per `docs/world/bio
 ### 0.3 — New Block Types for Biomes
 Add blocks needed by the biome system before biomes can render.
 
-- [ ] **New blocks**: BirchWood, BirchLeaves, BeechWood, BeechLeaves, PineWood, PineLeaves, SpruceLeaves, DeadWood, Moss, Mushroom, Peat, Ice, SmoothStone, Soot, CorruptedStone, IronOre, CopperOre, Crystal
+- [ ] **New blocks**: BirchWood, BirchLeaves, BeechWood, BeechLeaves, PineWood, PineLeaves, SpruceLeaves, DeadWood, Moss, Mushroom, Peat, Ice, SmoothStone, Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed
 - [ ] **New textures** in `tileset-generator.ts` for each block (expand grid to 8×4 or 8×5)
 - [ ] **Block properties**: hardness, color, transparency, special physics (ice = slippery, peat = bouncy, moss = soft)
-- [ ] **Update `Inventory` trait** to handle new resource types (switch from named fields to `Record<BlockId, number>`)
+- [ ] **Update `Inventory` trait** to handle new resource types (switch from named fields to `Record<number, number>`)
 
 **Dependencies**: 0.2 (biomes need these blocks)
 **Files**: `src/world/blocks.ts`, `src/world/tileset-generator.ts`, `src/ecs/traits/index.ts`
@@ -81,10 +82,10 @@ Add blocks needed by the biome system before biomes can render.
 ### 0.4 — Inventory Refactor
 The current Inventory trait has hardcoded fields per resource. This won't scale.
 
-- [ ] **Inventory as `Map<number, number>`** (blockId/itemId → count) instead of named fields
+- [ ] **Inventory as `Record<number, number>`** (blockId/itemId → count) instead of named fields. Use `Record` not `Map` so it serializes to JSON natively without encode/decode helpers.
 - [ ] **Update all consumers**: CraftingMenu, HotbarDisplay, miningSystem, questSystem, save/load
 - [ ] **Inventory capacity limit** (future-proofing for the Bok's Ledger page)
-- [ ] **Persist as JSON map** in `inventory_json`
+- [ ] **Persist as JSON** in `inventory_json` (Record serializes natively via `JSON.stringify`/`JSON.parse`)
 
 **Dependencies**: 0.3 (new block types need flexible inventory)
 **Files**: `src/ecs/traits/index.ts`, `src/ui/hud/HotbarDisplay.tsx`, `src/ui/components/CraftingMenu.tsx`, `src/ecs/systems/mining.ts`, `src/ecs/systems/quest.ts`, `src/persistence/db.ts`, `src/App.tsx`

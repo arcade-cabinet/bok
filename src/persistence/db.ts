@@ -162,6 +162,20 @@ export async function loadPlayerState(slotId: number): Promise<PlayerSaveData | 
 	const result = await db.query("SELECT * FROM player_state WHERE slot_id = ?", [slotId]);
 	const row = result.values?.[0];
 	if (!row) return null;
+	let hotbar: unknown[] = [];
+	try {
+		hotbar = JSON.parse(row.hotbar_json as string);
+	} catch (e) {
+		console.warn(`Corrupted hotbar_json for slot ${slotId}, using default`, e);
+	}
+
+	let inventory: Record<string, number> = {};
+	try {
+		inventory = JSON.parse(row.inventory_json as string);
+	} catch (e) {
+		console.warn(`Corrupted inventory_json for slot ${slotId}, using default`, e);
+	}
+
 	return {
 		posX: row.pos_x as number,
 		posY: row.pos_y as number,
@@ -173,8 +187,8 @@ export async function loadPlayerState(slotId: number): Promise<PlayerSaveData | 
 		questProgress: row.quest_progress as number,
 		timeOfDay: row.time_of_day as number,
 		dayCount: row.day_count as number,
-		hotbar: JSON.parse(row.hotbar_json as string),
-		inventory: JSON.parse(row.inventory_json as string),
+		hotbar,
+		inventory,
 	};
 }
 
@@ -198,6 +212,7 @@ export async function saveVoxelDelta(slotId: number, x: number, y: number, z: nu
 		 VALUES (?, ?, ?, ?, ?)`,
 		[slotId, x, y, z, blockId],
 	);
+	await persistWebStore();
 }
 
 /** Batch-save voxel deltas. Call persistWebStore() after. */

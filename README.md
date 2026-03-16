@@ -38,7 +38,7 @@ Deployed automatically to GitHub Pages on push to `main` via the CD workflow.
 | **UI** | React + Tailwind CSS | HUD overlays, menus, screens |
 | **Persistence** | @capacitor-community/sqlite | SQLite save slots, player state, voxel deltas |
 
-```
+```text
 src/
 ├── ecs/           # Traits (components) and systems (logic)
 ├── engine/        # Jolly Pixel bridge, behaviors, input

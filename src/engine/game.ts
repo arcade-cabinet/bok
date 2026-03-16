@@ -460,10 +460,11 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 			const chunkKey = getChunkKey(cx, cz);
 			const voxelKey = getVoxelKey(x, y, z);
 
-			if (!chunkData.has(chunkKey)) {
-				chunkData.set(chunkKey, new Map());
+			let deltas = chunkData.get(chunkKey);
+			if (!deltas) {
+				deltas = new Map();
+				chunkData.set(chunkKey, deltas);
 			}
-			const deltas = chunkData.get(chunkKey)!;
 
 			if (blockId === 0) {
 				deltas.set(voxelKey, 0);
@@ -485,10 +486,11 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	// Store spawn shrine blocks in authoritative chunkData manually
 	// (generateSpawnShrine uses voxelRenderer directly, not setVoxelAt)
 	const spawnChunkKey = getChunkKey(0, 0);
-	if (!chunkData.has(spawnChunkKey)) {
-		chunkData.set(spawnChunkKey, new Map());
+	let spawnDeltas = chunkData.get(spawnChunkKey);
+	if (!spawnDeltas) {
+		spawnDeltas = new Map();
+		chunkData.set(spawnChunkKey, spawnDeltas);
 	}
-	const spawnDeltas = chunkData.get(spawnChunkKey)!;
 
 	// Stone brick floor
 	for (let x = 6; x <= 10; x++) {

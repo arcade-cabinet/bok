@@ -7,13 +7,13 @@ Bok is a **4X survival game** disguised as a Scandinavian voxel sandbox. The fou
 **The world rewards curiosity.**
 
 ### Discovery Loop
-1. Player sees something unfamiliar on the horizon (Remnant tower, biome boundary, creature behavior)
+1. Player sees something unfamiliar on the horizon (Fornlämning tower, biome boundary, creature behavior)
 2. Player travels to investigate (risk: distance from base, resource consumption)
 3. Player discovers something valuable (lore fragment, rare resource, crafting knowledge, creature observation)
 4. Discovery is recorded in the Bok (the player's book/journal) and persists
 
 ### Mechanics
-- **Fog of War**: The Bok's Atlas page starts blank. Explored terrain is remembered. Unexplored terrain is parchment-colored void.
+- **Fog of War**: The Bok's Kartan page starts blank. Explored terrain is remembered. Unexplored terrain is parchment-colored void.
 - **Fornlämningar** (Ancient remains): Procedurally generated ruins containing rune inscriptions, rare blocks, Vittra warrens, and ancient crafting stations. Each major ruin has a Runväktare that must be dealt with — or respected.
 - **Creature Observation**: Watching creatures without disturbing them fills in their Kunskapen (knowledge) entry. Entries reveal weaknesses, drop tables, behavioral patterns. Observing Näcken at a distance teaches runes.
 - **Biome Transitions**: Each biome maps to a real Swedish landscape (Ängen, Bokskogen, Fjällen, Skärgården, Myren). Unique resources, creatures, and hazards per biome.
@@ -50,19 +50,19 @@ Building in a voxel game on mobile requires careful UX. Block placement should h
 ### Resource Loop
 1. Surface resources are common but low-tier (wood, stone, dirt, sand)
 2. Crafting transforms resources into higher-tier materials (planks, glass, bricks)
-3. Rare resources require exploration (cave ores, Remnant materials, creature drops)
+3. Rare resources require exploration (cave ores, Fornlämning materials, creature drops)
 4. Advanced crafting chains produce powerful items (multi-step recipes)
-5. The best resources require territorial control (defended mine, cleared Remnant)
+5. The best resources require territorial control (defended mine, cleared Fornlämning)
 
 ### Mechanics
 - **Resource Chains**: Wood → Planks → Treated Planks → Composite. Stone → Bricks → Reinforced Bricks → Foundation. Each tier unlocks new structures and tools.
 - **Creature Harvesting**: Skogssnigel shell plates, Trana feathers, Lindorm scales, Mörker essence, Runsten fragments. Each drops from specific creature interactions (not just killing — lagom applies to harvesting too).
-- **Farming**: Plant saplings (wood drops), grow crops (food alternatives to hunger decay), cultivate Dustmote gardens (light sources).
+- **Farming**: Plant saplings (wood drops), grow crops (food alternatives to hunger decay), cultivate Lyktgubbe gardens (light sources).
 - **Mining Depth**: Underground resources at different depths. Iron at 5-15 blocks deep, copper at 10-20, crystal at 20+. Requires light, structural support, air (future).
 - **Trade**: Place a Monolith Market to exchange resources asynchronously with other players' worlds (stretch — ghost economy).
 
 ### Mobile Consideration
-Resource management should be glanceable. The Bok's Ledger page shows resources as a simple list with counts. Crafting chains should be visualized as trees, not grids. One-tap crafting for known recipes.
+Resource management should be glanceable. The Bok's Listan page shows resources as a simple list with counts. Crafting chains should be visualized as trees, not grids. One-tap crafting for known recipes.
 
 ## eXterminate
 
@@ -89,16 +89,16 @@ Resource management should be glanceable. The Bok's Ledger page shows resources 
 - **Boss Events**: Jätten is a world event. It appears near the player's largest build and tests whether your saga is worthy of the land. Defeating it permanently changes the surrounding biome and yields the Runsten Seal.
 
 ### Mobile Consideration
-Combat on mobile must be simple but tactical. Auto-targeting nearest enemy when attack button pressed. Swipe gestures for dodge/block. The Bok's "observe" mechanic for Hollowfolk works perfectly on mobile — just keep the camera pointed at them.
+Combat on mobile must be simple but tactical. Auto-targeting nearest enemy when attack button pressed. Swipe gestures for dodge/block. The Bok's "observe" mechanic for Draugar works perfectly on mobile — just keep the camera pointed at them.
 
 ## Pillar Interactions
 
 The four pillars are not separate tracks — they feed each other:
 
-```
+```text
 eXplore → discover rare resources → eXploit → craft better tools →
 eXpand → build bigger settlements → attract stronger threats →
 eXterminate → gain boss materials → unlock new biomes → eXplore
 ```
 
-Every session, regardless of length, should touch at least two pillars. A 5-minute mobile session might be: mine resources (exploit) and fend off a night attack (exterminate). A 30-minute session might be: explore a new biome, discover a Remnant, fight a Glyphwarden, and haul loot home to expand a base.
+Every session, regardless of length, should touch at least two pillars. A 5-minute mobile session might be: mine resources (exploit) and fend off a night attack (exterminate). A 30-minute session might be: explore a new biome, discover a Fornlämning, fight a Runväktare, and haul loot home to expand a base.

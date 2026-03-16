@@ -2,7 +2,7 @@
 
 ## Stack
 
-```
+```text
 ┌────────────────────────┐
 │  React (UI Layer)      │  ← HUD, menus, overlays
 ├────────────────────────┤
@@ -22,6 +22,7 @@ Bok uses Jolly Pixel for:
 - **VoxelRenderer** (`@jolly-pixel/voxel.renderer`) — chunked voxel world
 
 ### Actor/Behavior Pattern
+
 Jolly Pixel uses an Actor model where Actors own Behaviors (components with lifecycle). Bok creates these Actors in `initGame()`:
 
 | Actor | Behavior | Purpose |
@@ -36,6 +37,7 @@ Jolly Pixel uses an Actor model where Actors own Behaviors (components with life
 | VoxelMap | `VoxelRenderer` | Chunked voxel world rendering |
 
 ### Behavior Lifecycle
+
 ```typescript
 class MyBehavior extends Behavior {
   awake() {
@@ -51,7 +53,7 @@ class MyBehavior extends Behavior {
 
 `GameBridge` is the central Behavior that orchestrates everything each frame:
 
-```
+```text
 GameBridge.update(dt)
 ├── Run ECS systems (movement, physics, survival, quest, time, enemy, mining)
 ├── syncPlayerToCamera() — Position/Rotation → Three.js camera
@@ -65,6 +67,7 @@ GameBridge.update(dt)
 ## Voxel World
 
 ### VoxelRenderer
+
 Jolly Pixel's VoxelRenderer handles:
 - Chunk-based voxel storage
 - Face culling (only render exposed faces)
@@ -72,6 +75,7 @@ Jolly Pixel's VoxelRenderer handles:
 - Layer system ("Ground" layer for all terrain)
 
 ### Chunk Streaming
+
 ```typescript
 const RENDER_DISTANCE = 3;  // chunks in each direction
 const CHUNKS_PER_FRAME = 2; // max chunks generated per frame
@@ -80,9 +84,10 @@ const CHUNKS_PER_FRAME = 2; // max chunks generated per frame
 Chunks are loaded into a queue sorted by distance to player. The closest unloaded chunks are generated first, capped at 2 per frame to maintain framerate. Chunks beyond `RENDER_DISTANCE + 2` are unloaded.
 
 ### Voxel Accessor Bridge
+
 `src/world/voxel-helpers.ts` provides global `getVoxelAt()` / `setVoxelAt()` functions that ECS systems use without importing Three.js. The bridge is registered in `initGame()`:
 
-```
+```text
 ECS Systems → voxel-helpers → VoxelRenderer
                     ↓
               Delta Listener → SQLite (persistence)

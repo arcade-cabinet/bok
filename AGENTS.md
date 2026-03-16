@@ -47,7 +47,7 @@ Creatures are assembled from geometric primitives like Scandinavian wooden toys 
 - **Side effects bridge ECS to rendering.** When a system needs to affect the visual world (spawn particles, remove a block), it calls a side-effect callback passed in by the GameBridge.
 
 ### File Organization
-```
+```text
 src/
 ├── ecs/
 │   ├── traits/index.ts     — All trait definitions (single file)

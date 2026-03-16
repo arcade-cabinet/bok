@@ -180,6 +180,7 @@ export default function App() {
 			cleanupRef.current?.();
 			cleanupRef.current = null;
 			disableVoxelDeltaTracking();
+			return;
 		}
 		return () => {
 			cleanupRef.current?.();

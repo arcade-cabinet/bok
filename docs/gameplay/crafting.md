@@ -25,14 +25,14 @@ Crafting should happen at **workstations placed in the world**, not in a floatin
 
 ### 2. Recipes are Discovered, Not Given
 The player starts knowing only hand-craft recipes. New recipes are discovered through:
-- **Exploration**: Lore inscriptions in Remnants contain recipe blueprints
-- **Experimentation**: Combining unusual materials at a workstation (guided hints in Codex)
-- **Creature Study**: Filling a creature's Codex entry reveals recipes using its drops
+- **Exploration**: Lore inscriptions in Fornlämningar contain recipe blueprints
+- **Experimentation**: Combining unusual materials at a workstation (guided hints in Kunskapen)
+- **Creature Study**: Filling a creature's Kunskapen entry reveals recipes using its drops
 
 ### 3. Resource Chains Have Depth
 Tier 0 materials transform into tier 1, which combine into tier 2:
 
-```
+```text
 Wood → Planks → Treated Planks (planks + resin)
 Stone → Bricks → Reinforced Bricks (bricks + iron)
 Sand → Glass → Crystal Lens (glass + crystal)
@@ -56,8 +56,8 @@ Tools should wear out over use, creating a maintenance loop:
 ### Light Sources
 - Torches (4 block radius, temporary)
 - Lanterns (8 block radius, permanent, portable)
-- Ember Lantern (12 block radius, damages Inklings)
-- Glyph Lamp (20 block radius, attracts Dustmotes)
+- Ember Lantern (12 block radius, damages Mörker)
+- Glyph Lamp (20 block radius, attracts Lyktgubbar)
 
 ### Tools
 - Axes (wood/stone/iron/crystal) — tree harvesting
@@ -67,15 +67,15 @@ Tools should wear out over use, creating a maintenance loop:
 - Chisel (iron/crystal) — decorative block shaping (future)
 
 ### Armor (Future)
-- Thornback Shell Plate Armor (physical defense)
-- Wyrm Scale Mail (underground vision)
-- Inkling Cloak (reduced detection at night)
-- Glyph Runeguard (structure damage resistance)
+- Näcken Shell Plate Armor (physical defense)
+- Lindorm Scale Mail (underground vision)
+- Mörker Cloak (reduced detection at night)
+- Runväktare Runeguard (structure damage resistance)
 
 ### Knowledge Items
-- Codex Pages (creature observations)
+- Kunskapen Pages (creature observations)
 - Lore Fragments (world history)
-- Glyph Stamps (structure blueprints)
+- Rune Stamps (structure blueprints)
 - Monolith Inscriptions (fast-travel anchors)
 
 ## Crafting UI Direction
