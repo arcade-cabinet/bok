@@ -14,7 +14,7 @@ The player isn't "building a forge." They're inscribing a sentence that says "ga
 
 ## Block Properties
 
-Every block has a fixed material type (wood, stone, iron, etc.) and an optional **rune inscription**. The inscription gives the block a behavior class:
+Every block has a fixed material type (wood, stone, iron, etc.) and up to **six face inscriptions** — one rune per face. A block is not inscribed once; it is etched directionally. Each face can carry a different rune, making a single block a multi-instruction circuit node.
 
 ### Material Properties (Intrinsic)
 
@@ -27,9 +27,47 @@ Every block has a fixed material type (wood, stone, iron, etc.) and an optional 
 | **Flows** | Water | Propagates downhill, cools |
 | **Resonates** | Crystal | Amplifies signal strength |
 
-### Rune Inscriptions (Applied)
+### Face-Based Rune Inscriptions
 
-The player can inscribe a rune onto any compatible block using a chisel + rune knowledge. The rune grants a behavior:
+The player uses a **chisel** to etch runes onto individual block faces. A block has 6 faces (+x, -x, +y, -y, +z, -z). Each face can hold one rune or be blank. A blank face on a conducting block passes signal through unchanged. An etched face intercepts the signal and applies the rune's behavior **directionally**.
+
+```
+     [Isa on top face]          ← signal exits upward with delay
+            │
+[in] → ┌───┴───┐ → [Naudiz]   ← signal exits east, inverted
+        │ IRON  │
+        └───┬───┘
+            │
+     [Hagalaz bottom]          ← signal exits downward only if gate signal present
+```
+
+One block. Three different behaviors. The face the signal enters and exits through determines what happens. This is the block as **crossroads**, not component.
+
+#### Visible vs. Internal Faces
+
+When two blocks are placed adjacent, their touching faces become **internal**. Runes on internal faces are hidden from view but still active. This creates hidden logic — a wall of plain stone blocks can carry a complete computational network on its internal faces. The wall IS the computer. The exterior shows nothing.
+
+Players etch internal-face runes by inscribing BEFORE placing the adjacent block, or by using an X-ray view (long-press with chisel) to see and modify internal faces.
+
+#### Etching Interaction (Mobile)
+
+Two interaction modes, progressively unlocked:
+
+**Beginner — Tap + Rune Wheel** (taught by the Tomte):
+1. Player holds chisel, taps a block face → face highlights
+2. Rune wheel appears around the tap point
+3. Drag to select rune → rune etches onto that face
+
+**Expert — Drag-to-Etch** (unlocked after mastering 3+ runes):
+1. Player holds chisel, drags across a block face
+2. Drag pattern determines the rune (↓ = Isa, ✕ = Hagalaz, ∧ = Kenaz)
+3. Faster for experienced players, feels like actual carving
+
+Both modes remain available after expert unlock. The Tomte demonstrates the upgrade.
+
+### Rune Vocabulary
+
+Each rune can be etched onto any compatible face. The rune's behavior is always **relative to the face it occupies** — an EMIT rune on the north face emits northward, a GATE rune on the east face gates signals entering from the east.
 
 | Rune | Name | Behavior | Description |
 |------|------|----------|-------------|
@@ -62,17 +100,23 @@ Signals flow through **conducting materials** from emitter to receiver. The rule
 
 ### Propagation Rules
 
+```text
+1. An EMIT face produces signal at strength S (default 10) in its facing direction
+2. Signal propagates to the adjacent block through the receiving face
+3. At each face boundary:
+   a. Check the EXIT face of the source block — apply its rune (if any)
+   b. Check the ENTRY face of the destination block — apply its rune (if any)
+   c. If no rune on either face, signal passes through based on material:
+      - Conducting material: strength -= 1 (stone, iron, copper)
+      - Resonating material: strength *= 1.5 (crystal)
+      - Insulating material: signal stops
+      - Air: signal stops (signals travel through blocks, not air)
+4. Signal continues through the destination block to its other faces
+5. Each exit face with a rune applies that rune's behavior directionally
+6. Signal strength determines behavior intensity
 ```
-1. An EMIT block produces signal at strength S (default 10)
-2. Signal propagates to adjacent blocks (6-connected: ±x, ±y, ±z)
-3. Each block the signal passes through:
-   - Conducting material: strength -= 1 (stone, iron, copper)
-   - Resonating material: strength *= 1.5 (crystal)
-   - Insulating material: signal stops
-   - Air: signal stops (signals travel through blocks, not air)
-4. When signal reaches a BEHAVIOR block, it activates that behavior
-5. Signal strength determines behavior intensity
-```
+
+The face-based model means a single block can **route** signals — enter from one face, exit from a different face with a different transformation. A block with Kenaz on the north face and Naudiz on the south face is a heat emitter going north and an inverter going south, simultaneously.
 
 ### Tick Rate
 
@@ -200,11 +244,14 @@ If limits are exceeded, farthest emitters from the player are paused. Signal pro
 Active inscribed blocks are tracked in a **chunk-level spatial index**:
 
 ```typescript
-// Per-chunk: which blocks have inscriptions
-chunkInscriptions: Map<chunkKey, Map<voxelKey, RuneId>>
+// Face index: 0=+x, 1=-x, 2=+y, 3=-y, 4=+z, 5=-z
+type FaceIndex = 0 | 1 | 2 | 3 | 4 | 5;
+
+// Per-chunk: which block faces have inscriptions
+chunkInscriptions: Map<chunkKey, Map<voxelKey, Map<FaceIndex, RuneId>>>
 ```
 
-Updated on block place/remove. The signal system only iterates inscribed blocks, not all voxels.
+Updated on block place/remove/etch. The signal system only iterates inscribed blocks, not all voxels. A block with any etched face appears in the index. The face map is sparse — most blocks have 1-3 etched faces, not all 6.
 
 ## Computational Completeness
 
@@ -384,14 +431,127 @@ The last point is critical. Every computational rune also serves gameplay direct
 
 Players use these runes for practical purposes long before they realize they can compose a CPU.
 
+## Destructive & Constructive Logic
+
+Block placement and removal are not just building — they are **write operations** on the computational substrate.
+
+### Block Presence as State
+
+A conducting block in a signal path is a closed circuit. Remove it, the circuit breaks. Place it back, the circuit closes. This binary — block/air — is the most primitive form of memory. But combined with rune-etched faces, it becomes powerful:
+
+- **Physical switch**: Place/remove a block to toggle a rune circuit on/off. The player's hand is the input device.
+- **Fuse**: A wood block in a signal path that carries a Kenaz (heat) signal. The heat burns the wood. The block is consumed. The circuit breaks. One-shot logic — a self-destroying fuse.
+- **Self-modifying circuits**: A Jera (transform) rune that converts air→stone or stone→air when signaled. The circuit rewrites its own wiring. A rune network can **place and remove blocks**, changing its own topology while running.
+
+### The Brainfuck Parallel
+
+Brainfuck has 8 instructions, a tape, and a pointer. Our system has:
+
+| Brainfuck | Runic Equivalent |
+|-----------|-----------------|
+| `>` `<` (move pointer) | Signal propagation through conductor faces |
+| `+` `-` (increment/decrement) | Signal strength modification through material |
+| `[` `]` (loop while nonzero) | Feedback paths through Isa (delay) loops |
+| `.` `,` (output/input) | Effect runes (Thurisaz/damage, Sowilo/light, Fehu/pull) + Ansuz (sense) |
+
+But the face-etching system goes far beyond brainfuck's 1D tape:
+- **3D tape**: The world volume is the memory space
+- **Multi-head**: Multiple signals traverse simultaneously
+- **Self-modifying**: Jera runes can rewrite the tape (place/remove blocks)
+- **Typed channels**: Heat, light, force, detection — four independent instruction streams multiplexed on the same conductor
+
+A line of blocks with face-etched runes is a program. The signal is the instruction pointer. The block faces are the instructions. The world is both the code AND the data. This is **reflection** — the program can inspect and modify itself.
+
+### Write Runes (Block Manipulation)
+
+Two runes enable self-modifying circuits:
+
+| Rune | Face Behavior | Description |
+|------|--------------|-------------|
+| ᛃ Jera (on exit face) | **PLACE(blockType)** | When signal exits this face into air, places a block of the specified type. Consumes signal strength proportional to block hardness. |
+| ᚦ Thurisaz (on exit face) | **DESTROY(facing)** | When signal exits this face into a block, removes that block. Produces particles. Destructive write. |
+
+Combined: a circuit that senses (Ansuz), decides (Hagalaz gate), and acts (Jera places, Thurisaz removes) — building and demolishing blocks autonomously. The settlement builds and repairs itself.
+
+## The Tomte (Tutorial Companion)
+
+In Swedish folklore, the **Tomte** (plural: Tomtar) is the farmstead guardian — a small, ancient gnome who lives under the floorboards and protects the home. He is grumpy, loyal, and deeply knowledgeable about the old ways. Disrespect him (forget to leave porridge on Christmas Eve) and he'll cause havoc. Respect him and he'll guard your stuga through the darkest winter nights.
+
+### Role in Bok
+
+The Tomte is the player's **diegetic tutorial**. He is not a floating tooltip or a quest marker. He is a character who lives in the world and teaches through demonstration.
+
+### Behavior Arc
+
+**Day 1 — The Introduction**
+The Tomte is waiting at the spawn stenhög when the player awakens. He is small (0.5 blocks tall), wearing a red pointed cap, with a long white beard. He stands on the runestone and watches the player. When the player approaches, he hops down and walks to a nearby stone block.
+
+He pulls out a tiny chisel. He etches ᚲ (Kenaz) onto the stone. The stone glows with warmth. He points at the glow, then at the player, then at the chisel he leaves on the ground.
+
+No text. No tooltip. The player understands: *pick up the chisel, carve the rune, make warmth.*
+
+**Days 2-5 — Face Etching**
+The Tomte appears near the player's builds. He examines their rune work. If the player has only etched single faces, the Tomte demonstrates multi-face etching — he walks to a block, etches one rune on the north face, a different rune on the east face, then stands back to watch the signal split and transform. He nods with satisfaction.
+
+The Tomte teaches the tap-and-wheel method first. After the player has etched 3+ distinct runes, the Tomte demonstrates drag-to-etch — he drags his chisel across a face in a rune pattern, faster than the wheel method. The player unlocks expert mode.
+
+**Days 5-15 — Computational Discovery**
+The Tomte occasionally builds small demonstration circuits near the player's settlement:
+- A Naudiz inverter (he activates it, shows the inverted output, disassembles it)
+- An Isa delay loop (he watches the signal circle, counts on his fingers, grins)
+- A Hagalaz gate (he blocks one input, shows the output stop, unblocks it, output resumes)
+
+He never builds anything the player has already built. He fills gaps in the player's knowledge.
+
+**Days 15+ — Settlement Guardian**
+The Tomte settles into the player's settlement. He sleeps by the hearth. He tends a small mushroom garden. He examines new rune machines the player builds — if they're novel (topology the Tomte hasn't seen), he inspects them with visible curiosity and scratches his beard. If they're dangerous (self-modifying circuits that destroy blocks chaotically), he retreats to his mushroom garden and hides.
+
+The Tomte is a **living indicator** of the player's runic sophistication. His behavior reflects what you've built.
+
+### Construction
+
+The Tomte is a multi-part building-block creature following the creature design language:
+
+- **Body**: Small rounded box (0.4 blocks wide, 0.5 tall)
+- **Head**: Sphere (0.25 blocks), oversized relative to body
+- **Cap**: Red cone on top of head, floppy tip (spring physics)
+- **Beard**: Chain of 3 small white boxes dangling from chin (spring physics)
+- **Legs**: 2 short stubby capsules with simple IK
+- **Chisel**: Tiny held item (thin box) when teaching
+
+Colors: Body in earth brown, cap in Falu red `#8b2500`, beard in Björk white `#e0d5c1`.
+
+### The Tomte and the Saga
+
+The Tomte's presence is recorded in the Sagan:
+- *"Day 1 — A tomte watches from the stenhög. He has been here longer than the stones."*
+- *"Day 3 — The tomte showed how fire runes speak in two directions."*
+- *"Day 20 — The tomte examined the clock-circuit and laughed. First time I've heard him laugh."*
+
+### Adding the Tomte to Creatures
+
+The Tomte is a unique entity — there is only one per world. He is not a species in the creature system but a **named singleton** with his own AI state machine:
+
+| State | Behavior | Trigger |
+|-------|----------|---------|
+| **Watching** | Follows player at distance, observes | Default early game |
+| **Teaching** | Walks to block, demonstrates rune etching | Player hasn't discovered a rune the Tomte knows |
+| **Examining** | Inspects player's rune builds, reacts | Player builds novel circuit topology |
+| **Settling** | Stays near hearth, tends garden, sleeps | Settlement has a Hearth archetype |
+| **Hiding** | Retreats to safe spot, covers eyes | Chaotic self-modifying circuits or Mörker nearby |
+| **Celebrating** | Dances, throws cap in air | Player achieves Settlement archetype |
+
 ## Implementation Phases
 
 ### Phase A — Signal Foundation
-- Rune inscription mechanic (chisel + interact with block)
-- Signal propagation BFS on slow tick
+- Face-based rune inscription mechanic (chisel + tap face + rune wheel)
+- Per-face rune storage in chunk spatial index (`Map<voxelKey, Map<faceIndex, RuneId>>`)
+- Signal propagation BFS on slow tick with face-direction awareness
 - Kenaz (heat emitter) + Sowilo (light emitter)
 - Stone/iron conduct, wood insulates
-- Visual feedback: inscribed blocks glow with rune color, signal propagation shown as subtle particle trails
+- Visual feedback: etched faces glow with rune color, signal propagation shown as subtle particle trails
+- Internal face support (runes on faces between adjacent blocks)
+- X-ray view for inspecting internal faces (long-press with chisel)
 
 ### Phase B — Interaction Behaviors
 - Jera (transform) — ore + heat → ingot, wood + heat → charcoal
@@ -406,11 +566,14 @@ Players use these runes for practical purposes long before they realize they can
 - Archetype recognition (Hearth, Workshop, Ward)
 - Settlement founding
 
-### Phase D — Computation
+### Phase D — Computation & Self-Modification
 - Naudiz (invert) — NOT gate, darkness alarm
 - Isa (delay) — signal timing, timed traps
 - Hagalaz (gate) — conditional signal routing, AND gate
 - Feedback loop detection and stable oscillator support
+- Destructive/constructive logic: Jera block placement, Thurisaz block removal
+- Self-modifying circuit support (circuits that alter their own topology)
+- Drag-to-etch expert mode unlock
 - Player discovers computational composition through gameplay
 
 ### Phase E — Network & Scale
@@ -421,7 +584,14 @@ Players use these runes for practical purposes long before they realize they can
 - Full settlement growth system
 - Inter-chunk signal bridges via Raido
 
-### Phase F — Emergence
+### Phase F — The Tomte
+- Tomte entity: singleton companion with state machine AI
+- Teaching behavior: demonstrates rune etching, face selection, multi-face builds
+- Progressive tutorial: tap+wheel first, drag-to-etch unlock after 3+ runes
+- Settlement integration: Tomte settles at hearth, reacts to player builds
+- Sagan integration: Tomte milestones recorded in the saga
+
+### Phase G — Emergence
 - Player-discovered compound behaviors not anticipated by designers
 - Kunskapen records player-invented machines (auto-detects novel circuit topologies)
 - Other players' settlement designs discoverable as Fornlämningar in new worlds (stretch: ghost archaeology)
@@ -433,7 +603,7 @@ Runes are NOT available from the start. The player discovers them through the wo
 
 | Rune | Discovery Method |
 |------|-----------------|
-| ᚲ Kenaz | Tutorial — first torch placed teaches basic inscription |
+| ᚲ Kenaz | Tutorial — the Tomte demonstrates by etching it onto the spawn stenhög stone |
 | ᛊ Sowilo | Dawn observation — watch a full sunrise cycle |
 | ᚠ Fehu | Drop items near a runestone — observe them slide toward it |
 | ᚨ Ansuz | Observe a Runväktare activate when you enter a ruin |
