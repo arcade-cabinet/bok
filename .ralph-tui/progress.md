@@ -5,6 +5,18 @@ after each iteration and it's included in prompts for context.
 
 ## Codebase Patterns (Study These First)
 
+### Procedural Animation Runtime Architecture
+The procedural animation system separates pure math from Three.js rendering:
+- `procedural-anim.ts` — Sine oscillators (`oscillate(time, freq, amp, phase)`), per-species config tables (`AnimConfig`), state-driven blending (`blendAnimParams`, `advanceBlend`). Pure math, no Three.js.
+- `ik-solver.ts` — Two-bone analytical IK solver using law of cosines. `solve2BoneIK` returns `{ upperAngle, lowerAngle, reached }`. `getEndEffector` verifies solutions via forward kinematics.
+- `spring-physics.ts` — Damped harmonic oscillator (`springUpdate`) with convergence check (`springConverged`). Follow-the-leader chain (`updateFollowChain`) for segmented creatures (Lindorm). `createChain` + `segmentHeading` utilities.
+- `CreatureRendererBehavior.ts` — Consumes animation primitives. PoolEntry tracks `prevAnimState` + `blendProgress` for smooth state transitions.
+- Key patterns:
+- **State blend on change**: When `animState` changes, snapshot previous state as `prevAnimState`, reset `blendProgress` to 0. Each frame, `advanceBlend` moves progress toward 1.0. `blendAnimParams(from, to, progress)` interpolates all animation parameters.
+- **Species config lookup**: `getAnimConfig(species)` returns per-species breathing/sway/bob parameters. Falls back to default config for unregistered species.
+- **Oscillator composition**: Body motion = breathing oscillator + state-weighted bob oscillator. Two independent frequencies produce organic-feeling animation without keyframes.
+- **FK verification**: `getEndEffector` in ik-solver.ts allows unit tests to verify IK solutions by computing the end position from joint angles — tests prove the chain reaches the target.
+
 ### Creature Part System Architecture
 The multi-part creature renderer separates pure data from Three.js construction:
 - `creature-parts.ts` — Part definitions (arrays of `{ geometry, size, offset, jointParent, jointAxis, color }`), assembly functions (creates Three.js Group hierarchies), variation (±10% scale, ±5% hue), LOD switching.
@@ -319,5 +331,24 @@ Key patterns:
   - Mocking Three.js for Node tests requires a full mock class hierarchy (Group, Mesh, Color with getHSL/setHSL, Vector3) but enables testing assembly logic without DOM or WebGL
   - `userData` on Three.js objects is the clean way to store metadata (jointAxis, originalY) that animation functions need without extending class types
   - LOD distance squared comparison (`distSq > LOD_DISTANCE_SQ`) avoids per-creature `Math.sqrt()` calls in the hot update loop
+---
+
+## 2026-03-16 - US-012
+- Procedural animation runtime with pure-math animation primitives (no Three.js dependency for core logic)
+- New file `src/engine/procedural-anim.ts` (144 LOC): Sine oscillators (`oscillate`), per-species animation configs (Mörker, Trana, Lindorm + default), state-driven blending (`blendAnimParams`, `advanceBlend`), `AnimConfig` and `AnimParams` interfaces
+- New file `src/engine/ik-solver.ts` (81 LOC): Two-bone analytical IK solver (`solve2BoneIK`) using law of cosines, forward kinematics verifier (`getEndEffector`), `IKResult` interface with reached flag
+- New file `src/engine/spring-physics.ts` (133 LOC): Damped spring physics (`springUpdate`, `springConverged`, `createSpring`), follow-the-leader chain (`updateFollowChain`, `createChain`, `segmentHeading`), `SpringState` and `SegmentPosition` interfaces
+- New file `src/engine/procedural-anim.test.ts`: 22 tests covering oscillators (amplitude, frequency, phase, zero), species configs (morker/trana/lindorm/fallback), state params (all 6 states), blend interpolation (t=0/0.5/1/clamp), blend advancement
+- New file `src/engine/ik-solver.test.ts`: 13 tests covering IK target reach (reachable, angled, negative Y, equal bones, right-angle), out-of-reach (full extension), too-close (fold), boundary cases, FK verification (extension, fold-back, rotation)
+- New file `src/engine/spring-physics.test.ts`: 26 tests covering spring convergence (target, overshoot, critical damping, negative), convergence check (at target, far, velocity, thresholds), follow chain (head movement, spacing, close segments, single/empty, curved path), chain creation, segment heading
+- Updated `src/engine/behaviors/CreatureRendererBehavior.ts` (249 LOC): PoolEntry extended with `prevAnimState` + `blendProgress` for smooth state transitions. `updatePosition` detects state changes and resets blend. `animateJoints` replaced with procedural system: body motion = breathing oscillator + state-blended bob, head sway uses species idle config × blended headSway, arm swing uses species walk config × blended armSwing. Removed `LOD_DISTANCE_SQ` import (only used internally in creature-parts).
+- All 304 vitest tests pass (61 new), typecheck clean, lint clean (only pre-existing errors)
+- **Learnings:**
+  - Two-bone IK sign convention: `upperAngle = baseAngle + offset` (not minus) when the elbow bends above the root-to-target line. Forward kinematics verification (`getEndEffector`) catches this immediately.
+  - Pure-math animation modules (no Three.js import) are trivially testable without mocking — oscillate, IK, springs are all plain number→number functions
+  - Semi-implicit Euler integration (`v += a*dt; x += v*dt`) is unconditionally stable for spring physics at typical game timesteps (1/60s). Explicit Euler (`x += v*dt; v += a*dt`) can diverge at high stiffness.
+  - State blending via `prevAnimState + blendProgress` is cheaper than maintaining a full animation state machine graph — only two states are ever active simultaneously
+  - Per-species config as `Partial<Record<SpeciesId, AnimConfig>>` with fallback keeps the API simple: new species get the default config automatically, override only when needed
+  - Oscillator composition (breathing freq + bob freq) produces organic motion because two incommensurate frequencies create quasi-periodic patterns that never exactly repeat
 ---
 

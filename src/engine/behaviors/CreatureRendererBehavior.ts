@@ -8,7 +8,8 @@
 import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import type { AnimStateId, SpeciesId } from "../../ecs/traits/index.ts";
-import { type AssembledCreature, assembleCreature, LOD_DISTANCE_SQ, updateLod } from "../creature-parts.ts";
+import { type AssembledCreature, assembleCreature, updateLod } from "../creature-parts.ts";
+import { advanceBlend, blendAnimParams, getAnimConfig, getStateParams, oscillate } from "../procedural-anim.ts";
 
 const MAX_POOL = 16;
 
@@ -22,6 +23,8 @@ interface PoolEntry {
 	targetY: number;
 	targetZ: number;
 	animState: AnimStateId;
+	prevAnimState: AnimStateId;
+	blendProgress: number;
 	isDaytime: boolean;
 }
 
@@ -36,6 +39,8 @@ function createEmptyEntry(): PoolEntry {
 		targetY: 0,
 		targetZ: 0,
 		animState: "idle",
+		prevAnimState: "idle",
+		blendProgress: 1,
 		isDaytime: false,
 	};
 }
@@ -103,6 +108,10 @@ export class CreatureRendererBehavior extends Behavior {
 				entry.targetX = x;
 				entry.targetY = y;
 				entry.targetZ = z;
+				if (entry.animState !== animState) {
+					entry.prevAnimState = entry.animState;
+					entry.blendProgress = 0;
+				}
 				entry.animState = animState;
 				entry.isDaytime = isDaytime;
 				break;
@@ -136,7 +145,7 @@ export class CreatureRendererBehavior extends Behavior {
 			const isLod = updateLod(entry.assembled, distSq);
 
 			if (!isLod) {
-				animateJoints(entry, now);
+				animateJoints(entry, now, dt);
 			}
 		}
 	}
@@ -154,33 +163,42 @@ export class CreatureRendererBehavior extends Behavior {
 	}
 }
 
-/** Animate joint rotations based on anim state. */
-function animateJoints(entry: PoolEntry, now: number) {
-	const { assembled, animState, entityId, isDaytime } = entry;
+/** Animate joint rotations using procedural animation system. */
+function animateJoints(entry: PoolEntry, now: number, dt: number) {
+	const { assembled, animState, prevAnimState, isDaytime, species } = entry;
 	if (!assembled) return;
-	const t = now * 0.003 + entityId;
+
+	// Advance blend progress
+	entry.blendProgress = advanceBlend(entry.blendProgress, dt);
+
+	// Compute blended animation parameters
+	const fromParams = getStateParams(prevAnimState);
+	const toParams = getStateParams(animState);
+	const params = blendAnimParams(fromParams, toParams, entry.blendProgress);
+
+	const config = getAnimConfig(species ?? "morker");
+	const t = now * 0.003 + entry.entityId;
 	const parts = assembled.parts;
 
-	// Body bob (part 0)
+	// Body bob: breathing + state-driven bob (part 0)
 	if (parts[0]) {
-		const bobAmount = animState === "chase" || animState === "attack" ? 0.08 : 0.04;
-		const bobSpeed = animState === "chase" ? 2 : 1;
-		parts[0].position.y = getOriginalY(parts[0]) + Math.sin(t * bobSpeed) * bobAmount;
+		const breath = oscillate(t, config.breathFreq, config.breathAmp);
+		const bob = oscillate(t, config.walkBobFreq, config.walkBobAmp * params.bodyBob);
+		parts[0].position.y = getOriginalY(parts[0]) + breath + bob;
 	}
 
-	// Head look (part 1)
+	// Head sway (part 1)
 	if (parts[1]) {
-		parts[1].rotation.y = Math.sin(t * 0.7) * 0.15;
+		parts[1].rotation.y = oscillate(t, config.idleSwayFreq, config.idleSwayAmp * params.headSway);
 	}
 
 	// Arm swing (parts 4, 5)
-	const swingAmp = animState === "chase" ? 0.6 : animState === "attack" ? 0.8 : 0.15;
-	const swingSpeed = animState === "chase" ? 3 : animState === "attack" ? 5 : 1;
+	const swingAmp = config.walkSwingAmp * params.armSwing;
 	if (parts[4]) {
-		parts[4].rotation.x = Math.sin(t * swingSpeed) * swingAmp;
+		parts[4].rotation.x = oscillate(t, config.walkBobFreq, swingAmp);
 	}
 	if (parts[5]) {
-		parts[5].rotation.x = Math.sin(t * swingSpeed + Math.PI) * swingAmp;
+		parts[5].rotation.x = oscillate(t, config.walkBobFreq, swingAmp, Math.PI);
 	}
 
 	// Daytime tint: body parts go orange when burning
@@ -190,7 +208,6 @@ function animateJoints(entry: PoolEntry, now: number) {
 		if (isDaytime) {
 			mat.color.setHex(0xff6600);
 		} else if (mat.color.getHex() === 0xff6600) {
-			// Restore original color (approximate: re-read from part defs is too expensive)
 			mat.color.setHex(0x1a1a2e);
 		}
 	}
