@@ -1,5 +1,6 @@
 import type { World } from "koota";
 import { BLOCKS, ITEMS } from "../../world/blocks.ts";
+import { addItem } from "../inventory.ts";
 import { Hotbar, Inventory, MiningState, PlayerTag, QuestProgress, ToolSwing } from "../traits/index.ts";
 
 /** Hit result from the block highlight raycaster */
@@ -80,23 +81,16 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 					effects.spawnParticles(hit.x, hit.y, hit.z, blockDef.color, 15);
 				}
 
-				// Add to inventory + quest tracking (only if block is known)
-				if (blockDef?.name) {
-					addToInventory(inv as unknown as Record<string, number>, blockDef.name);
-					const bName = blockDef.name.toLowerCase();
-					if (quest.step === 0 && bName === "wood") quest.progress++;
-					if (quest.step === 2 && bName === "stone") quest.progress++;
-				}
+				// Add to inventory using block ID as key
+				addItem(inv, hit.id);
+
+				// Quest tracking by block ID
+				const bName = blockDef?.name?.toLowerCase();
+				if (quest.step === 0 && bName === "wood") quest.progress++;
+				if (quest.step === 2 && bName === "stone") quest.progress++;
+
 				mining.progress = 0;
 				mining.active = false;
 			}
 		});
-}
-
-export function addToInventory(inventory: Record<string, number>, blockName: string) {
-	const key = blockName.toLowerCase();
-	if (!(key in inventory)) {
-		inventory[key] = 0;
-	}
-	inventory[key] += 1;
 }

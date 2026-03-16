@@ -142,7 +142,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 0 — Foundation Hardening. Touches UI components (HotbarDisplay, CraftingMenu).",
       "labels": [
         "phase-0",
@@ -152,7 +152,8 @@
       ],
       "dependsOn": [
         "US-001"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-006",
@@ -1636,6 +1637,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T08:50:51.269Z"
+    "updatedAt": "2026-03-16T08:59:09.634Z"
   }
 }

@@ -47,31 +47,12 @@ export const CameraFollow = trait({
 });
 
 // ─── Inventory & Crafting ───
-export interface InventoryData {
-	wood: number;
-	stone: number;
-	dirt: number;
-	grass: number;
-	sand: number;
-	glass: number;
-	stonebricks: number;
-	planks: number;
-	torches: number;
-}
+export type { InventoryData } from "../inventory.ts";
 
-export const Inventory = trait(
-	(): InventoryData => ({
-		wood: 0,
-		stone: 0,
-		dirt: 0,
-		grass: 0,
-		sand: 0,
-		glass: 0,
-		stonebricks: 0,
-		planks: 0,
-		torches: 0,
-	}),
-);
+export const Inventory = trait((): import("../inventory.ts").InventoryData => ({
+	items: {},
+	capacity: 256,
+}));
 
 export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
 export type HotbarSlot = { id: BlockIdValue; type: "block" } | { id: number; type: "item" };

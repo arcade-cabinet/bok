@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { InventoryData } from "./ecs/inventory.ts";
+import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
 	Health,
@@ -67,7 +69,7 @@ export default function App() {
 		health: 100,
 		hunger: 100,
 		stamina: 100,
-		inventory: { wood: 0, stone: 0, dirt: 0, grass: 0, sand: 0, glass: 0, stonebricks: 0, planks: 0, torches: 0 },
+		inventory: { items: {}, capacity: 256 } as InventoryData,
 		hotbarSlots: [null, null, null, null, null] as (HotbarSlot | null)[],
 		activeSlot: 0,
 		miningActive: false,
@@ -116,7 +118,7 @@ export default function App() {
 						health: health.current,
 						hunger: hunger.current,
 						stamina: stamina.current,
-						inventory: { ...inv },
+						inventory: { items: { ...inv.items }, capacity: inv.capacity },
 						hotbarSlots: [...hotbar.slots],
 						activeSlot: hotbar.activeSlot,
 						miningActive: mining.active,
@@ -293,19 +295,12 @@ export default function App() {
 		if (!recipe) return;
 
 		kootaWorld.query(PlayerTag, Inventory, Hotbar).updateEach(([inv, hotbar]) => {
-			const invAny = inv as unknown as Record<string, number>;
-			const canAfford = Object.entries(recipe.cost).every(([res, amount]) => (invAny[res] || 0) >= amount);
-			if (!canAfford) return;
+			if (!canAfford(inv, recipe.cost)) return;
 
-			for (const [res, amount] of Object.entries(recipe.cost)) {
-				invAny[res] -= amount;
-			}
+			deductCost(inv, recipe.cost);
 
 			if (recipe.result.type === "block") {
-				const invKey = getInventoryKeyForBlock(recipe.id);
-				if (invKey) {
-					invAny[invKey] = (invAny[invKey] || 0) + recipe.result.qty;
-				}
+				addItem(inv, recipe.result.id, recipe.result.qty);
 			}
 
 			const newSlot: HotbarSlot =
@@ -382,19 +377,4 @@ export default function App() {
 			</div>
 		</>
 	);
-}
-
-function getInventoryKeyForBlock(recipeId: string): string | null {
-	switch (recipeId) {
-		case "planks":
-			return "planks";
-		case "torch":
-			return "torches";
-		case "bricks":
-			return "stonebricks";
-		case "glass":
-			return "glass";
-		default:
-			return null;
-	}
 }

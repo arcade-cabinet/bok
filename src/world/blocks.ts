@@ -140,21 +140,41 @@ export interface CraftRecipe {
 	id: string;
 	name: string;
 	result: { type: "block" | "item"; id: number; qty: number };
-	cost: Record<string, number>;
+	cost: Record<number, number>;
 }
 
 export const RECIPES: CraftRecipe[] = [
-	{ id: "planks", name: "Wood Planks x4", result: { type: "block", id: BlockId.Planks, qty: 4 }, cost: { wood: 1 } },
-	{ id: "torch", name: "Torches x4", result: { type: "block", id: BlockId.Torch, qty: 4 }, cost: { wood: 1 } },
+	{
+		id: "planks",
+		name: "Wood Planks x4",
+		result: { type: "block", id: BlockId.Planks, qty: 4 },
+		cost: { [BlockId.Wood]: 1 },
+	},
+	{
+		id: "torch",
+		name: "Torches x4",
+		result: { type: "block", id: BlockId.Torch, qty: 4 },
+		cost: { [BlockId.Wood]: 1 },
+	},
 	{
 		id: "bricks",
 		name: "Stone Bricks x4",
 		result: { type: "block", id: BlockId.StoneBricks, qty: 4 },
-		cost: { stone: 4 },
+		cost: { [BlockId.Stone]: 4 },
 	},
-	{ id: "glass", name: "Mystic Glass x1", result: { type: "block", id: BlockId.Glass, qty: 1 }, cost: { sand: 1 } },
-	{ id: "wood_axe", name: "Wooden Axe", result: { type: "item", id: 101, qty: 1 }, cost: { wood: 3 } },
-	{ id: "wood_pick", name: "Wooden Pickaxe", result: { type: "item", id: 102, qty: 1 }, cost: { wood: 5 } },
-	{ id: "stone_pick", name: "Stone Pickaxe", result: { type: "item", id: 103, qty: 1 }, cost: { stone: 5 } },
-	{ id: "sword", name: "Stone Sword", result: { type: "item", id: 104, qty: 1 }, cost: { wood: 2, stone: 3 } },
+	{
+		id: "glass",
+		name: "Mystic Glass x1",
+		result: { type: "block", id: BlockId.Glass, qty: 1 },
+		cost: { [BlockId.Sand]: 1 },
+	},
+	{ id: "wood_axe", name: "Wooden Axe", result: { type: "item", id: 101, qty: 1 }, cost: { [BlockId.Wood]: 3 } },
+	{ id: "wood_pick", name: "Wooden Pickaxe", result: { type: "item", id: 102, qty: 1 }, cost: { [BlockId.Wood]: 5 } },
+	{ id: "stone_pick", name: "Stone Pickaxe", result: { type: "item", id: 103, qty: 1 }, cost: { [BlockId.Stone]: 5 } },
+	{
+		id: "sword",
+		name: "Stone Sword",
+		result: { type: "item", id: 104, qty: 1 },
+		cost: { [BlockId.Wood]: 2, [BlockId.Stone]: 3 },
+	},
 ];

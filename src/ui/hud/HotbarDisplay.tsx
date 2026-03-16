@@ -1,4 +1,6 @@
-import type { HotbarSlot, InventoryData } from "../../ecs/traits/index.ts";
+import type { InventoryData } from "../../ecs/inventory.ts";
+import { getItemCount } from "../../ecs/inventory.ts";
+import type { HotbarSlot } from "../../ecs/traits/index.ts";
 import { BLOCKS, BlockId, ITEMS } from "../../world/blocks.ts";
 
 interface HotbarDisplayProps {
@@ -7,18 +9,6 @@ interface HotbarDisplayProps {
 	inventory: InventoryData;
 	onSlotClick: (index: number) => void;
 }
-
-const PLACEABLE_BLOCKS: Record<string, keyof InventoryData> = {
-	Wood: "wood",
-	Dirt: "dirt",
-	Grass: "grass",
-	Sand: "sand",
-	Stone: "stone",
-	Planks: "planks",
-	Torch: "torches",
-	Stonebricks: "stonebricks",
-	Glass: "glass",
-};
 
 export function HotbarDisplay({ slots, activeSlot, inventory, onSlotClick }: HotbarDisplayProps) {
 	return (
@@ -72,8 +62,5 @@ function getSlotBackground(slot: HotbarSlot): string {
 
 function getBlockQty(slot: HotbarSlot, inventory: InventoryData): number {
 	if (slot.type !== "block") return 0;
-	const block = BLOCKS[slot.id];
-	if (!block) return 0;
-	const invKey = PLACEABLE_BLOCKS[block.name];
-	return invKey ? (inventory[invKey] as number) || 0 : 0;
+	return getItemCount(inventory, slot.id);
 }

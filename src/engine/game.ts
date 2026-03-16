@@ -51,7 +51,7 @@ import {
 } from "../ecs/traits/index.ts";
 
 import { createBlockDefinitions } from "../world/block-definitions.ts";
-import { BLOCKS, BlockId } from "../world/blocks.ts";
+import { BlockId } from "../world/blocks.ts";
 import { cosmeticRng, initNoise } from "../world/noise.ts";
 import {
 	CHUNK_SIZE,
@@ -585,22 +585,9 @@ export function placeBlock() {
 		const slot = hotbar.slots[hotbar.activeSlot];
 		if (!slot || slot.type !== "block") return;
 
-		const blockDef = BLOCKS[slot.id];
-		if (!blockDef) return;
-		const bName = blockDef.name.toLowerCase();
-
-		// Check craftable block inventory
-		const invAny = inv as unknown as Record<string, number>;
-		const craftableKeys: Record<string, string> = {
-			planks: "planks",
-			torch: "torches",
-			stonebricks: "stonebricks",
-			glass: "glass",
-		};
-		const invKey = craftableKeys[bName];
-		if (invKey) {
-			if ((invAny[invKey] || 0) <= 0) return;
-		}
+		// Check inventory for the block
+		const count = inv.items[slot.id] ?? 0;
+		if (count <= 0) return;
 
 		// Don't place inside player
 		const pX = prev.x,
@@ -613,9 +600,10 @@ export function placeBlock() {
 		)
 			return;
 
-		// All placement guards passed — now decrement inventory
-		if (invKey) {
-			invAny[invKey]--;
+		// Decrement inventory
+		inv.items[slot.id] = count - 1;
+		if (inv.items[slot.id] === 0) {
+			delete inv.items[slot.id];
 		}
 
 		setVoxelAt("Ground", pX, pY, pZ, slot.id);
@@ -651,7 +639,7 @@ export function readPlayerStateForSave(): PlayerSaveData | null {
 				timeOfDay,
 				dayCount,
 				hotbar: [...hotbar.slots],
-				inventory: { ...inv },
+				inventory: { items: { ...inv.items }, capacity: inv.capacity },
 			};
 		});
 
@@ -677,11 +665,9 @@ export function restorePlayerState(data: PlayerSaveData): void {
 				hotbar.slots[i] = savedHotbar[i] ?? null;
 			}
 
-			const savedInv = data.inventory as Record<string, number>;
-			const invAny = inv as unknown as Record<string, number>;
-			for (const key of Object.keys(savedInv)) {
-				invAny[key] = savedInv[key];
-			}
+			const savedInv = data.inventory;
+			inv.items = { ...savedInv.items };
+			inv.capacity = savedInv.capacity;
 		});
 
 	kootaWorld.query(WorldTime).updateEach(([time]) => {

@@ -125,3 +125,26 @@ Key patterns:
   - `BlockIdValue` type alias (`(typeof BlockId)[keyof typeof BlockId]`) provides exhaustive type checking for block IDs without runtime overhead
 ---
 
+## 2026-03-16 - US-005
+- Inventory refactored from named fields (`InventoryData { wood: number, stone: number, ... }`) to `Record<number, number>` keyed by BlockId/item ID
+- New `InventoryData` interface: `{ items: Record<number, number>, capacity: number }` with capacity limit for future Bok Ledger integration
+- New module `src/ecs/inventory.ts` (103 LOC): pure helper functions — `addItem`, `removeItem`, `hasItem`, `getItemCount`, `inventoryCount`, `isFull`, `canAfford`, `deductCost`, `serializeInventory`, `deserializeInventory`
+- Recipe costs changed from string keys (`{ wood: 1 }`) to numeric keys (`{ [BlockId.Wood]: 1 }`)
+- All mapping tables eliminated: `PLACEABLE_BLOCKS` in HotbarDisplay, `craftableKeys` in game.ts placeBlock, `getInventoryKeyForBlock` in App.tsx
+- Mining system uses `addItem(inv, hit.id)` instead of `addToInventory(inv, blockDef.name)` — block ID is the inventory key
+- HotbarDisplay uses `getItemCount(inventory, slot.id)` — no name-to-key indirection
+- CraftingMenu uses `canAfford(inventory, recipe.cost)` and `getBlockName(Number(id))` for display
+- Save/load: inventory persisted as `JSON.stringify({ items, capacity })`, loaded with fallback for legacy format
+- 29 new unit tests covering: inventoryCount, getItemCount, hasItem, isFull, addItem (with capacity clamping), removeItem (with cleanup), canAfford, deductCost, serialization round-trip
+- Playwright CT test updated for new inventory shape
+- All 104 vitest tests pass, typecheck clean, lint clean (only pre-existing index.css parse error)
+- Files created: src/ecs/inventory.ts, src/ecs/inventory.test.ts
+- Files modified: src/ecs/traits/index.ts, src/world/blocks.ts, src/ecs/systems/mining.ts, src/ui/hud/HotbarDisplay.tsx, src/ui/components/CraftingMenu.tsx, src/App.tsx, src/engine/game.ts, src/persistence/db.ts, src/ui/hud/HotbarDisplay.ct.tsx
+- **Learnings:**
+  - Koota traits with `Record<number, number>` work cleanly — `trait(() => ({ items: {}, capacity: 256 }))` — since Koota trait data must be plain serializable objects (no Maps)
+  - `export type { X } from` re-exports maintain the public API surface while moving the definition — consumers that import from traits/index.ts still work, while the canonical definition lives in inventory.ts
+  - Recipe costs as `Record<number, number>` with computed property keys (`{ [BlockId.Wood]: 1 }`) preserve type safety while making the inventory key consistent across the entire chain
+  - JSON.parse always produces string keys even for numeric Record keys — the deserializer must `Number(k)` when rebuilding `Record<number, number>`
+  - Removing name-based mapping tables (PLACEABLE_BLOCKS, craftableKeys, getInventoryKeyForBlock) eliminates an entire class of bugs where adding a new block requires updating multiple mapping tables
+---
+

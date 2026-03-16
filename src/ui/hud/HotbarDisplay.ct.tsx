@@ -3,17 +3,7 @@ import type { HotbarSlot } from "../../ecs/traits/index.ts";
 import { BlockId } from "../../world/blocks.ts";
 import { HotbarDisplay } from "./HotbarDisplay.tsx";
 
-const emptyInventory = {
-	wood: 0,
-	stone: 0,
-	dirt: 0,
-	grass: 0,
-	sand: 0,
-	glass: 0,
-	stonebricks: 0,
-	planks: 0,
-	torches: 0,
-};
+const emptyInventory = { items: {}, capacity: 256 };
 
 test.describe("HotbarDisplay", () => {
 	test("renders 5 empty slots", async ({ mount }) => {
@@ -46,7 +36,7 @@ test.describe("HotbarDisplay", () => {
 
 	test("shows block quantity for occupied slots", async ({ mount }) => {
 		const slots: (HotbarSlot | null)[] = [{ id: BlockId.Wood, type: "block" }, null, null, null, null];
-		const inv = { ...emptyInventory, wood: 42 };
+		const inv = { items: { [BlockId.Wood]: 42 }, capacity: 256 };
 		const component = await mount(
 			<HotbarDisplay slots={slots} activeSlot={0} inventory={inv} onSlotClick={() => {}} />,
 		);

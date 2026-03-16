@@ -128,6 +128,8 @@ export async function deleteSaveSlot(slotId: number): Promise<void> {
 
 // ─── Player State ───
 
+import type { InventoryData } from "../ecs/inventory.ts";
+
 export interface PlayerSaveData {
 	posX: number;
 	posY: number;
@@ -140,7 +142,7 @@ export interface PlayerSaveData {
 	timeOfDay: number;
 	dayCount: number;
 	hotbar: unknown[];
-	inventory: Record<string, number>;
+	inventory: InventoryData;
 }
 
 export async function savePlayerState(slotId: number, data: PlayerSaveData): Promise<void> {
@@ -185,9 +187,25 @@ export async function loadPlayerState(slotId: number): Promise<PlayerSaveData | 
 		console.warn(`Corrupted hotbar_json for slot ${slotId}, using default`, e);
 	}
 
-	let inventory: Record<string, number> = {};
+	let inventory: InventoryData = { items: {}, capacity: 256 };
 	try {
-		inventory = JSON.parse(row.inventory_json as string);
+		const parsed = JSON.parse(row.inventory_json as string);
+		if (parsed && typeof parsed === "object" && parsed.items) {
+			// New format: { items: Record<number, number>, capacity: number }
+			const items: Record<number, number> = {};
+			for (const [k, v] of Object.entries(parsed.items)) {
+				if (typeof v === "number" && v > 0) {
+					items[Number(k)] = v;
+				}
+			}
+			inventory = {
+				items,
+				capacity: typeof parsed.capacity === "number" ? parsed.capacity : 256,
+			};
+		} else if (parsed && typeof parsed === "object") {
+			// Legacy format: { wood: 1, stone: 3, ... } — skip, start fresh
+			inventory = { items: {}, capacity: 256 };
+		}
 	} catch (e) {
 		console.warn(`Corrupted inventory_json for slot ${slotId}, using default`, e);
 	}

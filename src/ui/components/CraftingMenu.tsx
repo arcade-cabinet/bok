@@ -1,5 +1,6 @@
-import type { InventoryData } from "../../ecs/traits/index.ts";
-import { type CraftRecipe, RECIPES } from "../../world/blocks.ts";
+import type { InventoryData } from "../../ecs/inventory.ts";
+import { canAfford } from "../../ecs/inventory.ts";
+import { type CraftRecipe, getBlockName, RECIPES } from "../../world/blocks.ts";
 
 interface CraftingMenuProps {
 	isOpen: boolean;
@@ -10,6 +11,8 @@ interface CraftingMenuProps {
 
 export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMenuProps) {
 	if (!isOpen) return null;
+
+	const nonZeroItems = Object.entries(inventory.items).filter(([, v]) => v > 0);
 
 	return (
 		<div
@@ -41,14 +44,12 @@ export function CraftingMenu({ isOpen, inventory, onCraft, onClose }: CraftingMe
 
 				{/* Inventory grid */}
 				<div className="grid grid-cols-2 gap-2 mb-5 text-sm">
-					{Object.entries(inventory).map(([key, val]) =>
-						val > 0 ? (
-							<div key={key} className="bg-white/5 px-3 py-1.5 rounded text-gray-300">
-								{key.toUpperCase()}: <span className="font-bold text-white">{val}</span>
-							</div>
-						) : null,
-					)}
-					{Object.values(inventory).every((v) => v === 0) && (
+					{nonZeroItems.map(([id, count]) => (
+						<div key={id} className="bg-white/5 px-3 py-1.5 rounded text-gray-300">
+							{getBlockName(Number(id)).toUpperCase()}: <span className="font-bold text-white">{count}</span>
+						</div>
+					))}
+					{nonZeroItems.length === 0 && (
 						<div className="col-span-2 text-gray-500 italic text-center py-2">Inventory Empty</div>
 					)}
 				</div>
@@ -75,20 +76,18 @@ function CraftButton({
 	inventory: InventoryData;
 	onCraft: (id: string) => void;
 }) {
-	const canAfford = Object.entries(recipe.cost).every(
-		([res, amount]) => (inventory[res as keyof InventoryData] || 0) >= amount,
-	);
+	const affordable = canAfford(inventory, recipe.cost);
 
 	return (
 		<button
 			type="button"
-			disabled={!canAfford}
+			disabled={!affordable}
 			onClick={() => onCraft(recipe.id)}
 			className={`
         w-full px-3 py-2.5 rounded-lg border text-left text-sm font-semibold
         transition-all duration-200 flex justify-between items-center
         ${
-					canAfford
+					affordable
 						? "bg-white/5 border-white/10 text-white hover:bg-white/15 hover:translate-x-1 cursor-pointer"
 						: "bg-transparent border-white/5 text-white/30 cursor-not-allowed"
 				}
@@ -97,7 +96,7 @@ function CraftButton({
 			<span>{recipe.name}</span>
 			<span className="bg-black/50 px-2 py-0.5 rounded text-xs text-gray-400">
 				{Object.entries(recipe.cost)
-					.map(([res, amt]) => `${amt} ${res}`)
+					.map(([id, amt]) => `${amt} ${getBlockName(Number(id))}`)
 					.join(", ")}
 			</span>
 		</button>
