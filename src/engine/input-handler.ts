@@ -93,6 +93,12 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 		}
 	};
 
+	const onPointerLockChange = () => {
+		if (document.pointerLockElement !== canvas) {
+			resetInputState();
+		}
+	};
+
 	document.addEventListener("keydown", onKeyDown);
 	document.addEventListener("keyup", onKeyUp);
 	document.addEventListener("mousemove", onMouseMove);
@@ -102,6 +108,7 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	canvas.addEventListener("click", onClick);
 	window.addEventListener("blur", onBlur);
 	document.addEventListener("visibilitychange", onVisibilityChange);
+	document.addEventListener("pointerlockchange", onPointerLockChange);
 
 	return () => {
 		resetInputState();
@@ -114,6 +121,7 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 		canvas.removeEventListener("click", onClick);
 		window.removeEventListener("blur", onBlur);
 		document.removeEventListener("visibilitychange", onVisibilityChange);
+		document.removeEventListener("pointerlockchange", onPointerLockChange);
 	};
 }
 
