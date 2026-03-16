@@ -243,14 +243,14 @@ describe("joint hierarchy", () => {
 		const parts = getPartDefs("morker");
 		const hierarchy = buildJointHierarchy(parts);
 
-		// Body (0) has children: head(1), left arm(4), right arm(5)
+		// Core mass (0) has children: upper mass(1), lower tendril(2), eye(3)
 		expect(hierarchy[0]).toContain(1);
-		expect(hierarchy[0]).toContain(4);
-		expect(hierarchy[0]).toContain(5);
+		expect(hierarchy[0]).toContain(2);
+		expect(hierarchy[0]).toContain(3);
 
-		// Head (1) has children: left eye(2), right eye(3)
-		expect(hierarchy[1]).toContain(2);
-		expect(hierarchy[1]).toContain(3);
+		// Upper mass (1) has children: eye(4), eye(5)
+		expect(hierarchy[1]).toContain(4);
+		expect(hierarchy[1]).toContain(5);
 	});
 
 	it("root parts have no parent entries in hierarchy", () => {
@@ -264,12 +264,10 @@ describe("joint hierarchy", () => {
 		}
 	});
 
-	it("Mörker has arm joints on X axis for swing", () => {
+	it("Mörker has rotational joints on body masses", () => {
 		const parts = getPartDefs("morker");
-		const leftArm = parts[4];
-		const rightArm = parts[5];
-		expect(leftArm.jointAxis).toBe("x");
-		expect(rightArm.jointAxis).toBe("x");
+		expect(parts[1].jointAxis).toBe("y"); // upper mass: Y-axis rotation
+		expect(parts[2].jointAxis).toBe("x"); // lower tendril: X-axis rotation
 	});
 
 	it("Mörker head joint rotates on Y axis", () => {
@@ -371,9 +369,9 @@ describe("assembly", () => {
 
 	it("stores jointAxis in userData", () => {
 		const assembled = assembleCreature("morker", 0.5);
-		expect(assembled.parts[0].userData.jointAxis).toBeNull(); // body: no joint
-		expect(assembled.parts[1].userData.jointAxis).toBe("y"); // head: y-axis
-		expect(assembled.parts[4].userData.jointAxis).toBe("x"); // left arm: x-axis
+		expect(assembled.parts[0].userData.jointAxis).toBeNull(); // core: no joint
+		expect(assembled.parts[1].userData.jointAxis).toBe("y"); // upper mass: y-axis
+		expect(assembled.parts[2].userData.jointAxis).toBe("x"); // lower tendril: x-axis
 	});
 
 	it("applies scale variation to part meshes", () => {

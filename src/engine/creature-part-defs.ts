@@ -7,49 +7,73 @@ import type { SpeciesId } from "../ecs/traits/index.ts";
 import type { CreaturePartDef } from "./creature-parts.ts";
 
 // ─── Mörker ───
+// Amorphous form: overlapping spheres with rotational joints for shifting mass.
+// Eyes on different parent joints orbit independently via procedural animation.
 
 const MORKER_PARTS: CreaturePartDef[] = [
-	// 0: body
-	{ geometry: "box", size: [0.6, 1.0, 0.5], offset: [0, 0.5, 0], jointParent: -1, jointAxis: null, color: 0x1a1a2e },
-	// 1: head
-	{ geometry: "box", size: [0.4, 0.35, 0.35], offset: [0, 0.85, 0], jointParent: 0, jointAxis: "y", color: 0x1a1a2e },
-	// 2: left eye
+	// 0: core mass — large central sphere
+	{
+		geometry: "sphere",
+		size: [0.5, 0.55, 0.5],
+		offset: [0, 0.5, 0],
+		jointParent: -1,
+		jointAxis: null,
+		color: 0x1a1a2e,
+	},
+	// 1: upper mass — off-center, Y-rotates for shifting silhouette
+	{
+		geometry: "sphere",
+		size: [0.35, 0.4, 0.35],
+		offset: [0.1, 0.35, -0.05],
+		jointParent: 0,
+		jointAxis: "y",
+		color: 0x1a1a2e,
+	},
+	// 2: lower tendril mass — X-rotates for undulating base
+	{
+		geometry: "sphere",
+		size: [0.3, 0.25, 0.3],
+		offset: [-0.1, -0.2, 0.1],
+		jointParent: 0,
+		jointAxis: "x",
+		color: 0x1a1a2e,
+	},
+	// 3-6: four shifting eyes on different parents
 	{
 		geometry: "sphere",
 		size: [0.06, 0.06, 0.06],
-		offset: [-0.1, 0.06, -0.16],
+		offset: [-0.15, 0.1, -0.22],
+		jointParent: 0,
+		jointAxis: null,
+		color: 0xff4444,
+		emissive: 0xff4444,
+	},
+	{
+		geometry: "sphere",
+		size: [0.05, 0.05, 0.05],
+		offset: [0.12, 0.15, -0.2],
 		jointParent: 1,
 		jointAxis: null,
 		color: 0xff4444,
 		emissive: 0xff4444,
 	},
-	// 3: right eye
 	{
 		geometry: "sphere",
-		size: [0.06, 0.06, 0.06],
-		offset: [0.1, 0.06, -0.16],
+		size: [0.04, 0.04, 0.04],
+		offset: [0.05, -0.05, -0.22],
 		jointParent: 1,
 		jointAxis: null,
 		color: 0xff4444,
 		emissive: 0xff4444,
 	},
-	// 4: left arm
 	{
-		geometry: "box",
-		size: [0.18, 0.55, 0.18],
-		offset: [-0.39, -0.1, 0],
-		jointParent: 0,
-		jointAxis: "x",
-		color: 0x1a1a2e,
-	},
-	// 5: right arm
-	{
-		geometry: "box",
-		size: [0.18, 0.55, 0.18],
-		offset: [0.39, -0.1, 0],
-		jointParent: 0,
-		jointAxis: "x",
-		color: 0x1a1a2e,
+		geometry: "sphere",
+		size: [0.05, 0.05, 0.05],
+		offset: [-0.08, 0.08, -0.18],
+		jointParent: 2,
+		jointAxis: null,
+		color: 0xff4444,
+		emissive: 0xff4444,
 	},
 ];
 

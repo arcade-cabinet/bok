@@ -22,14 +22,17 @@ import {
 	Species,
 } from "../traits/index.ts";
 import type { BoidAgent } from "./boids.ts";
+import { cleanupMorkerState, type MorkerInfo, updateMorkerAI } from "./creature-ai-hostile.ts";
 import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI } from "./creature-ai-passive.ts";
 import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./lyktgubbe-drift.ts";
+import type { TargetPos } from "./morker-pack.ts";
 
 const GRAVITY = 28;
 
 /** Clean up per-entity state when a creature is removed. */
 export function cleanupCreatureState(entityId: number): void {
 	cleanupPassiveState(entityId);
+	cleanupMorkerState(entityId);
 }
 
 export interface CreatureUpdateContext {
@@ -41,46 +44,50 @@ export interface CreatureUpdateContext {
 	timeOfDay: number;
 }
 
-/** Run hostile AI (Mörker behavior): chase + attack + burn in daylight. */
+/** Run hostile AI (Mörker pack behavior): coordinate pursuit, light-averse, hunt Lyktgubbar. */
 export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
 	const DAYTIME_DPS = 2;
+
+	// Pre-pass: collect Mörker and Lyktgubbe positions
+	const morkerList: MorkerInfo[] = [];
+	const lyktgubbar: TargetPos[] = [];
+	world.query(CreatureTag, CreatureType, Position).readEach(([cType, pos], entity) => {
+		if (cType.species === Species.Morker) {
+			morkerList.push({ entityId: entity.id(), x: pos.x, z: pos.z });
+		} else if (cType.species === Species.Lyktgubbe) {
+			lyktgubbar.push({ entityId: entity.id(), x: pos.x, z: pos.z });
+		}
+	});
 
 	world
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, Position)
 		.updateEach(([ai, hp, anim, pos], entity) => {
 			if (ai.aiType !== "hostile") return;
 
-			const dx = ctx.playerX - pos.x;
-			const dz = ctx.playerZ - pos.z;
-			const dist = Math.sqrt(dx * dx + dz * dz);
-
 			if (ctx.isDaytime) {
 				hp.hp -= DAYTIME_DPS * dt;
 				anim.animState = AnimState.Burn;
 			}
 
-			applyGravity(hp, pos, dt);
-			ai.attackCooldown = Math.max(0, ai.attackCooldown - dt);
-
-			if (dist <= ai.attackRange && ctx.playerAlive) {
-				ai.behaviorState = BehaviorState.Attack;
-				if (!ctx.isDaytime) anim.animState = AnimState.Attack;
-				if (ai.attackCooldown <= 0) {
-					ai.attackCooldown = 1.0;
-					applyDamageToPlayer(world, ai.attackDamage);
-				}
-			} else if (dist <= ai.aggroRange && ctx.playerAlive) {
-				ai.behaviorState = BehaviorState.Chase;
-				if (!ctx.isDaytime) anim.animState = AnimState.Chase;
-				chase(pos, hp, dx, dz, dist, ai.moveSpeed, dt);
-			} else {
-				ai.behaviorState = BehaviorState.Idle;
-				if (!ctx.isDaytime) anim.animState = AnimState.Idle;
-			}
+			updateMorkerAI(
+				pos,
+				ai,
+				hp,
+				anim,
+				entity.id(),
+				dt,
+				ctx,
+				morkerList,
+				lyktgubbar,
+				applyGravity,
+				chase,
+				(damage: number) => applyDamageToPlayer(world, damage),
+				effects,
+			);
 
 			if (hp.hp <= 0) {
 				cleanupCreatureState(entity.id());
-				effects?.spawnParticles(pos.x, pos.y, pos.z, 0xff0000, 20);
+				effects?.spawnParticles(pos.x, pos.y, pos.z, 0x1a1a2e, 20);
 				effects?.onCreatureDied(entity.id());
 				entity.destroy();
 			}

@@ -447,7 +447,7 @@
         "Files stay under ~200 LOC with proper decomposition"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Phase 2 — Building-Block Creatures. Primary hostile creature, replaces box enemy.",
       "labels": [
         "phase-2",
@@ -456,7 +456,8 @@
       ],
       "dependsOn": [
         "US-012"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-016",
@@ -1646,6 +1647,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-16T10:53:25.276Z"
+    "updatedAt": "2026-03-16T11:20:19.667Z"
   }
 }

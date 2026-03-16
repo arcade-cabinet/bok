@@ -115,6 +115,18 @@ Key patterns:
 - **Structure dispatch**: Boundary positions get stenhogar + runstenar; interior positions get biome-specific landmarks via `selectBiomeLandmark(biome)`.
 - **Height-gated placement**: Landmarks require `surfaceY >= LANDMARK_MIN_HEIGHT` (above water).
 
+### Hostile Creature Pack AI Pattern (Mörker)
+The Mörker system introduces pack-coordinated hostile AI following the same pure-math separation:
+- `morker-pack.ts` — Pure math: pack state (alpha/flanker registration), flanking formation geometry, light damage (torch radius DPS), size scaling by ambient light (sin-based sun height), dawn dissolution windows, Lyktgubbe hunting selection. No Three.js.
+- `creature-ai-hostile.ts` — ECS bridge: integrates morker-pack.ts with ECS state, dispatched per-entity from `updateHostileAI`. Parallels `creature-ai-passive.ts`.
+- `creature-spawner.ts` — Pack spawning: `spawnMorkerPack()` creates 3-5 clustered entities and registers them via `registerPack()`.
+- Key patterns:
+- **Pre-pass data collection**: Before per-entity update, collect all Mörker positions AND Lyktgubbe positions from a single ECS query. Pack coordination and prey selection both need cross-entity data.
+- **Priority-ordered behavior**: Attack > Flee > Hunt > Chase > Idle. Mörker commit to melee when within attack range (despite torch damage), but flee at intermediate torch distances.
+- **Alpha promotion**: When alpha dies, `cleanupMorkerState` auto-promotes the next pack member and re-indexes flankers.
+- **Flanking geometry**: `flankPosition()` places flankers in a semicircle on the opposite side of the player from the alpha, using `atan2` + angular spread.
+- **Amorphous mesh via overlapping spheres**: Multiple sphere parts with Y/X rotational joints create shifting silhouette. Eyes on different parent joints orbit independently via procedural animation.
+
 ---
 
 ## 2026-03-16 - US-001
@@ -408,5 +420,24 @@ Key patterns:
   - `spawnEntity` helper with `SpawnDefaults` interface eliminates 4 nearly-identical spawn functions, reducing creature-spawner.ts from 326 → 181 LOC
   - Extracting part definition data to `creature-part-defs.ts` keeps the assembly/variation logic in creature-parts.ts under 200 LOC — data arrays are inherently long but benefit from their own file
   - Previous US-012 already defined a `trana` anim config — adding a duplicate caused TS1117 (no duplicate properties). Always check existing config before adding
+---
+
+## 2026-03-16 - US-015
+- Mörker (Darkness Packs) — primary hostile creature with pack AI, replacing generic box enemy
+- New file `src/ecs/systems/morker-pack.ts` (~155 LOC): Pure math module — pack state management (alpha/flanker registration, cleanup with alpha promotion), ambient light from time-of-day (sin-based sun height), size scaling inversely with light, torch-radius light damage, dawn dissolution DPS, flanking formation geometry (semicircle around player), Lyktgubbe hunting selection (nearest prey closer than player)
+- New file `src/ecs/systems/morker-pack.test.ts` (~210 LOC): 28 tests covering ambient light, size scaling, light damage, dawn dissolution, pack registration/cleanup/alpha promotion, flanking positions, Lyktgubbe hunting
+- New file `src/ecs/systems/creature-ai-hostile.ts` (~180 LOC): ECS bridge for Mörker pack AI — priority-ordered behavior (attack > flee > hunt > chase > idle), pack-coordinated pursuit (alpha direct + flankers surround), torch aversion, Lyktgubbe ecological hunting
+- Updated `src/engine/creature-part-defs.ts`: Replaced boxy Mörker (body+head+2eyes+2arms) with amorphous multi-sphere design (core mass + upper mass with Y-joint + lower tendril with X-joint + 4 emissive eyes on different parent joints for independent shifting). Colors: ink #1a1a2e, eyes ember #ff4444
+- Updated `src/ecs/systems/creature-ai.ts`: Pre-pass collects Mörker + Lyktgubbe positions, delegates per-entity hostile AI to creature-ai-hostile.ts. Particle color changed from red to ink (#1a1a2e) on death
+- Updated `src/ecs/systems/creature-spawner.ts`: `spawnMorkerPack()` spawns 3-5 Mörker clustered within 4-block radius, registers pack via `registerPack()`. `spawnEntity` now returns entity ID
+- Updated `src/engine/creature-parts.test.ts`: Adjusted 3 tests for new Mörker mesh structure (sphere hierarchy instead of box arms)
+- All 429 vitest tests pass (28 new), typecheck clean, lint clean on new files. CT tests have 21 pre-existing timeout failures (confirmed same on clean branch)
+- **Learnings:**
+  - Pack AI needs **priority-ordered behavior** carefully: Mörker within attack range must commit to attack despite being in torch radius — otherwise torch-flee overrides melee and they never attack. Priority: attack > flee > hunt > chase > idle
+  - Cross-entity coordination (pack formation, prey selection) requires a **pre-pass data collection** pattern: collect all relevant entity positions in a first ECS query, then use that data in the per-entity update loop — same pattern as Trana boids
+  - `ambientLight(timeOfDay) = max(0, sin(timeOfDay * 2π))` aligns perfectly with `isDaytime = timeOfDay > 0 && timeOfDay < 0.5` because sin is positive in (0, π) which maps to timeOfDay (0, 0.5)
+  - **Amorphous building-block aesthetic**: Overlapping sphere parts with rotational joints (Y on upper mass, X on lower tendril) create shifting silhouette through procedural animation — no vertex displacement needed
+  - When changing creature mesh topology (e.g., replacing arms with spheres), tests that index specific parts by number break — always check creature-parts.test.ts after mesh changes
+  - `creature-ai-hostile.ts` parallels `creature-ai-passive.ts` as an ECS bridge, keeping creature-ai.ts as a dispatcher rather than growing it past 200 LOC
 ---
 

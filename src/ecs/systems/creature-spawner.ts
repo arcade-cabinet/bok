@@ -22,6 +22,7 @@ import {
 } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
+import { PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
 import { isSnailBiome } from "./snail-behavior.ts";
 import { isTranaBiome, isTranaSpawnHeight } from "./trana-behavior.ts";
 
@@ -112,11 +113,11 @@ export function spawnCreatures(
 		spawnTranaFlock(world, playerX, playerZ, effects);
 	}
 	if (!isDaytime && worldRng() < SPAWN_CHANCE) {
-		spawnAt(world, playerX, playerZ, 20, Species.Morker, MORKER, effects);
+		spawnMorkerPack(world, playerX, playerZ, effects);
 	}
 }
 
-/** Spawn a single creature entity with given defaults. */
+/** Spawn a single creature entity with given defaults. Returns entity ID. */
 function spawnEntity(
 	world: World,
 	x: number,
@@ -125,7 +126,7 @@ function spawnEntity(
 	species: SpeciesId,
 	d: SpawnDefaults,
 	effects?: CreatureEffects,
-) {
+): number {
 	const variant = cosmeticRng();
 	const entity = world.spawn(
 		CreatureTag,
@@ -146,6 +147,7 @@ function spawnEntity(
 		CreatureHealth({ hp: d.hp, maxHp: d.maxHp, velY: 0, meshIndex: -1 }),
 	);
 	effects?.onCreatureSpawned(entity.id(), species, variant);
+	return entity.id();
 }
 
 /** Spawn at a random position around the player. */
@@ -219,6 +221,24 @@ function spawnTranaFlock(world: World, px: number, pz: number, effects?: Creatur
 		const sy = findSurfaceSpawn(sx, sz);
 		if (sy >= 0) spawnEntity(world, sx, sy, sz, Species.Trana, TRANA, effects);
 	}
+}
+
+function spawnMorkerPack(world: World, px: number, pz: number, effects?: CreatureEffects) {
+	const packSize = PACK_MIN + Math.floor(worldRng() * (PACK_MAX - PACK_MIN + 1));
+	const angle = worldRng() * Math.PI * 2;
+	const bx = px + Math.cos(angle) * 20;
+	const bz = pz + Math.sin(angle) * 20;
+	const entityIds: number[] = [];
+
+	for (let i = 0; i < packSize; i++) {
+		const sx = bx + (worldRng() - 0.5) * 4;
+		const sz = bz + (worldRng() - 0.5) * 4;
+		const sy = findSurfaceSpawn(sx, sz);
+		if (sy >= 0) {
+			entityIds.push(spawnEntity(world, sx, sy, sz, Species.Morker, MORKER, effects));
+		}
+	}
+	if (entityIds.length > 0) registerPack(entityIds);
 }
 
 function findSurfaceSpawn(x: number, z: number): number {
