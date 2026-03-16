@@ -1,4 +1,5 @@
 import type { World } from "koota";
+import { cosmeticRng, worldRng } from "../../world/noise.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
 import { EnemyState, EnemyTag, Health, PlayerState, PlayerTag, Position, WorldTime } from "../traits/index.ts";
 
@@ -45,8 +46,8 @@ export function enemySystem(world: World, dt: number, effects?: EnemySideEffects
 	});
 
 	// Spawn enemies at night
-	if (!isDaytime && playerAlive && enemyCount < MAX_ENEMIES && Math.random() < SPAWN_CHANCE) {
-		const angle = Math.random() * Math.PI * 2;
+	if (!isDaytime && playerAlive && enemyCount < MAX_ENEMIES && worldRng() < SPAWN_CHANCE) {
+		const angle = worldRng() * Math.PI * 2;
 		const spawnX = px + Math.cos(angle) * SPAWN_DISTANCE;
 		const spawnZ = pz + Math.sin(angle) * SPAWN_DISTANCE;
 
@@ -120,7 +121,7 @@ export function enemySystem(world: World, dt: number, effects?: EnemySideEffects
 				world.query(PlayerTag, Health, PlayerState).updateEach(([health, state]) => {
 					health.current = Math.max(0, health.current - ATTACK_DAMAGE);
 					state.damageFlash = 1.0;
-					state.shakeX = (Math.random() - 0.5) * 0.1;
+					state.shakeX = (cosmeticRng() - 0.5) * 0.1;
 					state.shakeY = -0.15;
 				});
 			}

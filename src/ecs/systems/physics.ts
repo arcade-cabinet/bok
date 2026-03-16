@@ -1,5 +1,6 @@
 import type { World } from "koota";
 import { BlockId } from "../../world/blocks.ts";
+import { cosmeticRng } from "../../world/noise.ts";
 import { getVoxelAt, isBlockSolid } from "../../world/voxel-helpers.ts";
 import { Health, PhysicsBody, PlayerState, PlayerTag, Position, Velocity } from "../traits/index.ts";
 
@@ -56,7 +57,7 @@ export function physicsSystem(world: World, dt: number) {
 				vel.z = 0;
 				health.current = Math.max(0, health.current - 25);
 				state.damageFlash = 1.0;
-				state.shakeX = (Math.random() - 0.5) * 0.15;
+				state.shakeX = (cosmeticRng() - 0.5) * 0.15;
 				state.shakeY = -0.2;
 			}
 		});

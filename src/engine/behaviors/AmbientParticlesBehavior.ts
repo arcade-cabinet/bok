@@ -5,6 +5,7 @@
 
 import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
+import { cosmeticRng } from "../../world/noise.ts";
 
 const PARTICLE_COUNT = 300;
 
@@ -22,7 +23,7 @@ export class AmbientParticlesBehavior extends Behavior {
 		const geo = new THREE.BufferGeometry();
 		const pos: number[] = [];
 		for (let i = 0; i < PARTICLE_COUNT; i++) {
-			pos.push((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
+			pos.push((cosmeticRng() - 0.5) * 40, (cosmeticRng() - 0.5) * 40, (cosmeticRng() - 0.5) * 40);
 		}
 		geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
 

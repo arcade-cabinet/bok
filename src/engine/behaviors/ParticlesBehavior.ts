@@ -5,6 +5,7 @@
 
 import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
+import { cosmeticRng } from "../../world/noise.ts";
 
 interface Particle {
 	x: number;
@@ -44,12 +45,12 @@ export class ParticlesBehavior extends Behavior {
 		for (let i = 0; i < count; i++) {
 			if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
 			this.particles.push({
-				x: x + 0.5 + (Math.random() - 0.5) * 0.8,
-				y: y + 0.5 + (Math.random() - 0.5) * 0.8,
-				z: z + 0.5 + (Math.random() - 0.5) * 0.8,
-				vx: (Math.random() - 0.5) * 6,
-				vy: Math.random() * 4 + 2,
-				vz: (Math.random() - 0.5) * 6,
+				x: x + 0.5 + (cosmeticRng() - 0.5) * 0.8,
+				y: y + 0.5 + (cosmeticRng() - 0.5) * 0.8,
+				z: z + 0.5 + (cosmeticRng() - 0.5) * 0.8,
+				vx: (cosmeticRng() - 0.5) * 6,
+				vy: cosmeticRng() * 4 + 2,
+				vz: (cosmeticRng() - 0.5) * 6,
 				life: 1.0,
 				color: new THREE.Color(colorHex),
 			});

@@ -5,6 +5,7 @@
 
 import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
+import { cosmeticRng } from "../../world/noise.ts";
 
 export class CelestialBehavior extends Behavior {
 	private sunMesh!: THREE.Mesh;
@@ -42,8 +43,8 @@ export class CelestialBehavior extends Behavior {
 		const starGeo = new THREE.BufferGeometry();
 		const starPos: number[] = [];
 		for (let i = 0; i < 1500; i++) {
-			const u = Math.random();
-			const v = Math.random();
+			const u = cosmeticRng();
+			const v = cosmeticRng();
 			const theta = 2 * Math.PI * u;
 			const phi = Math.acos(2 * v - 1);
 			const r = 80;

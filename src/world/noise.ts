@@ -1,9 +1,15 @@
 /**
  * Deterministic PRNG and 2D Simplex noise for procedural world generation.
  * Ported from the original box.html POC.
+ *
+ * Two-layer PRNG architecture:
+ *  - worldRng: seeded from the world seed string, deterministic per-world.
+ *    Used for terrain, spawns, enemy behavior, and all gameplay-affecting randomness.
+ *  - cosmeticRng: seeded from Date.now() at module load, non-deterministic.
+ *    Used for particles, screen shake, UI animations — anything purely visual.
  */
 
-function xmur3(str: string): () => number {
+export function xmur3(str: string): () => number {
 	let h = 1779033703 ^ str.length;
 	for (let i = 0; i < str.length; i++) {
 		h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
@@ -17,7 +23,7 @@ function xmur3(str: string): () => number {
 	};
 }
 
-function sfc32(a: number, b: number, c: number, d: number): () => number {
+export function sfc32(a: number, b: number, c: number, d: number): () => number {
 	return () => {
 		a >>>= 0;
 		b >>>= 0;
@@ -34,11 +40,44 @@ function sfc32(a: number, b: number, c: number, d: number): () => number {
 	};
 }
 
+// ─── Two-layer PRNG ───
+
+/** World PRNG — deterministic per seed. Initialized in initNoise(). */
+let _worldRng: (() => number) | null = null;
+
+/** Cosmetic PRNG — non-deterministic, for visual-only randomness. */
+let _cosmeticRng: () => number = (() => {
+	const s = xmur3(String(Date.now()));
+	return sfc32(s(), s(), s(), s());
+})();
+
+/** Deterministic per-world random [0,1). Call only after initNoise(). */
+export function worldRng(): number {
+	if (!_worldRng) throw new Error("worldRng called before initNoise()");
+	return _worldRng();
+}
+
+/** Non-deterministic cosmetic random [0,1). Safe to call anytime. */
+export function cosmeticRng(): number {
+	return _cosmeticRng();
+}
+
+/** Re-seed cosmetic PRNG (e.g. on title screen load). */
+export function reseedCosmetic(seed?: number): void {
+	const s = xmur3(String(seed ?? Date.now()));
+	_cosmeticRng = sfc32(s(), s(), s(), s());
+}
+
 const Perm = new Uint8Array(512);
 
 export function initNoise(seedStr: string): void {
 	const seedFunc = xmur3(seedStr);
 	const rand = sfc32(seedFunc(), seedFunc(), seedFunc(), seedFunc());
+
+	// Initialize world PRNG from the same seed (but separate stream)
+	const wSeed = xmur3(`${seedStr}:world`);
+	_worldRng = sfc32(wSeed(), wSeed(), wSeed(), wSeed());
+
 	// Build a true permutation via Fisher-Yates shuffle
 	for (let i = 0; i < 256; i++) Perm[i] = i;
 	for (let i = 255; i > 0; i--) {
@@ -151,13 +190,14 @@ const nouns = [
 ];
 
 export function generateRandomSeedString(): string {
-	const a1 = adjectives[Math.floor(Math.random() * adjectives.length)];
-	let a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+	const rng = cosmeticRng;
+	const a1 = adjectives[Math.floor(rng() * adjectives.length)];
+	let a2 = adjectives[Math.floor(rng() * adjectives.length)];
 	let attempts = 0;
 	while (a1 === a2 && attempts < 20) {
-		a2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+		a2 = adjectives[Math.floor(rng() * adjectives.length)];
 		attempts++;
 	}
-	const n = nouns[Math.floor(Math.random() * nouns.length)];
+	const n = nouns[Math.floor(rng() * nouns.length)];
 	return `${a1} ${a2} ${n}`;
 }

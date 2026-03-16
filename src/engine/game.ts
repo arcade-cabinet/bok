@@ -50,7 +50,7 @@ import {
 } from "../ecs/traits/index.ts";
 
 import { BLOCKS, BlockId, createBlockDefinitions } from "../world/blocks.ts";
-import { initNoise } from "../world/noise.ts";
+import { cosmeticRng, initNoise } from "../world/noise.ts";
 import {
 	CHUNK_SIZE,
 	findSurfaceY,
@@ -153,7 +153,7 @@ class GameBridge extends Behavior {
 
 				// Sprint particles — kick up dust at player's feet
 				if (input.sprint && body.onGround && (input.forward || input.backward || input.left || input.right)) {
-					if (Math.random() < 0.3 && particlesBehavior) {
+					if (cosmeticRng() < 0.3 && particlesBehavior) {
 						particlesBehavior.spawn(pos.x, pos.y - 1.6, pos.z, 0x8b7355, 1);
 					}
 				}
@@ -225,8 +225,8 @@ class GameBridge extends Behavior {
 				setVoxelAt("Ground", x, y, z, 0);
 				// Screen shake on block break
 				kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
-					state.shakeX = (Math.random() - 0.5) * 0.06;
-					state.shakeY = (Math.random() - 0.5) * 0.04;
+					state.shakeX = (cosmeticRng() - 0.5) * 0.06;
+					state.shakeY = (cosmeticRng() - 0.5) * 0.04;
 				});
 			},
 			spawnParticles: (x, y, z, color, count) => particlesBehavior?.spawn(x, y, z, color, count),
