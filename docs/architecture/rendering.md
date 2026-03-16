@@ -119,3 +119,12 @@ Block textures are generated at runtime on a canvas (`src/world/tileset-generato
 - Each block type has a drawing function (noise patterns, gradients, shapes)
 - Output is a data URL loaded as the VoxelRenderer tileset
 - No external texture files needed
+
+## Rune Inscription Rendering (Pending)
+
+The surface rune language (`src/engine/runes/`) uses a 2D DOM-based test harness (`RuneSimulator.tsx`) for isolated visual TDD. When integrated into the engine, rune inscription rendering will need:
+- **Glyph decals** on block surfaces (Elder Futhark characters in rune colors)
+- **Signal glow** proportional to signal strength passing through inscriptions
+- **Wavefront particle trails** showing signal propagation through material (visible for first few seconds, then fade)
+
+This may require SDF (Signed Distance Field) rendering for crisp glyph decals at any camera distance, or an instanced mesh approach similar to `ParticlesBehavior`. The `RuneSimulator.tsx` component serves as a reference for the visual design (colors, glow intensity, signal overlay).

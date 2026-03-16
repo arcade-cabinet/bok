@@ -1,5 +1,7 @@
 # Runic Computation — Block Behaviors and Emergent Structures
 
+> **Surface Rune Language (in progress):** A new model is being developed where runes are inscribed on ANY surface, with signal propagation through continuous materials rather than block-face BFS. The surface rune system lives in `src/engine/runes/` as an isolated proof — standalone React component + Vitest tests demonstrating Turing completeness, material conductivity (stone/iron/crystal/copper/wood/dirt/water/air), and wavefront propagation. Once validated, this will replace the face-based model described below. See `src/engine/runes/wavefront.ts` for the core propagation engine and `src/engine/runes/RuneLanguage.test.ts` for the 32-test proof suite.
+
 ## The Core Idea
 
 Blocks in Bok are not inert. Certain blocks have **behaviors** — they sense, emit, conduct, transform, and act. When blocks with behaviors are placed adjacent to each other, signals propagate between them. Emergent function arises not from the game recognizing prescribed patterns, but from the player **composing behaviors into machines**.

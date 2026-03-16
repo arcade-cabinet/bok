@@ -59,6 +59,7 @@ Building in a voxel game on mobile requires careful UX. Block placement should h
 - **Creature Harvesting**: Skogssnigel shell plates, Trana feathers, Lindorm scales, Mörker essence, Runsten fragments. Each drops from specific creature interactions (not just killing — lagom applies to harvesting too).
 - **Farming**: Plant saplings (wood drops), grow crops (food alternatives to hunger decay), cultivate Lyktgubbe gardens (light sources).
 - **Mining Depth**: Underground resources at different depths. Iron at 5-15 blocks deep, copper at 10-20, crystal at 20+. Requires light, structural support, air (future).
+- **Surface Inscription Discovery**: Runes inscribed on world surfaces form computational circuits. The geometry of the material IS the circuit layout — a thin stone bridge is a wire, a stone slab where two walls meet is a junction, an air gap is a disconnect. Players discover new rune behaviors by observing signal wavefronts propagating through different materials (crystal amplifies, dirt attenuates, wood insulates). Material conductivity knowledge drives exploration of biomes for rare conductor materials.
 - **Trade**: Place a Monolith Market to exchange resources asynchronously with other players' worlds (stretch — ghost economy).
 
 ### Mobile Consideration
