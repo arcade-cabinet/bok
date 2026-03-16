@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
 	Health,
 	Hotbar,
@@ -45,9 +46,10 @@ import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import { RECIPES } from "./world/blocks.ts";
 
-const IS_MOBILE =
-	typeof navigator !== "undefined" &&
-	/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+function isMobile(): boolean {
+	if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 type GamePhase = "title" | "playing" | "dead";
@@ -66,7 +68,7 @@ export default function App() {
 		hunger: 100,
 		stamina: 100,
 		inventory: { wood: 0, stone: 0, dirt: 0, grass: 0, sand: 0, glass: 0, stonebricks: 0, planks: 0, torches: 0 },
-		hotbarSlots: [null, null, null, null, null] as (null | { id: number; type: "block" | "item" })[],
+		hotbarSlots: [null, null, null, null, null] as (HotbarSlot | null)[],
 		activeSlot: 0,
 		miningActive: false,
 		miningProgress: 0,
@@ -305,11 +307,15 @@ export default function App() {
 				}
 			}
 
+			const newSlot: HotbarSlot =
+				recipe.result.type === "block"
+					? { id: recipe.result.id as BlockIdValue, type: "block" }
+					: { id: recipe.result.id, type: "item" };
 			const emptySlot = hotbar.slots.indexOf(null);
 			if (emptySlot >= 0) {
-				hotbar.slots[emptySlot] = { id: recipe.result.id, type: recipe.result.type };
+				hotbar.slots[emptySlot] = newSlot;
 			} else {
-				hotbar.slots[hotbar.activeSlot] = { id: recipe.result.id, type: recipe.result.type };
+				hotbar.slots[hotbar.activeSlot] = newSlot;
 			}
 		});
 	}, []);
@@ -339,8 +345,8 @@ export default function App() {
 
 				{phase === "playing" && (
 					<>
-						{!IS_MOBILE && <Crosshair isMining={hudState.miningActive} miningProgress={hudState.miningProgress} />}
-						{IS_MOBILE && <MobileControls onCraftToggle={() => setCraftingOpen((prev) => !prev)} />}
+						{!isMobile() && <Crosshair isMining={hudState.miningActive} miningProgress={hudState.miningProgress} />}
+						{isMobile() && <MobileControls onCraftToggle={() => setCraftingOpen((prev) => !prev)} />}
 
 						<div
 							className="absolute top-4 left-4 right-4 flex justify-between items-start"

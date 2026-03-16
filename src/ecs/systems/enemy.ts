@@ -26,7 +26,7 @@ export function enemySystem(world: World, dt: number, effects?: EnemySideEffects
 		timeOfDay = time.timeOfDay;
 	});
 
-	const isDaytime = timeOfDay > 0.25 && timeOfDay < 0.75;
+	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
 	// Get player position
 	let px = 0,
@@ -81,12 +81,11 @@ export function enemySystem(world: World, dt: number, effects?: EnemySideEffects
 			effects?.onEnemyDied(entity.id());
 			entity.destroy();
 			return;
-	const normalizedTime = ((timeOfDay % 1) + 1) % 1;
-	const isDaytime = normalizedTime > 0 && normalizedTime < 0.5;
+		}
 
-	world.query(EnemyTag, EnemyState, Position).updateEach(([enemy, pos], entity) => {
+		// Daytime burn damage
 		if (isDaytime) {
-			enemy.hp -= dt * 2;
+			enemy.hp -= DAYTIME_DPS * dt;
 		}
 
 		// Gravity

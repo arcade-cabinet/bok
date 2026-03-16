@@ -26,6 +26,7 @@ import {
 	timeSystem,
 } from "../ecs/systems/index.ts";
 import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
+import type { HotbarSlot } from "../ecs/traits/index.ts";
 import {
 	EnemyState,
 	EnemyTag,
@@ -48,7 +49,7 @@ import {
 	WorldTime,
 } from "../ecs/traits/index.ts";
 
-import { BlockId, BLOCKS, createBlockDefinitions } from "../world/blocks.ts";
+import { BLOCKS, BlockId, createBlockDefinitions } from "../world/blocks.ts";
 import { initNoise } from "../world/noise.ts";
 import {
 	CHUNK_SIZE,
@@ -210,7 +211,7 @@ class GameBridge extends Behavior {
 		kootaWorld.query(WorldTime).readEach(([time]) => {
 			timeOfDay = time.timeOfDay;
 		});
-		const isDaytime = timeOfDay > 0.25 && timeOfDay < 0.75;
+		const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
 		kootaWorld.query(EnemyTag, EnemyState, Position).readEach(([enemy, pos], entity) => {
 			enemyRendererBehavior?.updatePosition(entity.id(), pos.x, pos.y, pos.z, enemy.aiState, isDaytime);
@@ -360,6 +361,11 @@ function streamChunks() {
 }
 
 export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise<void> {
+	if (jpRuntime) {
+		jpRuntime.stop();
+		jpRuntime = null;
+	}
+
 	initNoise(seed);
 
 	jpRuntime = new Runtime(canvas, {
@@ -655,7 +661,7 @@ export function restorePlayerState(data: PlayerSaveData): void {
 			quest.step = data.questStep;
 			quest.progress = data.questProgress;
 
-			const savedHotbar = data.hotbar as (null | { id: number; type: "block" | "item" })[];
+			const savedHotbar = data.hotbar as (HotbarSlot | null)[];
 			for (let i = 0; i < hotbar.slots.length; i++) {
 				hotbar.slots[i] = savedHotbar[i] ?? null;
 			}

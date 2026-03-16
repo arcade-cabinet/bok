@@ -1,17 +1,21 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { generateRandomSeedString } from "../../world/noise.ts";
 
-const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
-	id: `particle-${i}`,
-	left: Math.random() * 100,
-	duration: 8 + Math.random() * 12,
-	delay: Math.random() * 8,
-}));
-
 function ParticleField() {
+	const particles = useMemo(
+		() =>
+			Array.from({ length: 20 }, (_, i) => ({
+				id: `particle-${i}`,
+				left: Math.random() * 100,
+				duration: 8 + Math.random() * 12,
+				delay: Math.random() * 8,
+			})),
+		[],
+	);
+
 	return (
 		<div className="absolute inset-0 overflow-hidden pointer-events-none">
-			{PARTICLES.map((p) => (
+			{particles.map((p) => (
 				<div
 					key={p.id}
 					className="absolute w-1 h-1 rounded-full bg-amber-200 opacity-20"

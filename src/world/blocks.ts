@@ -54,8 +54,10 @@ export interface ItemDef {
 	color: string;
 }
 
+export const ITEM_WOOD_AXE_ID = 101;
+
 export const ITEMS: Record<number, ItemDef> = {
-	101: { name: "Wood Axe", type: "axe", target: "Wood", power: 3, color: "#8D6E63" },
+	[ITEM_WOOD_AXE_ID]: { name: "Wood Axe", type: "axe", target: "Wood", power: 3, color: "#8D6E63" },
 	102: { name: "Wood Pickaxe", type: "pickaxe", target: "Stone", power: 3, color: "#8D6E63" },
 	103: { name: "Stone Pickaxe", type: "pickaxe", target: "Stone", power: 6, color: "#9E9E9E" },
 	104: { name: "Stone Sword", type: "sword", target: "Entity", power: 1, color: "#9E9E9E" },
@@ -156,7 +158,7 @@ export function createBlockDefinitions(): BlockDefinition[] {
 			id: BlockId.Torch,
 			name: "Torch",
 			shapeId: "poleY",
-			collidable: true,
+			collidable: false,
 			faceTextures: {},
 			defaultTexture: { tilesetId: "default", col: 1, row: 1 },
 		},

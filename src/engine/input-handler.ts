@@ -73,6 +73,26 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 		}
 	};
 
+	const resetInputState = () => {
+		for (const key of Object.keys(keys)) {
+			keys[key] = false;
+		}
+		syncKeysToECS();
+		kootaWorld.query(PlayerTag, MiningState).updateEach(([mining]) => {
+			mining.active = false;
+		});
+	};
+
+	const onBlur = () => {
+		resetInputState();
+	};
+
+	const onVisibilityChange = () => {
+		if (document.hidden) {
+			resetInputState();
+		}
+	};
+
 	document.addEventListener("keydown", onKeyDown);
 	document.addEventListener("keyup", onKeyUp);
 	document.addEventListener("mousemove", onMouseMove);
@@ -80,8 +100,11 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 	document.addEventListener("mouseup", onMouseUp);
 	document.addEventListener("contextmenu", onContextMenu);
 	canvas.addEventListener("click", onClick);
+	window.addEventListener("blur", onBlur);
+	document.addEventListener("visibilitychange", onVisibilityChange);
 
 	return () => {
+		resetInputState();
 		document.removeEventListener("keydown", onKeyDown);
 		document.removeEventListener("keyup", onKeyUp);
 		document.removeEventListener("mousemove", onMouseMove);
@@ -89,6 +112,8 @@ export function setupInputHandlers(canvas: HTMLCanvasElement): () => void {
 		document.removeEventListener("mouseup", onMouseUp);
 		document.removeEventListener("contextmenu", onContextMenu);
 		canvas.removeEventListener("click", onClick);
+		window.removeEventListener("blur", onBlur);
+		document.removeEventListener("visibilitychange", onVisibilityChange);
 	};
 }
 

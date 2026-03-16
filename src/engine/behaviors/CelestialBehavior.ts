@@ -91,20 +91,21 @@ export class CelestialBehavior extends Behavior {
 			starOp = 1;
 		}
 
+		const clampedAlpha = THREE.MathUtils.clamp(dt * 0.5, 0, 1);
 		const targetBg = new THREE.Color(bgHex);
 		if (this.scene.background && (this.scene.background as THREE.Color).isColor) {
-			(this.scene.background as THREE.Color).lerp(targetBg, dt * 0.5);
+			(this.scene.background as THREE.Color).lerp(targetBg, clampedAlpha);
 		}
 		if (this.scene.fog && (this.scene.fog as THREE.Fog).color) {
-			(this.scene.fog as THREE.Fog).color.lerp(targetBg, dt * 0.5);
+			(this.scene.fog as THREE.Fog).color.lerp(targetBg, clampedAlpha);
 		}
 
-		this.ambientLight.intensity = THREE.MathUtils.lerp(this.ambientLight.intensity, ambInt, dt * 0.5);
-		this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, lightInt, dt * 0.5);
+		this.ambientLight.intensity = THREE.MathUtils.lerp(this.ambientLight.intensity, ambInt, clampedAlpha);
+		this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, lightInt, clampedAlpha);
 		(this.stars.material as THREE.PointsMaterial).opacity = THREE.MathUtils.lerp(
 			(this.stars.material as THREE.PointsMaterial).opacity,
 			starOp,
-			dt * 0.5,
+			clampedAlpha,
 		);
 
 		this.sunLight.target.position.set(this.playerX, 0, this.playerZ);

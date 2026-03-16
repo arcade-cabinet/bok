@@ -73,21 +73,26 @@ export const Inventory = trait(
 	}),
 );
 
-export interface HotbarSlot {
-	id: number;
-	type: "block" | "item";
+export type BlockIdValue = (typeof BlockId)[keyof typeof BlockId];
+export type HotbarSlot = { id: BlockIdValue; type: "block" } | { id: number; type: "item" };
+
+export interface HotbarState {
+	slots: (HotbarSlot | null)[];
+	activeSlot: number;
 }
 
-export const Hotbar = trait((): { slots: (HotbarSlot | null)[]; activeSlot: number } => ({
-	slots: [
-		{ id: BlockId.Wood, type: "block" },
-		{ id: BlockId.Sand, type: "block" },
-		{ id: BlockId.StoneBricks, type: "block" },
-		{ id: BlockId.Glass, type: "block" },
-		{ id: BlockId.Torch, type: "block" },
-	],
-	activeSlot: 0,
-}));
+export const Hotbar = trait(
+	(): HotbarState => ({
+		slots: [
+			{ id: BlockId.Wood, type: "block" },
+			{ id: BlockId.Sand, type: "block" },
+			{ id: BlockId.StoneBricks, type: "block" },
+			{ id: BlockId.Glass, type: "block" },
+			{ id: BlockId.Torch, type: "block" },
+		],
+		activeSlot: 0,
+	}),
+);
 
 // ─── Mining ───
 export const MiningState = trait({

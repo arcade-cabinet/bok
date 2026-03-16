@@ -136,9 +136,5 @@ export function findSurfaceY(vr: VoxelRenderer, x: number, z: number): number {
 	}
 	return WATER_LEVEL;
 }
-		}
-	}
-	return WATER_LEVEL;
-}
 
 export { CHUNK_SIZE, WATER_LEVEL, WORLD_HEIGHT };

@@ -86,8 +86,6 @@ export class ViewModelBehavior extends Behavior {
 
 		if (!this.slotData) return;
 
-		const stickMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
-
 		if (this.slotData.type === "block") {
 			const blockDef = BLOCKS[this.slotData.id];
 			const color = blockDef ? blockDef.color : "#ffffff";
@@ -102,6 +100,7 @@ export class ViewModelBehavior extends Behavior {
 			const itemDef: ItemDef | undefined = ITEMS[this.slotData.id];
 			if (!itemDef) return;
 
+			const stickMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
 			const headMat = new THREE.MeshStandardMaterial({ color: itemDef.color, roughness: 0.6 });
 			const tool = new THREE.Group();
 

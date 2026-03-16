@@ -12,6 +12,19 @@ const TILE_SIZE = 32;
 const COLS = 8;
 const ROWS = 2;
 
+/** Simple seeded PRNG (mulberry32) for deterministic textures. */
+function mulberry32(seed: number): () => number {
+	let s = seed | 0;
+	return () => {
+		s = (s + 0x6d2b79f5) | 0;
+		let t = Math.imul(s ^ (s >>> 15), 1 | s);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+let rng: () => number = Math.random;
+
 interface TileDef {
 	col: number;
 	row: number;
@@ -21,8 +34,8 @@ interface TileDef {
 
 function addNoise(ctx: CanvasRenderingContext2D, size: number) {
 	for (let i = 0; i < 200; i++) {
-		ctx.fillStyle = Math.random() > 0.5 ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)";
-		ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+		ctx.fillStyle = rng() > 0.5 ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)";
+		ctx.fillRect(rng() * size, rng() * size, 2, 2);
 	}
 }
 
@@ -105,8 +118,8 @@ const tiles: TileDef[] = [
 		draw: (ctx, s) => {
 			// Leaves — speckled
 			for (let i = 0; i < 100; i++) {
-				ctx.fillStyle = Math.random() > 0.5 ? "rgba(0,0,0,0.15)" : "rgba(100,255,100,0.15)";
-				ctx.fillRect(Math.random() * s, Math.random() * s, 3, 3);
+				ctx.fillStyle = rng() > 0.5 ? "rgba(0,0,0,0.15)" : "rgba(100,255,100,0.15)";
+				ctx.fillRect(rng() * s, rng() * s, 3, 3);
 			}
 		},
 	},
@@ -177,7 +190,7 @@ const tiles: TileDef[] = [
 			// Snow top
 			for (let i = 0; i < 80; i++) {
 				ctx.fillStyle = "rgba(200,220,255,0.15)";
-				ctx.fillRect(Math.random() * s, Math.random() * s, 2, 2);
+				ctx.fillRect(rng() * s, rng() * s, 2, 2);
 			}
 		},
 	},
@@ -240,7 +253,8 @@ const tiles: TileDef[] = [
 /**
  * Generate the tileset as a data URL.
  */
-export function generateTilesetDataURL(): string {
+export function generateTilesetDataURL(seed = 42): string {
+	rng = mulberry32(seed);
 	const canvas = document.createElement("canvas");
 	canvas.width = COLS * TILE_SIZE;
 	canvas.height = ROWS * TILE_SIZE;

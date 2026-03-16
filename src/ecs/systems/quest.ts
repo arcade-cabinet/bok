@@ -1,4 +1,5 @@
 import type { World } from "koota";
+import { ITEM_WOOD_AXE_ID } from "../../world/blocks.ts";
 import { Hotbar, PlayerTag, QuestProgress } from "../traits/index.ts";
 
 export function questSystem(world: World, _dt: number) {
@@ -7,7 +8,7 @@ export function questSystem(world: World, _dt: number) {
 			quest.step = 1;
 			quest.progress = 0;
 		} else if (quest.step === 1) {
-			const hasAxe = hotbar.slots.some((s) => s && s.type === "item" && s.id === 101);
+			const hasAxe = hotbar.slots.some((s) => s && s.type === "item" && s.id === ITEM_WOOD_AXE_ID);
 			if (hasAxe) {
 				quest.step = 2;
 				quest.progress = 0;

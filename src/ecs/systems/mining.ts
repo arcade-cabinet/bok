@@ -80,11 +80,9 @@ export function miningSystem(world: World, dt: number, hit: BlockHit | null, eff
 					effects.spawnParticles(hit.x, hit.y, hit.z, blockDef.color, 15);
 				}
 
-				if (blockDef) {
-					// Add to inventory
+				// Add to inventory + quest tracking (only if block is known)
+				if (blockDef && blockDef.name) {
 					addToInventory(inv as unknown as Record<string, number>, blockDef.name);
-
-					// Quest tracking
 					const bName = blockDef.name.toLowerCase();
 					if (quest.step === 0 && bName === "wood") quest.progress++;
 					if (quest.step === 2 && bName === "stone") quest.progress++;
