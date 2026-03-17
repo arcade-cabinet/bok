@@ -1,0 +1,19 @@
+{
+	"name": "Bok — Voxel Survival Saga",
+	"short_name": "Bok",
+	"description": "A mobile-first 4X voxel survival game rooted in Swedish folklore",
+	"start_url": "/bok/",
+	"scope": "/bok/",
+	"display": "standalone",
+	"orientation": "any",
+	"background_color": "#000000",
+	"theme_color": "#1a1a2e",
+	"icons": [
+		{
+			"src": "favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	]
+}

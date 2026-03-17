@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background: dark Nordic night -->
+  <rect width="1024" height="1024" rx="180" fill="#1a1a2e"/>
+
+  <!-- Subtle radial glow behind rune -->
+  <radialGradient id="glow" cx="50%" cy="48%" r="35%">
+    <stop offset="0%" stop-color="#4a90a4" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#1a1a2e" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1024" height="1024" rx="180" fill="url(#glow)"/>
+
+  <!-- Birch bark texture ring -->
+  <circle cx="512" cy="480" r="320" fill="none" stroke="#e0d5c1" stroke-width="4" stroke-opacity="0.15"/>
+  <circle cx="512" cy="480" r="280" fill="none" stroke="#e0d5c1" stroke-width="2" stroke-opacity="0.08"/>
+
+  <!-- Berkanan rune (ᛒ) — the Bok rune, hand-drawn style -->
+  <g transform="translate(512, 460)" fill="none" stroke="#e0d5c1" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stave (vertical line) -->
+    <line x1="0" y1="-200" x2="0" y2="200"/>
+    <!-- Upper branch -->
+    <polyline points="0,-160 100,-100 0,-40"/>
+    <!-- Lower branch -->
+    <polyline points="0,-40 100,20 0,80"/>
+  </g>
+
+  <!-- "BOK" text at bottom -->
+  <text x="512" y="780" text-anchor="middle" font-family="serif" font-size="80" font-weight="bold" fill="#e0d5c1" letter-spacing="24">BOK</text>
+
+  <!-- Subtle corner rune accents -->
+  <g fill="none" stroke="#4a90a4" stroke-width="3" stroke-opacity="0.4">
+    <path d="M100,100 L140,100 L140,140"/>
+    <path d="M924,100 L884,100 L884,140"/>
+    <path d="M100,924 L140,924 L140,884"/>
+    <path d="M924,924 L884,924 L884,884"/>
+  </g>
+</svg>

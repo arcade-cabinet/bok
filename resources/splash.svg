@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732" width="2732" height="2732">
+  <!-- Background: dark Nordic night -->
+  <rect width="2732" height="2732" fill="#1a1a2e"/>
+
+  <!-- Subtle radial glow -->
+  <radialGradient id="glow" cx="50%" cy="45%" r="30%">
+    <stop offset="0%" stop-color="#4a90a4" stop-opacity="0.2"/>
+    <stop offset="100%" stop-color="#1a1a2e" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="2732" height="2732" fill="url(#glow)"/>
+
+  <!-- Berkanan rune centered -->
+  <g transform="translate(1366, 1200)" fill="none" stroke="#e0d5c1" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="0" y1="-260" x2="0" y2="260"/>
+    <polyline points="0,-210 130,-130 0,-50"/>
+    <polyline points="0,-50 130,30 0,110"/>
+  </g>
+
+  <!-- BOK text below rune -->
+  <text x="1366" y="1640" text-anchor="middle" font-family="serif" font-size="120" font-weight="bold" fill="#e0d5c1" letter-spacing="32">BOK</text>
+</svg>
