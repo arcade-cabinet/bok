@@ -45,6 +45,7 @@ import { cosmeticRng } from "../world/noise.ts";
 import { getVoxelAt, isBlockSolid, setVoxelAt } from "../world/voxel-helpers.ts";
 import { Behavior } from "./behavior.ts";
 import { streamChunks } from "./chunk-streaming.ts";
+import { tickDevBridge } from "./dev-bridge.ts";
 import {
 	runComputationalRuneSystem,
 	runEmitterSystem,
@@ -107,6 +108,9 @@ export class GameBridge extends Behavior {
 	update(dt: number) {
 		if (dt <= 0 || dt > 0.1) return;
 		if (isGamePaused()) return;
+
+		// Dev diagnostics FPS tick
+		tickDevBridge();
 
 		const world = this.world;
 

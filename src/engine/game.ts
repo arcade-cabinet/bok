@@ -42,6 +42,7 @@ import { CHUNK_SIZE } from "../world/terrain-generator.ts";
 import { setVoxelAt, setVoxelDeltaListener } from "../world/voxel-helpers.ts";
 import { InputBehavior } from "./behaviors/InputBehavior.ts";
 import { chunkData, loadedChunks } from "./chunk-streaming.ts";
+import { initDevBridge, setDevRendererStats, tickDevBridge } from "./dev-bridge.ts";
 import { GameBridge, resetCombatDrainTimer } from "./game-bridge.ts";
 import { GameLoop } from "./game-loop.ts";
 import { createVoxelRenderer, generateSpawnArea, registerWorld, spawnPlayerEntity } from "./game-world-setup.ts";
@@ -139,6 +140,8 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 			() => capturedAmbient,
 		),
 	);
+
+	initDevBridge(kootaWorld);
 
 	threeCamera.position.set(8.5, surfaceY + 2.5, 8.5);
 	threeCamera.updateProjectionMatrix();
