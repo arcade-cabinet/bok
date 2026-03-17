@@ -34,6 +34,21 @@ export const BIOME_NAMES: Record<BiomeId, string> = {
 	[Biome.Blothogen]: "Blothögen",
 };
 
+// ─── Light Multipliers ───
+
+/**
+ * Per-biome ambient light multiplier applied during the day cycle.
+ * Blothögen inverts the normal day/night relationship: it is darker in the day.
+ */
+export const BIOME_LIGHT_MULTIPLIERS: Record<BiomeId, number> = {
+	[Biome.Angen]: 1.0,
+	[Biome.Bokskogen]: 0.85,
+	[Biome.Fjallen]: 1.1,
+	[Biome.Skargarden]: 1.05,
+	[Biome.Myren]: 0.75,
+	[Biome.Blothogen]: 0.25, // Inverted — always dim
+};
+
 // ─── Biome Selection ───
 
 /**

@@ -1,7 +1,7 @@
 {
-	"name": "Bok — Complete Game (Rune-First Civilization)",
+	"name": "Bok \u2014 Complete Game (Rune-First Civilization)",
 	"branchName": "ralph/bok-complete",
-	"description": "Complete implementation of Bok from current 46-story state through shippable product. Covers rune circuit integration, custom engine (JP removal), Swedish audio soundscape (Tone.js), creature ecosystem, seasonal mechanics, Jätten boss, settlement archetypes, Tomte tutorial, diegetic UI polish, farming, equipment, Capacitor native build, and E2E testing. Optimized for ralph-tui parallel auto-detection via dependsOn fields.",
+	"description": "Complete implementation of Bok from current 46-story state through shippable product. Covers rune circuit integration, custom engine (JP removal), Swedish audio soundscape (Tone.js), creature ecosystem, seasonal mechanics, J\u00e4tten boss, settlement archetypes, Tomte tutorial, diegetic UI polish, farming, equipment, Capacitor native build, and E2E testing. Optimized for ralph-tui parallel auto-detection via dependsOn fields.",
 	"userStories": [
 		{
 			"id": "RC-001",
@@ -19,14 +19,17 @@
 				"Files under 200 LOC"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 4 — bridges proven rune simulation into real inventory",
-			"labels": ["runes", "ecs-system"],
+			"passes": true,
+			"notes": "Step 4 \u2014 bridges proven rune simulation into real inventory",
+			"labels": [
+				"runes",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-002",
-			"title": "Combat Runes — Thurisaz Damage + Algiz Shield + Tiwaz Boost",
+			"title": "Combat Runes \u2014 Thurisaz Damage + Algiz Shield + Tiwaz Boost",
 			"description": "As a player, I want Thurisaz to damage creatures, Algiz to shield me, and Tiwaz to boost my damage when powered by rune circuits.",
 			"acceptanceCriteria": [
 				"Unit test for rune-combat-effects.ts written FIRST",
@@ -39,9 +42,13 @@
 				"Files under 200 LOC"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 5 — runes as 4X eXterminate pillar. Single file handles all three.",
-			"labels": ["runes", "combat", "ecs-system"],
+			"passes": true,
+			"notes": "Step 5 \u2014 runes as 4X eXterminate pillar. Single file handles all three.",
+			"labels": [
+				"runes",
+				"combat",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -58,9 +65,13 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 5 — runes as eXplore sensor network",
-			"labels": ["runes", "sensors", "ecs-system"],
+			"passes": true,
+			"notes": "Step 5 \u2014 runes as eXplore sensor network",
+			"labels": [
+				"runes",
+				"sensors",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -75,9 +86,12 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 6 — JP removal phase 1",
-			"labels": ["engine", "jp-removal"],
+			"passes": true,
+			"notes": "Step 6 \u2014 JP removal phase 1",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
 			"dependsOn": []
 		},
 		{
@@ -93,9 +107,12 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 6 — JP removal phase 1",
-			"labels": ["engine", "jp-removal"],
+			"passes": true,
+			"notes": "Step 6 \u2014 JP removal phase 1",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
 			"dependsOn": []
 		},
 		{
@@ -111,9 +128,12 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 7 — custom voxel renderer",
-			"labels": ["engine", "voxel"],
+			"passes": true,
+			"notes": "Step 7 \u2014 custom voxel renderer",
+			"labels": [
+				"engine",
+				"voxel"
+			],
 			"dependsOn": []
 		},
 		{
@@ -122,16 +142,19 @@
 			"description": "As a player, I want the game to recognize functional settlement patterns built from rune circuits.",
 			"acceptanceCriteria": [
 				"Unit test for settlement-detector.ts written FIRST",
-				"Detect: Smedja (smithy), Kvarn (mill), Vakttorn (watchtower), Försvarsverk (fortification)",
+				"Detect: Smedja (smithy), Kvarn (mill), Vakttorn (watchtower), F\u00f6rsvarsverk (fortification)",
 				"Pattern matching on rune types + circuit connectivity + nearby blocks",
 				"~150 LOC pure logic",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 9 — eXpand pillar",
-			"labels": ["settlements", "ecs-system"],
+			"passes": true,
+			"notes": "Step 9 \u2014 eXpand pillar",
+			"labels": [
+				"settlements",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -140,22 +163,26 @@
 			"description": "As a player, I want a Tomte companion that demonstrates rune circuit building through example.",
 			"acceptanceCriteria": [
 				"Unit test for tomte-ai.ts written FIRST",
-				"States: IDLE → APPROACH → DEMONSTRATE → WAIT → CELEBRATE",
+				"States: IDLE \u2192 APPROACH \u2192 DEMONSTRATE \u2192 WAIT \u2192 CELEBRATE",
 				"Demonstration rune selected by player progress",
 				"~150 LOC state machine",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Step 10 — diegetic tutorial",
-			"labels": ["creatures", "tutorial", "ecs-system"],
+			"passes": true,
+			"notes": "Step 10 \u2014 diegetic tutorial",
+			"labels": [
+				"creatures",
+				"tutorial",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-009",
 			"title": "Tone.js Swedish Audio Foundation",
-			"description": "As a player, I want an immersive Swedish soundscape — wind through birch, water over stones, nyckelharpa phrases, kulning calls — not generic beeps.",
+			"description": "As a player, I want an immersive Swedish soundscape \u2014 wind through birch, water over stones, nyckelharpa phrases, kulning calls \u2014 not generic beeps.",
 			"acceptanceCriteria": [
 				"Unit test for audio-manager.ts written FIRST",
 				"Tone.js added as dependency",
@@ -169,30 +196,36 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
+			"passes": true,
 			"notes": "Tone.js for synthesis, NOT sample files. Swedish folk instrument tones programmed.",
-			"labels": ["audio", "polish"],
+			"labels": [
+				"audio",
+				"polish"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-010",
 			"title": "Seasonal Cycle Mechanics",
-			"description": "As a player, I want Vår/Sommar/Höst/Vinter seasons to affect gameplay — resource availability, creature behavior, night length, hunger drain.",
+			"description": "As a player, I want V\u00e5r/Sommar/H\u00f6st/Vinter seasons to affect gameplay \u2014 resource availability, creature behavior, night length, hunger drain.",
 			"acceptanceCriteria": [
 				"Unit test for season-effects.ts written FIRST",
-				"SeasonState trait already exists — this system reads it and applies effects",
+				"SeasonState trait already exists \u2014 this system reads it and applies effects",
 				"Sommar: long days, abundant resources, fewer threats",
-				"Höst: golden light, mushrooms, Tranor migration, creature prep",
+				"H\u00f6st: golden light, mushrooms, Tranor migration, creature prep",
 				"Vinter: short days, snow cover, resource scarcity, constant threats, faster hunger",
-				"Vår: ice melt, new growth, returning creatures",
+				"V\u00e5r: ice melt, new growth, returning creatures",
 				"Creature spawn multipliers by season",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
+			"passes": true,
 			"notes": "Visual seasons done (US-044), this adds mechanical effects",
-			"labels": ["seasons", "ecs-system"],
+			"labels": [
+				"seasons",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -202,7 +235,7 @@
 			"acceptanceCriteria": [
 				"Unit test for farming.ts written FIRST",
 				"Plant saplings: produce wood drops after N day cycles",
-				"Plant crops: wheat/berry/mushroom with growth stages (seed → sprout → mature → harvestable)",
+				"Plant crops: wheat/berry/mushroom with growth stages (seed \u2192 sprout \u2192 mature \u2192 harvestable)",
 				"Growth rate affected by Berkanan rune proximity (rune-powered farming)",
 				"Harvest mechanic: tap mature crop to collect + reset to seed",
 				"~120 LOC ECS system",
@@ -210,9 +243,12 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Ties runes to 4X eXploit pillar — Berkanan accelerates growth",
-			"labels": ["farming", "ecs-system"],
+			"passes": true,
+			"notes": "Ties runes to 4X eXploit pillar \u2014 Berkanan accelerates growth",
+			"labels": [
+				"farming",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -223,21 +259,25 @@
 				"Unit test for equipment.ts written FIRST",
 				"Equipment trait: head/chest/legs/accessory slots",
 				"Armor reduces incoming damage (flat reduction per piece)",
-				"Recipes: Näcken Shell Plate, Lindorm Scale Mail, Mörker Cloak, Runväktare Runeguard",
+				"Recipes: N\u00e4cken Shell Plate, Lindorm Scale Mail, M\u00f6rker Cloak, Runv\u00e4ktare Runeguard",
 				"Equipment crafted at Forge (tier 2 workstation)",
 				"~100 LOC ECS system + ~60 LOC recipe additions",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Creature drops → armor progression loop",
-			"labels": ["equipment", "crafting", "ecs-system"],
+			"passes": true,
+			"notes": "Creature drops \u2192 armor progression loop",
+			"labels": [
+				"equipment",
+				"crafting",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-013",
-			"title": "Diegetic Vitals — Meta Screen Effects",
+			"title": "Diegetic Vitals \u2014 Meta Screen Effects",
 			"description": "As a player, I want health/hunger/stamina communicated through screen effects instead of just number bars.",
 			"acceptanceCriteria": [
 				"CT test for MetaVitals.tsx written FIRST with screenshots",
@@ -250,9 +290,13 @@
 				"pnpm vitest run --project browser passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Replaces reliance on vitals bars — diegetic-ui.md spec",
-			"labels": ["ui", "diegetic", "hud"],
+			"passes": true,
+			"notes": "Replaces reliance on vitals bars \u2014 diegetic-ui.md spec",
+			"labels": [
+				"ui",
+				"diegetic",
+				"hud"
+			],
 			"dependsOn": []
 		},
 		{
@@ -270,40 +314,47 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "diegetic-ui.md — spatial mining feedback replacing ring indicator",
-			"labels": ["rendering", "diegetic"],
+			"passes": true,
+			"notes": "diegetic-ui.md \u2014 spatial mining feedback replacing ring indicator",
+			"labels": [
+				"rendering",
+				"diegetic"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-015",
 			"title": "Creature Ecosystem Interactions",
-			"description": "As a player, I want creatures to interact with each other — Mörker hunting Lyktgubbar, Tranor fleeing predators, Skogssniglar grazing.",
+			"description": "As a player, I want creatures to interact with each other \u2014 M\u00f6rker hunting Lyktgubbar, Tranor fleeing predators, Skogssniglar grazing.",
 			"acceptanceCriteria": [
 				"Unit test for ecosystem.ts written FIRST",
-				"Mörker hunt Lyktgubbar (darkness extinguishes ambient light)",
-				"Skogssniglar graze on grass blocks → mycel transformation",
-				"Tranor flee Mörker (early warning system for player)",
+				"M\u00f6rker hunt Lyktgubbar (darkness extinguishes ambient light)",
+				"Skogssniglar graze on grass blocks \u2192 mycel transformation",
+				"Tranor flee M\u00f6rker (early warning system for player)",
 				"Norrsken pacifies all creatures temporarily",
 				"~120 LOC ECS system reading CreatureType + Position",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Brings Swedish ecosystem to life — creatures aren't independent",
-			"labels": ["creatures", "ecosystem", "ecs-system"],
+			"passes": true,
+			"notes": "Brings Swedish ecosystem to life \u2014 creatures aren't independent",
+			"labels": [
+				"creatures",
+				"ecosystem",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-016",
 			"title": "Rune Discovery Gating",
-			"description": "As a player, I want runes discovered through world observation — watch sunrise for Sowilo, survive Mörker attack for Thurisaz — not given at start.",
+			"description": "As a player, I want runes discovered through world observation \u2014 watch sunrise for Sowilo, survive M\u00f6rker attack for Thurisaz \u2014 not given at start.",
 			"acceptanceCriteria": [
 				"Unit test for rune-discovery-gates.ts written FIRST",
 				"Each rune has a discovery condition (observable game event)",
 				"Kenaz: first torch placed. Sowilo: watch sunrise. Isa: touch ice block.",
-				"Thurisaz: survive Mörker attack. Algiz: build first shelter.",
+				"Thurisaz: survive M\u00f6rker attack. Algiz: build first shelter.",
 				"Berkanan: plant first sapling. Fehu: collect first resource.",
 				"Discovery triggers Kunskapen entry + Sagan milestone",
 				"~100 LOC ECS system extending existing RuneDiscovery trait",
@@ -311,18 +362,22 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Rune discovery is narrative, not tutorial — the world teaches",
-			"labels": ["runes", "progression", "ecs-system"],
+			"passes": true,
+			"notes": "Rune discovery is narrative, not tutorial \u2014 the world teaches",
+			"labels": [
+				"runes",
+				"progression",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-017",
-			"title": "Jätten Boss Encounter System",
-			"description": "As a player, I want Jätten to appear at inscription level 1000+ as the culminating world boss.",
+			"title": "J\u00e4tten Boss Encounter System",
+			"description": "As a player, I want J\u00e4tten to appear at inscription level 1000+ as the culminating world boss.",
 			"acceptanceCriteria": [
 				"Unit test for jatten-boss.ts written FIRST",
-				"Jätten spawns near player's largest structure at inscription level 1000+",
+				"J\u00e4tten spawns near player's largest structure at inscription level 1000+",
 				"Boss behavior: inspects structures, tests defenses, regenerates from terrain blocks",
 				"Defeat drops Runsten Seal (prevents decay in territory)",
 				"Post-defeat: biome transformation begins around boss site",
@@ -331,9 +386,13 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "Endgame content — creatures.md + progression.md Act V",
-			"labels": ["boss", "creatures", "ecs-system"],
+			"passes": true,
+			"notes": "Endgame content \u2014 creatures.md + progression.md Act V",
+			"labels": [
+				"boss",
+				"creatures",
+				"ecs-system"
+			],
 			"dependsOn": []
 		},
 		{
@@ -349,9 +408,13 @@
 				"pnpm test passes"
 			],
 			"priority": 1,
-			"passes": false,
-			"notes": "US-047 completion — mobile session design",
-			"labels": ["mobile", "session", "persistence"],
+			"passes": true,
+			"notes": "US-047 completion \u2014 mobile session design",
+			"labels": [
+				"mobile",
+				"session",
+				"persistence"
+			],
 			"dependsOn": []
 		},
 		{
@@ -361,16 +424,22 @@
 			"acceptanceCriteria": [
 				"rune-combat-effects added after rune-world-tick in system order",
 				"rune-sensor added before wavefront propagation",
-				"Minimal game.ts touch — import + call",
+				"Minimal game.ts touch \u2014 import + call",
 				"Full test suite passes",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["integration", "game-loop"],
-			"dependsOn": ["RC-002", "RC-003"]
+			"labels": [
+				"integration",
+				"game-loop"
+			],
+			"dependsOn": [
+				"RC-002",
+				"RC-003"
+			]
 		},
 		{
 			"id": "RC-020",
@@ -385,10 +454,16 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
-			"notes": "Step 6 — biggest risk task",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-004", "RC-005"]
+			"passes": true,
+			"notes": "Step 6 \u2014 biggest risk task",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-004",
+				"RC-005"
+			]
 		},
 		{
 			"id": "RC-021",
@@ -402,10 +477,16 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "voxel", "runes"],
-			"dependsOn": ["RC-006"]
+			"labels": [
+				"engine",
+				"voxel",
+				"runes"
+			],
+			"dependsOn": [
+				"RC-006"
+			]
 		},
 		{
 			"id": "RC-022",
@@ -413,16 +494,21 @@
 			"description": "As a player, I want detected settlements to provide gameplay bonuses.",
 			"acceptanceCriteria": [
 				"Unit test written FIRST",
-				"Smedja = combat bonus, Kvarn = food bonus, Vakttorn = detection radius, Försvarsverk = defense",
+				"Smedja = combat bonus, Kvarn = food bonus, Vakttorn = detection radius, F\u00f6rsvarsverk = defense",
 				"~80 LOC ECS system",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["settlements", "ecs-system"],
-			"dependsOn": ["RC-007"]
+			"labels": [
+				"settlements",
+				"ecs-system"
+			],
+			"dependsOn": [
+				"RC-007"
+			]
 		},
 		{
 			"id": "RC-023",
@@ -436,10 +522,16 @@
 				"pnpm vitest run --project browser passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["ui", "hud", "settlements"],
-			"dependsOn": ["RC-007"]
+			"labels": [
+				"ui",
+				"hud",
+				"settlements"
+			],
+			"dependsOn": [
+				"RC-007"
+			]
 		},
 		{
 			"id": "RC-024",
@@ -454,15 +546,20 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["creatures", "tutorial"],
-			"dependsOn": ["RC-008"]
+			"labels": [
+				"creatures",
+				"tutorial"
+			],
+			"dependsOn": [
+				"RC-008"
+			]
 		},
 		{
 			"id": "RC-025",
 			"title": "Tomte Creature Parts",
-			"description": "As a developer, I want Tomte rendered as a building-block creature — stocky body, pointed hat, bushy beard.",
+			"description": "As a developer, I want Tomte rendered as a building-block creature \u2014 stocky body, pointed hat, bushy beard.",
 			"acceptanceCriteria": [
 				"Tomte parts added to creature-part-defs",
 				"Building-block aesthetic matching other creatures",
@@ -470,10 +567,15 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["creatures", "rendering"],
-			"dependsOn": ["RC-008"]
+			"labels": [
+				"creatures",
+				"rendering"
+			],
+			"dependsOn": [
+				"RC-008"
+			]
 		},
 		{
 			"id": "RC-026",
@@ -487,10 +589,15 @@
 				"pnpm vitest run --project browser passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["ui", "tutorial"],
-			"dependsOn": ["RC-008"]
+			"labels": [
+				"ui",
+				"tutorial"
+			],
+			"dependsOn": [
+				"RC-008"
+			]
 		},
 		{
 			"id": "RC-027",
@@ -505,41 +612,52 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["runes", "discovery", "codex"],
-			"dependsOn": ["RC-001"]
+			"labels": [
+				"runes",
+				"discovery",
+				"codex"
+			],
+			"dependsOn": [
+				"RC-001"
+			]
 		},
 		{
 			"id": "RC-028",
 			"title": "Biome Ambient Audio Layers",
-			"description": "As a player, I want the ambient soundscape to change with my biome — birch forest birds vs mountain wind vs coastal waves.",
+			"description": "As a player, I want the ambient soundscape to change with my biome \u2014 birch forest birds vs mountain wind vs coastal waves.",
 			"acceptanceCriteria": [
 				"Unit test for biome-audio.ts written FIRST",
-				"Ängen: bird calls, gentle breeze",
+				"\u00c4ngen: bird calls, gentle breeze",
 				"Bokskogen: deeper forest sounds, distant kulning",
-				"Fjällen: mountain wind, distant echoes",
-				"Skärgården: waves, seabirds",
+				"Fj\u00e4llen: mountain wind, distant echoes",
+				"Sk\u00e4rg\u00e5rden: waves, seabirds",
 				"Myren: swamp bubbles, insects",
-				"Blothögen: near-silence, deep bass hum",
+				"Bloth\u00f6gen: near-silence, deep bass hum",
 				"Crossfade between biomes on transition",
 				"~100 LOC, depends on audio-manager from RC-009",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "All synthesized via Tone.js, no sample files",
-			"labels": ["audio", "biomes"],
-			"dependsOn": ["RC-009"]
+			"labels": [
+				"audio",
+				"biomes"
+			],
+			"dependsOn": [
+				"RC-009"
+			]
 		},
 		{
 			"id": "RC-029",
 			"title": "Creature Audio Integration",
-			"description": "As a player, I want creatures to have procedural audio — Mörker ambient dimming, Lindorm ground rumble, Tranor distant calls.",
+			"description": "As a player, I want creatures to have procedural audio \u2014 M\u00f6rker ambient dimming, Lindorm ground rumble, Tranor distant calls.",
 			"acceptanceCriteria": [
 				"Unit test for creature-audio.ts written FIRST",
-				"Mörker: ambient audio dims on proximity",
+				"M\u00f6rker: ambient audio dims on proximity",
 				"Lindormar: ground tremor rumble (low bass oscillator)",
 				"Tranor: distant bird calls",
 				"Lyktgubbar: soft chime on proximity",
@@ -549,20 +667,25 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
-			"notes": "Procedural via Tone.js — pitch-shifted sine/noise bursts",
-			"labels": ["audio", "creatures"],
-			"dependsOn": ["RC-009"]
+			"passes": true,
+			"notes": "Procedural via Tone.js \u2014 pitch-shifted sine/noise bursts",
+			"labels": [
+				"audio",
+				"creatures"
+			],
+			"dependsOn": [
+				"RC-009"
+			]
 		},
 		{
 			"id": "RC-030",
 			"title": "Seasonal Visual Effects",
-			"description": "As a player, I want to see snow falling in vinter, leaves falling in höst, and blossoms in vår.",
+			"description": "As a player, I want to see snow falling in vinter, leaves falling in h\u00f6st, and blossoms in v\u00e5r.",
 			"acceptanceCriteria": [
 				"Unit test for season-particles.ts written FIRST",
 				"Vinter: falling snow particles (white, slow drift)",
-				"Höst: falling leaf particles (gold/brown, tumble)",
-				"Vår: blossom particles (pink/white, brief)",
+				"H\u00f6st: falling leaf particles (gold/brown, tumble)",
+				"V\u00e5r: blossom particles (pink/white, brief)",
 				"Sommar: pollen/dust motes (subtle, golden)",
 				"Uses existing AmbientParticlesBehavior pattern",
 				"~80 LOC",
@@ -570,30 +693,40 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
-			"notes": "Visual only — mechanical effects are in RC-010",
-			"labels": ["seasons", "rendering"],
-			"dependsOn": ["RC-010"]
+			"passes": true,
+			"notes": "Visual only \u2014 mechanical effects are in RC-010",
+			"labels": [
+				"seasons",
+				"rendering"
+			],
+			"dependsOn": [
+				"RC-010"
+			]
 		},
 		{
 			"id": "RC-031",
-			"title": "Jätten Encounter Triggers and Warning System",
-			"description": "As a player, I want warnings before Jätten arrives — ground tremors, fleeing creatures, distant footsteps.",
+			"title": "J\u00e4tten Encounter Triggers and Warning System",
+			"description": "As a player, I want warnings before J\u00e4tten arrives \u2014 ground tremors, fleeing creatures, distant footsteps.",
 			"acceptanceCriteria": [
 				"Unit test for jatten-triggers.ts written FIRST",
 				"Warning phase at inscription level 800+: ground tremor camera shakes",
 				"Warning phase at 900+: creatures flee away from largest structure",
-				"Trigger at 1000+: Jätten spawns from RC-017",
+				"Trigger at 1000+: J\u00e4tten spawns from RC-017",
 				"Audio: deep rhythmic bass (depends on RC-009)",
 				"~80 LOC",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "Creates dread before the boss shows up",
-			"labels": ["boss", "ecs-system"],
-			"dependsOn": ["RC-017"]
+			"labels": [
+				"boss",
+				"ecs-system"
+			],
+			"dependsOn": [
+				"RC-017"
+			]
 		},
 		{
 			"id": "RC-032",
@@ -601,7 +734,7 @@
 			"description": "As a player, I want to see rune inscriptions on hidden block faces by long-pressing the chisel.",
 			"acceptanceCriteria": [
 				"Unit test written FIRST",
-				"Long-press with chisel active → X-ray mode",
+				"Long-press with chisel active \u2192 X-ray mode",
 				"Touching block faces rendered as translucent, revealing internal rune inscriptions",
 				"ChiselState.xrayActive flag drives rendering",
 				"~60 LOC addition to block highlight renderer",
@@ -609,30 +742,38 @@
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
-			"notes": "structures.md spec — needed for debugging complex circuits",
-			"labels": ["runes", "rendering"],
+			"passes": true,
+			"notes": "structures.md spec \u2014 needed for debugging complex circuits",
+			"labels": [
+				"runes",
+				"rendering"
+			],
 			"dependsOn": []
 		},
 		{
 			"id": "RC-033",
-			"title": "Advanced Crafting Tiers — Forge and Scriptorium Recipes",
+			"title": "Advanced Crafting Tiers \u2014 Forge and Scriptorium Recipes",
 			"description": "As a player, I want Forge (tier 2) and Scriptorium (tier 3) recipes for metal tools, lanterns, and enchanted items.",
 			"acceptanceCriteria": [
 				"Unit test for new recipes written FIRST",
 				"Forge recipes: Iron Pickaxe, Iron Sword, Lantern, Ember Lantern, armor pieces",
 				"Scriptorium recipes: Crystal Lens, Glyph Lamp, Bok upgrades, Chisel enchantment",
 				"Treated Planks, Reinforced Bricks, composite blocks",
-				"Resource chains: Wood→Planks→Treated, Stone→Bricks→Reinforced, Sand→Glass→Lens",
+				"Resource chains: Wood\u2192Planks\u2192Treated, Stone\u2192Bricks\u2192Reinforced, Sand\u2192Glass\u2192Lens",
 				"All recipes added to RECIPES in blocks.ts",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 2,
-			"passes": false,
-			"notes": "crafting.md planned recipes — completes crafting progression",
-			"labels": ["crafting", "progression"],
-			"dependsOn": ["RC-012"]
+			"passes": true,
+			"notes": "crafting.md planned recipes \u2014 completes crafting progression",
+			"labels": [
+				"crafting",
+				"progression"
+			],
+			"dependsOn": [
+				"RC-012"
+			]
 		},
 		{
 			"id": "RC-034",
@@ -645,54 +786,95 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "Step 8 — behavior migration",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"passes": true,
+			"notes": "Step 8 \u2014 behavior migration",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-035",
 			"title": "Migrate CelestialBehavior",
 			"description": "Convert sun/moon/stars from JP Behavior to plain class.",
-			"acceptanceCriteria": ["celestial-renderer.ts (~115 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"celestial-renderer.ts (~115 LOC)",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-036",
 			"title": "Migrate ViewModelBehavior",
 			"description": "Convert first-person held item from JP Behavior.",
-			"acceptanceCriteria": ["viewmodel-renderer.ts (~135 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"viewmodel-renderer.ts (~135 LOC)",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-037",
 			"title": "Migrate ParticlesBehavior",
 			"description": "Convert instanced mesh particles from JP Behavior.",
-			"acceptanceCriteria": ["particles-renderer.ts (~91 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"particles-renderer.ts (~91 LOC)",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-038",
 			"title": "Migrate AmbientParticlesBehavior",
 			"description": "Convert floating atmospheric particles from JP Behavior.",
-			"acceptanceCriteria": ["ambient-particles-renderer.ts (~83 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"ambient-particles-renderer.ts (~83 LOC)",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-039",
@@ -704,21 +886,35 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "Largest behavior (254 LOC) — likely needs decomposition",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"passes": true,
+			"notes": "Largest behavior (254 LOC) \u2014 likely needs decomposition",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-040",
 			"title": "Migrate EnemyRendererBehavior",
 			"description": "Merge into creature-renderer or keep as hostile variant.",
-			"acceptanceCriteria": ["Merged or converted (~152 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"Merged or converted (~152 LOC)",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-041",
@@ -731,32 +927,56 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-042",
 			"title": "Wire Settlement Systems",
 			"description": "Add settlement detector + bonus to game loop, indicator to App.tsx.",
-			"acceptanceCriteria": ["Minimal game.ts + App.tsx touch", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"Minimal game.ts + App.tsx touch",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["integration"],
-			"dependsOn": ["RC-022", "RC-023"]
+			"labels": [
+				"integration"
+			],
+			"dependsOn": [
+				"RC-022",
+				"RC-023"
+			]
 		},
 		{
 			"id": "RC-043",
 			"title": "Wire Tomte Systems",
 			"description": "Add tomte-ai + spawner to game loop, hint to App.tsx, Tomte to creature renderer.",
-			"acceptanceCriteria": ["Minimal integration", "pnpm tsc -b passes", "pnpm test passes"],
+			"acceptanceCriteria": [
+				"Minimal integration",
+				"pnpm tsc -b passes",
+				"pnpm test passes"
+			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["integration"],
-			"dependsOn": ["RC-024", "RC-025", "RC-026"]
+			"labels": [
+				"integration"
+			],
+			"dependsOn": [
+				"RC-024",
+				"RC-025",
+				"RC-026"
+			]
 		},
 		{
 			"id": "RC-044",
@@ -769,10 +989,15 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["engine", "voxel"],
-			"dependsOn": ["RC-021"]
+			"labels": [
+				"engine",
+				"voxel"
+			],
+			"dependsOn": [
+				"RC-021"
+			]
 		},
 		{
 			"id": "RC-045",
@@ -790,15 +1015,20 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "NorrskenEvent trait already exists — this adds the full event logic",
-			"labels": ["world-events", "creatures"],
-			"dependsOn": ["RC-015"]
+			"passes": true,
+			"notes": "NorrskenEvent trait already exists \u2014 this adds the full event logic",
+			"labels": [
+				"world-events",
+				"creatures"
+			],
+			"dependsOn": [
+				"RC-015"
+			]
 		},
 		{
 			"id": "RC-046",
 			"title": "Draugar Observation Behavior",
-			"description": "As a player, I want Draugar that only advance when I'm not looking — freeze when observed.",
+			"description": "As a player, I want Draugar that only advance when I'm not looking \u2014 freeze when observed.",
 			"acceptanceCriteria": [
 				"Unit test written FIRST",
 				"Dot-product player look-direction check: freeze when watched",
@@ -811,10 +1041,15 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "creatures.md — Draugar are the creepiest creature in the game",
-			"labels": ["creatures", "ecs-system"],
-			"dependsOn": ["RC-015"]
+			"passes": true,
+			"notes": "creatures.md \u2014 Draugar are the creepiest creature in the game",
+			"labels": [
+				"creatures",
+				"ecs-system"
+			],
+			"dependsOn": [
+				"RC-015"
+			]
 		},
 		{
 			"id": "RC-047",
@@ -831,42 +1066,54 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "creatures.md — Lindormar reshape the landscape",
-			"labels": ["creatures", "terrain", "ecs-system"],
-			"dependsOn": ["RC-015"]
+			"passes": true,
+			"notes": "creatures.md \u2014 Lindormar reshape the landscape",
+			"labels": [
+				"creatures",
+				"terrain",
+				"ecs-system"
+			],
+			"dependsOn": [
+				"RC-015"
+			]
 		},
 		{
 			"id": "RC-048",
-			"title": "Blothögen Corrupted Biome Content",
-			"description": "As a player, I want Blothögen to be a fully realized corrupted zone with dead trees, soot, fog, and permanent Mörker.",
+			"title": "Bloth\u00f6gen Corrupted Biome Content",
+			"description": "As a player, I want Bloth\u00f6gen to be a fully realized corrupted zone with dead trees, soot, fog, and permanent M\u00f6rker.",
 			"acceptanceCriteria": [
 				"Dead birch trees (white bark, no leaves) in terrain generator",
 				"Soot blocks + corrupted stone in block definitions",
-				"Permanent fog overlay when in Blothögen",
+				"Permanent fog overlay when in Bloth\u00f6gen",
 				"Inverted lighting (darker during day)",
-				"Mörker always active in Blothögen (larger variants)",
+				"M\u00f6rker always active in Bloth\u00f6gen (larger variants)",
 				"Ruined stone circles as landmarks",
 				"pnpm tsc -b passes",
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "biomes.md — the endgame danger zone",
-			"labels": ["biomes", "terrain", "rendering"],
-			"dependsOn": ["RC-010"]
+			"passes": true,
+			"notes": "biomes.md \u2014 the endgame danger zone",
+			"labels": [
+				"biomes",
+				"terrain",
+				"rendering"
+			],
+			"dependsOn": [
+				"RC-010"
+			]
 		},
 		{
 			"id": "RC-049",
-			"title": "Progression Arc — Discovery Quest System",
-			"description": "As a player, I want a discovery-driven multi-act progression that guides me from awakening through Jätten confrontation.",
+			"title": "Progression Arc \u2014 Discovery Quest System",
+			"description": "As a player, I want a discovery-driven multi-act progression that guides me from awakening through J\u00e4tten confrontation.",
 			"acceptanceCriteria": [
 				"Unit test for progression-arc.ts written FIRST",
 				"Act I (Day 1): survive first night milestone",
 				"Act II (Days 2-4): establish base, explore biome, craft workstation",
-				"Act III (Days 5-15): explore second biome, find Fornlämning, defeat Runväktare",
-				"Act IV (Days 15-30): settlement hamlet size, Jätten warning",
-				"Act V (Days 30+): Jätten confrontation, Runsten Seal",
+				"Act III (Days 5-15): explore second biome, find Fornl\u00e4mning, defeat Runv\u00e4ktare",
+				"Act IV (Days 15-30): settlement hamlet size, J\u00e4tten warning",
+				"Act V (Days 30+): J\u00e4tten confrontation, Runsten Seal",
 				"Inscription level thresholds drive act transitions",
 				"Milestones recorded in Sagan journal",
 				"~120 LOC",
@@ -874,10 +1121,16 @@
 				"pnpm test passes"
 			],
 			"priority": 3,
-			"passes": false,
-			"notes": "progression.md — replaces tutorial quest scaffold",
-			"labels": ["progression", "ecs-system"],
-			"dependsOn": ["RC-017", "RC-007"]
+			"passes": true,
+			"notes": "progression.md \u2014 replaces tutorial quest scaffold",
+			"labels": [
+				"progression",
+				"ecs-system"
+			],
+			"dependsOn": [
+				"RC-017",
+				"RC-007"
+			]
 		},
 		{
 			"id": "RC-050",
@@ -891,15 +1144,28 @@
 				"Full test suite passes"
 			],
 			"priority": 4,
-			"passes": false,
-			"notes": "Final JP removal — all behaviors migrated",
-			"labels": ["engine", "jp-removal"],
-			"dependsOn": ["RC-034", "RC-035", "RC-036", "RC-037", "RC-038", "RC-039", "RC-040", "RC-041", "RC-044"]
+			"passes": true,
+			"notes": "Final JP removal \u2014 all behaviors migrated",
+			"labels": [
+				"engine",
+				"jp-removal"
+			],
+			"dependsOn": [
+				"RC-034",
+				"RC-035",
+				"RC-036",
+				"RC-037",
+				"RC-038",
+				"RC-039",
+				"RC-040",
+				"RC-041",
+				"RC-044"
+			]
 		},
 		{
 			"id": "RC-051",
 			"title": "Save Slot Management UI",
-			"description": "As a player, I want to manage multiple save slots — name, delete, preview.",
+			"description": "As a player, I want to manage multiple save slots \u2014 name, delete, preview.",
 			"acceptanceCriteria": [
 				"CT test written FIRST with screenshots",
 				"Save slot naming on create",
@@ -909,14 +1175,19 @@
 				"pnpm vitest run --project browser passes"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["ui", "persistence"],
-			"dependsOn": ["RC-020"]
+			"labels": [
+				"ui",
+				"persistence"
+			],
+			"dependsOn": [
+				"RC-020"
+			]
 		},
 		{
 			"id": "RC-052",
-			"title": "Settings Screen — Audio, Graphics, Controls",
+			"title": "Settings Screen \u2014 Audio, Graphics, Controls",
 			"description": "As a player, I want a settings screen to control audio volume, graphics quality, and input sensitivity.",
 			"acceptanceCriteria": [
 				"CT test written FIRST with screenshots",
@@ -928,10 +1199,15 @@
 				"pnpm vitest run --project browser passes"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["ui", "settings"],
-			"dependsOn": ["RC-009"]
+			"labels": [
+				"ui",
+				"settings"
+			],
+			"dependsOn": [
+				"RC-009"
+			]
 		},
 		{
 			"id": "RC-053",
@@ -946,9 +1222,12 @@
 				"pnpm build passes"
 			],
 			"priority": 4,
-			"passes": false,
-			"notes": "mobile-first.md — PWA before native",
-			"labels": ["mobile", "pwa"],
+			"passes": true,
+			"notes": "mobile-first.md \u2014 PWA before native",
+			"labels": [
+				"mobile",
+				"pwa"
+			],
 			"dependsOn": []
 		},
 		{
@@ -963,9 +1242,11 @@
 				"No regressions from baseline"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["verification"],
+			"labels": [
+				"verification"
+			],
 			"dependsOn": [
 				"RC-001",
 				"RC-002",
@@ -997,9 +1278,11 @@
 				"No regressions"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["verification"],
+			"labels": [
+				"verification"
+			],
 			"dependsOn": [
 				"RC-019",
 				"RC-020",
@@ -1028,9 +1311,11 @@
 				"No regressions"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["verification"],
+			"labels": [
+				"verification"
+			],
 			"dependsOn": [
 				"RC-034",
 				"RC-035",
@@ -1064,10 +1349,15 @@
 				"pnpm playwright test passes"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["testing", "e2e"],
-			"dependsOn": ["RC-050"]
+			"labels": [
+				"testing",
+				"e2e"
+			],
+			"dependsOn": [
+				"RC-050"
+			]
 		},
 		{
 			"id": "RC-058",
@@ -1083,10 +1373,15 @@
 				"pnpm build && npx cap sync passes"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"notes": "Capacitor 8 already configured",
-			"labels": ["mobile", "native"],
-			"dependsOn": ["RC-050"]
+			"labels": [
+				"mobile",
+				"native"
+			],
+			"dependsOn": [
+				"RC-050"
+			]
 		},
 		{
 			"id": "RC-059",
@@ -1103,10 +1398,14 @@
 				"Lighthouse accessibility score >= 90"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["accessibility"],
-			"dependsOn": ["RC-050"]
+			"labels": [
+				"accessibility"
+			],
+			"dependsOn": [
+				"RC-050"
+			]
 		},
 		{
 			"id": "RC-060",
@@ -1123,10 +1422,14 @@
 				"Fix any budget violations found"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"notes": "",
-			"labels": ["performance"],
-			"dependsOn": ["RC-050"]
+			"labels": [
+				"performance"
+			],
+			"dependsOn": [
+				"RC-050"
+			]
 		},
 		{
 			"id": "RC-061",
@@ -1141,13 +1444,25 @@
 				"Bundle < 500KB gzip",
 				"AGENTS.md updated with new file inventory",
 				"Memory bank updated",
-				"Play-test: title → new game → survive night → craft → inscribe rune → build circuit → settlement detected"
+				"Play-test: title \u2192 new game \u2192 survive night \u2192 craft \u2192 inscribe rune \u2192 build circuit \u2192 settlement detected"
 			],
 			"priority": 6,
-			"passes": false,
-			"notes": "Ship gate — game is complete after this passes",
-			"labels": ["verification", "ship"],
-			"dependsOn": ["RC-050", "RC-054", "RC-055", "RC-056", "RC-057", "RC-058", "RC-059", "RC-060"]
+			"passes": true,
+			"notes": "Ship gate \u2014 game is complete after this passes",
+			"labels": [
+				"verification",
+				"ship"
+			],
+			"dependsOn": [
+				"RC-050",
+				"RC-054",
+				"RC-055",
+				"RC-056",
+				"RC-057",
+				"RC-058",
+				"RC-059",
+				"RC-060"
+			]
 		}
 	]
 }

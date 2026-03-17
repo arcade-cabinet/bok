@@ -7,56 +7,32 @@
 import { BlockId } from "../../world/blocks.ts";
 import { distSq, getMaxSignal, getSignalOfType, type RuneBlock, type SignalMap, toChunk } from "./archetype-helpers.ts";
 import { RuneId } from "./rune-data.ts";
+import {
+	type DetectedSettlementArchetype,
+	FORSVARSVERK_LINK_DISTANCE,
+	FORSVARSVERK_MIN_SIGNAL,
+	KVARN_LINK_DISTANCE,
+	KVARN_MIN_SIGNAL,
+	SettlementArchetypeId,
+	type SettlementArchetypeKey,
+	SMEDJA_FORGE_DISTANCE,
+	SMEDJA_JERA_DISTANCE,
+	SMEDJA_MIN_HEAT,
+	VAKTTORN_LINK_DISTANCE,
+	VAKTTORN_MIN_LIGHT,
+	VAKTTORN_MIN_Y,
+} from "./settlement-detector-data.ts";
 import { SignalType } from "./signal-data.ts";
 
-// ─── Settlement Archetype IDs ───
-
-export const SettlementArchetypeId = {
-	/** Smithy: Kenaz heat + Jera transform + Forge block. */
-	Smedja: "smedja",
-	/** Mill: Jera transform + Berkanan growth, both with active signal. */
-	Kvarn: "kvarn",
-	/** Watchtower: Sowilo light + Ansuz detection at elevated position. */
-	Vakttorn: "vakttorn",
-	/** Fortification: Algiz ward + Thurisaz damage + Ansuz detection. */
-	Forsvarsverk: "forsvarsverk",
-} as const;
-export type SettlementArchetypeKey = (typeof SettlementArchetypeId)[keyof typeof SettlementArchetypeId];
-
-export interface DetectedSettlementArchetype {
-	type: SettlementArchetypeKey;
-	cx: number;
-	cz: number;
-	x: number;
-	y: number;
-	z: number;
-}
-
-// ─── Detection Thresholds ───
-
-/** Min heat signal at Kenaz for Smedja. */
-const SMEDJA_MIN_HEAT = 3;
-/** Max distance between Kenaz and Jera for Smedja. */
-const SMEDJA_JERA_DISTANCE = 5;
-/** Max distance from rune center to scan for Forge block. */
-export const SMEDJA_FORGE_DISTANCE = 4;
-
-/** Max distance between Jera and Berkanan for Kvarn. */
-export const KVARN_LINK_DISTANCE = 6;
-/** Min signal at each rune for Kvarn. */
-const KVARN_MIN_SIGNAL = 1;
-
-/** Min Y coordinate for Sowilo to qualify as Vakttorn. */
-export const VAKTTORN_MIN_Y = 20;
-/** Max distance between Sowilo and Ansuz for Vakttorn. */
-export const VAKTTORN_LINK_DISTANCE = 8;
-/** Min light signal at Sowilo for Vakttorn. */
-const VAKTTORN_MIN_LIGHT = 3;
-
-/** Max distance between defensive runes for Försvarsverk. */
-export const FORSVARSVERK_LINK_DISTANCE = 8;
-/** Min signal at each defensive rune for Försvarsverk. */
-const FORSVARSVERK_MIN_SIGNAL = 1;
+export type { DetectedSettlementArchetype, SettlementArchetypeKey };
+export {
+	FORSVARSVERK_LINK_DISTANCE,
+	KVARN_LINK_DISTANCE,
+	SettlementArchetypeId,
+	SMEDJA_FORGE_DISTANCE,
+	VAKTTORN_LINK_DISTANCE,
+	VAKTTORN_MIN_Y,
+};
 
 // ─── Smedja (Smithy) ───
 

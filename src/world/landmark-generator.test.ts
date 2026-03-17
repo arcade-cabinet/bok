@@ -1,4 +1,4 @@
-import type { VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import { describe, expect, it } from "vitest";
 import { Biome } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
@@ -115,9 +115,12 @@ describe("selectBiomeLandmark", () => {
 		expect(selectBiomeLandmark(Biome.Fjallen)).toBe("fjallstuga");
 	});
 
-	it("Ängen/Blothögen → fornlamning (default)", () => {
+	it("Ängen → fornlamning (default)", () => {
 		expect(selectBiomeLandmark(Biome.Angen)).toBe("fornlamning");
-		expect(selectBiomeLandmark(Biome.Blothogen)).toBe("fornlamning");
+	});
+
+	it("Blothögen → ruined-stone-circle", () => {
+		expect(selectBiomeLandmark(Biome.Blothogen)).toBe("ruined-stone-circle");
 	});
 });
 

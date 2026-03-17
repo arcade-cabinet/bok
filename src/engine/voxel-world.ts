@@ -12,11 +12,12 @@ import * as THREE from "three";
 import { buildBlockFaceAtlas, resetBlockFaceAtlas } from "./block-face-atlas.ts";
 import { buildChunkGeometry } from "./chunk-mesh-builder.ts";
 import { type ChunkAccessor, greedyMesh } from "./greedy-mesher.ts";
+import type { BlockDefinition, TilesetDescriptor, VoxelEntry, VoxelRenderer, VoxelSetOptions } from "./voxel-types.ts";
 import { type VoxelSetEntry, VoxelStore } from "./voxel-store.ts";
 
 export type { VoxelSetEntry };
 
-export class VoxelWorld {
+export class VoxelWorld implements VoxelRenderer {
 	readonly store: VoxelStore;
 	private scene: THREE.Scene;
 	private meshes = new Map<string, THREE.Mesh>();
@@ -32,19 +33,25 @@ export class VoxelWorld {
 		opts: {
 			chunkSize: number;
 			worldHeight: number;
-			blockDefs: Array<{
-				id: number;
-				shapeId: string;
-				defaultTexture?: { col: number; row: number };
-				faceTextures?: Partial<Record<number, { col: number; row: number }>>;
-			}>;
+			blockDefs: BlockDefinition[];
 		},
 	) {
 		this.scene = scene;
 		this.chunkSize = opts.chunkSize;
 		this.worldHeight = opts.worldHeight;
 		this.store = new VoxelStore(opts.chunkSize, opts.worldHeight);
-		buildBlockFaceAtlas(opts.blockDefs);
+		buildBlockFaceAtlas(
+			opts.blockDefs.map((d) => ({
+				id: d.id,
+				shapeId: d.shapeId,
+				defaultTexture: d.defaultTexture,
+				faceTextures: d.faceTextures
+					? Object.fromEntries(
+							Object.entries(d.faceTextures).map(([k, v]) => [k, v ? { col: v.col, row: v.row } : undefined]),
+						)
+					: undefined,
+			})),
+		);
 	}
 
 	/** Load tileset texture (matches JP VoxelRenderer.loadTileset API). */
@@ -66,7 +73,7 @@ export class VoxelWorld {
 
 	// ─── JP-compatible API ───
 
-	getVoxel(pos: { x: number; y: number; z: number }): { blockId: number } | null {
+	getVoxel(pos: { x: number; y: number; z: number }): VoxelEntry | null {
 		const id = this.store.getVoxel(pos.x, pos.y, pos.z);
 		return id !== 0 ? { blockId: id } : null;
 	}

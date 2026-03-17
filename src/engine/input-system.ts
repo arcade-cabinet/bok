@@ -4,14 +4,9 @@
  * Call endFrame() at the end of each game loop tick to clear per-frame flags.
  */
 
-export interface Vec2 {
-	x: number;
-	y: number;
-}
+import { BUTTON_MAP, type MouseButton, type Vec2 } from "./input-data.ts";
 
-export type MouseButton = "left" | "right" | "middle";
-
-const BUTTON_MAP: Record<number, MouseButton> = { 0: "left", 1: "middle", 2: "right" };
+export type { MouseButton, Vec2 };
 
 export class InputSystem {
 	private keysDown = new Set<string>();
@@ -75,7 +70,6 @@ export class InputSystem {
 		});
 		this.on(this.canvas, "contextmenu", (e) => e.preventDefault());
 
-		// Touch events
 		this.on(
 			this.canvas,
 			"touchstart",
@@ -157,7 +151,6 @@ export class InputSystem {
 		return "ontouchstart" in window || navigator.maxTouchPoints > 0;
 	}
 
-	/** Was a touch started this frame? slot 0 = "primary", slot 1 = "secondary". */
 	wasTouchStarted(slot: "primary" | "secondary"): boolean {
 		const idx = slot === "primary" ? 0 : 1;
 		return this.touchStartedAtSlot(idx);
@@ -184,7 +177,6 @@ export class InputSystem {
 
 	// ─── Per-frame lifecycle ───
 
-	/** Call at end of each frame to clear per-frame state. */
 	endFrame(): void {
 		this.keysJustPressed.clear();
 		this.mouseButtonsJustPressed.clear();
@@ -194,7 +186,6 @@ export class InputSystem {
 		this.touchesEnded.clear();
 	}
 
-	/** Remove all event listeners. */
 	dispose(): void {
 		for (const [target, event, handler] of this.boundHandlers) {
 			target.removeEventListener(event, handler);

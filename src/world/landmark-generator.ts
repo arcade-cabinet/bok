@@ -19,6 +19,7 @@ import {
 	placeKolmila,
 	placeOfferkalla,
 	placeRunsten,
+	placeRuinedStoneCircle,
 	placeSjomarke,
 	placeStenhog,
 } from "./landmark-types.ts";
@@ -92,6 +93,8 @@ export function selectBiomeLandmark(biome: BiomeId): string {
 			return "sjomarke";
 		case Biome.Fjallen:
 			return "fjallstuga";
+		case Biome.Blothogen:
+			return "ruined-stone-circle";
 		default:
 			return "fornlamning";
 	}
@@ -156,6 +159,9 @@ export function generateChunkLandmarks(entries: VoxelSetOptions[], cx: number, c
 				break;
 			case "fjallstuga":
 				placeFjallstuga(entries, gx, h, gz);
+				break;
+			case "ruined-stone-circle":
+				placeRuinedStoneCircle(entries, gx, h, gz);
 				break;
 			case "fornlamning": {
 				const sizes = [5, 7, 9];

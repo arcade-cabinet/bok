@@ -12,6 +12,9 @@ import { computeActiveObjective, computeSagaStats } from "./ecs/systems/saga-dat
 import { AUTO_SAVE_INTERVAL_MS } from "./ecs/systems/session-data.ts";
 import type { ResumeContext } from "./ecs/systems/session-resume.ts";
 import { generateResumeContext } from "./ecs/systems/session-resume.ts";
+import { LEVEL_NAMES } from "./ecs/systems/settlement-data.ts";
+import { getPlayerSettlement } from "./ecs/systems/settlement-system.ts";
+import { getTomteHint } from "./ecs/systems/tomte-ai.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
@@ -86,6 +89,8 @@ import { MobileControls } from "./ui/hud/MobileControls.tsx";
 import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
 import { ResumeBanner } from "./ui/hud/ResumeBanner.tsx";
 import { ScreenReaderAnnouncer } from "./ui/hud/ScreenReaderAnnouncer.tsx";
+import { SettlementIndicator } from "./ui/hud/SettlementIndicator.tsx";
+import { TomteHint } from "./ui/hud/TomteHint.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -128,6 +133,9 @@ export default function App() {
 	const [microGoal, setMicroGoal] = useState<import("./ecs/systems/micro-goals.ts").MicroGoal | null>(null);
 	const recentRunePlacementsRef = useRef<RuneIdValue[]>([]);
 	const runePlacementCountsRef = useRef<Record<number, number>>({});
+	const [settlementName, setSettlementName] = useState<string | null>(null);
+	const [settlementLevelName, setSettlementLevelName] = useState<string | null>(null);
+	const [tomteHint, setTomteHint] = useState<string | null>(null);
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -333,6 +341,12 @@ export default function App() {
 				...playerUpdate,
 				...timeUpdate,
 			}));
+
+			// Settlement + Tomte — module-level accessors (not ECS queries)
+			const settlement = getPlayerSettlement();
+			setSettlementName(settlement?.name ?? null);
+			setSettlementLevelName(settlement ? (LEVEL_NAMES[settlement.level] ?? null) : null);
+			setTomteHint(getTomteHint());
 
 			raf = requestAnimationFrame(poll);
 		};
@@ -744,6 +758,8 @@ export default function App() {
 
 						<ResumeBanner context={resumeContext} onDismiss={() => setResumeContext(null)} />
 						<MicroGoalHint goal={!resumeContext ? microGoal : null} />
+						<SettlementIndicator name={settlementName} levelName={settlementLevelName} />
+						<TomteHint hint={tomteHint} />
 
 						<div className="absolute top-4 right-4 flex items-center gap-3">
 							<BokIndicator

@@ -125,6 +125,35 @@ export function placeSjomarke(e: Entries, gx: number, h: number, gz: number): vo
 	push(e, gx, h + 6, gz, BlockId.Torch);
 }
 
+/** Blothögen ruined stone circle: corrupted ring of CorruptedStone blocks. Blothögen. */
+export function placeRuinedStoneCircle(e: Entries, gx: number, h: number, gz: number): void {
+	// Outer ring radius 3 — partial (ruined) circle using 8 cardinal + diagonal positions
+	const ringPositions: [number, number][] = [
+		[3, 0],
+		[-3, 0],
+		[0, 3],
+		[0, -3],
+		[2, 2],
+		[-2, 2],
+		[2, -2],
+	];
+	for (const [dx, dz] of ringPositions) {
+		push(e, gx + dx, h + 1, gz + dz, BlockId.CorruptedStone);
+		// Some pillars are 2 blocks tall (ruined variation)
+		if (Math.abs(dx) !== Math.abs(dz)) {
+			push(e, gx + dx, h + 2, gz + dz, BlockId.CorruptedStone);
+		}
+	}
+	// Soot floor patches inside the circle
+	for (let dx = -1; dx <= 1; dx++) {
+		for (let dz = -1; dz <= 1; dz++) {
+			push(e, gx + dx, h, gz + dz, BlockId.Soot);
+		}
+	}
+	// Central altar: single RuneStone
+	push(e, gx, h + 1, gz, BlockId.RuneStone);
+}
+
 /** Fjällstuga (mountain shelter): small wood hut. Fjällen. */
 export function placeFjallstuga(e: Entries, gx: number, h: number, gz: number): void {
 	// Floor: 3×3 Planks
