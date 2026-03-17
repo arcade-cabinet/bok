@@ -76,33 +76,33 @@ import {
 	saveRuneFaces,
 	saveVoxelDelta,
 } from "./persistence/db.ts";
-import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
-import { SettingsPanel } from "./ui/components/SettingsPanel.tsx";
+import { DeathScreen } from "./ui/death/DeathScreen.tsx";
+import { BlothogenFogOverlay } from "./ui/game/hud/BlothogenFogOverlay.tsx";
+import { BokIndicator } from "./ui/game/hud/BokIndicator.tsx";
+import { Crosshair } from "./ui/game/hud/Crosshair.tsx";
+import { DamageVignette } from "./ui/game/hud/DamageVignette.tsx";
+import { HotbarDisplay } from "./ui/game/hud/HotbarDisplay.tsx";
+import { HungerOverlay } from "./ui/game/hud/HungerOverlay.tsx";
+import { triggerGameHaptic } from "./ui/game/hud/haptics.ts";
+import { MetaVitals } from "./ui/game/hud/MetaVitals.tsx";
+import { MicroGoalHint } from "./ui/game/hud/MicroGoalHint.tsx";
+import { MobileControls } from "./ui/game/hud/MobileControls.tsx";
+import type { MobileButtonId } from "./ui/game/hud/mobile-controls-data.ts";
+import { QuestTracker } from "./ui/game/hud/QuestTracker.tsx";
+import { ResumeBanner } from "./ui/game/hud/ResumeBanner.tsx";
+import { ScreenReaderAnnouncer } from "./ui/game/hud/ScreenReaderAnnouncer.tsx";
+import { SettingsButton } from "./ui/game/hud/SettingsButton.tsx";
+import { SettlementIndicator } from "./ui/game/hud/SettlementIndicator.tsx";
+import { TomteHint } from "./ui/game/hud/TomteHint.tsx";
+import { UnderwaterOverlay } from "./ui/game/hud/UnderwaterOverlay.tsx";
+import { VitalsBar } from "./ui/game/hud/VitalsBar.tsx";
+import type { MapData } from "./ui/game/modals/BokScreen.tsx";
+import { BokScreen } from "./ui/game/modals/BokScreen.tsx";
+import { CraftingMenu } from "./ui/game/modals/CraftingMenu.tsx";
+import { EtchingSurface } from "./ui/game/modals/EtchingSurface.tsx";
+import { SettingsPanel } from "./ui/game/modals/SettingsPanel.tsx";
 import { useSettings } from "./ui/hooks/useSettings.ts";
-import { BlothogenFogOverlay } from "./ui/hud/BlothogenFogOverlay.tsx";
-import { BokIndicator } from "./ui/hud/BokIndicator.tsx";
-import { Crosshair } from "./ui/hud/Crosshair.tsx";
-import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
-import { EtchingSurface } from "./ui/hud/EtchingSurface.tsx";
-import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
-import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
-import { triggerGameHaptic } from "./ui/hud/haptics.ts";
-import { MetaVitals } from "./ui/hud/MetaVitals.tsx";
-import { MicroGoalHint } from "./ui/hud/MicroGoalHint.tsx";
-import { MobileControls } from "./ui/hud/MobileControls.tsx";
-import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
-import { QuestTracker } from "./ui/hud/QuestTracker.tsx";
-import { ResumeBanner } from "./ui/hud/ResumeBanner.tsx";
-import { ScreenReaderAnnouncer } from "./ui/hud/ScreenReaderAnnouncer.tsx";
-import { SettingsButton } from "./ui/hud/SettingsButton.tsx";
-import { SettlementIndicator } from "./ui/hud/SettlementIndicator.tsx";
-import { TomteHint } from "./ui/hud/TomteHint.tsx";
-import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
-import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
-import type { MapData } from "./ui/screens/BokScreen.tsx";
-import { BokScreen } from "./ui/screens/BokScreen.tsx";
-import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
-import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
+import { LandingScreen } from "./ui/landing/LandingScreen.tsx";
 import { Biome } from "./world/biomes.ts";
 import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
@@ -129,7 +129,7 @@ export default function App() {
 		discoveredRuneIds: number[];
 	} | null>(null);
 	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
-	const [sagaData, setSagaData] = useState<import("./ui/components/BokSaga.tsx").BokSagaProps | null>(null);
+	const [sagaData, setSagaData] = useState<import("./ui/game/bok/BokSaga.tsx").BokSagaProps | null>(null);
 	// Derived from settings hook — no local state needed
 	const showVitalsBars = settings.showVitals;
 	const lastSeenSagaCountRef = useRef(0);
@@ -504,21 +504,27 @@ export default function App() {
 
 	const handleStartGame = useCallback(async (seed: string) => {
 		const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
-		if (!canvas) return;
+		if (!canvas) {
+			console.error("Game canvas not found in DOM");
+			return;
+		}
 
 		try {
 			await initDatabase();
 			await initGame(canvas, seed);
 			saveSeedRef.current = seed;
-
-			// Create save slot and wire delta tracking
-			const slotId = await createSaveSlot(seed);
-			saveSlotRef.current = slotId;
-			enableVoxelDeltaTracking((x, y, z, blockId) => {
-				saveVoxelDelta(slotId, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
-			});
-
 			setPhase("playing");
+
+			// Save slot creation is non-blocking — game is already running
+			try {
+				const slotId = await createSaveSlot(seed);
+				saveSlotRef.current = slotId;
+				enableVoxelDeltaTracking((x, y, z, blockId) => {
+					saveVoxelDelta(slotId, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
+				});
+			} catch (saveErr) {
+				console.error("Save slot creation failed (game continues):", saveErr);
+			}
 		} catch (err) {
 			console.error("Failed to start game:", err);
 		}
@@ -756,7 +762,7 @@ export default function App() {
 			{/* UI Layer */}
 			<div className="absolute inset-0 z-10 pointer-events-none">
 				{phase === "title" && (
-					<TitleScreen onStartGame={handleStartGame} onContinueGame={hasSaveSlot ? handleContinueGame : undefined} />
+					<LandingScreen onStartGame={handleStartGame} onContinueGame={hasSaveSlot ? handleContinueGame : undefined} />
 				)}
 				{phase === "dead" && <DeathScreen onRespawn={handleRespawn} />}
 

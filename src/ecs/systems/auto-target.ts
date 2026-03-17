@@ -3,7 +3,7 @@
  * Pure math, no ECS/Three.js dependencies.
  */
 
-import { AUTO_TARGET_HALF_ANGLE, AUTO_TARGET_RANGE } from "../../ui/hud/mobile-controls-data.ts";
+import { AUTO_TARGET_HALF_ANGLE, AUTO_TARGET_RANGE } from "../../ui/game/hud/mobile-controls-data.ts";
 
 export interface TargetCandidate {
 	entityId: number;
