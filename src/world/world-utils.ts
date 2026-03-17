@@ -16,13 +16,18 @@ const WATER_LEVEL = 10;
  */
 export function generateSpawnShrine(vr: VoxelRenderer, layerName: string, surfaceY: number): void {
 	const entries: VoxelSetOptions[] = [];
+	// Clear a large area above the platform so player can see sky
+	for (let x = 5; x <= 11; x++) {
+		for (let z = 5; z <= 11; z++) {
+			for (let y = surfaceY + 1; y <= surfaceY + 24; y++) {
+				vr.removeVoxel(layerName, { position: { x, y, z } });
+			}
+		}
+	}
 	// StoneBricks platform
 	for (let x = 6; x <= 10; x++) {
 		for (let z = 6; z <= 10; z++) {
 			entries.push({ position: { x, y: surfaceY, z }, blockId: BlockId.StoneBricks });
-			for (let y = surfaceY + 1; y <= surfaceY + 5; y++) {
-				vr.removeVoxel(layerName, { position: { x, y, z } });
-			}
 		}
 	}
 	// Stenhög at center

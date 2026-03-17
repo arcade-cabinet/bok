@@ -11,6 +11,7 @@ import { LEVEL_NAMES } from "../ecs/systems/settlement-data.ts";
 import { getPlayerSettlement } from "../ecs/systems/settlement-system.ts";
 import { getTomteHint, isTomteSpawned } from "../ecs/systems/tomte-ai.ts";
 import {
+	CreatureHealth,
 	CreatureTag,
 	CreatureType,
 	Health,
@@ -68,8 +69,8 @@ export function initDevBridge(world: World): void {
 		/** List all creatures with positions */
 		creatures: () => {
 			const list: Array<{ species: string; x: number; y: number; z: number; hp: number }> = [];
-			kWorld?.query(CreatureTag, CreatureType, Position, Health).readEach(([ct, pos, h]) => {
-				list.push({ species: ct.species, x: pos.x, y: pos.y, z: pos.z, hp: h.current });
+			kWorld?.query(CreatureTag, CreatureType, Position, CreatureHealth).readEach(([ct, pos, h]) => {
+				list.push({ species: ct.species, x: pos.x, y: pos.y, z: pos.z, hp: h.hp });
 			});
 			return list;
 		},

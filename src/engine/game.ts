@@ -143,7 +143,7 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 
 	initDevBridge(kootaWorld);
 
-	threeCamera.position.set(8.5, surfaceY + 2.5, 8.5);
+	threeCamera.position.set(8.5, surfaceY + 8, 8.5);
 	threeCamera.updateProjectionMatrix();
 	resizeHandler = () => {
 		if (!threeCamera) return;
@@ -155,6 +155,16 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	bindRenderer(gameLoop.renderer);
 	registerPerfShortcut();
 	gameLoop.start();
+
+	// Wire dev bridge renderer stats
+	if (import.meta.env.DEV && gameLoop) {
+		const gl = gameLoop;
+		const origTick = tickDevBridge;
+		// Override tickDevBridge to also capture renderer stats
+		setInterval(() => {
+			setDevRendererStats(gl.lastDrawCalls, gl.lastTriangles);
+		}, 500);
+	}
 }
 
 // ─── Getters ───

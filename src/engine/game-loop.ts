@@ -16,6 +16,8 @@ export class GameLoop {
 	private lastTime = 0;
 	private running = false;
 	private inputSystem: InputSystem | null = null;
+	lastDrawCalls = 0;
+	lastTriangles = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
@@ -76,6 +78,11 @@ export class GameLoop {
 		// Render
 		if (this.camera) {
 			this.renderer.render(this.scene, this.camera);
+			if (import.meta.env.DEV) {
+				const info = this.renderer.info.render;
+				this.lastDrawCalls = info.calls;
+				this.lastTriangles = info.triangles;
+			}
 		}
 
 		this.rafId = requestAnimationFrame((t) => this.loop(t));

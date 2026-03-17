@@ -131,9 +131,9 @@ function recordSpawnShrineDeltas(surfaceY: number): void {
 export function spawnPlayerEntity(world: World, surfaceY: number): void {
 	world.spawn(
 		PlayerTag,
-		Position({ x: 8.5, y: surfaceY + 2.5, z: 8.5 }),
+		Position({ x: 8.5, y: surfaceY + 8, z: 8.5 }),
 		Velocity,
-		Rotation,
+		Rotation({ pitch: 0, yaw: 0 }),
 		Health,
 		Hunger,
 		Stamina,
