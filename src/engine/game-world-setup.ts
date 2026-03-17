@@ -93,6 +93,10 @@ export function generateSpawnArea(renderer: VoxelRenderer): number {
 	const surfaceY = findSurfaceY(renderer, 8, 8);
 	generateSpawnShrine(renderer, "Ground", surfaceY);
 	recordSpawnShrineDeltas(surfaceY);
+	// Flush dirty chunks so the greedy mesher generates visible geometry
+	if ("flushDirtyChunks" in renderer) {
+		(renderer as { flushDirtyChunks: () => void }).flushDirtyChunks();
+	}
 	return surfaceY;
 }
 

@@ -92,6 +92,11 @@ function processQueue(vr: VoxelRenderer) {
 				}
 			}
 		}
+		// Rebuild mesh for newly generated chunk
+		if ("rebuildChunkMesh" in vr) {
+			(vr as { rebuildChunkMesh: (cx: number, cz: number) => void }).rebuildChunkMesh(chunk.cx, chunk.cz);
+		}
+
 		generated++;
 	}
 }
