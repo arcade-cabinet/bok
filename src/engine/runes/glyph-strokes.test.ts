@@ -7,7 +7,7 @@ describe("glyph-strokes", () => {
 		for (const runeId of PLACEABLE_RUNES) {
 			const glyph = getGlyph(runeId);
 			expect(glyph, `Missing glyph for rune ${runeId}`).toBeDefined();
-			expect(glyph!.runeId).toBe(runeId);
+			expect(glyph?.runeId).toBe(runeId);
 		}
 	});
 
@@ -57,13 +57,13 @@ describe("glyph-strokes", () => {
 	test("Isa has exactly 1 stroke (simplest rune)", () => {
 		const isa = getGlyph(6); // RuneId.Isa = 6
 		expect(isa).toBeDefined();
-		expect(isa!.strokes.length).toBe(1);
+		expect(isa?.strokes.length).toBe(1);
 	});
 
 	test("Mannaz has exactly 4 strokes (most complex)", () => {
 		const mannaz = getGlyph(11); // RuneId.Mannaz = 11
 		expect(mannaz).toBeDefined();
-		expect(mannaz!.strokes.length).toBe(4);
+		expect(mannaz?.strokes.length).toBe(4);
 	});
 
 	test("no duplicate rune IDs in glyph set", () => {

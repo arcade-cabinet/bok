@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createTestWorld, spawnCreature, spawnPlayer, spawnWorldTime } from "../../test-utils.ts";
-import { Health, PlayerTag, RuneDiscovery, SagaLog, Species, WorldTime } from "../traits/index.ts";
+import { PlayerTag, RuneDiscovery, SagaLog, Species } from "../traits/index.ts";
 import { RuneId } from "./rune-data.ts";
 import type { RuneDiscoveryEffects } from "./rune-discovery-system.ts";
 import { grantTutorialRunes, runeDiscoverySystem } from "./rune-discovery-system.ts";

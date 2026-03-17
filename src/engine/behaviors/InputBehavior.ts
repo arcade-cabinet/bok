@@ -1,16 +1,14 @@
-/** InputBehavior — polls JP's Input system, writes to Koota ECS traits. */
+/** InputBehavior — polls custom InputSystem, writes to Koota ECS traits. */
 
-import { Behavior, type Input, type InputKeyboardAction } from "@jolly-pixel/engine";
 import { Hotbar, MiningState, MoveInput, PlayerState, PlayerTag, Rotation, ToolSwing } from "../../ecs/traits/index.ts";
+import { Behavior } from "../behavior.ts";
 import { kootaWorld, placeBlock } from "../game.ts";
 import { getBindings, getMobileConfig } from "../input-config.ts";
+import type { InputSystem } from "../input-system.ts";
 import { clamp, clampPitch, computeJoystickAnalog, computeMouseLook } from "./input-helpers.ts";
 import { getJoystickStateRef } from "./joystick-state.ts";
 
 export { getJoystickState, resetJoystickState } from "./joystick-state.ts";
-
-/** Cast binding string to JP's strict KeyCode union. */
-const key = (code: string) => code as InputKeyboardAction;
 
 const MOUSE_SENSITIVITY = 0.002;
 const MOUSE_SWAY_FACTOR = 0.0005;
@@ -19,6 +17,8 @@ const TOUCH_SWAY_FACTOR = 0.001;
 const JOYSTICK_RADIUS = 40;
 
 export class InputBehavior extends Behavior {
+	private input: InputSystem;
+
 	/** Tracks the touch start position for the left-side joystick. */
 	private joyStartX = 0;
 	private joyStartY = 0;
@@ -32,35 +32,37 @@ export class InputBehavior extends Behavior {
 	/** Whether we detected touch as the primary input device. */
 	private touchMode = false;
 
+	constructor(inputSystem: InputSystem) {
+		super();
+		this.input = inputSystem;
+	}
+
 	awake() {
 		this.needUpdate = true;
-		this.touchMode = this.actor.world.input.isTouchpadAvailable();
-		// Pre-set pointer lock flag so the first canvas click triggers requestPointerLock().
-		// JP's mouse.lock() only sets a flag — actual locking happens in onMouseDown.
+		this.touchMode = this.input.isTouchpadAvailable();
 		if (!this.touchMode) {
-			this.actor.world.input.lockMouse();
+			this.input.lockMouse();
 		}
 	}
 
 	update(_dt: number) {
-		const { input } = this.actor.world;
-
 		if (this.touchMode) {
-			this.pollTouch(input);
+			this.pollTouch();
 		} else {
-			this.pollDesktop(input);
+			this.pollDesktop();
 		}
 	}
 
-	private pollDesktop(input: Input) {
+	private pollDesktop() {
+		const input = this.input;
 		const b = getBindings();
 		kootaWorld.query(PlayerTag, MoveInput).updateEach(([move]) => {
-			move.forward = input.isKeyDown(key(b.forward)) || input.isKeyDown("ArrowUp");
-			move.backward = input.isKeyDown(key(b.backward)) || input.isKeyDown("ArrowDown");
-			move.left = input.isKeyDown(key(b.left)) || input.isKeyDown("ArrowLeft");
-			move.right = input.isKeyDown(key(b.right)) || input.isKeyDown("ArrowRight");
-			move.jump = input.isKeyDown(key(b.jump));
-			move.sprint = input.isKeyDown(key(b.sprint));
+			move.forward = input.isKeyDown(b.forward) || input.isKeyDown("ArrowUp");
+			move.backward = input.isKeyDown(b.backward) || input.isKeyDown("ArrowDown");
+			move.left = input.isKeyDown(b.left) || input.isKeyDown("ArrowLeft");
+			move.right = input.isKeyDown(b.right) || input.isKeyDown("ArrowRight");
+			move.jump = input.isKeyDown(b.jump);
+			move.sprint = input.isKeyDown(b.sprint);
 		});
 
 		if (input.mouse.locked) {
@@ -85,7 +87,7 @@ export class InputBehavior extends Behavior {
 		}
 
 		for (let i = 0; i < 5; i++) {
-			const slotKey = key(`Digit${i + 1}`);
+			const slotKey = `Digit${i + 1}`;
 			if (input.wasKeyJustPressed(slotKey)) {
 				kootaWorld.query(PlayerTag, Hotbar).updateEach(([hotbar]) => {
 					hotbar.activeSlot = i;
@@ -93,26 +95,25 @@ export class InputBehavior extends Behavior {
 			}
 		}
 
-		if (input.wasKeyJustPressed(key(b.eat))) {
+		if (input.wasKeyJustPressed(b.eat)) {
 			kootaWorld.query(PlayerTag, PlayerState).updateEach(([state]) => {
 				state.wantsEat = true;
 			});
 		}
-
-		// Note: pointer lock is requested via JP's Mouse.onMouseDown when #wantsPointerLock is set.
-		// We set that flag in awake(), so clicking canvas always re-locks after menu close.
 	}
 
-	private pollTouch(input: Input) {
+	private pollTouch() {
+		const input = this.input;
 		const mobileConfig = getMobileConfig();
 		const screen = input.getScreenSize();
 		const halfW = screen.x / 2;
 
-		this.pollMovementTouch(input, halfW, mobileConfig.joystickDeadZone);
-		this.pollLookTouch(input, mobileConfig.lookSensitivity);
+		this.pollMovementTouch(halfW, mobileConfig.joystickDeadZone);
+		this.pollLookTouch(mobileConfig.lookSensitivity);
 	}
 
-	private pollMovementTouch(input: Input, halfW: number, deadZone: number) {
+	private pollMovementTouch(halfW: number, deadZone: number) {
+		const input = this.input;
 		const joyState = getJoystickStateRef();
 
 		if (input.wasTouchStarted("primary")) {
@@ -156,7 +157,9 @@ export class InputBehavior extends Behavior {
 		}
 	}
 
-	private pollLookTouch(input: Input, sensitivity: number) {
+	private pollLookTouch(sensitivity: number) {
+		const input = this.input;
+
 		if (input.wasTouchStarted("secondary")) {
 			const pos = input.getTouchPosition(1);
 			this.lookPrevX = pos.x;

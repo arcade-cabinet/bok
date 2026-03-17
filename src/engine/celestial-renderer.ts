@@ -42,20 +42,14 @@ export class CelestialRenderer {
 		scene.add(this.pivot);
 
 		// Sun — blocky cube matching the voxel aesthetic
-		this.sunMesh = new THREE.Mesh(
-			new THREE.BoxGeometry(8, 8, 8),
-			new THREE.MeshBasicMaterial({ color: 0xffffaa }),
-		);
+		this.sunMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffaa }));
 		this.sunMesh.position.set(0, SUN_DISTANCE, 0);
 		sunLight.position.set(0, SUN_DISTANCE, 0);
 		this.pivot.add(this.sunMesh);
 		this.pivot.add(sunLight);
 
 		// Moon
-		this.moonMesh = new THREE.Mesh(
-			new THREE.BoxGeometry(6, 6, 6),
-			new THREE.MeshBasicMaterial({ color: 0xddddff }),
-		);
+		this.moonMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 6), new THREE.MeshBasicMaterial({ color: 0xddddff }));
 		this.moonMesh.position.set(0, -MOON_DISTANCE, 0);
 		this.pivot.add(this.moonMesh);
 
@@ -128,8 +122,5 @@ function createStarField(): THREE.Points {
 		);
 	}
 	geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-	return new THREE.Points(
-		geo,
-		new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true, opacity: 0 }),
-	);
+	return new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, transparent: true, opacity: 0 }));
 }

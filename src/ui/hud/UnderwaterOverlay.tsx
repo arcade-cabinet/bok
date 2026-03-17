@@ -12,6 +12,7 @@ export function UnderwaterOverlay({ isUnderwater }: UnderwaterOverlayProps) {
 				background: "rgba(0, 105, 148, 0.45)",
 				boxShadow: "inset 0 0 150px rgba(0,30,50,0.8)",
 			}}
+			aria-hidden="true"
 		/>
 	);
 }

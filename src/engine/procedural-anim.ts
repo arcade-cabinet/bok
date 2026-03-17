@@ -106,6 +106,15 @@ const SPECIES_CONFIGS: Partial<Record<SpeciesId, AnimConfig>> = {
 		walkBobFreq: 2.0,
 		walkSwingAmp: 0.2,
 	},
+	tomte: {
+		breathAmp: 0.03,
+		breathFreq: 1.0,
+		idleSwayAmp: 0.08,
+		idleSwayFreq: 0.6,
+		walkBobAmp: 0.05,
+		walkBobFreq: 3.5,
+		walkSwingAmp: 0.35,
+	},
 };
 
 /** Look up animation config for a species. Falls back to default. */

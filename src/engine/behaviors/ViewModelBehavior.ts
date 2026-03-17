@@ -3,9 +3,9 @@
  * Includes sway, breathing bob, walk bob, and swing animation.
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import { BLOCKS, BlockId, ITEMS, type ItemDef } from "../../world/blocks.ts";
+import { Behavior } from "../behavior.ts";
 
 export class ViewModelBehavior extends Behavior {
 	private viewModelGroup = new THREE.Group();

@@ -151,7 +151,7 @@ function mergeSlice(
 	d: number,
 	uSize: number,
 	vSize: number,
-	chunkW: number,
+	_chunkW: number,
 	_chunkH: number,
 	runeFaces?: RuneFaceSet,
 ): void {
@@ -167,7 +167,7 @@ function mergeSlice(
 			DIMS[axis.sweep] = d;
 			DIMS[axis.u] = u;
 			DIMS[axis.v] = v;
-			const isRune = runeFaces !== undefined && runeFaces.has(`${DIMS[0]},${DIMS[1]},${DIMS[2]},${axis.face}`);
+			const isRune = runeFaces?.has(`${DIMS[0]},${DIMS[1]},${DIMS[2]},${axis.face}`);
 
 			// If rune-inscribed, emit 1×1 quad and skip merging
 			if (isRune) {

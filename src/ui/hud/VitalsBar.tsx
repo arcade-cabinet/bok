@@ -14,7 +14,14 @@ export function VitalsBar({ health, hunger, stamina, hungerSlowed = false, visib
 		<div className="flex flex-col items-center gap-2 mb-3" data-testid="vitals-bar">
 			{/* Health & Hunger */}
 			<div className="flex gap-4 w-72 justify-center">
-				<div className="w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg">
+				<div
+					className="w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg"
+					role="progressbar"
+					aria-label="Health"
+					aria-valuenow={Math.round(health)}
+					aria-valuemin={0}
+					aria-valuemax={100}
+				>
 					<div
 						className="h-full transition-[width] duration-200 rounded-full"
 						style={{
@@ -23,7 +30,14 @@ export function VitalsBar({ health, hunger, stamina, hungerSlowed = false, visib
 						}}
 					/>
 				</div>
-				<div className="relative w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg">
+				<div
+					className="relative w-24 h-2 rounded-full overflow-hidden bg-black/60 border border-white/15 shadow-lg"
+					role="progressbar"
+					aria-label="Hunger"
+					aria-valuenow={Math.round(hunger)}
+					aria-valuemin={0}
+					aria-valuemax={100}
+				>
 					<div
 						className={`h-full transition-[width] duration-200 rounded-full ${hungerSlowed ? "animate-pulse" : ""}`}
 						style={{
@@ -36,7 +50,14 @@ export function VitalsBar({ health, hunger, stamina, hungerSlowed = false, visib
 				</div>
 			</div>
 			{/* Stamina */}
-			<div className="w-52 h-1 rounded-full overflow-hidden bg-black/60 border border-white/10 shadow-lg">
+			<div
+				className="w-52 h-1 rounded-full overflow-hidden bg-black/60 border border-white/10 shadow-lg"
+				role="progressbar"
+				aria-label="Stamina"
+				aria-valuenow={Math.round(stamina)}
+				aria-valuemin={0}
+				aria-valuemax={100}
+			>
 				<div
 					className="h-full transition-[width] duration-100 rounded-full"
 					style={{

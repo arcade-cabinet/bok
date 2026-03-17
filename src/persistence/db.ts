@@ -99,6 +99,13 @@ export async function initDatabase(): Promise<void> {
 			// Column already exists — ignore
 		}
 
+		// Migration: add name column to save_slots
+		try {
+			await db.execute("ALTER TABLE save_slots ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+		} catch {
+			// Column already exists — ignore
+		}
+
 		initialized = true;
 	})();
 
@@ -117,6 +124,7 @@ async function persistWebStore(): Promise<void> {
 
 export interface SaveSlotMeta {
 	id: number;
+	name: string;
 	seed: string;
 	createdAt: string;
 	updatedAt: string;
@@ -124,23 +132,58 @@ export interface SaveSlotMeta {
 
 export async function listSaveSlots(): Promise<SaveSlotMeta[]> {
 	if (!db) return [];
-	const result = await db.query("SELECT id, seed, created_at, updated_at FROM save_slots ORDER BY updated_at DESC");
+	const result = await db.query(
+		"SELECT id, name, seed, created_at, updated_at FROM save_slots ORDER BY updated_at DESC",
+	);
 	return (result.values ?? []).map((r) => ({
 		id: r.id as number,
+		name: (r.name as string) || (r.seed as string),
 		seed: r.seed as string,
 		createdAt: r.created_at as string,
 		updatedAt: r.updated_at as string,
 	}));
 }
 
-export async function createSaveSlot(seed: string): Promise<number> {
+export async function createSaveSlot(seed: string, name?: string): Promise<number> {
 	if (!db) throw new Error("Database not initialized");
-	const result = await db.run("INSERT INTO save_slots (seed) VALUES (?)", [seed]);
+	const slotName = name ?? seed;
+	const result = await db.run("INSERT INTO save_slots (seed, name) VALUES (?, ?)", [seed, slotName]);
 	const slotId = result.changes?.lastId;
 	if (slotId === undefined) throw new Error("Failed to create save slot");
 	await db.run("INSERT INTO player_state (slot_id) VALUES (?)", [slotId]);
 	await persistWebStore();
 	return slotId;
+}
+
+/** Preview data for the slot manager UI. */
+export interface SlotPreviewData {
+	id: number;
+	name: string;
+	seed: string;
+	dayCount: number;
+	inscriptionLevel: number;
+	updatedAt: string;
+}
+
+/** Fetch all save slots with preview data (joined from player_state). */
+export async function getSlotPreviews(): Promise<SlotPreviewData[]> {
+	if (!db) return [];
+	const result = await db.query(`
+		SELECT s.id, s.name, s.seed, s.updated_at,
+			COALESCE(p.day_count, 1) AS day_count,
+			COALESCE(p.inscription_blocks_placed, 0) AS inscription_level
+		FROM save_slots s
+		LEFT JOIN player_state p ON p.slot_id = s.id
+		ORDER BY s.updated_at DESC
+	`);
+	return (result.values ?? []).map((r) => ({
+		id: r.id as number,
+		name: (r.name as string) || (r.seed as string),
+		seed: r.seed as string,
+		dayCount: r.day_count as number,
+		inscriptionLevel: r.inscription_level as number,
+		updatedAt: r.updated_at as string,
+	}));
 }
 
 export async function deleteSaveSlot(slotId: number): Promise<void> {

@@ -5,7 +5,7 @@
 
 import type { SpeciesId } from "../ecs/traits/index.ts";
 import { DRAUGAR_PARTS, LINDORM_PARTS, RUNVAKTARE_PARTS } from "./creature-part-defs-hostile.ts";
-import { JATTEN_PARTS, NACKEN_PARTS, VITTRA_PARTS } from "./creature-part-defs-neutral.ts";
+import { JATTEN_PARTS, NACKEN_PARTS, TOMTE_PARTS, VITTRA_PARTS } from "./creature-part-defs-neutral.ts";
 import type { CreaturePartDef } from "./creature-parts.ts";
 
 // ─── Mörker ───
@@ -193,6 +193,7 @@ export const SPECIES_PARTS: Partial<Record<SpeciesId, CreaturePartDef[]>> = {
 	vittra: VITTRA_PARTS,
 	nacken: NACKEN_PARTS,
 	jatten: JATTEN_PARTS,
+	tomte: TOMTE_PARTS,
 };
 
 export const DEFAULT_PARTS = MORKER_PARTS;

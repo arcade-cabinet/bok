@@ -51,7 +51,12 @@ function buildQuad(
 	const a1 = a0 + w;
 	const b1 = b0 + h;
 	const c = [toXYZ(axis, d, a0, b0), toXYZ(axis, d, a1, b0), toXYZ(axis, d, a1, b1), toXYZ(axis, d, a0, b1)];
-	const uv = [[0, 0], [w, 0], [w, h], [0, h]];
+	const uv = [
+		[0, 0],
+		[w, 0],
+		[w, h],
+		[0, h],
+	];
 	const ord = sign > 0 ? [0, 1, 2, 3] : [0, 3, 2, 1];
 	const positions: number[] = [];
 	const uvs: number[] = [];
@@ -118,7 +123,10 @@ export function greedyMesh(chunk: Uint8Array, getNeighbor: NeighborGetter): Mesh
 			for (let b = 0; b < bSize; b++) {
 				for (let a = 0; a < aSize; ) {
 					const bt = mask[a + b * aSize];
-					if (bt === 0) { a++; continue; }
+					if (bt === 0) {
+						a++;
+						continue;
+					}
 
 					let w = 1;
 					while (a + w < aSize && mask[a + w + b * aSize] === bt) w++;
@@ -127,7 +135,10 @@ export function greedyMesh(chunk: Uint8Array, getNeighbor: NeighborGetter): Mesh
 					let ok = true;
 					while (b + h < bSize && ok) {
 						for (let k = 0; k < w; k++) {
-							if (mask[a + k + (b + h) * aSize] !== bt) { ok = false; break; }
+							if (mask[a + k + (b + h) * aSize] !== bt) {
+								ok = false;
+								break;
+							}
 						}
 						if (ok) h++;
 					}
@@ -135,9 +146,7 @@ export function greedyMesh(chunk: Uint8Array, getNeighbor: NeighborGetter): Mesh
 					const { positions, uvs } = buildQuad(axis, sign, slice, a, b, w, h);
 					quads.push({ positions, normal, uvs, blockType: bt });
 
-					for (let db = 0; db < h; db++)
-						for (let da = 0; da < w; da++)
-							mask[a + da + (b + db) * aSize] = 0;
+					for (let db = 0; db < h; db++) for (let da = 0; da < w; da++) mask[a + da + (b + db) * aSize] = 0;
 
 					a += w;
 				}

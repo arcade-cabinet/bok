@@ -43,12 +43,7 @@ const GLYPH_SIZE = 1 - GLYPH_MARGIN * 2;
  * Compute a UV rect for a block face in world space.
  * Used for texture mapping and glyph placement.
  */
-export function computeFaceUV(
-	blockX: number,
-	blockY: number,
-	blockZ: number,
-	faceIndex: number,
-): FaceUV {
+export function computeFaceUV(blockX: number, blockY: number, blockZ: number, faceIndex: number): FaceUV {
 	const cx = blockX + 0.5;
 	const cy = blockY + 0.5;
 	const cz = blockZ + 0.5;

@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { BlockId } from "../../world/blocks.ts";
-import type { RuneBlock, SignalMap } from "./archetype-helpers.ts";
+import type { RuneBlock } from "./archetype-helpers.ts";
 import { RuneId } from "./rune-data.ts";
 import {
-	type DetectedSettlementArchetype,
-	FORSVARSVERK_LINK_DISTANCE,
-	KVARN_LINK_DISTANCE,
-	SMEDJA_FORGE_DISTANCE,
-	SettlementArchetypeId,
-	VAKTTORN_LINK_DISTANCE,
-	VAKTTORN_MIN_Y,
 	detectAllSettlementArchetypes,
 	detectForsvarsverk,
 	detectKvarn,
 	detectSmedja,
 	detectVakttorn,
+	FORSVARSVERK_LINK_DISTANCE,
+	KVARN_LINK_DISTANCE,
+	SettlementArchetypeId,
+	SMEDJA_FORGE_DISTANCE,
+	VAKTTORN_LINK_DISTANCE,
+	VAKTTORN_MIN_Y,
 } from "./settlement-detector.ts";
 import { SignalType } from "./signal-data.ts";
 
@@ -141,9 +140,7 @@ describe("detectVakttorn", () => {
 			{ x: 10, y: VAKTTORN_MIN_Y, z: 10, runeId: RuneId.Sowilo },
 			{ x: 12, y: VAKTTORN_MIN_Y, z: 10, runeId: RuneId.Ansuz },
 		];
-		const signalMap = buildSignalMap([
-			{ x: 10, y: VAKTTORN_MIN_Y, z: 10, type: SignalType.Light, strength: 5 },
-		]);
+		const signalMap = buildSignalMap([{ x: 10, y: VAKTTORN_MIN_Y, z: 10, type: SignalType.Light, strength: 5 }]);
 		const result = detectVakttorn(runes, signalMap);
 		expect(result).toHaveLength(1);
 		expect(result[0].type).toBe(SettlementArchetypeId.Vakttorn);
@@ -154,17 +151,13 @@ describe("detectVakttorn", () => {
 			{ x: 10, y: VAKTTORN_MIN_Y - 1, z: 10, runeId: RuneId.Sowilo },
 			{ x: 12, y: VAKTTORN_MIN_Y - 1, z: 10, runeId: RuneId.Ansuz },
 		];
-		const signalMap = buildSignalMap([
-			{ x: 10, y: VAKTTORN_MIN_Y - 1, z: 10, type: SignalType.Light, strength: 5 },
-		]);
+		const signalMap = buildSignalMap([{ x: 10, y: VAKTTORN_MIN_Y - 1, z: 10, type: SignalType.Light, strength: 5 }]);
 		expect(detectVakttorn(runes, signalMap)).toHaveLength(0);
 	});
 
 	it("rejects without Ansuz nearby", () => {
 		const runes: RuneBlock[] = [{ x: 10, y: VAKTTORN_MIN_Y, z: 10, runeId: RuneId.Sowilo }];
-		const signalMap = buildSignalMap([
-			{ x: 10, y: VAKTTORN_MIN_Y, z: 10, type: SignalType.Light, strength: 5 },
-		]);
+		const signalMap = buildSignalMap([{ x: 10, y: VAKTTORN_MIN_Y, z: 10, type: SignalType.Light, strength: 5 }]);
 		expect(detectVakttorn(runes, signalMap)).toHaveLength(0);
 	});
 
@@ -182,9 +175,7 @@ describe("detectVakttorn", () => {
 			{ x: 0, y: VAKTTORN_MIN_Y, z: 0, runeId: RuneId.Sowilo },
 			{ x: d, y: VAKTTORN_MIN_Y, z: 0, runeId: RuneId.Ansuz },
 		];
-		const signalMap = buildSignalMap([
-			{ x: 0, y: VAKTTORN_MIN_Y, z: 0, type: SignalType.Light, strength: 5 },
-		]);
+		const signalMap = buildSignalMap([{ x: 0, y: VAKTTORN_MIN_Y, z: 0, type: SignalType.Light, strength: 5 }]);
 		expect(detectVakttorn(runes, signalMap)).toHaveLength(0);
 	});
 });

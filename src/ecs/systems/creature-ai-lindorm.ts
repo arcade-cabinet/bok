@@ -1,18 +1,21 @@
 /**
  * Lindorm ECS bridge — integrates lindorm-tunnel.ts with ECS state.
  * Segmented wyrm that tunnels underground and breaches near the player.
+ * Removes soft blocks to create permanent tunnels (environmental storytelling).
  */
 
 import type { AnimStateId, BehaviorStateId } from "../traits/index.ts";
 import { AnimState, BehaviorState } from "../traits/index.ts";
 import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
 import {
+	attractedByMining,
 	BREACH_DAMAGE,
 	BREACH_DURATION,
 	BREACH_SPEED,
 	breachArcXZ,
 	breachArcY,
 	breachHitsPlayer,
+	collectTunnelBlocks,
 	getLindormData,
 	LindormPhase,
 	nearTarget,
@@ -56,6 +59,7 @@ export function updateLindormAI(
 	surfaceYAt: (x: number, z: number) => number,
 	applyDamageToPlayer: (damage: number) => void,
 	effects?: CreatureEffects,
+	getBlock?: (x: number, y: number, z: number) => number,
 ): void {
 	const data = getLindormData(entityId);
 	if (!data) return;
@@ -63,13 +67,36 @@ export function updateLindormAI(
 	data.phaseTimer -= dt;
 
 	if (data.phase === LindormPhase.Underground) {
-		// Move underground toward player
-		data.targetX = ctx.playerX;
-		data.targetZ = ctx.playerZ;
+		// Vibration attraction: mining overrides player as target
+		if (ctx.miningActive && ctx.mineX != null && ctx.mineZ != null) {
+			if (attractedByMining(pos.x, pos.z, ctx.mineX, ctx.mineZ)) {
+				data.targetX = ctx.mineX;
+				data.targetZ = ctx.mineZ;
+			} else {
+				data.targetX = ctx.playerX;
+				data.targetZ = ctx.playerZ;
+			}
+		} else {
+			data.targetX = ctx.playerX;
+			data.targetZ = ctx.playerZ;
+		}
+
 		const move = tunnelToward(pos.x, pos.z, data.targetX, data.targetZ, TUNNEL_SPEED, dt);
 		pos.x += move.dx;
 		pos.z += move.dz;
-		pos.y = surfaceYAt(pos.x, pos.z) - 3; // stay underground
+		const surfY = surfaceYAt(pos.x, pos.z);
+		pos.y = surfY - 3; // stay underground
+
+		// Remove soft blocks to create permanent tunnel
+		if (getBlock && effects?.removeBlock) {
+			const blocks = collectTunnelBlocks(pos.x, surfY, pos.z, getBlock);
+			for (const b of blocks) {
+				effects.removeBlock(b.x, b.y, b.z);
+			}
+			if (blocks.length > 0) {
+				effects.spawnParticles(pos.x, surfY, pos.z, 0x7f5b4e, 4);
+			}
+		}
 
 		ai.behaviorState = BehaviorState.Chase;
 		anim.animState = AnimState.Chase;

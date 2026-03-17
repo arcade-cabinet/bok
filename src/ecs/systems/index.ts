@@ -311,45 +311,22 @@ export { worldEventSystem } from "./world-event.ts";
 
 // ─── Ralph-parallel: new systems ───
 
-export { resourceToItemId } from "./rune-resource-data.ts";
-export type { RuneResourcePickupEffects } from "./rune-resource-pickup.ts";
-export { PICKUP_RADIUS, resetRuneResourcePickupState, runeResourcePickupSystem } from "./rune-resource-pickup.ts";
-
-export type { CombatRuneEffects } from "./rune-combat-effects.ts";
-export { resetCombatEffectsState, runeCombatEffectsSystem } from "./rune-combat-effects.ts";
-
-export type { SensorEffects } from "./rune-sensor.ts";
-export { getSensorEmitters, resetSensorState, runeSensorSystem } from "./rune-sensor.ts";
-
+export { chiselXraySystem, resetChiselXrayState, XRAY_HOLD_THRESHOLD } from "./chisel-xray.ts";
+export type { CircuitMatch, CircuitTypeId } from "./circuit-recognizer.ts";
+export { CircuitType, scanCircuits } from "./circuit-recognizer.ts";
+export { isInActiveCombat } from "./combat-safe.ts";
+export type { CreatureAudioProfile, NearbyCreature } from "./creature-audio.ts";
+export { computeAmbientDimming, computeCreatureAudioGain, getCreatureAudioProfile } from "./creature-audio.ts";
+export type { DraugarPos, ProximityEffects } from "./draugar-proximity.ts";
 export {
-	isTomteSpawned,
-	getTomteHint,
-	getTomteEntityId,
-	registerTomte,
-	resetTomteState,
-	shouldSpawnTomte,
-	shouldDespawnTomte,
-	findTomteSpawn,
-	updateTomteAI,
-	cleanupTomteState,
-} from "./tomte-ai.ts";
-
-export {
-	creatureSpawnMultiplier,
-	getResourceYieldMult,
-	getSeasonCreatureSpawnMult,
-	isGrowthSeason,
-	isMushroomSeason,
-	resetSeasonEffectsState,
-	resourceYieldMultiplier,
-	seasonEffectsSystem,
-} from "./season-effects.ts";
-
-export { CropType, farmingSystem, GrowthStage, harvestCrop, plantCrop } from "./farming.ts";
-
-export type { ArmorItemDef, ArmorSlot } from "./equipment.ts";
-export { ARMOR_ITEMS, applyArmorReduction, getTotalArmorReduction } from "./equipment.ts";
-
+	computeDraugarProximity,
+	DRAUGAR_ABERRATION_RANGE,
+	DRAUGAR_FROST_RANGE,
+	DRAUGAR_MAX_ABERRATION,
+	DRAUGAR_SILENCE_RANGE,
+	getDraugarProximityEffects,
+	resetDraugarProximityState,
+} from "./draugar-proximity.ts";
 export type { CreatureInfo, EcosystemResult, GrazeTransform, HuntTarget, TranaFlee } from "./ecosystem.ts";
 export {
 	computeEcosystemInteractions,
@@ -364,63 +341,69 @@ export {
 	resetEcosystemState,
 } from "./ecosystem.ts";
 
-export { isInActiveCombat } from "./combat-safe.ts";
-
-export { applySettlementBonuses, resetSettlementBonusState } from "./settlement-bonus.ts";
-
-export { countRuneInscriptions, resetTomteSpawnState, tomteSpawnSystem } from "./tomte-spawn.ts";
-
-export type { CreatureAudioProfile, NearbyCreature } from "./creature-audio.ts";
-export { computeAmbientDimming, computeCreatureAudioGain, getCreatureAudioProfile } from "./creature-audio.ts";
-
+export type { ArmorItemDef, ArmorSlot } from "./equipment.ts";
+export { ARMOR_ITEMS, applyArmorReduction, getTotalArmorReduction } from "./equipment.ts";
+export { CropType, farmingSystem, GrowthStage, harvestCrop, plantCrop } from "./farming.ts";
 export type { WarningPhase } from "./jatten-triggers.ts";
 export {
+	CREATURE_FLEE_THRESHOLD,
 	computeShakeIntensity,
 	computeWarningPhase,
-	CREATURE_FLEE_THRESHOLD,
 	JATTEN_SPAWN_THRESHOLD,
 	shouldCreaturesFlee,
 	shouldSpawnJatten,
 	shouldTremor,
 	TREMOR_THRESHOLD,
 } from "./jatten-triggers.ts";
-
-export { chiselXraySystem, resetChiselXrayState, XRAY_HOLD_THRESHOLD } from "./chisel-xray.ts";
-
-export type { DraugarPos, ProximityEffects } from "./draugar-proximity.ts";
-export {
-	computeDraugarProximity,
-	DRAUGAR_ABERRATION_RANGE,
-	DRAUGAR_FROST_RANGE,
-	DRAUGAR_MAX_ABERRATION,
-	DRAUGAR_SILENCE_RANGE,
-	getDraugarProximityEffects,
-	resetDraugarProximityState,
-} from "./draugar-proximity.ts";
-
 export type { ActId, ProgressionState } from "./progression-arc.ts";
 export {
-	Act,
 	ACT_NAMES,
+	Act,
 	computeCurrentAct,
 	getActMilestoneId,
 	getActObjective,
 	getActProse,
 	INSCRIPTION_ACT_THRESHOLDS,
 } from "./progression-arc.ts";
-
-export type { CircuitTypeId, CircuitMatch } from "./circuit-recognizer.ts";
-export { CircuitType, scanCircuits } from "./circuit-recognizer.ts";
-
+export type { CombatRuneEffects } from "./rune-combat-effects.ts";
+export { resetCombatEffectsState, runeCombatEffectsSystem } from "./rune-combat-effects.ts";
+export { resourceToItemId } from "./rune-resource-data.ts";
+export type { RuneResourcePickupEffects } from "./rune-resource-pickup.ts";
+export { PICKUP_RADIUS, resetRuneResourcePickupState, runeResourcePickupSystem } from "./rune-resource-pickup.ts";
+export type { SensorEffects } from "./rune-sensor.ts";
+export { getSensorEmitters, resetSensorState, runeSensorSystem } from "./rune-sensor.ts";
+export {
+	creatureSpawnMultiplier,
+	getResourceYieldMult,
+	getSeasonCreatureSpawnMult,
+	isGrowthSeason,
+	isMushroomSeason,
+	resetSeasonEffectsState,
+	resourceYieldMultiplier,
+	seasonEffectsSystem,
+} from "./season-effects.ts";
 export type { SeasonParticleConfig } from "./season-particles.ts";
 export { getSeasonParticles } from "./season-particles.ts";
-
-export type { SettlementArchetypeKey, DetectedSettlementArchetype } from "./settlement-detector.ts";
+export { applySettlementBonuses, resetSettlementBonusState } from "./settlement-bonus.ts";
+export type { DetectedSettlementArchetype, SettlementArchetypeKey } from "./settlement-detector.ts";
 export {
-	SettlementArchetypeId,
-	detectSmedja,
-	detectKvarn,
-	detectVakttorn,
-	detectForsvarsverk,
 	detectAllSettlementArchetypes,
+	detectForsvarsverk,
+	detectKvarn,
+	detectSmedja,
+	detectVakttorn,
+	SettlementArchetypeId,
 } from "./settlement-detector.ts";
+export {
+	cleanupTomteState,
+	findTomteSpawn,
+	getTomteEntityId,
+	getTomteHint,
+	isTomteSpawned,
+	registerTomte,
+	resetTomteState,
+	shouldDespawnTomte,
+	shouldSpawnTomte,
+	updateTomteAI,
+} from "./tomte-ai.ts";
+export { countRuneInscriptions, resetTomteSpawnState, tomteSpawnSystem } from "./tomte-spawn.ts";

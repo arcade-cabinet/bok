@@ -9,7 +9,7 @@ import {
 	isLandmarkNearby,
 	isSunriseObserved,
 } from "./rune-discovery.ts";
-import { DiscoveryTrigger, RUNE_DISCOVERIES, type RuneDiscoveryEntry } from "./rune-discovery-data.ts";
+import { RUNE_DISCOVERIES, type RuneDiscoveryEntry } from "./rune-discovery-data.ts";
 
 function baseCtx(overrides: Partial<DiscoveryContext> = {}): DiscoveryContext {
 	return {

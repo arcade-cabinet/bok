@@ -149,8 +149,8 @@ describe("greedyMesh", () => {
 		const posZQuads = quads.filter((q) => q.face === FaceDir.PosZ);
 		const runeQuad = posZQuads.find((q) => q.x === 6 && q.y === 5 && q.z === 5);
 		expect(runeQuad).toBeDefined();
-		expect(runeQuad!.w).toBe(1);
-		expect(runeQuad!.h).toBe(1);
+		expect(runeQuad?.w).toBe(1);
+		expect(runeQuad?.h).toBe(1);
 	});
 
 	test("quad positions are in world-local chunk coordinates", () => {
@@ -159,9 +159,9 @@ describe("greedyMesh", () => {
 		const quads = greedyMesh(chunk, W, H, accessor(chunk));
 		const posYQuad = quads.find((q) => q.face === FaceDir.PosY);
 		expect(posYQuad).toBeDefined();
-		expect(posYQuad!.x).toBe(3);
-		expect(posYQuad!.y).toBe(7);
-		expect(posYQuad!.z).toBe(9);
+		expect(posYQuad?.x).toBe(3);
+		expect(posYQuad?.y).toBe(7);
+		expect(posYQuad?.z).toBe(9);
 	});
 
 	test("large flat layer merges efficiently", () => {

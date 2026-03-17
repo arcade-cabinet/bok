@@ -5,9 +5,9 @@
  * LOD switches to single box beyond 30 blocks.
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import type { AnimStateId, SpeciesId } from "../../ecs/traits/index.ts";
+import { Behavior } from "../behavior.ts";
 import { type AssembledCreature, assembleCreature, updateLod } from "../creature-parts.ts";
 import { advanceBlend, blendAnimParams, getAnimConfig, getStateParams, oscillate } from "../procedural-anim.ts";
 

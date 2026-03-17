@@ -3,9 +3,9 @@
  * Ported from box.html's particle system.
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import { cosmeticRng } from "../../world/noise.ts";
+import { Behavior } from "../behavior.ts";
 
 interface Particle {
 	x: number;

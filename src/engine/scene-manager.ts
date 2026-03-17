@@ -1,44 +1,85 @@
 /**
- * Scene infrastructure factory — replaces JP Runtime construction.
- * Creates ThreeRenderer, SceneManager, and World from @jolly-pixel/engine.
- * The World manages actors, behaviors, input, and per-frame updates.
+ * Scene manager — creates and manages Three.js scene, camera, and renderer.
+ * Replaces the JP Runtime scene infrastructure.
  */
-import { Systems } from "@jolly-pixel/engine";
-import type * as THREE from "three";
 
-export interface GameInfra {
-	/** JP World — owns actors, behaviors, input, scene manager. */
-	world: Systems.World<THREE.WebGLRenderer>;
-	/** Access the underlying Three.js WebGLRenderer. */
-	webglRenderer: THREE.WebGLRenderer;
+import * as THREE from "three";
+
+export interface SceneManagerOptions {
+	fov?: number;
+	near?: number;
+	far?: number;
+	background?: number;
 }
 
-/**
- * Construct the game's rendering/actor infrastructure.
- * Replicates what JP Runtime does internally — without the
- * loading UI, GPU detection, or stats overlay.
- */
-export function createGameInfra(canvas: HTMLCanvasElement): GameInfra {
-	const sceneManager = new Systems.SceneManager();
-	const renderer = new Systems.ThreeRenderer(canvas, {
-		sceneManager,
-		renderMode: "direct",
-	});
+export interface SceneManager {
+	scene: THREE.Scene;
+	camera: THREE.PerspectiveCamera;
+	renderer: THREE.WebGLRenderer & { setSize: (w: number, h: number) => void; dispose: () => void };
+	add(id: string, object: THREE.Object3D): void;
+	get(id: string): THREE.Object3D | undefined;
+	remove(id: string): void;
+	resize(width: number, height: number): void;
+	destroy(): void;
+}
 
-	// Cast: ThreeRenderer.onDraw wraps the callback param in { source }, but
-	// World's Renderer generic expects the raw WebGLRenderer. JP Runtime's JS
-	// source does the same assignment without types — this cast is safe.
-	const world = new Systems.World(renderer as unknown as Systems.Renderer<THREE.WebGLRenderer>, {
-		enableOnExit: true,
-		sceneManager,
-	});
+export function createSceneManager(canvas: HTMLCanvasElement, opts: SceneManagerOptions = {}): SceneManager {
+	const { fov = 75, near = 0.1, far = 100, background } = opts;
 
-	// Match what loadRuntime sets: 60fps default, device pixel ratio
-	world.setFps(60);
-	renderer.getSource().setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	const scene = new THREE.Scene();
+	if (background !== undefined) scene.background = new THREE.Color(background);
+
+	const camera = new THREE.PerspectiveCamera(fov, canvas.clientWidth / canvas.clientHeight, near, far);
+
+	const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false }) as SceneManager["renderer"];
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+	const registry = new Map<string, THREE.Object3D>();
+
+	const resizeHandler = () => {
+		camera.aspect = canvas.clientWidth / canvas.clientHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+	};
+	window.addEventListener("resize", resizeHandler);
 
 	return {
-		world,
-		webglRenderer: renderer.getSource(),
+		scene,
+		camera,
+		renderer,
+
+		add(id: string, object: THREE.Object3D) {
+			const existing = registry.get(id);
+			if (existing) scene.remove(existing);
+			registry.set(id, object);
+			scene.add(object);
+		},
+
+		get(id: string) {
+			return registry.get(id);
+		},
+
+		remove(id: string) {
+			const object = registry.get(id);
+			if (!object) return;
+			scene.remove(object);
+			registry.delete(id);
+		},
+
+		resize(width: number, height: number) {
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			renderer.setSize(width, height);
+		},
+
+		destroy() {
+			window.removeEventListener("resize", resizeHandler);
+			for (const obj of registry.values()) {
+				scene.remove(obj);
+			}
+			registry.clear();
+			renderer.dispose();
+		},
 	};
 }

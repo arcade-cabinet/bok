@@ -207,7 +207,7 @@ export function BokScreen({ isOpen, onClose, mapData, codexData, ledgerData, sag
 						key={tab.id}
 						onClick={() => setActiveTab(tab.id)}
 						className={`
-							px-4 py-2 rounded-lg font-display text-xs tracking-[0.15em] uppercase
+							px-4 py-2 min-h-[44px] min-w-[44px] rounded-lg font-display text-xs tracking-[0.15em] uppercase
 							transition-all duration-200
 						`}
 						style={

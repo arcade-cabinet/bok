@@ -3,8 +3,8 @@
  * Uses a pool of reusable enemy meshes (red/dark boxes with glowing eyes).
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
+import { Behavior } from "../behavior.ts";
 
 const MAX_POOL = 16;
 

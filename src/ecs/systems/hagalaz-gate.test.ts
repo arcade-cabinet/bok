@@ -127,11 +127,11 @@ describe("hagalaz-gate", () => {
 			]);
 			const result = evaluateHagalaz(5, 5, 5, Face.PosX, map);
 			expect(result).not.toBeNull();
-			expect(result!.x).toBe(5);
-			expect(result!.y).toBe(5);
-			expect(result!.z).toBe(5);
-			expect(result!.face).toBe(Face.PosX);
-			expect(result!.strength).toBeGreaterThan(0);
+			expect(result?.x).toBe(5);
+			expect(result?.y).toBe(5);
+			expect(result?.z).toBe(5);
+			expect(result?.face).toBe(Face.PosX);
+			expect(result?.strength).toBeGreaterThan(0);
 		});
 
 		it("gate open: emits on the inscribed face", () => {
@@ -141,7 +141,7 @@ describe("hagalaz-gate", () => {
 				["5,5,5", [[SignalType.Heat, 5]]], // self
 			]);
 			const result = evaluateHagalaz(5, 5, 5, Face.NegY, map);
-			expect(result!.face).toBe(Face.NegY);
+			expect(result?.face).toBe(Face.NegY);
 		});
 
 		it("gate closed: signal on same axis both sides (not perpendicular)", () => {
@@ -180,7 +180,7 @@ describe("hagalaz-gate", () => {
 				]);
 				const hagalazOutput = evaluateHagalaz(5, 5, 5, Face.PosX, map);
 				expect(hagalazOutput).not.toBeNull();
-				expect(computeNaudizOutput(hagalazOutput!.strength)).toBe(0);
+				expect(computeNaudizOutput(hagalazOutput?.strength)).toBe(0);
 			});
 		});
 

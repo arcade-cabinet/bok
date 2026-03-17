@@ -71,14 +71,14 @@ test.describe("MobileControls", () => {
 		const btn = component.getByTestId("mobile-btn-mine");
 		const box = await btn.boundingBox();
 		expect(box).not.toBeNull();
-		expect(box!.width).toBeGreaterThanOrEqual(48);
-		expect(box!.height).toBeGreaterThanOrEqual(48);
+		expect(box?.width).toBeGreaterThanOrEqual(48);
+		expect(box?.height).toBeGreaterThanOrEqual(48);
 	});
 
 	test("all buttons are positioned in the bottom 40% of viewport", async ({ mount, page }) => {
 		const viewport = page.viewportSize();
 		expect(viewport).not.toBeNull();
-		const thumbZoneTop = viewport!.height * 0.6;
+		const thumbZoneTop = viewport?.height * 0.6;
 
 		const component = await mount(
 			<MobileControls
@@ -97,7 +97,7 @@ test.describe("MobileControls", () => {
 			const box = await btn.boundingBox();
 			expect(box).not.toBeNull();
 			// Button top edge should be within the bottom 40%
-			expect(box!.y).toBeGreaterThanOrEqual(thumbZoneTop - box!.height);
+			expect(box?.y).toBeGreaterThanOrEqual(thumbZoneTop - box?.height);
 		}
 	});
 
@@ -150,7 +150,7 @@ test.describe("MobileControls", () => {
 		const box = await btn.boundingBox();
 		expect(box).not.toBeNull();
 		// Even at 0.5 scale, should be at least 48px
-		expect(box!.width).toBeGreaterThanOrEqual(48);
+		expect(box?.width).toBeGreaterThanOrEqual(48);
 	});
 
 	test("mobile controls overlay has correct z-index for pointer events", async ({ mount }) => {

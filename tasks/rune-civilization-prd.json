@@ -654,11 +654,7 @@
 			"id": "RC-035",
 			"title": "Migrate CelestialBehavior",
 			"description": "Convert sun/moon/stars from JP Behavior to plain class.",
-			"acceptanceCriteria": [
-				"celestial-renderer.ts (~115 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["celestial-renderer.ts (~115 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -669,11 +665,7 @@
 			"id": "RC-036",
 			"title": "Migrate ViewModelBehavior",
 			"description": "Convert first-person held item from JP Behavior.",
-			"acceptanceCriteria": [
-				"viewmodel-renderer.ts (~135 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["viewmodel-renderer.ts (~135 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -684,11 +676,7 @@
 			"id": "RC-037",
 			"title": "Migrate ParticlesBehavior",
 			"description": "Convert instanced mesh particles from JP Behavior.",
-			"acceptanceCriteria": [
-				"particles-renderer.ts (~91 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["particles-renderer.ts (~91 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -699,11 +687,7 @@
 			"id": "RC-038",
 			"title": "Migrate AmbientParticlesBehavior",
 			"description": "Convert floating atmospheric particles from JP Behavior.",
-			"acceptanceCriteria": [
-				"ambient-particles-renderer.ts (~83 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["ambient-particles-renderer.ts (~83 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -729,11 +713,7 @@
 			"id": "RC-040",
 			"title": "Migrate EnemyRendererBehavior",
 			"description": "Merge into creature-renderer or keep as hostile variant.",
-			"acceptanceCriteria": [
-				"Merged or converted (~152 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Merged or converted (~152 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -760,11 +740,7 @@
 			"id": "RC-042",
 			"title": "Wire Settlement Systems",
 			"description": "Add settlement detector + bonus to game loop, indicator to App.tsx.",
-			"acceptanceCriteria": [
-				"Minimal game.ts + App.tsx touch",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Minimal game.ts + App.tsx touch", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -775,11 +751,7 @@
 			"id": "RC-043",
 			"title": "Wire Tomte Systems",
 			"description": "Add tomte-ai + spawner to game loop, hint to App.tsx, Tomte to creature renderer.",
-			"acceptanceCriteria": [
-				"Minimal integration",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Minimal integration", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": false,
 			"notes": "",
@@ -994,7 +966,26 @@
 			"passes": false,
 			"notes": "",
 			"labels": ["verification"],
-			"dependsOn": ["RC-001", "RC-002", "RC-003", "RC-004", "RC-005", "RC-006", "RC-007", "RC-008", "RC-009", "RC-010", "RC-011", "RC-012", "RC-013", "RC-014", "RC-015", "RC-016", "RC-017", "RC-018"]
+			"dependsOn": [
+				"RC-001",
+				"RC-002",
+				"RC-003",
+				"RC-004",
+				"RC-005",
+				"RC-006",
+				"RC-007",
+				"RC-008",
+				"RC-009",
+				"RC-010",
+				"RC-011",
+				"RC-012",
+				"RC-013",
+				"RC-014",
+				"RC-015",
+				"RC-016",
+				"RC-017",
+				"RC-018"
+			]
 		},
 		{
 			"id": "RC-055",
@@ -1009,7 +1000,23 @@
 			"passes": false,
 			"notes": "",
 			"labels": ["verification"],
-			"dependsOn": ["RC-019", "RC-020", "RC-021", "RC-022", "RC-023", "RC-024", "RC-025", "RC-026", "RC-027", "RC-028", "RC-029", "RC-030", "RC-031", "RC-032", "RC-033"]
+			"dependsOn": [
+				"RC-019",
+				"RC-020",
+				"RC-021",
+				"RC-022",
+				"RC-023",
+				"RC-024",
+				"RC-025",
+				"RC-026",
+				"RC-027",
+				"RC-028",
+				"RC-029",
+				"RC-030",
+				"RC-031",
+				"RC-032",
+				"RC-033"
+			]
 		},
 		{
 			"id": "RC-056",
@@ -1024,7 +1031,24 @@
 			"passes": false,
 			"notes": "",
 			"labels": ["verification"],
-			"dependsOn": ["RC-034", "RC-035", "RC-036", "RC-037", "RC-038", "RC-039", "RC-040", "RC-041", "RC-042", "RC-043", "RC-044", "RC-045", "RC-046", "RC-047", "RC-048", "RC-049"]
+			"dependsOn": [
+				"RC-034",
+				"RC-035",
+				"RC-036",
+				"RC-037",
+				"RC-038",
+				"RC-039",
+				"RC-040",
+				"RC-041",
+				"RC-042",
+				"RC-043",
+				"RC-044",
+				"RC-045",
+				"RC-046",
+				"RC-047",
+				"RC-048",
+				"RC-049"
+			]
 		},
 		{
 			"id": "RC-057",

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { Stroke, StrokePoint } from "./glyph-strokes.ts";
+import type { Stroke } from "./glyph-strokes.ts";
 import { getGlyph } from "./glyph-strokes.ts";
 import {
 	findBestMatch,
@@ -254,7 +254,7 @@ describe("findBestMatch", () => {
 		const player = [tracePerfect(isa.strokes[0], 25)];
 		const match = findBestMatch(player, [isa, naudiz]);
 		expect(match).not.toBeNull();
-		expect(match!.glyph.runeId).toBe(6); // Isa
+		expect(match?.glyph.runeId).toBe(6); // Isa
 	});
 
 	test("returns null when nothing passes", () => {

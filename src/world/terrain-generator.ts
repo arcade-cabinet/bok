@@ -9,7 +9,7 @@
  *   Corruption (80)   — Blothögen overlay
  */
 
-import type { VoxelRenderer, VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelRenderer, VoxelSetOptions } from "../engine/voxel-types.ts";
 import type { BiomeId, BiomeWeight, SurfaceRule } from "./biomes.ts";
 import {
 	BIOME_SURFACE_RULES,

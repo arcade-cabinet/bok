@@ -18,9 +18,13 @@ import type { ProtectionRuneEffects } from "../ecs/systems/protection-rune-syste
 import { protectionRuneSystem } from "../ecs/systems/protection-rune-system.ts";
 import type { RaidoEffects } from "../ecs/systems/raido-system.ts";
 import { raidoSystem } from "../ecs/systems/raido-system.ts";
+import type { CombatRuneEffects } from "../ecs/systems/rune-combat-effects.ts";
+import { runeCombatEffectsSystem } from "../ecs/systems/rune-combat-effects.ts";
 import type { RuneDiscoveryEffects } from "../ecs/systems/rune-discovery-system.ts";
 import { runeDiscoverySystem } from "../ecs/systems/rune-discovery-system.ts";
 import { getRuneIndex } from "../ecs/systems/rune-index.ts";
+import type { SensorEffects } from "../ecs/systems/rune-sensor.ts";
+import { runeSensorSystem } from "../ecs/systems/rune-sensor.ts";
 import type { SelfModifyEffects } from "../ecs/systems/self-modify-system.ts";
 import { selfModifySystem } from "../ecs/systems/self-modify-system.ts";
 import type { SettlementEffects } from "../ecs/systems/settlement-system.ts";
@@ -32,6 +36,7 @@ import { worldEventSystem } from "../ecs/systems/world-event.ts";
 import { CreatureHealth, CreatureTag, PlayerTag, Position, SagaLog } from "../ecs/traits/index.ts";
 import { cosmeticRng } from "../world/noise.ts";
 import { getVoxelAt, setVoxelAt } from "../world/voxel-helpers.ts";
+import type { SignalField } from "./runes/wavefront.ts";
 
 /** Shared particle spawner type (some systems pass string colors). */
 type SpawnFn = (x: number, y: number, z: number, color: number | string, count: number) => void;
@@ -140,4 +145,19 @@ export function runWorldEventSystem(
 		},
 	};
 	worldEventSystem(world, dt, cosmeticRng, effects);
+}
+
+export function runRuneSensorSystem(world: World, dt: number, spawn: SpawnFn) {
+	const effects: SensorEffects = { spawnParticles: spawn };
+	runeSensorSystem(world, dt, effects);
+}
+
+export function runRuneCombatEffectsSystem(world: World, dt: number, spawn: SpawnFn, field: SignalField) {
+	const effects: CombatRuneEffects = {
+		spawnParticles: spawn,
+		damageCreature: (entityId, damage) => {
+			damageCreature(world, entityId, damage, { spawnParticles: spawn });
+		},
+	};
+	runeCombatEffectsSystem(world, dt, field, effects);
 }

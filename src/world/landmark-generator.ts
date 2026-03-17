@@ -10,7 +10,7 @@
  * before setVoxelBulk.
  */
 
-import type { VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import type { BiomeId } from "./biomes.ts";
 import { Biome, selectBiome } from "./biomes.ts";
 import {

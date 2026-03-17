@@ -3,9 +3,9 @@
  * Uses raycasting from box.html's getLookingAt().
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import { BlockId } from "../../world/blocks.ts";
+import { Behavior } from "../behavior.ts";
 
 export class BlockHighlightBehavior extends Behavior {
 	private highlight!: THREE.LineSegments;

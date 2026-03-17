@@ -1,10 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { RuneId } from "../ecs/systems/rune-data.ts";
-import {
-	computeGlowIntensity,
-	computePulsePhase,
-	isEmitterGlow,
-} from "./signal-glow-renderer.ts";
+import { computeGlowIntensity, computePulsePhase, isEmitterGlow } from "./signal-glow-renderer.ts";
 
 describe("signal-glow-renderer", () => {
 	describe("computeGlowIntensity", () => {

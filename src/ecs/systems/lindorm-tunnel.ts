@@ -5,6 +5,8 @@
  * Consumed by creature-ai-hostile.ts.
  */
 
+import { BlockId } from "../../world/blocks.ts";
+
 // ─── Constants ───
 
 /** Number of body segments (including head). */
@@ -94,12 +96,63 @@ export function _resetLindormState(): void {
 
 // ─── Soft Block Check ───
 
+/** Block IDs the Lindorm can tunnel through (dirt, grass, sand, moss, peat). */
+const SOFT_BLOCK_IDS: ReadonlySet<number> = new Set([
+	BlockId.Dirt,
+	BlockId.Grass,
+	BlockId.Sand,
+	BlockId.Moss,
+	BlockId.Peat,
+]);
+
+/** Tunnel depth — how many blocks below surface the wyrm carves. */
+const TUNNEL_DEPTH = 3;
+
 /**
  * Check if a block type is soft enough for Lindorm to tunnel through.
  * Soft blocks: dirt, grass, sand, moss, peat. Not stone.
  */
 export function canTunnelThrough(isSoftBlock: boolean): boolean {
 	return isSoftBlock;
+}
+
+/** Check if a block ID is soft enough for Lindorm tunneling. */
+export function isSoftBlock(blockId: number): boolean {
+	return SOFT_BLOCK_IDS.has(blockId);
+}
+
+// ─── Terrain Modification ───
+
+export interface TunnelBlock {
+	x: number;
+	y: number;
+	z: number;
+}
+
+/**
+ * Collect soft blocks around the Lindorm's underground position to remove.
+ * Creates a 1-wide column of removed blocks, simulating a wyrm-sized tunnel.
+ */
+export function collectTunnelBlocks(
+	worldX: number,
+	surfaceY: number,
+	worldZ: number,
+	getBlock: (x: number, y: number, z: number) => number,
+): TunnelBlock[] {
+	const bx = Math.floor(worldX);
+	const bz = Math.floor(worldZ);
+	const result: TunnelBlock[] = [];
+
+	// Sample a column from surface down to tunnel depth
+	for (let dy = 0; dy < TUNNEL_DEPTH; dy++) {
+		const by = Math.floor(surfaceY) - dy;
+		if (by < 0) break;
+		const blockId = getBlock(bx, by, bz);
+		if (isSoftBlock(blockId)) {
+			result.push({ x: bx, y: by, z: bz });
+		}
+	}
+	return result;
 }
 
 // ─── Tunnel Pathfinding ───

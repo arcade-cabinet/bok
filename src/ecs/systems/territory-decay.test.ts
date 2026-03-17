@@ -136,7 +136,7 @@ describe("selectDecayTargets", () => {
 		const b = selectDecayTargets(8, 40, 8, 4, 2, 77, getVoxel);
 		// Different day seeds should usually (but not always) pick different targets.
 		// With enough candidates this is virtually certain.
-		const sameTargets = a.length === b.length && a.every((t, i) => t.x === b[i].x && t.z === b[i].z);
+		const _sameTargets = a.length === b.length && a.every((t, i) => t.x === b[i].x && t.z === b[i].z);
 		// Probabilistically they should differ, but we just verify both return results
 		expect(a.length).toBeGreaterThan(0);
 		expect(b.length).toBeGreaterThan(0);

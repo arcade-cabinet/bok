@@ -41,8 +41,8 @@ describe("rune-discovery-data", () => {
 	it("getDiscoveryEntry returns entry for valid rune", () => {
 		const entry = getDiscoveryEntry(RuneId.Kenaz);
 		expect(entry).toBeDefined();
-		expect(entry!.title).toContain("Kenaz");
-		expect(entry!.trigger).toBe(DiscoveryTrigger.Tutorial);
+		expect(entry?.title).toContain("Kenaz");
+		expect(entry?.trigger).toBe(DiscoveryTrigger.Tutorial);
 	});
 
 	it("getDiscoveryEntry returns undefined for invalid rune", () => {

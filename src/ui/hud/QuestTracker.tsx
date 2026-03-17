@@ -12,7 +12,7 @@ export function QuestTracker({ step, progress }: QuestTrackerProps) {
 				Current Objective
 			</div>
 			<div className="text-sm font-semibold text-white">{getQuestText(step, progress)}</div>
-			<div className="mt-2 text-xs text-gray-500 font-normal">[E] Inventory / Crafting</div>
+			<div className="mt-2 text-xs text-gray-400 font-normal">[E] Inventory / Crafting</div>
 		</div>
 	);
 }

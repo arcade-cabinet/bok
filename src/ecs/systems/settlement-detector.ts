@@ -148,11 +148,15 @@ export function detectForsvarsverk(
 	for (const a of algizBlocks) {
 		if (getMaxSignal(a.x, a.y, a.z, signalMap) < FORSVARSVERK_MIN_SIGNAL) continue;
 		const hasThur = thurisazBlocks.some(
-			(t) => distSq(a.x, a.y, a.z, t.x, t.y, t.z) <= maxDistSq && getMaxSignal(t.x, t.y, t.z, signalMap) >= FORSVARSVERK_MIN_SIGNAL,
+			(t) =>
+				distSq(a.x, a.y, a.z, t.x, t.y, t.z) <= maxDistSq &&
+				getMaxSignal(t.x, t.y, t.z, signalMap) >= FORSVARSVERK_MIN_SIGNAL,
 		);
 		if (!hasThur) continue;
 		const hasAns = ansuzBlocks.some(
-			(n) => distSq(a.x, a.y, a.z, n.x, n.y, n.z) <= maxDistSq && getMaxSignal(n.x, n.y, n.z, signalMap) >= FORSVARSVERK_MIN_SIGNAL,
+			(n) =>
+				distSq(a.x, a.y, a.z, n.x, n.y, n.z) <= maxDistSq &&
+				getMaxSignal(n.x, n.y, n.z, signalMap) >= FORSVARSVERK_MIN_SIGNAL,
 		);
 		if (!hasAns) continue;
 		const { cx, cz } = toChunk(a.x, a.z);

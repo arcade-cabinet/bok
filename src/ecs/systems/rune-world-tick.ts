@@ -4,7 +4,6 @@
 // Reads RuneFaces from ECS, maintains TickState, runs simulation.
 
 import type { InscriptionIndex } from "../../engine/runes/inscription.ts";
-import type { ResourceIdValue } from "../../engine/runes/resource.ts";
 import type { GetMaterial, SignalField } from "../../engine/runes/wavefront.ts";
 import type { WorldState } from "../../engine/runes/world-state.ts";
 import { type BerkananConfig, type TickState, tickWorld } from "../../engine/runes/world-tick.ts";

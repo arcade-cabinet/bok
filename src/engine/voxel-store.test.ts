@@ -65,9 +65,9 @@ describe("VoxelStore", () => {
 		store.setVoxel(5, 5, 5, 3);
 		const data = store.getChunkData(0, 0);
 		expect(data).not.toBeNull();
-		expect(data!.length).toBe(CS * WH * CS);
+		expect(data?.length).toBe(CS * WH * CS);
 		// Check the voxel at local (5,5,5)
-		expect(data![5 + 5 * CS + 5 * CS * CS]).toBe(3);
+		expect(data?.[5 + 5 * CS + 5 * CS * CS]).toBe(3);
 	});
 
 	test("out-of-height-range returns 0", () => {

@@ -147,12 +147,10 @@ export interface FarmPlotEntry {
 	growthProgress: number;
 }
 /** Tracks planted crops. Key: "x,y,z" block position → plot data. */
-export const FarmPlots = trait(
-	(): { plots: Record<string, FarmPlotEntry>; lastProcessedDay: number } => ({
-		plots: {},
-		lastProcessedDay: -1,
-	}),
-);
+export const FarmPlots = trait((): { plots: Record<string, FarmPlotEntry>; lastProcessedDay: number } => ({
+	plots: {},
+	lastProcessedDay: -1,
+}));
 
 // ─── Equipment ───
 export interface EquipmentSlots {

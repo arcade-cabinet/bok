@@ -1,21 +1,25 @@
 /**
  * Settings modal — tabbed overlay for game configuration.
- * Tabs: Keybindings, Display, Audio. Persisted to SQLite via useSettings.
- * Uses bok-panel styling to match the diegetic aesthetic.
+ * Tabs: Keybindings, Audio, Graphics, Controls.
+ * Persists audio/graphics/controls to localStorage via settings-store.
+ * Keybindings still use SQLite via useSettings.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SettingsAudio } from "../components/SettingsAudio.tsx";
-import { SettingsDisplay } from "../components/SettingsDisplay.tsx";
+import { SettingsControls } from "../components/SettingsControls.tsx";
+import { SettingsGraphics } from "../components/SettingsGraphics.tsx";
 import { SettingsKeybindings } from "../components/SettingsKeybindings.tsx";
 import { useSettings } from "../hooks/useSettings.ts";
+import { loadSettings, type SettingsData, saveSettings } from "../settings-store.ts";
 
-type SettingsTab = "keybindings" | "display" | "audio";
+type SettingsTab = "keybindings" | "audio" | "graphics" | "controls";
 
 const TABS: { id: SettingsTab; label: string }[] = [
 	{ id: "keybindings", label: "Keybindings" },
-	{ id: "display", label: "Display" },
 	{ id: "audio", label: "Audio" },
+	{ id: "graphics", label: "Graphics" },
+	{ id: "controls", label: "Controls" },
 ];
 
 interface SettingsModalProps {
@@ -24,7 +28,16 @@ interface SettingsModalProps {
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
 	const [activeTab, setActiveTab] = useState<SettingsTab>("keybindings");
-	const { settings, updateSetting, rebindKey, updateMobileConfig } = useSettings();
+	const { settings: kbSettings, rebindKey, updateMobileConfig } = useSettings();
+	const [store, setStore] = useState<SettingsData>(loadSettings);
+
+	const updateStore = useCallback(<K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
+		setStore((prev) => {
+			const next = { ...prev, [key]: value };
+			saveSettings(next);
+			return next;
+		});
+	}, []);
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -69,7 +82,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 							role="tab"
 							key={tab.id}
 							onClick={() => setActiveTab(tab.id)}
-							className="px-4 py-2 rounded font-display text-xs tracking-[0.1em] uppercase transition-colors"
+							className="px-3 py-2 min-h-[44px] rounded font-display text-xs tracking-[0.1em] uppercase transition-colors"
 							style={
 								activeTab === tab.id
 									? {
@@ -77,7 +90,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 											color: "var(--color-bok-gold)",
 											borderBottom: "2px solid var(--color-bok-gold)",
 										}
-									: { background: "transparent", color: "var(--color-bok-parchment)", opacity: 0.5 }
+									: { background: "transparent", color: "var(--color-bok-parchment)", opacity: 0.7 }
 							}
 							aria-selected={activeTab === tab.id}
 							data-testid={`settings-tab-${tab.id}`}
@@ -91,30 +104,42 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 				<div className="flex-1 overflow-y-auto min-h-[200px]" role="tabpanel">
 					{activeTab === "keybindings" && (
 						<SettingsKeybindings
-							bindings={settings.keybindings}
-							mobileConfig={settings.mobileConfig}
+							bindings={kbSettings.keybindings}
+							mobileConfig={kbSettings.mobileConfig}
 							onRebind={rebindKey}
 							onMobileConfig={updateMobileConfig}
 						/>
 					)}
-					{activeTab === "display" && (
-						<SettingsDisplay
-							showVitals={settings.showVitals}
-							renderDistance={settings.renderDistance}
-							qualityTier={settings.qualityTier}
-							onToggleVitals={(v) => updateSetting("showVitals", v)}
-							onRenderDistance={(v) => updateSetting("renderDistance", v)}
-							onQualityTier={(v) => updateSetting("qualityTier", v)}
-						/>
-					)}
 					{activeTab === "audio" && (
 						<SettingsAudio
-							masterVolume={settings.masterVolume}
-							musicVolume={settings.musicVolume}
-							sfxVolume={settings.sfxVolume}
-							onMasterVolume={(v) => updateSetting("masterVolume", v)}
-							onMusicVolume={(v) => updateSetting("musicVolume", v)}
-							onSfxVolume={(v) => updateSetting("sfxVolume", v)}
+							masterVolume={store.masterVolume}
+							ambientVolume={store.ambientVolume}
+							interactionVolume={store.interactionVolume}
+							muted={store.muted}
+							onMasterVolume={(v) => updateStore("masterVolume", v)}
+							onAmbientVolume={(v) => updateStore("ambientVolume", v)}
+							onInteractionVolume={(v) => updateStore("interactionVolume", v)}
+							onMuted={(v) => updateStore("muted", v)}
+						/>
+					)}
+					{activeTab === "graphics" && (
+						<SettingsGraphics
+							renderDistance={store.renderDistance}
+							particleDensity={store.particleDensity}
+							shadowQuality={store.shadowQuality}
+							onRenderDistance={(v) => updateStore("renderDistance", v)}
+							onParticleDensity={(v) => updateStore("particleDensity", v as SettingsData["particleDensity"])}
+							onShadowQuality={(v) => updateStore("shadowQuality", v as SettingsData["shadowQuality"])}
+						/>
+					)}
+					{activeTab === "controls" && (
+						<SettingsControls
+							mouseSensitivity={store.mouseSensitivity}
+							touchSensitivity={store.touchSensitivity}
+							invertY={store.invertY}
+							onMouseSensitivity={(v) => updateStore("mouseSensitivity", v)}
+							onTouchSensitivity={(v) => updateStore("touchSensitivity", v)}
+							onInvertY={(v) => updateStore("invertY", v)}
 						/>
 					)}
 				</div>
@@ -133,8 +158,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 		</div>
 	);
 }
-
-// ─── Sub-components ───
 
 function RuneBorder() {
 	return (

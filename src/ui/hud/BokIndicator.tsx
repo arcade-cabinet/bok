@@ -15,7 +15,7 @@ export function BokIndicator({ hasNewInfo, onOpen }: BokIndicatorProps) {
 		<button
 			type="button"
 			data-testid="bok-indicator"
-			className={`pointer-events-auto font-display text-2xl transition-all duration-500 ${
+			className={`pointer-events-auto font-display text-2xl min-w-[44px] min-h-[44px] flex items-center justify-center transition-all duration-500 ${
 				hasNewInfo ? "rune-glow text-[var(--color-bok-gold)]" : "text-white/30"
 			}`}
 			style={{ textShadow: hasNewInfo ? "0 0 12px var(--color-bok-gold), 0 0 24px var(--color-bok-gold)" : "none" }}

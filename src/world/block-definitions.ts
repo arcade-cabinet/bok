@@ -11,7 +11,7 @@
  * Row 5: RuneStone
  */
 
-import { type BlockDefinition, Face } from "@jolly-pixel/voxel.renderer";
+import { type BlockDefinition, Face } from "../engine/voxel-types.ts";
 import { BlockId } from "./blocks.ts";
 
 const T = "default";

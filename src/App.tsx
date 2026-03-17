@@ -85,6 +85,7 @@ import { MicroGoalHint } from "./ui/hud/MicroGoalHint.tsx";
 import { MobileControls } from "./ui/hud/MobileControls.tsx";
 import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
 import { ResumeBanner } from "./ui/hud/ResumeBanner.tsx";
+import { ScreenReaderAnnouncer } from "./ui/hud/ScreenReaderAnnouncer.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -337,7 +338,7 @@ export default function App() {
 		};
 		raf = requestAnimationFrame(poll);
 		return () => cancelAnimationFrame(raf);
-	}, [phase, bokOpen, hudState.dayCount]);
+	}, [phase, bokOpen, hudState.dayCount, mobileMode]);
 
 	// Micro-goal scan — throttled to every 2 seconds
 	useEffect(() => {
@@ -714,6 +715,9 @@ export default function App() {
 
 	return (
 		<>
+			{/* Screen reader announcements */}
+			<ScreenReaderAnnouncer phase={phase} health={hudState.health} dayCount={hudState.dayCount} />
+
 			{/* Overlays */}
 			{phase === "playing" && (
 				<>

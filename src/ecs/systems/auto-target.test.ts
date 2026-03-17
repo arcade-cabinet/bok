@@ -18,7 +18,7 @@ describe("selectAutoTarget", () => {
 		];
 		const result = selectAutoTarget(playerX, playerY, playerZ, yaw, candidates);
 		expect(result).not.toBeNull();
-		expect(result!.entityId).toBe(2); // closer
+		expect(result?.entityId).toBe(2); // closer
 	});
 
 	it("rejects enemies beyond range", () => {
@@ -45,21 +45,21 @@ describe("selectAutoTarget", () => {
 		];
 		const result = selectAutoTarget(playerX, playerY, playerZ, yaw, candidates);
 		expect(result).not.toBeNull();
-		expect(result!.entityId).toBe(1); // more aligned wins
+		expect(result?.entityId).toBe(1); // more aligned wins
 	});
 
 	it("handles enemies at different Y levels", () => {
 		const candidates = [{ entityId: 1, x: 0, y: 8, z: -4 }];
 		const result = selectAutoTarget(playerX, playerY, playerZ, yaw, candidates);
 		expect(result).not.toBeNull();
-		expect(result!.entityId).toBe(1);
+		expect(result?.entityId).toBe(1);
 	});
 
 	it("returns distSq in result", () => {
 		const candidates = [{ entityId: 1, x: 3, y: 5, z: -4 }];
 		const result = selectAutoTarget(playerX, playerY, playerZ, yaw, candidates);
 		expect(result).not.toBeNull();
-		expect(result!.distSq).toBeCloseTo(25, 5); // 3² + 0² + 4² = 25
+		expect(result?.distSq).toBeCloseTo(25, 5); // 3² + 0² + 4² = 25
 	});
 
 	it("respects custom range and half angle", () => {

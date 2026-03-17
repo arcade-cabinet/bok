@@ -41,8 +41,8 @@ describe("isa-delay", () => {
 			pushIsaInput(0, 0, 0, SignalType.Heat, 8, 1);
 			const result = popIsaOutput(0, 0, 0, 1, 2);
 			expect(result).not.toBeNull();
-			expect(result!.signalType).toBe(SignalType.Heat);
-			expect(result!.strength).toBe(8);
+			expect(result?.signalType).toBe(SignalType.Heat);
+			expect(result?.strength).toBe(8);
 		});
 
 		it("crystal delay requires 2 ticks", () => {
@@ -50,19 +50,19 @@ describe("isa-delay", () => {
 			expect(popIsaOutput(0, 0, 0, 2, 2)).toBeNull(); // only 1 tick passed
 			const result = popIsaOutput(0, 0, 0, 2, 3); // 2 ticks passed
 			expect(result).not.toBeNull();
-			expect(result!.strength).toBe(10);
+			expect(result?.strength).toBe(10);
 		});
 
 		it("preserves signal type through delay", () => {
 			pushIsaInput(5, 3, 2, SignalType.Detection, 6, 10);
 			const result = popIsaOutput(5, 3, 2, 1, 11);
-			expect(result!.signalType).toBe(SignalType.Detection);
+			expect(result?.signalType).toBe(SignalType.Detection);
 		});
 
 		it("preserves signal strength through delay", () => {
 			pushIsaInput(0, 0, 0, SignalType.Heat, 12, 5);
 			const result = popIsaOutput(0, 0, 0, 1, 6);
-			expect(result!.strength).toBe(12);
+			expect(result?.strength).toBe(12);
 		});
 
 		it("returns null when no input was ever pushed", () => {
@@ -74,10 +74,10 @@ describe("isa-delay", () => {
 			pushIsaInput(0, 0, 0, SignalType.Heat, 10, 2);
 
 			const r1 = popIsaOutput(0, 0, 0, 1, 2);
-			expect(r1!.strength).toBe(5);
+			expect(r1?.strength).toBe(5);
 
 			const r2 = popIsaOutput(0, 0, 0, 1, 3);
-			expect(r2!.strength).toBe(10);
+			expect(r2?.strength).toBe(10);
 		});
 	});
 
@@ -96,9 +96,9 @@ describe("isa-delay", () => {
 			const emptyMap: SignalMap = new Map();
 			const result = evaluateIsa(0, 0, 0, Face.PosX, emptyMap, false, 2);
 			expect(result).not.toBeNull();
-			expect(result!.strength).toBe(8);
-			expect(result!.signalType).toBe(SignalType.Heat);
-			expect(result!.face).toBe(Face.PosX);
+			expect(result?.strength).toBe(8);
+			expect(result?.signalType).toBe(SignalType.Heat);
+			expect(result?.face).toBe(Face.PosX);
 		});
 
 		it("crystal block delays by 2 ticks", () => {
@@ -111,7 +111,7 @@ describe("isa-delay", () => {
 			// Tick 3: ready
 			const r3 = evaluateIsa(0, 0, 0, Face.PosZ, emptyMap, true, 3);
 			expect(r3).not.toBeNull();
-			expect(r3!.strength).toBe(10);
+			expect(r3?.strength).toBe(10);
 		});
 
 		it("passes no signal when input has no signal", () => {

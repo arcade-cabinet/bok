@@ -3,7 +3,7 @@
  * Extracted from terrain-generator.ts to keep chunk generation focused.
  */
 
-import type { VoxelRenderer, VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelRenderer, VoxelSetOptions } from "../engine/voxel-types.ts";
 import { BlockId } from "./blocks.ts";
 import { placeRunsten, placeStenhog } from "./landmark-types.ts";
 

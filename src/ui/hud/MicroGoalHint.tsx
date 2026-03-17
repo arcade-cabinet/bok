@@ -29,8 +29,8 @@ export function MicroGoalHint({ goal }: MicroGoalHintProps) {
 		<div
 			className="absolute top-14 left-1/2 -translate-x-1/2
 				bg-stone-800/60 border border-stone-600/40 rounded px-3 py-1.5
-				text-stone-300 text-xs font-serif
-				transition-opacity duration-700 opacity-70"
+				text-stone-200 text-xs font-serif
+				transition-opacity duration-700 opacity-90"
 		>
 			{goal.hint}
 		</div>

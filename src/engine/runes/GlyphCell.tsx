@@ -42,7 +42,9 @@ export function GlyphCell({ runeId, glowIntensity, size }: GlyphCellProps) {
 
 		// Radial glow behind glyph
 		if (glowIntensity > 0) {
-			const hex = Math.round(glowIntensity * 60).toString(16).padStart(2, "0");
+			const hex = Math.round(glowIntensity * 60)
+				.toString(16)
+				.padStart(2, "0");
 			const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, drawSize * 0.6);
 			grad.addColorStop(0, `${color}${hex}`);
 			grad.addColorStop(1, "transparent");
@@ -51,8 +53,12 @@ export function GlyphCell({ runeId, glowIntensity, size }: GlyphCellProps) {
 		}
 
 		const alpha = Math.max(0.3, glowIntensity);
-		const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, "0");
-		const glowHex = Math.round(alpha * 0.4 * 255).toString(16).padStart(2, "0");
+		const alphaHex = Math.round(alpha * 255)
+			.toString(16)
+			.padStart(2, "0");
+		const glowHex = Math.round(alpha * 0.4 * 255)
+			.toString(16)
+			.padStart(2, "0");
 
 		// Outer glow stroke
 		ctx.strokeStyle = `${color}${glowHex}`;
@@ -83,7 +89,7 @@ export function GlyphCell({ runeId, glowIntensity, size }: GlyphCellProps) {
 			}
 			ctx.stroke();
 		}
-	}, [runeId, glowIntensity, size, glyph, def, color]);
+	}, [glowIntensity, size, glyph, def, color]);
 
 	return (
 		<canvas

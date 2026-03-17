@@ -44,11 +44,7 @@ export function isEmitterGlow(runeId: number): boolean {
  * Compute final glow value for a rune face, incorporating pulse.
  * Emitters glow at constant 0.8. Powered runes pulse between 0.3 and full glow.
  */
-export function computeFaceGlow(
-	runeId: RuneIdValue,
-	signalStrength: number,
-	timeSeconds: number,
-): number {
+export function computeFaceGlow(runeId: RuneIdValue, signalStrength: number, timeSeconds: number): number {
 	if (runeId === 0) return 0;
 
 	if (isEmitterGlow(runeId)) {

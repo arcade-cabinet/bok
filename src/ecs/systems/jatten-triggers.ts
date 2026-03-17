@@ -69,10 +69,7 @@ export function shouldCreaturesFlee(inscriptionLevel: number): boolean {
  * Check if Jätten should spawn.
  * Only triggers once — returns false if already spawned.
  */
-export function shouldSpawnJatten(
-	inscriptionLevel: number,
-	alreadySpawned: boolean,
-): boolean {
+export function shouldSpawnJatten(inscriptionLevel: number, alreadySpawned: boolean): boolean {
 	if (alreadySpawned) return false;
 	return inscriptionLevel >= JATTEN_SPAWN_THRESHOLD;
 }

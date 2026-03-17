@@ -22,27 +22,21 @@ async function startGame(page: import("@playwright/test").Page) {
 }
 
 /** Read player position from ECS via page context. */
-async function getPlayerPos(page: import("@playwright/test").Page) {
+async function _getPlayerPos(page: import("@playwright/test").Page) {
 	return page.evaluate(() => {
-		// Access the exported kootaWorld from game.ts via Vite's module graph
-		// We need to go through the window — inject a helper during game init
-		const w = (window as any).__bokTestHelpers;
+		const w = (window as Record<string, unknown>).__bokTestHelpers as { getPlayerPosition: () => unknown } | undefined;
 		if (!w) return null;
 		return w.getPlayerPosition();
 	});
 }
 
 /** Inject test helpers into the game's module scope. */
-async function injectTestHelpers(page: import("@playwright/test").Page) {
+async function _injectTestHelpers(page: import("@playwright/test").Page) {
 	await page.evaluate(() => {
-		// This runs in the page context — we can access modules via Vite's import
-		(window as any).__bokTestHelpers = {
+		(window as Record<string, unknown>).__bokTestHelpers = {
 			getPlayerPosition: () => {
-				// Direct ECS query via the global kootaWorld
-				// We'll use a different approach: read from the Three.js camera position
 				const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 				if (!canvas) return null;
-				// Return canvas dimensions as proof the game is running
 				return { width: canvas.width, height: canvas.height, running: true };
 			},
 		};
@@ -146,7 +140,7 @@ test.describe("Mouse input", () => {
 		// Simulate mouse movement with movementX/Y (works even without pointer lock
 		// because JP's Mouse.onMouseMove handles both locked and unlocked movement)
 		await page.evaluate(() => {
-			const canvas = document.getElementById("game-canvas")!;
+			const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 			for (let i = 0; i < 5; i++) {
 				canvas.dispatchEvent(new MouseEvent("mousemove", { movementX: 50, movementY: 0, bubbles: true }));
 			}
@@ -162,7 +156,7 @@ test.describe("Mouse input", () => {
 
 		// Dispatch mousedown + mouseup and verify no crash
 		const result = await page.evaluate(() => {
-			const canvas = document.getElementById("game-canvas")!;
+			const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 			canvas.dispatchEvent(new MouseEvent("mousedown", { button: 0, bubbles: true }));
 			// Small delay then release
 			setTimeout(() => {

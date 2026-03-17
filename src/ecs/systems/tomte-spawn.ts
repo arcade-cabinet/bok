@@ -64,40 +64,38 @@ function despawnTomte(world: World): void {
 export function tomteSpawnSystem(world: World): void {
 	if (tomteRetired) return;
 
-	world.query(PlayerTag, Position, InscriptionLevel, RuneFaces).updateEach(
-		([pos, inscription, runeFaces]) => {
-			const runeCount = countRuneInscriptions(runeFaces.faces);
+	world.query(PlayerTag, Position, InscriptionLevel, RuneFaces).updateEach(([pos, inscription, runeFaces]) => {
+		const runeCount = countRuneInscriptions(runeFaces.faces);
 
-			// Despawn check: Tomte leaves after player inscribes enough runes
-			if (tomteSpawned && runeCount >= REQUIRED_INSCRIPTIONS) {
-				despawnTomte(world);
-				return;
-			}
+		// Despawn check: Tomte leaves after player inscribes enough runes
+		if (tomteSpawned && runeCount >= REQUIRED_INSCRIPTIONS) {
+			despawnTomte(world);
+			return;
+		}
 
-			// Spawn check: Tomte appears after first structure
-			if (!tomteSpawned && inscription.structuresBuilt >= REQUIRED_STRUCTURES) {
-				world.spawn(
-					CreatureTag,
-					Position({ x: pos.x + SPAWN_OFFSET, y: pos.y, z: pos.z + SPAWN_OFFSET }),
-					CreatureType({ species: Species.Tomte }),
-					CreatureAI({
-						aiType: AiType.Passive,
-						behaviorState: BehaviorState.Idle,
-						targetEntity: -1,
-						aggroRange: 0,
-						attackRange: 0,
-						attackDamage: 0,
-						attackCooldown: 0,
-						moveSpeed: 1.0,
-						detectionRange: 10,
-					}),
-					CreatureAnimation({ animState: AnimState.Idle, animTimer: 0, variant: 0 }),
-					CreatureHealth({ hp: 10, maxHp: 10, velY: 0, meshIndex: -1 }),
-				);
-				tomteSpawned = true;
-			}
-		},
-	);
+		// Spawn check: Tomte appears after first structure
+		if (!tomteSpawned && inscription.structuresBuilt >= REQUIRED_STRUCTURES) {
+			world.spawn(
+				CreatureTag,
+				Position({ x: pos.x + SPAWN_OFFSET, y: pos.y, z: pos.z + SPAWN_OFFSET }),
+				CreatureType({ species: Species.Tomte }),
+				CreatureAI({
+					aiType: AiType.Passive,
+					behaviorState: BehaviorState.Idle,
+					targetEntity: -1,
+					aggroRange: 0,
+					attackRange: 0,
+					attackDamage: 0,
+					attackCooldown: 0,
+					moveSpeed: 1.0,
+					detectionRange: 10,
+				}),
+				CreatureAnimation({ animState: AnimState.Idle, animTimer: 0, variant: 0 }),
+				CreatureHealth({ hp: 10, maxHp: 10, velY: 0, meshIndex: -1 }),
+			);
+			tomteSpawned = true;
+		}
+	});
 }
 
 /** Reset module state (for testing or game restart). */

@@ -8,8 +8,6 @@ import {
 	CreatureAnimation,
 	CreatureHealth,
 	CreatureTag,
-	Health,
-	PlayerState,
 	Position,
 	Species,
 } from "../traits/index.ts";

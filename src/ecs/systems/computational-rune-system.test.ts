@@ -21,7 +21,7 @@ function airWorld(): number {
 	return BlockId.Air;
 }
 
-const noopEffects: ComputationalRuneEffects = {
+const _noopEffects: ComputationalRuneEffects = {
 	spawnParticles: vi.fn(),
 };
 

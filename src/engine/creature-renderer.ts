@@ -7,9 +7,9 @@
  * Plain class — no Jolly Pixel dependency. Call update(dt) from GameBridge.
  */
 
-import * as THREE from "three";
+import type * as THREE from "three";
 import type { AnimStateId, SpeciesId } from "../ecs/traits/index.ts";
-import { type CreatureAnimState, animateJoints, disposeAssembled } from "./creature-anim.ts";
+import { animateJoints, type CreatureAnimState, disposeAssembled } from "./creature-anim.ts";
 import { type AssembledCreature, assembleCreature, updateLod } from "./creature-parts.ts";
 
 const MAX_POOL = 16;

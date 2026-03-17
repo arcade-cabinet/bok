@@ -13,7 +13,13 @@ import { isInteractionRune, isProtectionRune } from "./interaction-rune-data.ts"
 import { isNetworkRune } from "./network-rune-data.ts";
 import { unpackFaceKey } from "./rune-data.ts";
 import { getRuneIndex } from "./rune-index.ts";
-import { LEVEL_NAMES, settlementFoundedProse, settlementGrewProse } from "./settlement-data.ts";
+import {
+	computeSettlementBonuses,
+	LEVEL_NAMES,
+	type SettlementBonuses,
+	settlementFoundedProse,
+	settlementGrewProse,
+} from "./settlement-data.ts";
 import { detectSettlements, diffSettlements, type Settlement } from "./settlement-detect.ts";
 
 /** How often to re-scan for settlements (seconds). Settlements change rarely. */
@@ -30,16 +36,42 @@ export interface SettlementEffects {
 
 let scanTimer = 0;
 let cachedSettlements: Settlement[] = [];
+let cachedPlayerSettlement: Settlement | null = null;
+let cachedPlayerBonuses: SettlementBonuses = {
+	wardMult: 1,
+	growthMult: 1,
+	combatMult: 1,
+	morkerSpawnMult: 1,
+	signalBonus: 0,
+};
 
 /** Get all currently detected settlements. Read by creature AI and map. */
 export function getActiveSettlements(): ReadonlyArray<Settlement> {
 	return cachedSettlements;
 }
 
+/** Get the settlement the player is currently standing in, or null. */
+export function getPlayerSettlement(): Readonly<Settlement> | null {
+	return cachedPlayerSettlement;
+}
+
+/** Get settlement bonuses for the player's current chunk. */
+export function getPlayerSettlementBonuses(): Readonly<SettlementBonuses> {
+	return cachedPlayerBonuses;
+}
+
 /** Reset module state. Called in destroyGame(). */
 export function resetSettlementState(): void {
 	scanTimer = 0;
 	cachedSettlements = [];
+	cachedPlayerSettlement = null;
+	cachedPlayerBonuses = {
+		wardMult: 1,
+		growthMult: 1,
+		combatMult: 1,
+		morkerSpawnMult: 1,
+		signalBonus: 0,
+	};
 }
 
 // ─── Rune Collection ───
@@ -138,6 +170,13 @@ export function settlementSystem(
 	const prev = cachedSettlements;
 	const next = detectSettlements(archetypes);
 	cachedSettlements = next;
+
+	// Track which settlement the player is in and compute bonuses
+	const match = next.find((s) => s.cx === playerCx && s.cz === playerCz) ?? null;
+	cachedPlayerSettlement = match;
+	cachedPlayerBonuses = match
+		? computeSettlementBonuses(match.level, match.archetypes)
+		: { wardMult: 1, growthMult: 1, combatMult: 1, morkerSpawnMult: 1, signalBonus: 0 };
 
 	// Diff for saga entries
 	const { founded, grew } = diffSettlements(prev, next);

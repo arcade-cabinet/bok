@@ -8,6 +8,7 @@ import {
 	CreatureHealth,
 	CreatureTag,
 	InscriptionLevel,
+	MiningState,
 	PlayerState,
 	PlayerTag,
 	Position,
@@ -32,21 +33,35 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 	});
 	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 
-	// Get player position, yaw, and inscription level
+	// Get player position, yaw, inscription level, and mining state
 	let px = 0,
 		py = 0,
 		pz = 0,
 		pYaw = 0;
 	let playerAlive = false;
 	let insLevel = 0;
-	world.query(PlayerTag, Position, PlayerState, Rotation, InscriptionLevel).readEach(([pos, state, rot, ins]) => {
-		px = pos.x;
-		py = pos.y;
-		pz = pos.z;
-		pYaw = rot.yaw;
-		playerAlive = !state.isDead;
-		insLevel = computeInscriptionLevel(ins.totalBlocksPlaced, ins.totalBlocksMined, ins.structuresBuilt);
-	});
+	let miningActive = false;
+	let mineX = 0;
+	let mineY = 0;
+	let mineZ = 0;
+	let structuresBuilt = 0;
+	let discoveredRunes = 0;
+	world
+		.query(PlayerTag, Position, PlayerState, Rotation, InscriptionLevel, MiningState)
+		.readEach(([pos, state, rot, ins, mining]) => {
+			px = pos.x;
+			py = pos.y;
+			pz = pos.z;
+			pYaw = rot.yaw;
+			playerAlive = !state.isDead;
+			insLevel = computeInscriptionLevel(ins.totalBlocksPlaced, ins.totalBlocksMined, ins.structuresBuilt);
+			structuresBuilt = ins.structuresBuilt;
+			discoveredRunes = ins.totalBlocksMined; // proxy — actual rune count tracked elsewhere
+			miningActive = mining.active;
+			mineX = mining.targetX;
+			mineY = mining.targetY;
+			mineZ = mining.targetZ;
+		});
 
 	// Count + despawn distant creatures
 	let creatureCount = 0;
@@ -91,6 +106,8 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		morkerSpawnMult,
 		seasonMorkerMult,
 		tranaMigrating,
+		structuresBuilt,
+		discoveredRunes,
 	);
 
 	// Update AI by archetype
@@ -102,6 +119,10 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		playerAlive,
 		isDaytime,
 		timeOfDay,
+		miningActive,
+		mineX,
+		mineY,
+		mineZ,
 	};
 
 	updateHostileAI(world, dt, ctx, effects);

@@ -68,12 +68,12 @@ describe("naudiz-not", () => {
 			const map: SignalMap = new Map();
 			const result = evaluateNaudiz(5, 3, 2, Face.PosX, map);
 			expect(result).not.toBeNull();
-			expect(result!.strength).toBe(NAUDIZ_OUTPUT_STRENGTH);
-			expect(result!.x).toBe(5);
-			expect(result!.y).toBe(3);
-			expect(result!.z).toBe(2);
-			expect(result!.face).toBe(Face.PosX);
-			expect(result!.signalType).toBe(SignalType.Force);
+			expect(result?.strength).toBe(NAUDIZ_OUTPUT_STRENGTH);
+			expect(result?.x).toBe(5);
+			expect(result?.y).toBe(3);
+			expect(result?.z).toBe(2);
+			expect(result?.face).toBe(Face.PosX);
+			expect(result?.signalType).toBe(SignalType.Force);
 		});
 
 		it("is silent when signal is present at block", () => {
@@ -90,7 +90,7 @@ describe("naudiz-not", () => {
 		it("emits on correct face", () => {
 			const map: SignalMap = new Map();
 			const result = evaluateNaudiz(1, 2, 3, Face.NegY, map);
-			expect(result!.face).toBe(Face.NegY);
+			expect(result?.face).toBe(Face.NegY);
 		});
 	});
 });

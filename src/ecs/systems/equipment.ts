@@ -6,9 +6,9 @@
 
 import type { EquipmentSlots } from "../traits/index.ts";
 
+export type { EquipmentSlots } from "../traits/index.ts";
 // Re-export trait for convenience (test imports)
 export { Equipment } from "../traits/index.ts";
-export type { EquipmentSlots } from "../traits/index.ts";
 
 // ─── Armor Slot Type ───
 

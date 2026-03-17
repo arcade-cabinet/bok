@@ -1,18 +1,15 @@
 /**
- * Core game engine — bridges Jolly Pixel (rendering + Actors) with Koota (ECS state).
+ * Core game engine — bridges GameLoop (rendering) with Koota (ECS state).
  *
- * All 3D scene objects are managed as Jolly Pixel Actors with Behaviors:
- *  - GameBridge: runs Koota systems, syncs state to camera + behaviors
- *  - CelestialBehavior: sun/moon orbit, sky color, stars
- *  - ViewModelBehavior: first-person held item with sway/bob/swing
- *  - BlockHighlightBehavior: wireframe on targeted block + raycasting
- *  - ParticlesBehavior: instanced mesh particles for mining/combat/sprint
- *  - AmbientParticlesBehavior: floating atmospheric particles
+ * All 3D scene objects are managed as standalone renderers called from GameBridge:
+ *  - CelestialRenderer: sun/moon orbit, sky color, stars
+ *  - ViewModelRenderer: first-person held item with sway/bob/swing
+ *  - BlockHighlightRenderer: wireframe on targeted block + raycasting
+ *  - ParticlesRenderer: instanced mesh particles for mining/combat/sprint
+ *  - AmbientParticlesRenderer: floating atmospheric particles
+ *  - CreatureRenderer: multi-part creature meshes with LOD
  */
 
-import { Behavior } from "@jolly-pixel/engine";
-import { loadRuntime, Runtime } from "@jolly-pixel/runtime";
-import { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import { createWorld as createKootaWorld } from "koota";
 import * as THREE from "three";
 import { resetComputationalRuneState } from "../ecs/systems/computational-rune-system.ts";
@@ -47,6 +44,7 @@ import { resetProtectionRuneState } from "../ecs/systems/protection-rune-system.
 import { getActiveQuality, resetQualityState, setRenderDistanceOverride } from "../ecs/systems/quality-presets.ts";
 import { executeFastTravel, getActiveAnchors, resetRaidoState } from "../ecs/systems/raido-system.ts";
 import type { TravelAnchor } from "../ecs/systems/raido-travel.ts";
+import { resetCombatEffectsState } from "../ecs/systems/rune-combat-effects.ts";
 import {
 	grantTutorialRunes,
 	registerDiscoveryBiomeResolver,
@@ -54,13 +52,12 @@ import {
 } from "../ecs/systems/rune-discovery-system.ts";
 import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
-import { resetRuneWorldTickState, runeWorldTickSystem } from "../ecs/systems/rune-world-tick.ts";
-import { InscriptionIndex as SimInscriptionIndex } from "./runes/inscription.ts";
-import { MaterialId } from "./runes/material.ts";
-import { WorldState as RuneWorldState } from "./runes/world-state.ts";
-import { createTickState, type TickState } from "./runes/world-tick.ts";
+import { resetRuneResourcePickupState, runeResourcePickupSystem } from "../ecs/systems/rune-resource-pickup.ts";
+import { resetSensorState } from "../ecs/systems/rune-sensor.ts";
+import { getLastSignalField, resetRuneWorldTickState, runeWorldTickSystem } from "../ecs/systems/rune-world-tick.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
 import { resetSeasonState } from "../ecs/systems/season.ts";
+import { resetSeasonEffectsState, seasonEffectsSystem } from "../ecs/systems/season-effects.ts";
 import { resetSelfModifyState } from "../ecs/systems/self-modify-system.ts";
 import { isGamePaused, resetPauseState } from "../ecs/systems/session-pause.ts";
 import { resetSettlementState } from "../ecs/systems/settlement-system.ts";
@@ -118,14 +115,13 @@ import {
 	setVoxelDeltaListener,
 } from "../world/voxel-helpers.ts";
 import { findSurfaceY, generateSpawnShrine } from "../world/world-utils.ts";
-import { AmbientParticlesBehavior } from "./behaviors/AmbientParticlesBehavior.ts";
-import { BlockHighlightBehavior } from "./behaviors/BlockHighlightBehavior.ts";
-import { CelestialBehavior } from "./behaviors/CelestialBehavior.ts";
-import { CreatureRendererBehavior } from "./behaviors/CreatureRendererBehavior.ts";
-import { InputBehavior, resetJoystickState } from "./behaviors/InputBehavior.ts";
-import { ParticlesBehavior } from "./behaviors/ParticlesBehavior.ts";
-import { ViewModelBehavior } from "./behaviors/ViewModelBehavior.ts";
+import { AmbientParticlesRenderer } from "./ambient-particles-renderer.ts";
+import { Behavior } from "./behavior.ts";
+import { InputBehavior } from "./behaviors/InputBehavior.ts";
+import { BlockHighlightRenderer } from "./block-highlight-renderer.ts";
+import { CelestialRenderer } from "./celestial-renderer.ts";
 import { chunkData, getChunkKey, getVoxelKey, loadedChunks, streamChunks } from "./chunk-streaming.ts";
+import { CreatureRenderer } from "./creature-renderer.ts";
 import {
 	runComputationalRuneSystem,
 	runEmitterSystem,
@@ -133,28 +129,41 @@ import {
 	runNetworkRuneSystem,
 	runProtectionRuneSystem,
 	runRaidoSystem,
+	runRuneCombatEffectsSystem,
 	runRuneDiscoverySystem,
+	runRuneSensorSystem,
 	runSelfModifySystem,
 	runSettlementSystem,
 	runTerritorySystem,
 	runWorldEventSystem,
 } from "./game-effects.ts";
+import { GameLoop } from "./game-loop.ts";
+import { InputSystem } from "./input-system.ts";
+import { ParticlesRenderer } from "./particles-renderer.ts";
+import { bindRenderer, registerPerfShortcut, stopMonitor } from "./perf-monitor.ts";
+import { InscriptionIndex as SimInscriptionIndex } from "./runes/inscription.ts";
+import { MaterialId } from "./runes/material.ts";
+import { WorldState as RuneWorldState } from "./runes/world-state.ts";
+import { createTickState, type TickState } from "./runes/world-tick.ts";
+import { ViewModelRenderer } from "./viewmodel-renderer.ts";
+import { SimpleVoxelRenderer } from "./voxel-renderer.ts";
 
 export const kootaWorld = createKootaWorld();
 
-let jpRuntime: Runtime | null = null;
-let voxelRenderer: VoxelRenderer | null = null;
+let gameLoop: GameLoop | null = null;
+let inputSystem: InputSystem | null = null;
+let voxelRenderer: SimpleVoxelRenderer | null = null;
 
 let threeScene: THREE.Scene | null = null;
 let threeCamera: THREE.PerspectiveCamera | null = null;
 
-// Jolly Pixel Actor-managed behaviors
-let viewModelBehavior: ViewModelBehavior | null = null;
-let celestialBehavior: CelestialBehavior | null = null;
-let blockHighlightBehavior: BlockHighlightBehavior | null = null;
-let particlesBehavior: ParticlesBehavior | null = null;
-let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
-let creatureRendererBehavior: CreatureRendererBehavior | null = null;
+// Standalone renderers
+let blockHighlightRenderer: BlockHighlightRenderer | null = null;
+let celestialRenderer: CelestialRenderer | null = null;
+let viewModelRenderer: ViewModelRenderer | null = null;
+let particlesRenderer: ParticlesRenderer | null = null;
+let ambientParticlesRenderer: AmbientParticlesRenderer | null = null;
+let creatureRenderer: CreatureRenderer | null = null;
 
 let ambientLight: THREE.AmbientLight | null = null;
 
@@ -172,11 +181,11 @@ function resolveLandmarkForChunk(cx: number, cz: number): import("../ecs/systems
 
 /** Shared particle spawn shorthand. */
 const spawn = (x: number, y: number, z: number, color: number | string, count: number) =>
-	particlesBehavior?.spawn(x, y, z, color as number, count);
+	particlesRenderer?.spawn(x, y, z, color as number, count);
 
 /**
- * GameBridge Behavior — runs on a Jolly Pixel Actor each frame.
- * Drives all Koota ECS systems and pushes state to the visual Behaviors.
+ * GameBridge Behavior — runs each frame via GameLoop.
+ * Drives all Koota ECS systems and pushes state to the visual renderers.
  */
 class GameBridge extends Behavior {
 	awake() {
@@ -196,11 +205,13 @@ class GameBridge extends Behavior {
 		questSystem(kootaWorld, dt);
 		timeSystem(kootaWorld, dt);
 		seasonSystem(kootaWorld, dt);
+		seasonEffectsSystem(kootaWorld, dt);
 		workstationProximitySystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 		structureSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z), isBlockSolid);
 		lightSystem(kootaWorld, dt, (x, y, z) => getVoxelAt(x, y, z));
 
 		// Rune + settlement systems (side-effects wired in game-effects.ts)
+		runRuneSensorSystem(kootaWorld, dt, spawn);
 		runEmitterSystem(kootaWorld, dt, spawn);
 		runInteractionRuneSystem(kootaWorld, dt, spawn);
 		runProtectionRuneSystem(kootaWorld, dt, spawn);
@@ -225,11 +236,22 @@ class GameBridge extends Behavior {
 					const [bx, by, bz] = key.split(",").map(Number);
 					for (let fi = 0; fi < faces.length; fi++) {
 						if (faces[fi] !== 0) {
-							const normals = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+							const normals = [
+								[1, 0, 0],
+								[-1, 0, 0],
+								[0, 1, 0],
+								[0, -1, 0],
+								[0, 0, 1],
+								[0, 0, -1],
+							];
 							const [nx, ny, nz] = normals[fi];
 							simIndex.add({
-								x: bx, y: by, z: bz,
-								nx, ny, nz,
+								x: bx,
+								y: by,
+								z: bz,
+								nx,
+								ny,
+								nz,
 								glyph: faces[fi] as import("../ecs/systems/rune-data.ts").RuneIdValue,
 								material: MaterialId.Stone,
 								strength: 10,
@@ -239,6 +261,12 @@ class GameBridge extends Behavior {
 				}
 			});
 			runeWorldTickSystem(simIndex, () => MaterialId.Stone, runeWorldState, runeTickState, new Map());
+
+			// Pickup resources produced by rune circuits
+			runeResourcePickupSystem(kootaWorld, runeWorldState, { spawnParticles: spawn });
+
+			// Apply combat effects from signal field
+			runRuneCombatEffectsSystem(kootaWorld, dt, spawn, getLastSignalField());
 		}
 
 		// Advance camera transition progress
@@ -248,13 +276,21 @@ class GameBridge extends Behavior {
 			}
 		});
 
-		// Sync Koota → Three.js camera + Behaviors
+		// Sync Koota → Three.js camera + renderers
 		this.syncPlayerToCamera();
 		this.syncViewModelState();
 		this.syncEnvironmentState();
 		this.runRuneInscriptionSystem(dt);
 		this.runMiningSystem(dt);
 		if (voxelRenderer) streamChunks(kootaWorld, voxelRenderer);
+
+		// Update standalone renderers
+		blockHighlightRenderer?.update(dt);
+		celestialRenderer?.update(dt);
+		viewModelRenderer?.update(dt);
+		particlesRenderer?.update(dt);
+		ambientParticlesRenderer?.update(dt);
+		creatureRenderer?.update(dt);
 	}
 
 	private syncPlayerToCamera() {
@@ -285,13 +321,13 @@ class GameBridge extends Behavior {
 				cam.position.set(pos.x + state.shakeX, pos.y + state.shakeY, pos.z);
 				cam.rotation.order = "YXZ";
 				cam.rotation.set(rot.pitch, rot.yaw, 0);
-				creatureRendererBehavior?.setCameraPosition(pos.x, pos.y, pos.z);
-				if (viewModelBehavior) {
-					viewModelBehavior.isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
-					viewModelBehavior.isSprinting = input.sprint;
-					viewModelBehavior.swingProgress = toolSwing.progress;
-					viewModelBehavior.swayX = toolSwing.swayX;
-					viewModelBehavior.swayY = toolSwing.swayY;
+				creatureRenderer?.setCameraPosition(pos.x, pos.y, pos.z);
+				if (viewModelRenderer) {
+					viewModelRenderer.isMoving = (input.forward || input.backward || input.left || input.right) && body.onGround;
+					viewModelRenderer.isSprinting = input.sprint;
+					viewModelRenderer.swingProgress = toolSwing.progress;
+					viewModelRenderer.swayX = toolSwing.swayX;
+					viewModelRenderer.swayY = toolSwing.swayY;
 				}
 				if (input.sprint && body.onGround && (input.forward || input.backward || input.left || input.right)) {
 					if (cosmeticRng() < 0.3) spawn(pos.x, pos.y - 1.6, pos.z, 0x8b7355, 1);
@@ -301,7 +337,7 @@ class GameBridge extends Behavior {
 
 	private syncViewModelState() {
 		kootaWorld.query(PlayerTag, Hotbar).readEach(([hotbar]) => {
-			if (viewModelBehavior) viewModelBehavior.slotData = hotbar.slots[hotbar.activeSlot];
+			if (viewModelRenderer) viewModelRenderer.slotData = hotbar.slots[hotbar.activeSlot];
 		});
 	}
 
@@ -318,25 +354,24 @@ class GameBridge extends Behavior {
 			py = pos.y;
 			pz = pos.z;
 		});
-		if (celestialBehavior) {
-			celestialBehavior.timeOfDay = timeOfDay;
-			celestialBehavior.playerX = px;
-			celestialBehavior.playerZ = pz;
+		if (celestialRenderer) {
+			celestialRenderer.timeOfDay = timeOfDay;
+			celestialRenderer.playerX = px;
+			celestialRenderer.playerZ = pz;
 		}
-		if (ambientParticlesBehavior) {
-			ambientParticlesBehavior.timeOfDay = timeOfDay;
-			ambientParticlesBehavior.playerX = px;
-			ambientParticlesBehavior.playerY = py;
-			ambientParticlesBehavior.playerZ = pz;
+		if (ambientParticlesRenderer) {
+			ambientParticlesRenderer.timeOfDay = timeOfDay;
+			ambientParticlesRenderer.playerX = px;
+			ambientParticlesRenderer.playerY = py;
+			ambientParticlesRenderer.playerZ = pz;
 		}
 	}
 
 	private runCreatureSystem(dt: number) {
 		const effects: CreatureEffects = {
 			spawnParticles: spawn,
-			onCreatureSpawned: (entityId, species, variant) =>
-				creatureRendererBehavior?.assignMesh(entityId, species, variant),
-			onCreatureDied: (entityId) => creatureRendererBehavior?.releaseMesh(entityId),
+			onCreatureSpawned: (entityId, species, variant) => creatureRenderer?.assignMesh(entityId, species, variant),
+			onCreatureDied: (entityId) => creatureRenderer?.releaseMesh(entityId),
 		};
 		creatureSystem(kootaWorld, dt, effects);
 		let timeOfDay = 0.25;
@@ -345,20 +380,13 @@ class GameBridge extends Behavior {
 		});
 		const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
 		kootaWorld.query(CreatureTag, CreatureAnimation, Position).readEach(([anim, pos], entity) => {
-			creatureRendererBehavior?.updatePosition(
-				entity.id(),
-				pos.x,
-				pos.y,
-				pos.z,
-				anim.animState as AnimStateId,
-				isDaytime,
-			);
+			creatureRenderer?.updatePosition(entity.id(), pos.x, pos.y, pos.z, anim.animState as AnimStateId, isDaytime);
 		});
 	}
 
 	private runRuneInscriptionSystem(dt: number) {
-		const hit = blockHighlightBehavior?.lastHit ?? null;
-		const prev = blockHighlightBehavior?.lastPrev ?? null;
+		const hit = blockHighlightRenderer?.lastHit ?? null;
+		const prev = blockHighlightRenderer?.lastPrev ?? null;
 		const faceHit: FaceHit | null =
 			hit && prev ? { blockX: hit.x, blockY: hit.y, blockZ: hit.z, prevX: prev.x, prevY: prev.y, prevZ: prev.z } : null;
 		const effects: RuneInscriptionEffects = { spawnParticles: spawn };
@@ -366,7 +394,7 @@ class GameBridge extends Behavior {
 	}
 
 	private runMiningSystem(dt: number) {
-		const hit: BlockHit | null = blockHighlightBehavior?.lastHit ?? null;
+		const hit: BlockHit | null = blockHighlightRenderer?.lastHit ?? null;
 		const effects: MiningSideEffects = {
 			removeBlock: (x, y, z) => {
 				setVoxelAt("Ground", x, y, z, 0);
@@ -429,9 +457,9 @@ class GameBridge extends Behavior {
 // ─── Public API ───
 
 export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise<void> {
-	if (jpRuntime) {
-		jpRuntime.stop();
-		jpRuntime = null;
+	if (gameLoop) {
+		gameLoop.stop();
+		gameLoop = null;
 	}
 
 	initNoise(seed);
@@ -440,16 +468,15 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	registerSagaBiomeResolver(biomeAt);
 	registerDiscoveryBiomeResolver(biomeAt);
 
-	jpRuntime = new Runtime(canvas, { includePerformanceStats: false });
-	const jpWorld = jpRuntime.world;
-
-	threeScene = jpWorld.sceneManager.default;
-	threeScene.background = new THREE.Color(0x87ceeb);
+	gameLoop = new GameLoop(canvas);
 	const quality = getActiveQuality();
+
+	threeScene = gameLoop.scene;
+	threeScene.background = new THREE.Color(0x87ceeb);
 	threeScene.fog = new THREE.Fog(0x87ceeb, quality.fogNear, quality.renderDistance * CHUNK_SIZE * quality.fogFar);
 
 	threeCamera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-	jpWorld.renderer.addRenderComponent(threeCamera);
+	gameLoop.setCamera(threeCamera);
 
 	ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
 	threeScene.add(ambientLight);
@@ -465,22 +492,24 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	sunLight.shadow.mapSize.height = quality.shadowMapSize;
 	threeScene.add(sunLight.target);
 
-	// Actor setup
-	celestialBehavior = jpWorld.createActor("Celestial").addComponentAndGet(CelestialBehavior);
-	celestialBehavior.setup(threeScene, ambientLight, sunLight);
-	ambientParticlesBehavior = jpWorld.createActor("AmbientParticles").addComponentAndGet(AmbientParticlesBehavior);
-	ambientParticlesBehavior.setup(threeScene, quality.ambientParticles);
-	particlesBehavior = jpWorld.createActor("Particles").addComponentAndGet(ParticlesBehavior);
-	particlesBehavior.setup(threeScene, quality.particleBudget);
-	creatureRendererBehavior = jpWorld.createActor("CreatureRenderer").addComponentAndGet(CreatureRendererBehavior);
-	creatureRendererBehavior.setup(threeScene);
-	blockHighlightBehavior = jpWorld.createActor("BlockHighlight").addComponentAndGet(BlockHighlightBehavior);
-	blockHighlightBehavior.setup(threeScene, threeCamera, (x, y, z) => getVoxelAt(x, y, z));
-	viewModelBehavior = jpWorld.createActor("ViewModel").addComponentAndGet(ViewModelBehavior);
-	viewModelBehavior.setCamera(threeCamera);
+	// InputSystem
+	inputSystem = new InputSystem(canvas);
+	gameLoop.setInputSystem(inputSystem);
+
+	// Standalone renderers
+	celestialRenderer = new CelestialRenderer(threeScene, ambientLight, sunLight);
+	ambientParticlesRenderer = new AmbientParticlesRenderer();
+	ambientParticlesRenderer.setup(threeScene, quality.ambientParticles);
+	particlesRenderer = new ParticlesRenderer();
+	particlesRenderer.setup(threeScene, quality.particleBudget);
+	creatureRenderer = new CreatureRenderer();
+	creatureRenderer.setup(threeScene);
+	blockHighlightRenderer = new BlockHighlightRenderer();
+	blockHighlightRenderer.setup(threeScene, threeCamera, (x, y, z) => getVoxelAt(x, y, z));
+	viewModelRenderer = new ViewModelRenderer(threeCamera);
 
 	// Voxel renderer
-	voxelRenderer = jpWorld.createActor("VoxelMap").addComponentAndGet(VoxelRenderer, {
+	voxelRenderer = new SimpleVoxelRenderer(threeScene, {
 		chunkSize: CHUNK_SIZE,
 		layers: ["Ground"],
 		blocks: createBlockDefinitions(),
@@ -563,8 +592,10 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 900, dayCount: 1 }), WorldSeed({ seed }), SeasonState());
 	kootaWorld.spawn(NorrskenEvent());
 
-	jpWorld.createActor("InputPoller").addComponent(InputBehavior);
-	jpWorld.createActor("GameBridge").addComponent(GameBridge);
+	// Behaviors registered with GameLoop
+	const inputBehavior = new InputBehavior(inputSystem);
+	gameLoop.addBehavior(inputBehavior);
+	gameLoop.addBehavior(new GameBridge());
 
 	threeCamera.position.set(8.5, surfaceY + 2.5, 8.5);
 	threeCamera.updateProjectionMatrix();
@@ -574,7 +605,12 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		threeCamera.updateProjectionMatrix();
 	};
 	window.addEventListener("resize", resizeHandler);
-	await loadRuntime(jpRuntime, { loadingDelay: 300 });
+
+	// Bind perf monitor to WebGL renderer for draw call stats
+	bindRenderer(gameLoop.renderer);
+	registerPerfShortcut();
+
+	gameLoop.start();
 }
 
 function recordSpawnShrineDeltas(surfaceY: number) {
@@ -614,27 +650,27 @@ export function getVoxelRenderer() {
 	return voxelRenderer;
 }
 export function getBlockHighlight() {
-	return blockHighlightBehavior;
+	return blockHighlightRenderer;
 }
 export function getParticlesBehavior() {
-	return particlesBehavior;
+	return particlesRenderer;
 }
 
-/** Release pointer lock via JP's Input system (keeps internal state in sync). */
+/** Release pointer lock. */
 export function releasePointerLock() {
-	jpRuntime?.world.input.unlockMouse();
+	inputSystem?.unlockMouse();
 }
 
-/** Re-enable pointer lock via JP's Input system (next canvas click will lock). */
+/** Re-enable pointer lock (next canvas click will lock). */
 export function requestPointerLock() {
-	jpRuntime?.world.input.lockMouse();
+	inputSystem?.lockMouse();
 }
 
 // ─── Block placement ───
 
 export function placeBlock() {
-	if (!blockHighlightBehavior) return;
-	const prev = blockHighlightBehavior.lastPrev;
+	if (!blockHighlightRenderer) return;
+	const prev = blockHighlightRenderer.lastPrev;
 	if (!prev) return;
 	kootaWorld
 		.query(PlayerTag, Hotbar, Inventory, Position, ToolSwing, InscriptionLevel)
@@ -719,17 +755,25 @@ export function destroyGame(): void {
 		resizeHandler = null;
 	}
 	setVoxelDeltaListener(null);
-	jpRuntime?.stop();
-	jpRuntime = null;
+	stopMonitor();
+	gameLoop?.stop();
+	gameLoop = null;
+	inputSystem?.dispose();
+	inputSystem = null;
 	threeScene = null;
 	threeCamera = null;
 	voxelRenderer = null;
-	viewModelBehavior = null;
-	celestialBehavior = null;
-	blockHighlightBehavior = null;
-	particlesBehavior = null;
-	ambientParticlesBehavior = null;
-	creatureRendererBehavior = null;
+	blockHighlightRenderer?.dispose();
+	blockHighlightRenderer = null;
+	celestialRenderer?.dispose();
+	celestialRenderer = null;
+	viewModelRenderer = null;
+	particlesRenderer?.dispose();
+	particlesRenderer = null;
+	ambientParticlesRenderer?.dispose();
+	ambientParticlesRenderer = null;
+	creatureRenderer?.dispose();
+	creatureRenderer = null;
 	ambientLight = null;
 	sunLight = null;
 	loadedChunks.clear();
@@ -739,6 +783,9 @@ export function destroyGame(): void {
 	resetRuneWorldTickState();
 	runeWorldState = null;
 	runeTickState = null;
+	resetRuneResourcePickupState();
+	resetCombatEffectsState();
+	resetSensorState();
 	resetEmitterState();
 	resetInteractionRuneState();
 	resetProtectionRuneState();
@@ -753,7 +800,7 @@ export function destroyGame(): void {
 	resetSagaState();
 	resetDiscoveryState();
 	resetSeasonState();
-	resetJoystickState();
+	resetSeasonEffectsState();
 	resetQualityState();
 	resetPauseState();
 	kootaWorld.reset();

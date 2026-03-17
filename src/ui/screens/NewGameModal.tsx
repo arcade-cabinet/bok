@@ -65,14 +65,14 @@ export function NewGameModal({ onStart, onClose }: NewGameModalProps) {
 					New Saga
 				</h2>
 
-				<p className="text-sm text-center opacity-50" style={{ color: "var(--color-bok-parchment)" }}>
+				<p className="text-sm text-center opacity-70" style={{ color: "var(--color-bok-parchment)" }}>
 					Every world is born from a name. Speak it, or let fate decide.
 				</p>
 
 				{/* Seed input with shuffle */}
 				<div className="w-full">
 					<label
-						className="text-xs tracking-wider uppercase opacity-40 mb-2 block"
+						className="text-xs tracking-wider uppercase opacity-70 mb-2 block"
 						style={{ color: "var(--color-bok-parchment)" }}
 						htmlFor="seed-input"
 					>

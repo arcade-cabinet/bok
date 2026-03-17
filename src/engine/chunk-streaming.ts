@@ -3,11 +3,11 @@
  * Runs each frame from GameBridge.update() after ECS systems.
  */
 
-import type { VoxelRenderer } from "@jolly-pixel/voxel.renderer";
 import type { World } from "koota";
 import { getActiveQuality } from "../ecs/systems/quality-presets.ts";
 import { PlayerTag, Position } from "../ecs/traits/index.ts";
 import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
+import type { VoxelRenderer } from "./voxel-types.ts";
 
 const CHUNKS_PER_FRAME = 2;
 

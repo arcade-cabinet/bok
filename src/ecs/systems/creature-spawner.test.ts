@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createTestWorld, spawnCreature } from "../../test-utils.ts";
+import { createTestWorld } from "../../test-utils.ts";
 import { AiType, CreatureAI, CreatureHealth, CreatureTag, CreatureType, Position, Species } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { MAX_CREATURES, registerBiomeResolver, spawnCreatures } from "./creature-spawner.ts";

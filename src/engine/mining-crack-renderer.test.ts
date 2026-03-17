@@ -1,10 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-	computeCrackStage,
-	computeChipCount,
-	computeShatterParticles,
-	CRACK_STAGES,
-} from "./mining-crack-renderer.ts";
+import { CRACK_STAGES, computeChipCount, computeCrackStage, computeShatterParticles } from "./mining-crack-renderer.ts";
 
 describe("mining-crack-renderer", () => {
 	describe("computeCrackStage", () => {
@@ -59,9 +54,7 @@ describe("mining-crack-renderer", () => {
 
 		test("opacity increases with stage", () => {
 			for (let i = 1; i < CRACK_STAGES.length; i++) {
-				expect(CRACK_STAGES[i].opacity).toBeGreaterThan(
-					CRACK_STAGES[i - 1].opacity,
-				);
+				expect(CRACK_STAGES[i].opacity).toBeGreaterThan(CRACK_STAGES[i - 1].opacity);
 			}
 		});
 	});
@@ -88,8 +81,8 @@ describe("mining-crack-renderer", () => {
 		test("returns shatter data when progress >= 1.0", () => {
 			const result = computeShatterParticles(1.0);
 			expect(result).not.toBeNull();
-			expect(result!.count).toBe(15);
-			expect(result!.burstSpeed).toBeGreaterThan(0);
+			expect(result?.count).toBe(15);
+			expect(result?.burstSpeed).toBeGreaterThan(0);
 		});
 
 		test("returns null when progress < 1.0", () => {

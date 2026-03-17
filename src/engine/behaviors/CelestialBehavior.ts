@@ -3,9 +3,9 @@
  * Ported from box.html's celestialPivot system.
  */
 
-import { Behavior } from "@jolly-pixel/engine";
 import * as THREE from "three";
 import { cosmeticRng } from "../../world/noise.ts";
+import { Behavior } from "../behavior.ts";
 
 export class CelestialBehavior extends Behavior {
 	private sunMesh!: THREE.Mesh;
@@ -14,6 +14,7 @@ export class CelestialBehavior extends Behavior {
 	private ambientLight!: THREE.AmbientLight;
 	private sunLight!: THREE.DirectionalLight;
 	private scene!: THREE.Scene;
+	private pivot!: THREE.Object3D;
 
 	// Set externally each frame by GameBridge
 	public timeOfDay = 0.25;
@@ -25,7 +26,9 @@ export class CelestialBehavior extends Behavior {
 		this.ambientLight = ambientLight;
 		this.sunLight = sunLight;
 
-		const pivot = this.actor.object3D;
+		const pivot = new THREE.Object3D();
+		this.pivot = pivot;
+		scene.add(pivot);
 
 		// Sun
 		this.sunMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffaa }));
@@ -63,7 +66,7 @@ export class CelestialBehavior extends Behavior {
 	}
 
 	update(dt: number) {
-		const pivot = this.actor.object3D;
+		const pivot = this.pivot;
 		const timePI = this.timeOfDay * Math.PI * 2;
 		pivot.position.set(this.playerX, 0, this.playerZ);
 		pivot.rotation.z = -timePI;

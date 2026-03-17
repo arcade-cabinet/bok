@@ -5,6 +5,7 @@ interface DeathScreenProps {
 export function DeathScreen({ onRespawn }: DeathScreenProps) {
 	return (
 		<div
+			role="alert"
 			className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-auto"
 			style={{
 				background: "radial-gradient(ellipse at center, rgba(80,0,0,0.85) 0%, rgba(20,0,0,0.97) 70%)",
@@ -20,7 +21,7 @@ export function DeathScreen({ onRespawn }: DeathScreenProps) {
 			>
 				FALLEN
 			</h1>
-			<p className="text-base opacity-60 mb-8" style={{ color: "var(--color-bok-parchment)" }}>
+			<p className="text-base opacity-80 mb-8" style={{ color: "var(--color-bok-parchment)" }}>
 				The wilderness claims another soul. But the land remembers.
 			</p>
 			<button

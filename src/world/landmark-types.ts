@@ -14,7 +14,7 @@
  *   Fjällstuga (Fjällen): small mountain shelter
  */
 
-import type { VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import { BlockId } from "./blocks.ts";
 
 type Entries = VoxelSetOptions[];

@@ -1,30 +1,35 @@
 /**
- * Audio settings tab — master, music, and SFX volume sliders.
- * Props-in, callbacks-out pattern. No direct DB access.
+ * Audio settings tab — master, ambient, interaction volumes + mute toggle.
+ * Props-in, callbacks-out pattern. No direct DB/store access.
  */
 
 interface AudioSettingsProps {
 	masterVolume: number;
-	musicVolume: number;
-	sfxVolume: number;
+	ambientVolume: number;
+	interactionVolume: number;
+	muted: boolean;
 	onMasterVolume: (value: number) => void;
-	onMusicVolume: (value: number) => void;
-	onSfxVolume: (value: number) => void;
+	onAmbientVolume: (value: number) => void;
+	onInteractionVolume: (value: number) => void;
+	onMuted: (value: boolean) => void;
 }
 
 export function SettingsAudio({
 	masterVolume,
-	musicVolume,
-	sfxVolume,
+	ambientVolume,
+	interactionVolume,
+	muted,
 	onMasterVolume,
-	onMusicVolume,
-	onSfxVolume,
+	onAmbientVolume,
+	onInteractionVolume,
+	onMuted,
 }: AudioSettingsProps) {
 	return (
 		<div className="space-y-4">
 			<VolumeSlider label="Master Volume" value={masterVolume} onChange={onMasterVolume} />
-			<VolumeSlider label="Music Volume" value={musicVolume} onChange={onMusicVolume} />
-			<VolumeSlider label="SFX Volume" value={sfxVolume} onChange={onSfxVolume} />
+			<VolumeSlider label="Ambient Volume" value={ambientVolume} onChange={onAmbientVolume} />
+			<VolumeSlider label="Interaction Volume" value={interactionVolume} onChange={onInteractionVolume} />
+			<MuteToggle muted={muted} onMuted={onMuted} />
 		</div>
 	);
 }
@@ -35,7 +40,7 @@ function VolumeSlider({ label, value, onChange }: { label: string; value: number
 			className="flex justify-between items-center px-3 py-3 rounded"
 			style={{ background: "rgba(255,255,255,0.03)" }}
 		>
-			<span className="text-sm" style={{ color: "var(--color-bok-parchment)", opacity: 0.7 }}>
+			<span className="text-sm" style={{ color: "var(--color-bok-parchment)", opacity: 0.85 }}>
 				{label}
 			</span>
 			<div className="flex items-center gap-3 flex-1 ml-4">
@@ -54,6 +59,33 @@ function VolumeSlider({ label, value, onChange }: { label: string; value: number
 					{value}
 				</span>
 			</div>
+		</div>
+	);
+}
+
+function MuteToggle({ muted, onMuted }: { muted: boolean; onMuted: (v: boolean) => void }) {
+	return (
+		<div
+			className="flex justify-between items-center px-3 py-3 rounded"
+			style={{ background: "rgba(255,255,255,0.03)" }}
+		>
+			<span className="text-sm" style={{ color: "var(--color-bok-parchment)", opacity: 0.85 }}>
+				Mute All
+			</span>
+			<button
+				type="button"
+				role="switch"
+				aria-checked={muted}
+				onClick={() => onMuted(!muted)}
+				className="px-4 py-1.5 min-h-[44px] rounded text-xs font-display tracking-wider uppercase transition-colors"
+				style={
+					muted
+						? { background: "rgba(201,168,76,0.2)", color: "var(--color-bok-gold)" }
+						: { background: "rgba(255,255,255,0.04)", color: "var(--color-bok-parchment)", opacity: 0.7 }
+				}
+			>
+				{muted ? "On" : "Off"}
+			</button>
 		</div>
 	);
 }

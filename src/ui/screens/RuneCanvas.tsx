@@ -177,6 +177,7 @@ export function RuneCanvas() {
 
 		let raf = 0;
 		const t0 = performance.now();
+		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 		const resize = () => {
 			canvas.width = canvas.clientWidth * Math.min(devicePixelRatio, 2);
@@ -186,9 +187,12 @@ export function RuneCanvas() {
 
 		const draw = () => {
 			resize();
-			gl.uniform1f(uTime, (performance.now() - t0) / 1000);
+			// Use a frozen time for reduced-motion users (static frame)
+			const elapsed = prefersReducedMotion ? 0 : (performance.now() - t0) / 1000;
+			gl.uniform1f(uTime, elapsed);
 			gl.uniform2f(uRes, canvas.width, canvas.height);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			if (prefersReducedMotion) return; // Single static frame
 			raf = requestAnimationFrame(draw);
 		};
 

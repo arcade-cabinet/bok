@@ -32,6 +32,7 @@ export function TravelConfirm({ destX, destY, destZ, cost, dustAvailable, onConf
 			}}
 			data-testid="travel-confirm"
 			role="dialog"
+			aria-modal="true"
 			aria-label="Confirm fast travel"
 		>
 			<h3
@@ -59,7 +60,7 @@ export function TravelConfirm({ destX, destY, destZ, cost, dustAvailable, onConf
 					type="button"
 					onClick={onConfirm}
 					disabled={!canAfford}
-					className="px-4 py-1.5 rounded font-display text-xs tracking-[0.1em] uppercase transition-opacity"
+					className="px-4 py-1.5 min-h-[44px] rounded font-display text-xs tracking-[0.1em] uppercase transition-opacity"
 					style={{
 						background: canAfford ? "var(--color-bok-gold, #c9a84c)" : "#999",
 						color: canAfford ? "var(--color-bok-ink, #2a1f14)" : "#666",
@@ -73,7 +74,7 @@ export function TravelConfirm({ destX, destY, destZ, cost, dustAvailable, onConf
 				<button
 					type="button"
 					onClick={onCancel}
-					className="px-4 py-1.5 rounded font-display text-xs tracking-[0.1em] uppercase"
+					className="px-4 py-1.5 min-h-[44px] rounded font-display text-xs tracking-[0.1em] uppercase"
 					style={{
 						background: "transparent",
 						color: "var(--color-bok-ink, #2a1f14)",

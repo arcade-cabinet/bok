@@ -56,7 +56,7 @@ export function TitleScreen({ onStartGame, onContinueGame }: TitleScreenProps) {
 
 				{/* Lore text */}
 				<p
-					className="text-center max-w-md mb-10 text-sm leading-relaxed opacity-60 px-6"
+					className="text-center max-w-md mb-10 text-sm leading-relaxed opacity-80 px-6"
 					style={{
 						color: "var(--color-bok-parchment)",
 						animation: "subtitle-fade 2s ease-out 1s both",

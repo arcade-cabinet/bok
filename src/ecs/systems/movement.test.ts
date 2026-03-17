@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTestWorld, spawnPlayer } from "../../test-utils.ts";
-import { MoveInput, PlayerTag, Rotation, Velocity } from "../traits/index.ts";
+import { MoveInput, PlayerTag, Velocity } from "../traits/index.ts";
 import { movementSystem } from "./movement.ts";
 
 function readVel(world: ReturnType<typeof createTestWorld>) {

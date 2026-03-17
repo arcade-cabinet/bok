@@ -146,7 +146,7 @@ export function isSoft(blockId: number): boolean {
 
 export interface ItemDef {
 	name: string;
-	type: "axe" | "pickaxe" | "sword" | "food" | "light" | "chisel" | "material";
+	type: "axe" | "pickaxe" | "sword" | "food" | "light" | "chisel" | "material" | "armor";
 	target: string;
 	power: number;
 	color: string;
@@ -169,11 +169,29 @@ export const ITEMS: Record<number, ItemDef> = {
 	109: { name: "Ember Lantern", type: "light", target: "Light", power: 2, color: "#FF6600" },
 	// Chisel (tier 2 — forge)
 	110: { name: "Chisel", type: "chisel", target: "Block", power: 1, color: "#707070" },
+	// Scriptorium items (tier 3)
+	111: { name: "Crystal Lens", type: "material", target: "Optics", power: 0, color: "#88CCFF" },
+	112: { name: "Glyph Lamp", type: "light", target: "Light", power: 3, color: "#c9a84c" },
+	113: { name: "Enchanted Chisel", type: "chisel", target: "Block", power: 2, color: "#c9a84c" },
+	// Armor (tier 2 — forge)
+	120: { name: "Iron Helmet", type: "armor", target: "Head", power: 2, color: "#707070" },
+	121: { name: "Iron Chestplate", type: "armor", target: "Chest", power: 4, color: "#707070" },
+	122: { name: "Iron Greaves", type: "armor", target: "Legs", power: 3, color: "#707070" },
+	// Bok upgrades (tier 3 — scriptorium)
+	130: { name: "Bok Binding", type: "material", target: "Bok", power: 0, color: "#6D5040" },
+	131: { name: "Lore Ink", type: "material", target: "Bok", power: 0, color: "#2a2a3e" },
 	// Food
 	201: { name: "Raw Meat", type: "food", target: "Hunger", power: 10, color: "#8B4513" },
 	202: { name: "Cooked Meat", type: "food", target: "Hunger", power: 35, color: "#CD853F" },
+	203: { name: "Wheat", type: "food", target: "Hunger", power: 15, color: "#D4A843" },
+	204: { name: "Berry", type: "food", target: "Hunger", power: 12, color: "#6A1B4D" },
 	// Materials
 	301: { name: "Crystal Dust", type: "material", target: "Travel", power: 0, color: "#c9a84c" },
+	// Armor (creature-drop crafting — Forge tier 2)
+	401: { name: "Näcken Shell Plate", type: "armor", target: "Head", power: 4, color: "#5a8a7a" },
+	402: { name: "Lindorm Scale Mail", type: "armor", target: "Chest", power: 6, color: "#4a6a3a" },
+	403: { name: "Mörker Cloak", type: "armor", target: "Legs", power: 3, color: "#2a2a3e" },
+	404: { name: "Runväktare Runeguard", type: "armor", target: "Accessory", power: 5, color: "#6a5a4a" },
 };
 
 /** Recipe tier: 0=hand, 1=Crafting Bench, 2=Forge, 3=Scriptorium. */
@@ -339,6 +357,57 @@ export const RECIPES: CraftRecipe[] = [
 		cost: { [BlockId.IronOre]: 3, [BlockId.Crystal]: 1 },
 		tier: 2,
 	},
+	// Armor — iron set (tier 2 — forge)
+	{
+		id: "iron_helmet",
+		name: "Iron Helmet",
+		result: { type: "item", id: 120, qty: 1 },
+		cost: { [BlockId.IronOre]: 5, [BlockId.CopperOre]: 1 },
+		tier: 2,
+	},
+	{
+		id: "iron_chestplate",
+		name: "Iron Chestplate",
+		result: { type: "item", id: 121, qty: 1 },
+		cost: { [BlockId.IronOre]: 8, [BlockId.CopperOre]: 2 },
+		tier: 2,
+	},
+	{
+		id: "iron_greaves",
+		name: "Iron Greaves",
+		result: { type: "item", id: 122, qty: 1 },
+		cost: { [BlockId.IronOre]: 6, [BlockId.CopperOre]: 1 },
+		tier: 2,
+	},
+	// Armor — creature-drop set (tier 2 — forge)
+	{
+		id: "armor_head",
+		name: "Näcken Shell Plate",
+		result: { type: "item", id: 401, qty: 1 },
+		cost: { [BlockId.IronOre]: 3, [BlockId.CopperOre]: 2, [BlockId.Crystal]: 1 },
+		tier: 2,
+	},
+	{
+		id: "armor_chest",
+		name: "Lindorm Scale Mail",
+		result: { type: "item", id: 402, qty: 1 },
+		cost: { [BlockId.IronOre]: 5, [BlockId.Stone]: 3, [BlockId.Crystal]: 1 },
+		tier: 2,
+	},
+	{
+		id: "armor_legs",
+		name: "Mörker Cloak",
+		result: { type: "item", id: 403, qty: 1 },
+		cost: { [BlockId.IronOre]: 2, [BlockId.Peat]: 3, [BlockId.Crystal]: 1 },
+		tier: 2,
+	},
+	{
+		id: "armor_accessory",
+		name: "Runväktare Runeguard",
+		result: { type: "item", id: 404, qty: 1 },
+		cost: { [BlockId.IronOre]: 4, [BlockId.RuneStone]: 1, [BlockId.Crystal]: 2 },
+		tier: 2,
+	},
 	{
 		id: "crystal_dust",
 		name: "Crystal Dust x4",
@@ -347,6 +416,41 @@ export const RECIPES: CraftRecipe[] = [
 		tier: 1,
 	},
 	// ─── Tier 3: Scriptorium ───
+	{
+		id: "crystal_lens",
+		name: "Crystal Lens",
+		result: { type: "item", id: 111, qty: 1 },
+		cost: { [BlockId.Glass]: 2, [BlockId.Crystal]: 1 },
+		tier: 3,
+	},
+	{
+		id: "glyph_lamp",
+		name: "Glyph Lamp",
+		result: { type: "item", id: 112, qty: 1 },
+		cost: { 111: 1, [BlockId.Crystal]: 2, [BlockId.IronOre]: 1 },
+		tier: 3,
+	},
+	{
+		id: "enchanted_chisel",
+		name: "Enchanted Chisel",
+		result: { type: "item", id: 113, qty: 1 },
+		cost: { 110: 1, [BlockId.Crystal]: 2, [BlockId.RuneStone]: 1 },
+		tier: 3,
+	},
+	{
+		id: "bok_binding",
+		name: "Bok Binding",
+		result: { type: "item", id: 130, qty: 1 },
+		cost: { [BlockId.TreatedPlanks]: 4, [BlockId.Crystal]: 2, [BlockId.CopperOre]: 1 },
+		tier: 3,
+	},
+	{
+		id: "lore_ink",
+		name: "Lore Ink",
+		result: { type: "item", id: 131, qty: 1 },
+		cost: { 301: 2, [BlockId.Peat]: 1, [BlockId.Cranberry]: 1 },
+		tier: 3,
+	},
 	{
 		id: "rune_seal",
 		name: "Rune Seal",

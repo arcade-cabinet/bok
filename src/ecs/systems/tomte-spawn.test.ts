@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTestWorld, spawnPlayer } from "../../test-utils.ts";
-import {
-	CreatureTag,
-	CreatureType,
-	PlayerTag,
-	RuneFaces,
-	Species,
-} from "../traits/index.ts";
+import { CreatureTag, CreatureType, PlayerTag, RuneFaces, Species } from "../traits/index.ts";
 import {
 	countRuneInscriptions,
 	REQUIRED_INSCRIPTIONS,

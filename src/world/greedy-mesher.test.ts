@@ -5,13 +5,8 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-	CHUNK_HEIGHT,
-	CHUNK_SIZE,
-	type MeshQuad,
-	greedyMesh,
-} from "./greedy-mesher.ts";
 import { BlockId } from "./blocks.ts";
+import { CHUNK_HEIGHT, CHUNK_SIZE, greedyMesh } from "./greedy-mesher.ts";
 
 /** Create an empty chunk filled with air. */
 function emptyChunk(): Uint8Array {
@@ -168,7 +163,7 @@ describe("greedy merging", () => {
 		const topQuad = quads.find((q) => q.normal[1] === 1);
 		expect(topQuad).toBeDefined();
 		// UVs should span 3 units in one direction
-		const maxU = Math.max(...topQuad!.uvs.filter((_, i) => i % 2 === 0));
+		const maxU = Math.max(...topQuad?.uvs.filter((_, i) => i % 2 === 0));
 		expect(maxU).toBe(3);
 	});
 });
@@ -180,8 +175,7 @@ describe("chunk boundary", () => {
 		const chunk = emptyChunk();
 		setBlock(chunk, 0, 0, 0, BlockId.Stone);
 		// Neighbor function: solid in -X direction
-		const solidLeft = (face: number, _a: number, _b: number, _c: number) =>
-			face === 0 ? BlockId.Stone : BlockId.Air; // face 0 = -X
+		const solidLeft = (face: number, _a: number, _b: number, _c: number) => (face === 0 ? BlockId.Stone : BlockId.Air); // face 0 = -X
 		const quads = greedyMesh(chunk, solidLeft);
 		expect(quads).toHaveLength(5); // 6 - 1 culled face
 	});

@@ -22,6 +22,7 @@ export function HotbarDisplay({ slots, activeSlot, inventory, onSlotClick }: Hot
 						type="button"
 						key={slotKey}
 						onClick={() => onSlotClick(i)}
+						aria-label={slot ? `Hotbar slot ${i + 1}: ${getSlotLabel(slot)}` : `Hotbar slot ${i + 1}: empty`}
 						className={`
               relative w-12 h-12 rounded-lg flex items-center justify-center
               border-2 transition-all duration-100 cursor-pointer
@@ -81,6 +82,11 @@ function getDurabilityColor(pct: number): string {
 	if (pct > 0.5) return "#4ade80"; // green
 	if (pct > 0.2) return "#facc15"; // yellow
 	return "#ef4444"; // red
+}
+
+function getSlotLabel(slot: HotbarSlot): string {
+	if (slot.type === "block") return BLOCKS[slot.id]?.name ?? `block ${slot.id}`;
+	return ITEMS[slot.id]?.name ?? `item ${slot.id}`;
 }
 
 function getSlotBackground(slot: HotbarSlot): string {

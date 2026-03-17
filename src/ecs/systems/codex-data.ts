@@ -132,6 +132,14 @@ export const CREATURE_ENTRIES: readonly CreatureEntry[] = [
 		drops: "Giant's Heart",
 		rune: "\u16C1",
 	},
+	{
+		species: Species.Tomte,
+		name: "Tomte",
+		description: "Grumpy gnome companion. Teaches rune etching through demonstration. Appears after you build.",
+		weaknesses: "None — a friendly teacher.",
+		drops: "Wisdom",
+		rune: "\u16C7",
+	},
 ];
 
 /** Lookup creature entry by species. */

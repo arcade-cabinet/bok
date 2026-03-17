@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 import {
 	type CreatureInfo,
 	computeEcosystemInteractions,
-	type EcosystemResult,
 	findGrazingSnails,
 	findMorkerHuntTargets,
 	findTranaFleeTargets,

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { WorldState } from "../../engine/runes/world-state.ts";
-import { createTickState, type TickState } from "../../engine/runes/world-tick.ts";
 import { InscriptionIndex, type SurfaceInscription } from "../../engine/runes/inscription.ts";
 import { MaterialId } from "../../engine/runes/material.ts";
 import { ResourceId } from "../../engine/runes/resource.ts";
+import { WorldState } from "../../engine/runes/world-state.ts";
+import { createTickState } from "../../engine/runes/world-tick.ts";
 import { RuneId } from "./rune-data.ts";
 import { resetRuneWorldTickState, runeWorldTickSystem } from "./rune-world-tick.ts";
 
@@ -16,7 +16,17 @@ function makeIndex(inscriptions: SurfaceInscription[]): InscriptionIndex {
 
 /** Create a basic inscription. */
 function ins(x: number, z: number, glyph: number, strength = 10): SurfaceInscription {
-	return { x, y: 0, z, nx: 0, ny: 1, nz: 0, glyph: glyph as SurfaceInscription["glyph"], material: MaterialId.Stone, strength };
+	return {
+		x,
+		y: 0,
+		z,
+		nx: 0,
+		ny: 1,
+		nz: 0,
+		glyph: glyph as SurfaceInscription["glyph"],
+		material: MaterialId.Stone,
+		strength,
+	};
 }
 
 describe("rune-world-tick system", () => {
@@ -50,10 +60,7 @@ describe("rune-world-tick system", () => {
 		const worldState = new WorldState();
 		const tickState = createTickState();
 		// Kenaz emits signal, Berkanan at adjacent position receives it
-		const index = makeIndex([
-			ins(2, 0, RuneId.Kenaz),
-			ins(3, 0, RuneId.Berkanan),
-		]);
+		const index = makeIndex([ins(2, 0, RuneId.Kenaz), ins(3, 0, RuneId.Berkanan)]);
 		const getMat = () => MaterialId.Stone;
 		const berkConfig = new Map([["3,0,0", ResourceId.Wood]]);
 

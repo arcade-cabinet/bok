@@ -165,6 +165,102 @@ export const NACKEN_PARTS: CreaturePartDef[] = [
 	},
 ];
 
+// ─── Tomte (House Gnome / Tutorial Companion) ───
+// Small stocky gnome (0.5 blocks tall), pointed Falu-red hat, bushy white beard.
+// Singleton companion, not a spawned species. Building-block aesthetic.
+
+export const TOMTE_PARTS: CreaturePartDef[] = [
+	// 0: torso — stocky, wider than tall
+	{ geometry: "box", size: [0.4, 0.5, 0.3], offset: [0, 0.25, 0], jointParent: -1, jointAxis: null, color: 0x6b4b3b },
+	// 1: head — oversized sphere relative to body
+	{
+		geometry: "sphere",
+		size: [0.2, 0.2, 0.2],
+		offset: [0, 0.38, 0],
+		jointParent: 0,
+		jointAxis: null,
+		color: 0xd4a37a,
+	},
+	// 2: hat — pointed cone, Falu red
+	{
+		geometry: "cone",
+		size: [0.15, 0.3, 0.15],
+		offset: [0, 0.22, 0],
+		jointParent: 1,
+		jointAxis: null,
+		color: 0x8b2500,
+	},
+	// 3: beard (upper) — bushy box
+	{
+		geometry: "box",
+		size: [0.22, 0.12, 0.1],
+		offset: [0, -0.1, -0.12],
+		jointParent: 1,
+		jointAxis: null,
+		color: 0xe0d5c1,
+	},
+	// 4: beard (lower) — trailing tuft
+	{
+		geometry: "box",
+		size: [0.16, 0.1, 0.08],
+		offset: [0, -0.1, 0],
+		jointParent: 3,
+		jointAxis: null,
+		color: 0xe0d5c1,
+	},
+	// 5-6: eyes — small dark
+	{
+		geometry: "sphere",
+		size: [0.03, 0.03, 0.03],
+		offset: [-0.06, 0.04, -0.17],
+		jointParent: 1,
+		jointAxis: null,
+		color: 0x1a1a2e,
+	},
+	{
+		geometry: "sphere",
+		size: [0.03, 0.03, 0.03],
+		offset: [0.06, 0.04, -0.17],
+		jointParent: 1,
+		jointAxis: null,
+		color: 0x1a1a2e,
+	},
+	// 7-8: arms — stubby
+	{
+		geometry: "box",
+		size: [0.1, 0.25, 0.1],
+		offset: [-0.28, -0.05, 0],
+		jointParent: 0,
+		jointAxis: "x",
+		color: 0x6b4b3b,
+	},
+	{
+		geometry: "box",
+		size: [0.1, 0.25, 0.1],
+		offset: [0.28, -0.05, 0],
+		jointParent: 0,
+		jointAxis: "x",
+		color: 0x6b4b3b,
+	},
+	// 9-10: legs — short and stocky
+	{
+		geometry: "box",
+		size: [0.12, 0.18, 0.12],
+		offset: [-0.1, -0.3, 0],
+		jointParent: 0,
+		jointAxis: "x",
+		color: 0x5b4b3b,
+	},
+	{
+		geometry: "box",
+		size: [0.12, 0.18, 0.12],
+		offset: [0.1, -0.3, 0],
+		jointParent: 0,
+		jointAxis: "x",
+		color: 0x5b4b3b,
+	},
+];
+
 // ─── Jatten (Giant) ───
 // 8-block tall humanoid assembled from world blocks (stone, wood, moss).
 // Massive body, column arms, glowing runsten core in chest.

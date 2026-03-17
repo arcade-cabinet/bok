@@ -47,7 +47,7 @@ export function CraftingMenu({ isOpen, inventory, maxTier, onCraft, onClose }: C
 				</h2>
 
 				{/* Station indicator */}
-				<div className="text-xs text-gray-400 mb-3" data-testid="tier-indicator">
+				<div className="text-xs text-gray-300 mb-3" data-testid="tier-indicator">
 					Station: <span className="text-white font-semibold">{TIER_NAMES[maxTier]}</span>
 					{maxTier > 0 && ` (tier ${maxTier})`}
 				</div>
@@ -71,7 +71,7 @@ export function CraftingMenu({ isOpen, inventory, maxTier, onCraft, onClose }: C
 					))}
 				</div>
 
-				<p className="text-center mt-4 text-xs text-gray-600">Press [E] to close</p>
+				<p className="text-center mt-4 text-xs text-gray-400">Press [E] to close</p>
 			</div>
 		</div>
 	);

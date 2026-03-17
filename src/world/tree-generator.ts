@@ -8,7 +8,7 @@
  *   Dead Birch — bare trunk (5h), no leaves
  */
 
-import type { VoxelSetOptions } from "@jolly-pixel/voxel.renderer";
+import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import { TreeType, type TreeTypeId } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
 

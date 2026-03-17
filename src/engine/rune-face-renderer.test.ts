@@ -1,11 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { RuneId } from "../ecs/systems/rune-data.ts";
-import { Face } from "../ecs/systems/rune-data.ts";
-import {
-	computeFaceUV,
-	glyphToFaceCoords,
-	type FaceGlyphData,
-} from "./rune-face-renderer.ts";
+import { Face, RuneId } from "../ecs/systems/rune-data.ts";
+import { computeFaceUV, glyphToFaceCoords } from "./rune-face-renderer.ts";
 
 describe("rune-face-renderer", () => {
 	describe("computeFaceUV", () => {
@@ -39,8 +34,8 @@ describe("rune-face-renderer", () => {
 		test("converts glyph strokes to face-local coordinates", () => {
 			const data = glyphToFaceCoords(RuneId.Isa, Face.PosX, 5, 10, 15);
 			expect(data).not.toBeNull();
-			expect(data!.runeId).toBe(RuneId.Isa);
-			expect(data!.strokes.length).toBeGreaterThan(0);
+			expect(data?.runeId).toBe(RuneId.Isa);
+			expect(data?.strokes.length).toBeGreaterThan(0);
 		});
 
 		test("returns null for RuneId.None", () => {
@@ -51,19 +46,19 @@ describe("rune-face-renderer", () => {
 		test("Isa glyph has 1 stroke in face coords", () => {
 			const data = glyphToFaceCoords(RuneId.Isa, Face.PosX, 0, 0, 0);
 			expect(data).not.toBeNull();
-			expect(data!.strokes.length).toBe(1);
+			expect(data?.strokes.length).toBe(1);
 		});
 
 		test("Fehu glyph has 3 strokes in face coords", () => {
 			const data = glyphToFaceCoords(RuneId.Fehu, Face.PosY, 0, 0, 0);
 			expect(data).not.toBeNull();
-			expect(data!.strokes.length).toBe(3);
+			expect(data?.strokes.length).toBe(3);
 		});
 
 		test("face coords are in world space near the block", () => {
 			const data = glyphToFaceCoords(RuneId.Isa, Face.PosX, 10, 20, 30);
 			expect(data).not.toBeNull();
-			for (const stroke of data!.strokes) {
+			for (const stroke of data?.strokes) {
 				for (const pt of stroke) {
 					// Points should be near the block position
 					expect(pt.x).toBeGreaterThan(9);
@@ -79,7 +74,7 @@ describe("rune-face-renderer", () => {
 		test("PosX face: glyph X coords are on the face plane", () => {
 			const data = glyphToFaceCoords(RuneId.Isa, Face.PosX, 5, 10, 15);
 			expect(data).not.toBeNull();
-			for (const stroke of data!.strokes) {
+			for (const stroke of data?.strokes) {
 				for (const pt of stroke) {
 					// PosX face is at x = blockX + 1, glyph slightly offset
 					expect(pt.x).toBeCloseTo(6.01, 1);

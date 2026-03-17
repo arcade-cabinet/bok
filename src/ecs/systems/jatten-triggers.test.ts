@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
 	CREATURE_FLEE_THRESHOLD,
-	JATTEN_SPAWN_THRESHOLD,
-	TREMOR_THRESHOLD,
 	computeShakeIntensity,
 	computeWarningPhase,
+	JATTEN_SPAWN_THRESHOLD,
 	shouldCreaturesFlee,
 	shouldSpawnJatten,
 	shouldTremor,
+	TREMOR_THRESHOLD,
 } from "./jatten-triggers.ts";
 
 // ─── Warning Phase Detection ───

@@ -15,6 +15,7 @@ import {
 	CreatureHealth,
 	CreatureTag,
 	CreatureType,
+	Equipment,
 	Health,
 	PlayerState,
 	PlayerTag,
@@ -28,6 +29,7 @@ import { updateLindormAI } from "./creature-ai-lindorm.ts";
 import { cleanupPassiveState, getTranaState, updateSkogssniglarAI, updateTranaAI } from "./creature-ai-passive.ts";
 import { updateRunvaktareAI } from "./creature-ai-runvaktare.ts";
 import { cleanupDraugarState } from "./draugar-gaze.ts";
+import { applyArmorReduction, getTotalArmorReduction } from "./equipment.ts";
 import { cleanupJattenState } from "./jatten-boss.ts";
 import { getActiveLightSources } from "./light.ts";
 import { cleanupLindormState } from "./lindorm-tunnel.ts";
@@ -35,6 +37,7 @@ import { driftOffset, isLyktgubbeTime, SCATTER_RANGE, SCATTER_SPEED } from "./ly
 import type { TargetPos } from "./morker-pack.ts";
 import { cleanupNackenState } from "./nacken-aura.ts";
 import { cleanupRunvaktareState } from "./runvaktare-ai.ts";
+import { cleanupTomteState, updateTomteAI } from "./tomte-ai.ts";
 import { cleanupVittraState } from "./vittra-debuff.ts";
 
 const GRAVITY = 28;
@@ -49,6 +52,7 @@ export function cleanupCreatureState(entityId: number): void {
 	cleanupVittraState(entityId);
 	cleanupNackenState(entityId);
 	cleanupJattenState(entityId);
+	cleanupTomteState(entityId);
 }
 
 export interface CreatureUpdateContext {
@@ -59,6 +63,12 @@ export interface CreatureUpdateContext {
 	playerAlive: boolean;
 	isDaytime: boolean;
 	timeOfDay: number;
+	/** Whether the player is actively mining. */
+	miningActive?: boolean;
+	/** Target block position of active mining (for vibration attraction). */
+	mineX?: number;
+	mineY?: number;
+	mineZ?: number;
 }
 
 /** Run hostile AI: dispatch by species (Mörker, Runväktare, Lindorm, Draugar). */
@@ -108,7 +118,7 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 			} else if (cType.species === Species.Runvaktare) {
 				updateRunvaktareAI(pos, ai, hp, anim, entity.id(), dt, ctx, applyGravity, dmg, effects);
 			} else if (cType.species === Species.Lindorm) {
-				updateLindormAI(pos, ai, hp, anim, entity.id(), dt, ctx, simpleSurfaceY, dmg, effects);
+				updateLindormAI(pos, ai, hp, anim, entity.id(), dt, ctx, simpleSurfaceY, dmg, effects, getVoxelAt);
 			} else if (cType.species === Species.Draug) {
 				updateDraugarAI(pos, ai, hp, anim, entity.id(), dt, ctx, applyGravity, dmg, effects);
 			}
@@ -156,6 +166,8 @@ export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateCon
 				updateSkogssniglarAI(pos, ai, hp, anim, entity, dt, ctx, applyGravity);
 			} else if (cType.species === Species.Trana) {
 				updateTranaAI(pos, ai, hp, anim, entity, dt, ctx, tranaAgents, applyGravity);
+			} else if (cType.species === Species.Tomte) {
+				updateTomteAI(pos, ai, hp, anim, entity.id(), dt, ctx, effects);
 			}
 		});
 }
@@ -249,8 +261,16 @@ function chase(
 }
 
 function applyDamageToPlayer(world: World, damage: number) {
+	// Read armor value from equipment (separate query — player may not have Equipment in tests)
+	let armorValue = 0;
+	world.query(PlayerTag, Equipment).readEach(([eq]) => {
+		armorValue = getTotalArmorReduction(eq);
+	});
+
+	const reduced = applyArmorReduction(damage, armorValue);
+
 	world.query(PlayerTag, Health, PlayerState).updateEach(([health, state]) => {
-		health.current = Math.max(0, health.current - damage);
+		health.current = Math.max(0, health.current - reduced);
 		state.damageFlash = 1.0;
 		state.shakeX = (cosmeticRng() - 0.5) * 0.1;
 		state.shakeY = -0.15;
@@ -277,4 +297,5 @@ export interface CreatureEffects {
 	spawnParticles: (x: number, y: number, z: number, color: string | number, count: number) => void;
 	onCreatureSpawned: (entityId: number, species: SpeciesId, variant: number) => void;
 	onCreatureDied: (entityId: number) => void;
+	removeBlock?: (x: number, y: number, z: number) => void;
 }

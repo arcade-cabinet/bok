@@ -27,7 +27,16 @@ import { getSpawnRateMultiplier } from "./inscription-level.ts";
 import { getActiveLightSources } from "./light.ts";
 import { isLyktgubbeBiome, isLyktgubbeTime } from "./lyktgubbe-drift.ts";
 import { isSpawnBlockedByLight, PACK_MAX, PACK_MIN, registerPack } from "./morker-pack.ts";
+import { getSeasonCreatureSpawnMult } from "./season-effects.ts";
 import { isSnailBiome } from "./snail-behavior.ts";
+import {
+	cleanupTomteState,
+	findTomteSpawn,
+	getTomteEntityId,
+	registerTomte,
+	shouldDespawnTomte,
+	shouldSpawnTomte,
+} from "./tomte-ai.ts";
 import { isTranaBiome, isTranaSpawnHeight } from "./trana-behavior.ts";
 
 const MAX_CREATURES = 12;
@@ -88,6 +97,16 @@ const TRANA: SpawnDefaults = {
 	moveSpeed: 0.6,
 	detectionRange: 10,
 };
+const TOMTE: SpawnDefaults = {
+	hp: 20,
+	maxHp: 20,
+	aiType: AiType.Passive,
+	aggroRange: 0,
+	attackRange: 0,
+	attackDamage: 0,
+	moveSpeed: 0.8,
+	detectionRange: 12,
+};
 let biomeResolver: ((gx: number, gz: number) => number) | null = null;
 
 export function registerBiomeResolver(resolver: (gx: number, gz: number) => number): void {
@@ -107,18 +126,42 @@ export function spawnCreatures(
 	morkerSpawnMult = 1,
 	seasonMorkerMult = 1,
 	tranaMigrating = false,
+	structuresBuilt = 0,
+	discoveredRunes = 0,
 ) {
 	if (!playerAlive || creatureCount >= MAX_CREATURES) return;
 
+	// Tomte singleton spawn/despawn
+	if (shouldDespawnTomte(discoveredRunes)) {
+		const eid = getTomteEntityId();
+		world.query(CreatureTag, Position).updateEach(([_pos], entity) => {
+			if (entity.id() === eid) {
+				effects?.spawnParticles(_pos.x, _pos.y, _pos.z, 0x8b2500, 15);
+				effects?.onCreatureDied(eid);
+				cleanupTomteState(eid);
+				entity.destroy();
+			}
+		});
+	} else if (shouldSpawnTomte(structuresBuilt, discoveredRunes)) {
+		const spot = findTomteSpawn(playerX, playerZ);
+		if (spot) {
+			const eid = spawnEntity(world, spot.x, spot.y, spot.z, Species.Tomte, TOMTE, effects);
+			registerTomte(eid);
+		}
+	}
+
 	const mult = getSpawnRateMultiplier(inscriptionLevel);
 
-	if (isLyktgubbeTime(timeOfDay) && worldRng() < LYKTGUBBE_SPAWN_CHANCE * mult) {
+	const lyktMult = getSeasonCreatureSpawnMult(Species.Lyktgubbe);
+	if (isLyktgubbeTime(timeOfDay) && worldRng() < LYKTGUBBE_SPAWN_CHANCE * mult * lyktMult) {
 		spawnLyktgubbe(world, playerX, playerZ, effects);
 	}
-	if (isDaytime && worldRng() < SNAIL_SPAWN_CHANCE * mult) {
+	const snailMult = getSeasonCreatureSpawnMult(Species.Skogssnigle);
+	if (isDaytime && worldRng() < SNAIL_SPAWN_CHANCE * mult * snailMult) {
 		spawnBiomeGated(world, playerX, playerZ, 18, Species.Skogssnigle, SNAIL, isSnailBiome, effects);
 	}
-	if (isDaytime && !tranaMigrating && worldRng() < TRANA_SPAWN_CHANCE * mult) {
+	const tranaMult = getSeasonCreatureSpawnMult(Species.Trana);
+	if (isDaytime && !tranaMigrating && tranaMult > 0 && worldRng() < TRANA_SPAWN_CHANCE * mult * tranaMult) {
 		spawnTranaFlock(world, playerX, playerZ, effects);
 	}
 	if (!isDaytime && worldRng() < SPAWN_CHANCE * mult * morkerSpawnMult * seasonMorkerMult) {

@@ -213,6 +213,9 @@ export function EtchingSurface({
 			data-phase={phase}
 			data-prediction={predDef?.name?.toLowerCase() ?? "none"}
 			data-prediction-count={predictions.length}
+			role="dialog"
+			aria-modal="true"
+			aria-label="Rune etching surface"
 		>
 			<div
 				className="absolute inset-0 bg-black/60"
@@ -230,19 +233,19 @@ export function EtchingSurface({
 							{predDef.name}
 						</span>
 						{predLabel && (
-							<span className="text-xs text-neutral-500" data-testid="prediction-index">
+							<span className="text-xs text-neutral-400" data-testid="prediction-index">
 								{predLabel}
 							</span>
 						)}
 					</div>
 				)}
 				{phase === "idle" && predictions.length > 0 && (
-					<div className="text-xs text-neutral-500" data-testid="etching-hint">
+					<div className="text-xs text-neutral-400" data-testid="etching-hint">
 						double-tap to inscribe · draw to carve · swipe to cycle
 					</div>
 				)}
 				{phase === "idle" && predictions.length === 0 && (
-					<div className="text-xs text-neutral-500" data-testid="etching-hint">
+					<div className="text-xs text-neutral-400" data-testid="etching-hint">
 						draw a rune to inscribe
 					</div>
 				)}
@@ -261,14 +264,14 @@ export function EtchingSurface({
 				/>
 				<div className="flex items-center gap-4">
 					{strokes.length > 0 && phase === "drawing" && (
-						<span className="text-xs text-neutral-500" data-testid="stroke-count">
+						<span className="text-xs text-neutral-400" data-testid="stroke-count">
 							{strokes.length} stroke{strokes.length !== 1 ? "s" : ""}
 						</span>
 					)}
 					{(phase === "drawing" || phase === "idle") && strokes.length > 0 && (
 						<button
 							type="button"
-							className="px-3 py-1 rounded text-xs text-neutral-400 bg-neutral-800 hover:bg-neutral-700"
+							className="px-3 py-1 min-h-[44px] rounded text-xs text-neutral-400 bg-neutral-800 hover:bg-neutral-700"
 							onClick={() => {
 								setStrokes([]);
 								setCurrentStroke([]);
