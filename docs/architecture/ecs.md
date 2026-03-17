@@ -2,25 +2,26 @@
 
 ## Overview
 
-Bok uses **Koota** for entity-component-system (ECS) state management. All gameplay state lives in the Koota world — the rendering layer (Jolly Pixel / Three.js) reads from it but never owns game state.
+Bok uses **Koota** for entity-component-system (ECS) state management. All gameplay state lives in the Koota world — the rendering layer (Three.js) reads from it but never owns game state.
 
 ```text
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │  ECS World   │────>│  Game Bridge │────>│  Three.js    │
-│  (Koota)     │     │  (Behavior)  │     │  (Rendering) │
+│  (Koota)     │     │  (sync layer)│     │  (rendering) │
 │              │<────│              │<────│              │
-│  State truth │     │  Sync layer  │     │  Visual only │
+│  State truth │     │  callbacks   │     │  Visual only │
 └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
 ## Traits (Components)
 
-Traits are defined in `src/ecs/traits/index.ts`. Every trait is created with `trait()` from Koota.
+All traits are defined in `src/ecs/traits/index.ts` using `trait()` from Koota.
 
-### Player Traits
-| Trait | Fields | Purpose |
-|-------|--------|---------|
-| `PlayerTag` | (none) | Marker — identifies the player entity |
+### Player
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `PlayerTag` | — | Marker — identifies the player entity |
 | `Position` | x, y, z | World position |
 | `Velocity` | x, y, z | Movement velocity |
 | `Rotation` | pitch, yaw | Camera/look direction |
@@ -28,106 +29,219 @@ Traits are defined in `src/ecs/traits/index.ts`. Every trait is created with `tr
 | `Hunger` | current, max, decayRate | Depletes over time |
 | `Stamina` | current, max, regenRate | Sprint/jump resource |
 | `PhysicsBody` | onGround, isSwimming, gravity, width, height, depth | Collision + physics state |
-| `MoveInput` | forward, backward, left, right, jump, sprint | Input flags |
-| `PlayerState` | isRunning, isDead, damageFlash, shakeX, shakeY | Meta state |
-| `Inventory` | wood, stone, dirt, grass, sand, glass, stonebricks, planks, torches | Resource counts |
-| `Hotbar` | slots[5], activeSlot | Equipped items |
-| `MiningState` | active, progress, targetX/Y/Z, targetKey, lastHitTime | Mining progress |
-| `QuestProgress` | step, progress | Tutorial quests |
-| `ToolSwing` | progress, swayX/Y, targetSwayX/Y | View model animation |
+| `MoveInput` | forward, backward, left, right, jump, sprint | Input flags written each frame |
+| `PlayerState` | isRunning, isDead, damageFlash, shakeX, shakeY, hungerSlowed, wantsEat | Meta state + camera shake |
+| `ToolSwing` | progress, swayX, swayY, targetSwayX, targetSwayY | View model animation |
 
-### World Traits
-| Trait | Fields | Purpose |
-|-------|--------|---------|
+### Camera
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `CameraTag` | — | Marker |
+| `CameraFollow` | targetEntity, smoothing | Camera attachment |
+| `CameraTransition` | active, progress, duration, start/target/lookAt XYZ, toEtching | Smooth cut to etching mode |
+
+### Inventory
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `Inventory` | items (Record), capacity | Item counts by block/item ID |
+| `Hotbar` | slots[5], activeSlot | Equipped block or item per slot |
+| `Equipment` | head, chest, legs, accessory | Worn armor slots |
+
+### Mining / Crafting
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `MiningState` | active, progress, targetX/Y/Z, targetKey, lastHitTime | Block mining progress |
+| `CookingState` | active, timer, inputId, resultId | Active cooking operation |
+| `WorkstationProximity` | maxTier | Highest workstation tier within range |
+
+### Quest / Progression
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `QuestProgress` | step, progress | Tutorial quest steps |
+| `InscriptionLevel` | totalBlocksPlaced, totalBlocksMined, structuresBuilt | World modification tracking |
+| `ExploredChunks` | visited (Set) | Packed chunk keys for fog of war |
+| `Codex` | creatureProgress, loreEntries, discoveredRecipes | Observed knowledge |
+| `SagaLog` | achieved, entries, creaturesKilled, bossDefeated | Narrative milestone log |
+
+### World
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
 | `WorldTime` | timeOfDay, dayDuration, dayCount | Day/night cycle |
-| `WorldSeed` | seed | Deterministic generation |
+| `WorldSeed` | seed | Deterministic generation seed |
+| `SeasonState` | current, progress, hungerMult, morkerMult, nightMult, tranaMigrating | Active season effects |
+| `NorrskenEvent` | active, timer, dayTriggered, wasNight | Northern lights event state |
 
-### Enemy Traits
-| Trait | Fields | Purpose |
-|-------|--------|---------|
-| `EnemyTag` | (none) | Marker — identifies enemy entities |
-| `EnemyState` | hp, velY, aiState, attackCooldown, meshIndex | Enemy AI + rendering |
+### Creature
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `CreatureTag` | — | Marker — identifies creature entities |
+| `CreatureType` | species | Species from Swedish folklore (Morker, Vittra, etc.) |
+| `CreatureAI` | aiType, behaviorState, targetEntity, aggroRange, attackRange, moveSpeed | AI behavior control |
+| `CreatureAnimation` | animState, animTimer, variant | Animation state machine |
+| `CreatureHealth` | hp, maxHp, velY, meshIndex | HP + renderer mesh slot |
+| `YukaState` | hasVehicle, currentStateName, wantsJump | Yuka pathfinding bridge |
+
+### Rune
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `RuneFaces` | faces (Record "x,y,z" → number[6]) | Rune ID per block face |
+| `ChiselState` | active, selectedFace, selectedX/Y/Z, xrayActive, wheelOpen | Chisel tool interaction |
+| `EtchingState` | active, selectedRuneId, blockX/Y/Z, faceIndex, lastScore, lastAccepted | Glyph tracing session |
+| `RuneDiscovery` | discovered (Set), prevHealth, prevTimeOfDay | Unlocked rune IDs + edge detection |
+
+### Settlement
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `ShelterState` | inShelter, structureVolume, faluRedCount, morkerSpawnMult | Enclosed-space detection |
+| `TerritoryState` | density, radius, sealActive, hostileSpawnMult, passiveBonus | Territory density + spawn modifiers |
+| `SettlementBonusState` | combatMult, foodMult, detectionBonus, defenseMult | Archetype bonuses applied to player |
+
+### Farming
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `FarmPlots` | plots (Record "x,y,z" → FarmPlotEntry), lastProcessedDay | Planted crop state |
+
+### UI
+
+| Trait | Key Fields | Purpose |
+|-------|-----------|---------|
+| `TomteHint` | text, visible | Tutorial speech-bubble content |
+
+---
 
 ## Systems
 
-Systems are pure functions: `(world: World, dt: number, ...sideEffects) => void`. They run every frame in the GameBridge.
+Systems are pure functions: `(world: World, dt: number, ...sideEffects) => void`. They run every frame inside `GameBridge.update()`.
 
-### Execution Order
+The barrel export at `src/ecs/systems/index.ts` is the authoritative list. Systems are grouped below by category.
+
+### System Categories
+
+| Category | Systems |
+|----------|---------|
+| **Core** | movementSystem, physicsSystem, miningSystem, survivalSystem, cookingSystem, eatingSystem, timeSystem, questSystem, workstationProximitySystem, structureSystem, lightSystem |
+| **Creature** | creatureSystem, creatureSpawner (passive/neutral/hostile), tomteSpawnSystem, ecosystem |
+| **Rune** | runeInscriptionSystem, runeIndex, emitterSystem, signal propagation, interactionRuneSystem, protectionRuneSystem, networkRuneSystem, computationalRuneSystem, selfModifySystem, runeSensorSystem, runeCombatEffectsSystem, runeResourcePickupSystem, raidoSystem |
+| **Settlement** | settlementSystem, settlementDetector, settlementBonus, territorySystem |
+| **Season** | seasonSystem, seasonEffectsSystem, worldEventSystem |
+| **Quality** | quality-presets, chunk-lod |
+| **Progression** | progressionArc, sagaSystem, codexSystem, explorationSystem, runeDiscoverySystem |
+| **Farming** | farmingSystem |
+
+### Execution Order (GameBridge)
+
 ```text
-1. movementSystem    — Process input → velocity
-2. physicsSystem     — Apply gravity, collision, swimming
-3. survivalSystem    — Hunger decay, stamina regen, damage flash decay, shake decay
-4. questSystem       — Check quest completion conditions
-5. timeSystem        — Advance day/night cycle
-6. enemySystem       — Enemy AI, spawning, combat (via side effects)
-7. miningSystem      — Mining progress, block break (via side effects)
+updateAutopilot (dev only)
+movementSystem → physicsSystem → survivalSystem → eatingSystem → cookingSystem
+questSystem → timeSystem → seasonSystem → seasonEffectsSystem
+workstationProximitySystem → structureSystem → lightSystem
+runeSensorSystem → emitterSystem → interactionRuneSystem → protectionRuneSystem
+networkRuneSystem → computationalRuneSystem → selfModifySystem
+settlementSystem → territorySystem → raidoSystem
+explorationSystem → creatureSystem → codexSystem → sagaSystem
+runeDiscoverySystem → worldEventSystem → tickRuneWorld
 ```
 
-Order matters: movement before physics (input drives velocity), physics before survival (fall damage sets damageFlash), time before enemy (day/night affects spawning).
+Order matters: movement before physics (input drives velocity), physics before survival (fall damage), time before creature (day/night affects spawning).
 
-### Side Effect Pattern
-Systems that need to interact with the rendering layer receive **side-effect callbacks** instead of importing rendering code directly:
+---
+
+## Side-Effect Callback Pattern
+
+ECS systems never import Three.js. When a system needs to trigger a visual effect (spawn particles, remove a block, play a sound), the GameBridge passes a callback at call time:
 
 ```typescript
-// mining.ts — pure ECS logic
+// mining.ts — pure ECS, no Three.js import
 export interface MiningSideEffects {
   removeBlock: (x: number, y: number, z: number) => void;
   spawnParticles: (x: number, y: number, z: number, color: string, count: number) => void;
 }
 
 export function miningSystem(world: World, dt: number, hit: BlockHit | null, effects: MiningSideEffects) {
-  // ... uses effects.removeBlock() instead of importing voxel renderer
+  // calls effects.removeBlock() rather than importing the voxel renderer
 }
 ```
 
-This keeps systems testable and decoupled from Three.js.
+The GameBridge wires the concrete callbacks from the renderer layer:
+
+```typescript
+// game-bridge.ts
+miningSystem(world, dt, hit, {
+  removeBlock: (x, y, z) => setVoxelAt("Ground", x, y, z, 0),
+  spawnParticles: spawn,
+});
+```
+
+This keeps systems testable in isolation with no rendering dependencies.
+
+---
 
 ## Entity Spawning
 
 ### Player Entity
-Spawned once in `initGame()`:
+
+Spawned once in `spawnPlayerEntity()` (called from `initGame()`):
+
 ```typescript
 kootaWorld.spawn(
   PlayerTag, Position, Velocity, Rotation, Health, Hunger, Stamina,
   PhysicsBody, MoveInput, PlayerState, Inventory, Hotbar,
-  MiningState, QuestProgress, ToolSwing
+  MiningState, QuestProgress, ToolSwing, Equipment, InscriptionLevel,
+  ExploredChunks, Codex, SagaLog, RuneDiscovery, RuneFaces,
+  ChiselState, EtchingState, CameraTransition, ShelterState,
+  TerritoryState, SettlementBonusState, FarmPlots, TomteHint, YukaState,
+  CookingState, WorkstationProximity,
 );
 ```
 
 ### World Entity
+
 Spawned once in `initGame()`:
+
 ```typescript
-kootaWorld.spawn(WorldTime, WorldSeed);
+kootaWorld.spawn(WorldTime(...), WorldSeed({ seed }), SeasonState());
+kootaWorld.spawn(NorrskenEvent());
 ```
 
-### Enemy Entities
-Spawned dynamically by `enemySystem()` during night, destroyed on death/despawn:
+### Creature Entities
+
+Spawned dynamically by the creature spawner systems; destroyed on death or despawn:
+
 ```typescript
-world.spawn(EnemyTag, Position({ x, y, z }), EnemyState({ hp: 6, ... }));
+world.spawn(CreatureTag, CreatureType({ species }), CreatureAI(...), CreatureHealth(...), Position(...), ...);
 ```
+
+---
 
 ## Querying Patterns
 
 ```typescript
-// Read-only query (no mutation)
-kootaWorld.query(PlayerTag, Position).readEach(([pos]) => {
-  // pos.x, pos.y, pos.z — read only
-});
+// Read-only
+world.query(PlayerTag, Position).readEach(([pos]) => { /* pos.x, pos.y */ });
 
-// Mutable query
-kootaWorld.query(PlayerTag, Health).updateEach(([health]) => {
-  health.current -= damage; // mutation allowed
-});
+// Mutable
+world.query(PlayerTag, Health).updateEach(([health]) => { health.current -= damage; });
 
-// Entity reference in callback
-kootaWorld.query(EnemyTag, EnemyState).updateEach(([enemy], entity) => {
-  if (enemy.hp <= 0) entity.destroy();
+// With entity reference
+world.query(CreatureTag, CreatureHealth).updateEach(([hp], entity) => {
+  if (hp.hp <= 0) entity.destroy();
 });
 ```
+
+---
 
 ## World Lifecycle
 
 - `kootaWorld` is a module-level singleton in `src/engine/game.ts`
-- `initGame()` spawns entities
-- `destroyGame()` calls `kootaWorld.reset()` which clears all entities
-- Save/load serializes/deserializes specific traits to SQLite
+- `initGame()` initializes noise, spawns all entities, starts the game loop
+- `destroyGame()` calls `kootaWorld.reset()` (clears all entities) and resets module-level system state
+- Save/load serializes specific traits to SQLite via `game-save.ts`

@@ -41,6 +41,7 @@ import {
 } from "../ecs/traits/index.ts";
 import { createBlockDefinitions } from "../world/block-definitions.ts";
 import { BlockId } from "../world/blocks.ts";
+import { flattenSpawnPlateau, forEachSpawnChunk } from "../world/spawn-zone.ts";
 import { CHUNK_SIZE, generateChunkTerrain, WORLD_HEIGHT } from "../world/terrain-generator.ts";
 import { COLS, generateTilesetDataURL, ROWS, TILE_SIZE } from "../world/tileset-generator.ts";
 import { registerVoxelAccessors } from "../world/voxel-helpers.ts";
@@ -88,11 +89,21 @@ export function registerWorld(renderer: VoxelRenderer): void {
 }
 
 export function generateSpawnArea(renderer: VoxelRenderer): number {
-	generateChunkTerrain(renderer, "Ground", 0, 0);
-	loadedChunks.add("0,0");
+	// Pre-generate all 9 chunks in the 3x3 starting zone
+	forEachSpawnChunk((cx, cz) => {
+		generateChunkTerrain(renderer, "Ground", cx, cz);
+		loadedChunks.add(getChunkKey(cx, cz));
+	});
+
 	const surfaceY = findSurfaceY(renderer, 8, 8);
+
+	// Flatten the plateau around the shrine for walkable terrain
+	flattenSpawnPlateau(renderer, surfaceY);
+
+	// Place the shrine on the flattened surface
 	generateSpawnShrine(renderer, "Ground", surfaceY);
 	recordSpawnShrineDeltas(surfaceY);
+
 	// Flush dirty chunks so the greedy mesher generates visible geometry
 	if ("flushDirtyChunks" in renderer) {
 		(renderer as { flushDirtyChunks: () => void }).flushDirtyChunks();
@@ -131,7 +142,7 @@ function recordSpawnShrineDeltas(surfaceY: number): void {
 export function spawnPlayerEntity(world: World, surfaceY: number): void {
 	world.spawn(
 		PlayerTag,
-		Position({ x: 8.5, y: surfaceY + 8, z: 8.5 }),
+		Position({ x: 8.5, y: surfaceY + 2, z: 8.5 }),
 		Velocity,
 		Rotation({ pitch: 0, yaw: 0 }),
 		Health,

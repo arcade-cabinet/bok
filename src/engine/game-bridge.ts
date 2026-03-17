@@ -45,6 +45,7 @@ import { cosmeticRng } from "../world/noise.ts";
 import { getVoxelAt, isBlockSolid, setVoxelAt } from "../world/voxel-helpers.ts";
 import { Behavior } from "./behavior.ts";
 import { streamChunks } from "./chunk-streaming.ts";
+import { updateAutopilot } from "./dev-autopilot.ts";
 import { tickDevBridge } from "./dev-bridge.ts";
 import {
 	runComputationalRuneSystem,
@@ -113,6 +114,9 @@ export class GameBridge extends Behavior {
 		tickDevBridge();
 
 		const world = this.world;
+
+		// Dev autopilot (sets MoveInput/Rotation before movement reads them)
+		updateAutopilot(world, dt);
 
 		// Core ECS systems
 		movementSystem(world, dt);

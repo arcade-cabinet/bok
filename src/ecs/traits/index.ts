@@ -487,6 +487,18 @@ export const CameraTransition = trait({
 	toEtching: false,
 });
 
+// ─── Yuka AI Bridge ───
+
+/** Tracks whether a Yuka Vehicle is associated with this creature and its FSM state. */
+export const YukaState = trait({
+	/** Whether a Yuka Vehicle has been created for this entity. */
+	hasVehicle: false,
+	/** Name of the current Yuka StateMachine state (for debugging / UI). */
+	currentStateName: "" as string,
+	/** Set by obstacle avoidance when the creature should auto-jump. */
+	wantsJump: false,
+});
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

@@ -24,6 +24,9 @@ import { resetSeasonEffectsState } from "../ecs/systems/season-effects.ts";
 import { resetPauseState } from "../ecs/systems/session-pause.ts";
 import { resetSettlementState } from "../ecs/systems/settlement-system.ts";
 import { resetTerritoryState } from "../ecs/systems/territory.ts";
+import { resetVehiclePool } from "../ecs/systems/yuka-bridge.ts";
+import { resetYukaCreatureSystem } from "../ecs/systems/yuka-creature-system.ts";
+import { resetFsmContexts } from "../ecs/systems/yuka-states-shared.ts";
 import {
 	Hotbar,
 	InscriptionLevel,
@@ -42,7 +45,8 @@ import { CHUNK_SIZE } from "../world/terrain-generator.ts";
 import { setVoxelAt, setVoxelDeltaListener } from "../world/voxel-helpers.ts";
 import { InputBehavior } from "./behaviors/InputBehavior.ts";
 import { chunkData, loadedChunks } from "./chunk-streaming.ts";
-import { initDevBridge, setDevRendererStats, tickDevBridge } from "./dev-bridge.ts";
+import { initAutopilot } from "./dev-autopilot.ts";
+import { initDevBridge, setDevRendererStats } from "./dev-bridge.ts";
 import { GameBridge, resetCombatDrainTimer } from "./game-bridge.ts";
 import { GameLoop } from "./game-loop.ts";
 import { createVoxelRenderer, generateSpawnArea, registerWorld, spawnPlayerEntity } from "./game-world-setup.ts";
@@ -142,8 +146,9 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	);
 
 	initDevBridge(kootaWorld);
+	initAutopilot();
 
-	threeCamera.position.set(8.5, surfaceY + 8, 8.5);
+	threeCamera.position.set(8.5, surfaceY + 2, 8.5);
 	threeCamera.updateProjectionMatrix();
 	resizeHandler = () => {
 		if (!threeCamera) return;
@@ -159,8 +164,6 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 	// Wire dev bridge renderer stats
 	if (import.meta.env.DEV && gameLoop) {
 		const gl = gameLoop;
-		const origTick = tickDevBridge;
-		// Override tickDevBridge to also capture renderer stats
 		setInterval(() => {
 			setDevRendererStats(gl.lastDrawCalls, gl.lastTriangles);
 		}, 500);
@@ -304,5 +307,8 @@ export function destroyGame(): void {
 	resetSeasonEffectsState();
 	resetQualityState();
 	resetPauseState();
+	resetVehiclePool();
+	resetFsmContexts();
+	resetYukaCreatureSystem();
 	kootaWorld.reset();
 }

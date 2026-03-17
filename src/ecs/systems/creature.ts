@@ -21,6 +21,7 @@ import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
 import { cleanupCreatureState, updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
 import { spawnCreatures } from "./creature-spawner.ts";
 import { computeInscriptionLevel } from "./inscription-level.ts";
+import { yukaCreatureUpdate } from "./yuka-creature-system.ts";
 
 const DESPAWN_DISTANCE = 50;
 
@@ -125,9 +126,13 @@ export function creatureSystem(world: World, dt: number, effects?: CreatureEffec
 		mineZ,
 	};
 
-	updateHostileAI(world, dt, ctx, effects);
-	updatePassiveAI(world, dt, ctx, effects);
-	updateNeutralAI(world, dt, ctx, effects);
+	// Yuka AI runs first — returns set of entity IDs it handled
+	const yukaHandled = yukaCreatureUpdate(world, dt, ctx, effects);
+
+	// Legacy AI runs for creatures NOT handled by Yuka
+	updateHostileAI(world, dt, ctx, effects, yukaHandled);
+	updatePassiveAI(world, dt, ctx, effects, yukaHandled);
+	updateNeutralAI(world, dt, ctx, effects, yukaHandled);
 }
 
 /**

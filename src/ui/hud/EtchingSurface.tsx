@@ -141,7 +141,7 @@ export function EtchingSurface({
 				if (result.pass) {
 					setRecognizedName(predDef?.name ?? null);
 					setPhase("success");
-					setTimeout(() => onInscribe(pred!, result.score), 400);
+					if (pred != null) setTimeout(() => onInscribe(pred, result.score), 400);
 					return;
 				}
 			}

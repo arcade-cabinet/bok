@@ -1,130 +1,176 @@
 # Rendering Architecture
 
+## Engine Overview
+
+Bok uses a **custom Three.js engine** (no Jolly Pixel). The engine is organized around three collaborating modules:
+
+| Module | File | Purpose |
+|--------|------|---------|
+| `GameLoop` | `src/engine/game-loop.ts` | RAF loop, scene, renderer, behavior list |
+| `GameBridge` | `src/engine/game-bridge.ts` | Behavior that drives ECS + syncs to renderers each frame |
+| `RendererManager` | `src/engine/renderer-manager.ts` | Lifecycle for all standalone visual renderers |
+
+```text
+┌──────────────┐     ┌────────────────┐     ┌─────────────────────┐
+│  Koota ECS   │────>│  GameBridge    │────>│  Standalone         │
+│  (state)     │     │  (Behavior)    │     │  Renderers          │
+│              │     │                │     │  (Three.js objects) │
+└──────────────┘     └────────────────┘     └─────────────────────┘
+                             │
+                             ▼
+                      GameLoop.renderer.render(scene, camera)
+```
+
+---
+
 ## Stack
 
 ```text
 ┌────────────────────────┐
-│  React (UI Layer)      │  ← HUD, menus, overlays
+│  React (UI Layer)      │  HUD, menus, overlays
 ├────────────────────────┤
-│  Jolly Pixel (Engine)  │  ← Actor/Behavior system, runtime loop
+│  GameBridge (Behavior) │  ECS orchestration, sync layer
 ├────────────────────────┤
-│  Three.js (3D)         │  ← Scene graph, rendering, materials
+│  Three.js (3D)         │  Scene graph, materials, camera
 ├────────────────────────┤
-│  WebGL / WebGPU        │  ← GPU interface
+│  WebGL                 │  GPU interface
 └────────────────────────┘
 ```
 
-## Jolly Pixel Integration
+---
 
-Bok uses Jolly Pixel for:
-- **Runtime** (`@jolly-pixel/runtime`) — game loop, canvas management, loading
-- **Engine** (`@jolly-pixel/engine`) — Actor/Behavior pattern
-- **VoxelRenderer** (`@jolly-pixel/voxel.renderer`) — chunked voxel world
+## Rendering Loop
 
-### Actor/Behavior Pattern
+`GameLoop` runs a `requestAnimationFrame` loop. Each tick it calls `update(dt)` on all registered `Behavior` instances, then calls `renderer.render(scene, camera)`.
 
-Jolly Pixel uses an Actor model where Actors own Behaviors (components with lifecycle). Bok creates these Actors in `initGame()`:
-
-| Actor | Behavior | Purpose |
-|-------|----------|---------|
-| GameBridge | `GameBridge` | Runs ECS systems, syncs state to visuals |
-| Celestial | `CelestialBehavior` | Sun, moon, stars, sky color, lighting |
-| AmbientParticles | `AmbientParticlesBehavior` | Floating atmospheric particles |
-| Particles | `ParticlesBehavior` | Mining/combat/sprint dynamic particles |
-| BlockHighlight | `BlockHighlightBehavior` | Block targeting wireframe + raycaster |
-| ViewModel | `ViewModelBehavior` | First-person held item with animations |
-| EnemyRenderer | `EnemyRendererBehavior` | Enemy mesh pool and interpolation |
-| VoxelMap | `VoxelRenderer` | Chunked voxel world rendering |
-
-### Behavior Lifecycle
-
-```typescript
-class MyBehavior extends Behavior {
-  awake() {
-    this.needUpdate = true;  // Required to enable update()
-  }
-  update(dt: number) {
-    // Called every frame by Jolly Pixel runtime
-  }
-}
-```
-
-## GameBridge — The Core Loop
-
-`GameBridge` is the central Behavior that orchestrates everything each frame:
+`GameBridge` is the only Behavior that matters for gameplay. Its `update(dt)` runs in this order:
 
 ```text
 GameBridge.update(dt)
-├── Run ECS systems (movement, physics, survival, quest, time, enemy, mining)
-├── syncPlayerToCamera() — Position/Rotation → Three.js camera
-├── syncViewModelState() — Hotbar slot → ViewModel mesh
-├── syncEnvironmentState() — Time → Celestial, Ambient particles
-├── runEnemySystem() — Enemy AI + sync positions to EnemyRenderer
-├── runMiningSystem() — Mining + block highlight hit data
-└── streamChunks() — Load/unload voxel chunks around player
+├── updateAutopilot()           — dev-only: sets MoveInput before movement reads it
+├── [All ECS systems]           — movement, physics, survival, runes, creatures, …
+├── syncPlayerToCamera()        — Position + Rotation → Three.js camera
+├── syncViewModelState()        — active hotbar slot → ViewModelRenderer
+├── syncEnvironmentState()      — WorldTime → CelestialRenderer + AmbientParticlesRenderer
+├── syncCreatureRendererPositions() — CreatureTag + Position → CreatureRenderer
+├── runRuneInscriptionSystem()  — face-hit data → rune inscription ECS
+├── runMiningSystem()           — block-hit data → mining ECS + side effects
+├── streamChunks()              — load/unload VoxelWorld chunks around player
+└── updateRenderers(dt)         — tick each standalone renderer
 ```
+
+---
+
+## Standalone Renderers
+
+Each renderer is a plain class (no Behavior base) that owns Three.js objects. All are created by `createRenderers()` in `renderer-manager.ts` and ticked by `updateRenderers(dt)`.
+
+| Renderer | File | Purpose |
+|----------|------|---------|
+| `VoxelWorld` | `src/engine/voxel-world.ts` | Chunk-based voxel world with greedy meshing |
+| `CreatureRenderer` | `src/engine/creature-renderer.ts` | Building-block creature meshes + procedural animation |
+| `ParticlesRenderer` | `src/engine/particles-renderer.ts` | Mining hits, block break, combat, sprint dust |
+| `BlockHighlightRenderer` | `src/engine/block-highlight-renderer.ts` | Block selection wireframe + raycaster |
+| `AmbientParticlesRenderer` | `src/engine/ambient-particles-renderer.ts` | Environmental floating particles |
+| `CelestialRenderer` | `src/engine/celestial-renderer.ts` | Sun, moon, stars, sky color, ambient/sun intensity |
+| `ViewModelRenderer` | `src/engine/viewmodel-renderer.ts` | First-person held item with bob + swing animation |
+| `RuneFaceRenderer` | `src/engine/rune-face-renderer.ts` | Rune glyph decals on block faces |
+| `SignalGlowRenderer` | `src/engine/signal-glow-renderer.ts` | Rune signal strength visualization |
+| `MiningCrackRenderer` | `src/engine/mining-crack-renderer.ts` | Mining progress overlay on targeted block |
+
+---
 
 ## Voxel World
 
-### VoxelRenderer
+### VoxelWorld Class
 
-Jolly Pixel's VoxelRenderer handles:
-- Chunk-based voxel storage
-- Face culling (only render exposed faces)
-- Tileset-based texturing
-- Layer system ("Ground" layer for all terrain)
+`VoxelWorld` (`src/engine/voxel-world.ts`) implements the `VoxelRenderer` interface and replaces the former Jolly Pixel VoxelRenderer. It combines:
 
-### Chunk Streaming
+- **VoxelStore** — flat `Uint8Array` chunk storage, one array per chunk key `"cx,cz"`
+- **Greedy mesher** — combines adjacent same-type faces into larger quads
+- **Chunk mesh builder** — converts quads into `THREE.BufferGeometry`
 
 ```typescript
-const RENDER_DISTANCE = 3;  // chunks in each direction
-const CHUNKS_PER_FRAME = 2; // max chunks generated per frame
+// The public API matches what terrain-generator and chunk-streaming expect:
+voxelWorld.setVoxel("Ground", { position: { x, y, z }, blockId });
+voxelWorld.removeVoxel("Ground", { position: { x, y, z } });
+voxelWorld.setVoxelBulk("Ground", entries);
+voxelWorld.getVoxel({ x, y, z });  // returns { blockId } | null
 ```
 
-Chunks are loaded into a queue sorted by distance to player. The closest unloaded chunks are generated first, capped at 2 per frame to maintain framerate. Chunks beyond `RENDER_DISTANCE + 2` are unloaded.
+### Greedy Mesher Pipeline
+
+Located at `src/world/greedy-mesher.ts` (tested in `src/world/greedy-mesher.test.ts`).
+
+1. For each axis and direction, scan the chunk slice by slice.
+2. Skip faces that are occluded by an adjacent solid block (face culling).
+3. Expand each exposed face greedily along the two remaining axes as long as block type and face visibility match.
+4. Emit one `MeshQuad` per merged region (positions, normals, UVs, blockType).
+
+Greedy merging converts a dense voxel scene into far fewer draw quads, dramatically reducing geometry. A 2×2 flat floor of the same block type produces a single top-face quad rather than four.
+
+### Chunk Lifecycle
+
+```text
+setVoxel / setVoxelBulk
+  └── markDirty(cx, cz)           — adds chunk key to dirtyChunks set
+
+flushDirtyChunks()                — called after bulk terrain generation
+  └── rebuildChunkMesh(cx, cz)    — greedyMesh → buildChunkGeometry → THREE.Mesh
+
+streamChunks() (each frame)       — loads/unloads chunks around player
+  └── rebuildChunkMesh / removeChunkMesh
+```
 
 ### Voxel Accessor Bridge
 
-`src/world/voxel-helpers.ts` provides global `getVoxelAt()` / `setVoxelAt()` functions that ECS systems use without importing Three.js. The bridge is registered in `initGame()`:
+`src/world/voxel-helpers.ts` provides global `getVoxelAt()` / `setVoxelAt()` functions that ECS systems use without importing Three.js. The bridge is registered in `initGame()` and wires a delta listener to SQLite for persistence:
 
 ```text
-ECS Systems → voxel-helpers → VoxelRenderer
-                    ↓
-              Delta Listener → SQLite (persistence)
+ECS Systems → voxel-helpers.setVoxelAt() → VoxelWorld.setVoxel()
+                         │
+                         └── deltaListener → SQLite (voxel_deltas table)
 ```
 
-## Particle System
+---
 
-`ParticlesBehavior` uses Three.js `InstancedMesh` (500 particles max) with per-instance color and transform. Particles have:
-- Position, velocity, gravity
-- Life (decays at 1.5x/sec)
-- Color (per-spawn)
+## Tileset Generation
 
-Used for: mining hits (block color), block break (block color, 15 count), combat (red), sprint (brown dust).
+Block textures are generated at runtime on a canvas (`src/world/tileset-generator.ts`):
+
+- Grid of 32×32 px tiles; each block type has a drawing function (noise, gradients, shapes)
+- Output is a data URL loaded as the `VoxelWorld` tileset texture
+- Loaded via `VoxelWorld.loadTileset()` which creates a `THREE.MeshLambertMaterial` with `NearestFilter`
+- No external texture files required
+
+---
+
+## Input System
+
+`InputSystem` (`src/engine/input-system.ts`) handles keyboard and mouse. `MobileControls` (`src/ui/hud/MobileControls.tsx`) handles touch. Both write their state into the `MoveInput` and `Rotation` traits on the player entity each frame. The rendering layer never reads raw input events.
+
+---
 
 ## Scene Setup
 
 | Element | Type | Details |
 |---------|------|---------|
-| Camera | PerspectiveCamera | 75 FOV, 0.1 near, 100 far |
-| Ambient Light | AmbientLight | 0.35 intensity, modulated by time |
-| Sun | DirectionalLight | 1.2 intensity, shadow-casting, 1024 shadow map |
-| Fog | Fog | Matches sky color, 15 near, render distance far |
-| Background | Scene.background | Sky color, modulated by CelestialBehavior |
+| Camera | `PerspectiveCamera` | 75° FOV, 0.1 near, 100 far |
+| Ambient Light | `AmbientLight` | 0.35 base intensity, modulated by `CelestialRenderer` |
+| Sun | `DirectionalLight` | 1.2 intensity, shadow-casting, shadow map size from quality preset |
+| Fog | `THREE.Fog` | Matches sky color, distance from quality preset |
+| Background | `scene.background` | Sky color, modulated by `CelestialRenderer` |
 
-## Tileset Generation
+---
 
-Block textures are generated at runtime on a canvas (`src/world/tileset-generator.ts`):
-- 8x2 grid, 32x32 pixels per tile
-- Each block type has a drawing function (noise patterns, gradients, shapes)
-- Output is a data URL loaded as the VoxelRenderer tileset
-- No external texture files needed
+## Quality / LOD
 
-## Rune Inscription Rendering (Pending)
+`quality-presets.ts` detects device tier (GPU, CPU, memory) and returns a `QualityPreset` with:
 
-The surface rune language (`src/engine/runes/`) uses a 2D DOM-based test harness (`RuneSimulator.tsx`) for isolated visual TDD. When integrated into the engine, rune inscription rendering will need:
-- **Glyph decals** on block surfaces (Elder Futhark characters in rune colors)
-- **Signal glow** proportional to signal strength passing through inscriptions
-- **Wavefront particle trails** showing signal propagation through material (visible for first few seconds, then fade)
+- `renderDistance` — chunk load radius
+- `shadowMapSize` — shadow map resolution
+- `particleBudget` — max live particles
+- `ambientParticles` — ambient particle count
+- `fogNear`, `fogFar` — fog range multipliers
 
-This may require SDF (Signed Distance Field) rendering for crisp glyph decals at any camera distance, or an instanced mesh approach similar to `ParticlesBehavior`. The `RuneSimulator.tsx` component serves as a reference for the visual design (colors, glow intensity, signal overlay).
+`chunk-lod.ts` classifies loaded chunks as near/mid/far and controls unload priority.

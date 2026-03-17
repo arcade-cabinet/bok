@@ -16,11 +16,11 @@ describe("tomte-ai", () => {
 	});
 
 	describe("shouldSpawnTomte", () => {
-		test("returns false when no structures built", () => {
-			expect(shouldSpawnTomte(0, 0)).toBe(false);
+		test("returns true immediately on fresh game", () => {
+			expect(shouldSpawnTomte(0, 0)).toBe(true);
 		});
 
-		test("returns true when first structure built and no runes discovered", () => {
+		test("returns true regardless of structures built", () => {
 			expect(shouldSpawnTomte(1, 0)).toBe(true);
 		});
 

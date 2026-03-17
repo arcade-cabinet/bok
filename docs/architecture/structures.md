@@ -543,61 +543,79 @@ The Tomte is a unique entity — there is only one per world. He is not a specie
 | **Hiding** | Retreats to safe spot, covers eyes | Chaotic self-modifying circuits or Mörker nearby |
 | **Celebrating** | Dances, throws cap in air | Player achieves Settlement archetype |
 
-## Implementation Phases
+## Implementation Status
 
-### Phase A — Signal Foundation
-- Face-based rune inscription mechanic (chisel + tap face + rune wheel)
-- Per-face rune storage in chunk spatial index (`Map<voxelKey, Map<faceIndex, RuneId>>`)
-- Signal propagation BFS on slow tick with face-direction awareness
-- Kenaz (heat emitter) + Sowilo (light emitter)
-- Stone/iron conduct, wood insulates
-- Visual feedback: etched faces glow with rune color, signal propagation shown as subtle particle trails
-- Internal face support (runes on faces between adjacent blocks)
-- X-ray view for inspecting internal faces (long-press with chisel)
+### Rune System Files
 
-### Phase B — Interaction Behaviors
-- Jera (transform) — ore + heat → ingot, wood + heat → charcoal
-- Fehu (pull) — item collection radius
-- Ansuz (sense) — creature detection trigger
-- Thurisaz (damage) — signal-activated trap
+| File | Phase | Status | Implements |
+|------|-------|--------|------------|
+| `src/ecs/systems/rune-data.ts` | A | Implemented | `RuneId` enum, face constants, rune definitions, color palette |
+| `src/ecs/systems/rune-index.ts` | A | Implemented | Chunk-level spatial index: `Map<chunkKey, Map<voxelKey, Map<faceIndex, RuneId>>>` |
+| `src/ecs/systems/rune-inscription.ts` | A | Implemented | Chisel mode, face selection, `placeRune()`, camera transition to etch surface |
+| `src/engine/runes/wavefront.ts` | A | Implemented | Surface rune language — material conductivity, wavefront propagation engine |
+| `src/ecs/systems/signal-propagation.ts` | A | Implemented | BFS signal propagation, face-direction aware, budget limits, signal combining |
+| `src/ecs/systems/emitter-runes.ts` | A | Implemented | Kenaz (heat) + Sowilo (light) emitter configs |
+| `src/ecs/systems/emitter-system.ts` | A | Implemented | Collects emitters from nearby chunks, runs propagation on throttled tick, particle trails |
+| `src/ecs/systems/rune-sensor.ts` | A/B | Implemented | Ansuz detection — scans creatures, caches sensor emitters for propagation |
+| `src/ecs/systems/interaction-rune-system.ts` | B | Implemented | Jera (transform), Fehu (pull), Ansuz (sense), Thurisaz (damage) |
+| `src/ecs/systems/rune-combat-effects.ts` | B | Implemented | Thurisaz damage from wavefront signal field |
+| `src/ecs/systems/rune-resource-pickup.ts` | B | Implemented | Transfers WorldState resources into player inventory within pickup radius |
+| `src/ecs/systems/protection-rune-system.ts` | C | Implemented | Algiz (ward zones), Mannaz (calm zones), Berkanan (growth zones); caches read by creature AI |
+| `src/ecs/systems/computational-rune-system.ts` | D | Implemented | Naudiz (NOT), Isa (DELAY), Hagalaz (AND gate); produces emitters for next tick |
+| `src/ecs/systems/self-modify-system.ts` | D | Implemented | Jera PLACE, Thurisaz DESTROY on exit faces; fuse consumption (wood + heat signal) |
+| `src/ecs/systems/network-rune-system.ts` | E | Implemented | Uruz (push forces on creatures), Tiwaz (combat buff zones) |
+| `src/ecs/systems/raido-system.ts` | E | Implemented | Raido anchor scanning, paired fast travel via crystal dust cost |
 
-### Phase C — Protection & Territory
-- Algiz (ward) — hostile exclusion zone
-- Mannaz (calm) — creature taming
-- Berkanan (grow) — nature acceleration
-- Archetype recognition (Hearth, Workshop, Ward)
-- Settlement founding
+### Rune Vocabulary Status
 
-### Phase D — Computation & Self-Modification
-- Naudiz (invert) — NOT gate, darkness alarm
-- Isa (delay) — signal timing, timed traps
-- Hagalaz (gate) — conditional signal routing, AND gate
-- Feedback loop detection and stable oscillator support
-- Destructive/constructive logic: Jera block placement, Thurisaz block removal
-- Self-modifying circuit support (circuits that alter their own topology)
-- Drag-to-etch expert mode unlock
-- Player discovers computational composition through gameplay
+| Rune | ID | Phase | Status | Behavior |
+|------|----|-------|--------|----------|
+| ᚲ Kenaz | 5 | A | Implemented | EMIT(heat) — continuous heat signal, strength 10 |
+| ᛊ Sowilo | 9 | A | Implemented | EMIT(light) — continuous light signal, repels Mörker |
+| ᚦ Thurisaz | 3 | B | Implemented | DAMAGE(signal) — damages creatures in radius when signaled |
+| ᚨ Ansuz | 4 | B | Implemented | SENSE(entity) — detects creatures, emits detection signal |
+| ᚠ Fehu | 1 | B | Implemented | PULL(resource) — attracts nearby item drops |
+| ᛃ Jera | 10 | B/D | Implemented | TRANSFORM(input→output) + PLACE(block) on exit face |
+| ᛉ Algiz | 8 | C | Implemented | WARD(radius) — hostile exclusion zone, radius scales with signal |
+| ᛗ Mannaz | 11 | C | Implemented | CALM(creature) — calm zone, radius scales with signal |
+| ᛒ Berkanan | 7 | C | Implemented | GROW(nature) — growth zone with multiplier |
+| ᚾ Naudiz | 12 | D | Implemented | INVERT(signal) — NOT gate |
+| ᛁ Isa | 6 | D | Implemented | DELAY(ticks) — 1 tick default, 2 on crystal |
+| ᚺ Hagalaz | 13 | D | Implemented | GATE(condition) — AND gate, perpendicular face required |
+| ᚢ Uruz | 2 | E | Implemented | PUSH(force) — pushes creatures in face direction |
+| ᛏ Tiwaz | 15 | E | Implemented | BUFF(combat) — damage multiplier zone |
+| ᚱ Raido | 14 | E | Implemented | TELEPORT(linked) — fast travel, costs crystal dust |
 
-### Phase E — Network & Scale
-- Raido (teleport) — paired fast travel
-- Crystal amplification
-- Uruz (push) — entity displacement
-- Tiwaz (buff) — combat enhancement
-- Full settlement growth system
-- Inter-chunk signal bridges via Raido
+### Phase Implementation Status
 
-### Phase F — The Tomte
-- Tomte entity: singleton companion with state machine AI
-- Teaching behavior: demonstrates rune etching, face selection, multi-face builds
-- Progressive tutorial: tap+wheel first, drag-to-etch unlock after 3+ runes
-- Settlement integration: Tomte settles at hearth, reacts to player builds
-- Sagan integration: Tomte milestones recorded in the saga
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **A** | Signal foundation: inscription, BFS propagation, Kenaz + Sowilo emitters | Complete |
+| **B** | Interaction behaviors: Jera, Fehu, Ansuz, Thurisaz | Complete |
+| **C** | Protection + territory: Algiz, Mannaz, Berkanan | Complete |
+| **D** | Computation + self-modification: Naudiz, Isa, Hagalaz, Jera PLACE, Thurisaz DESTROY, fuse burn | Complete |
+| **E** | Network + scale: Uruz, Tiwaz, Raido fast travel | Complete |
+| **F** | The Tomte — singleton tutorial companion with state machine AI | Planned |
+| **G** | Emergence — player-invented machine discovery, shared saga fragments | Planned |
 
-### Phase G — Emergence
-- Player-discovered compound behaviors not anticipated by designers
-- Kunskapen records player-invented machines (auto-detects novel circuit topologies)
-- Other players' settlement designs discoverable as Fornlämningar in new worlds (stretch: ghost archaeology)
-- Community-shared rune programs as "saga fragments"
+### Tick Intervals
+
+All rune systems use throttled ticks, not per-frame evaluation:
+
+| System | Interval | Constant |
+|--------|----------|----------|
+| Signal propagation (emitter-system) | 250ms (4 Hz) | `SIGNAL_TICK_INTERVAL` in `signal-data.ts` |
+| Interaction runes (Jera, Fehu, Ansuz, Thurisaz) | `INTERACTION_TICK_INTERVAL` | `interaction-rune-data.ts` |
+| Protection runes (Algiz, Mannaz, Berkanan) | `INTERACTION_TICK_INTERVAL` | `interaction-rune-data.ts` |
+| Computational runes (Naudiz, Isa, Hagalaz) | `INTERACTION_TICK_INTERVAL` | `interaction-rune-data.ts` |
+| Self-modify (Jera PLACE, Thurisaz DESTROY) | `INTERACTION_TICK_INTERVAL` | `interaction-rune-data.ts` |
+| Raido scan | `RAIDO_SCAN_INTERVAL` | `raido-data.ts` |
+
+Ward boundary particles spawn at 1.0s interval (less frequent than processing tick).
+
+### Self-Modify Budget
+
+`self-modify-system.ts` enforces `MAX_MUTATIONS_PER_TICK = 8` to prevent runaway circuits from thrashing the voxel world on a single tick.
 
 ## Rune Discovery
 

@@ -163,7 +163,7 @@ describe("greedy merging", () => {
 		const topQuad = quads.find((q) => q.normal[1] === 1);
 		expect(topQuad).toBeDefined();
 		// UVs should span 3 units in one direction
-		const maxU = Math.max(...topQuad?.uvs.filter((_, i) => i % 2 === 0));
+		const maxU = Math.max(...(topQuad ? topQuad.uvs.filter((_, i) => i % 2 === 0) : [0]));
 		expect(maxU).toBe(3);
 	});
 });

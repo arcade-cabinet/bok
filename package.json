@@ -27,7 +27,8 @@
 		"react-dom": "^19.2.4",
 		"sql.js": "^1.11.0",
 		"three": "^0.182.0",
-		"tone": "^15.1.22"
+		"tone": "^15.1.22",
+		"yuka": "^0.7.8"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.7",
@@ -38,6 +39,7 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/three": "^0.182.0",
+		"@types/yuka": "^0.7.4",
 		"@vitejs/plugin-react": "^6.0.0",
 		"@vitest/browser-playwright": "^4.1.0",
 		"daisyui": "^5.0.0",

@@ -177,7 +177,7 @@ describe("scoreStroke", () => {
 
 describe("matchGlyph", () => {
 	test("perfect trace of Isa (1 stroke) passes", () => {
-		const glyph = getGlyph(6)!; // Isa
+		const glyph = getGlyph(6); // Isa
 		const player = [tracePerfect(glyph.strokes[0], 25)];
 		const result = matchGlyph(player, glyph);
 		expect(result.pass).toBe(true);
@@ -186,7 +186,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("perfect trace of Naudiz (2 strokes) passes", () => {
-		const glyph = getGlyph(12)!; // Naudiz
+		const glyph = getGlyph(12); // Naudiz
 		const player = glyph.strokes.map((s) => tracePerfect(s, 25));
 		const result = matchGlyph(player, glyph);
 		expect(result.pass).toBe(true);
@@ -195,7 +195,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("perfect trace of Fehu (3 strokes) passes", () => {
-		const glyph = getGlyph(1)!; // Fehu
+		const glyph = getGlyph(1); // Fehu
 		const player = glyph.strokes.map((s) => tracePerfect(s, 25));
 		const result = matchGlyph(player, glyph);
 		expect(result.pass).toBe(true);
@@ -203,7 +203,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("permuted stroke order still matches", () => {
-		const glyph = getGlyph(12)!; // Naudiz (2 strokes)
+		const glyph = getGlyph(12); // Naudiz (2 strokes)
 		// Draw strokes in reverse order
 		const player = [...glyph.strokes].reverse().map((s) => tracePerfect(s, 25));
 		const result = matchGlyph(player, glyph);
@@ -212,7 +212,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("wrong stroke count fails", () => {
-		const glyph = getGlyph(6)!; // Isa (1 stroke)
+		const glyph = getGlyph(6); // Isa (1 stroke)
 		const player = [
 			tracePerfect(glyph.strokes[0], 25),
 			tracePerfect(glyph.strokes[0], 25), // extra
@@ -223,7 +223,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("strokes below MIN_RAW_POINTS are filtered out", () => {
-		const glyph = getGlyph(6)!; // Isa
+		const glyph = getGlyph(6); // Isa
 		// Only 3 points — below minimum
 		const shortStroke: Stroke = [
 			{ x: 0.5, y: 0 },
@@ -236,7 +236,7 @@ describe("matchGlyph", () => {
 	});
 
 	test("Mannaz (4 strokes) — perfect trace passes", () => {
-		const glyph = getGlyph(11)!; // Mannaz
+		const glyph = getGlyph(11); // Mannaz
 		expect(glyph.strokes.length).toBe(4);
 		const player = glyph.strokes.map((s) => tracePerfect(s, 25));
 		const result = matchGlyph(player, glyph);
@@ -249,8 +249,8 @@ describe("matchGlyph", () => {
 
 describe("findBestMatch", () => {
 	test("identifies correct glyph from candidates", () => {
-		const isa = getGlyph(6)!;
-		const naudiz = getGlyph(12)!;
+		const isa = getGlyph(6);
+		const naudiz = getGlyph(12);
 		const player = [tracePerfect(isa.strokes[0], 25)];
 		const match = findBestMatch(player, [isa, naudiz]);
 		expect(match).not.toBeNull();
@@ -258,7 +258,7 @@ describe("findBestMatch", () => {
 	});
 
 	test("returns null when nothing passes", () => {
-		const isa = getGlyph(6)!;
+		const isa = getGlyph(6);
 		// Draw a circle (nothing like Isa)
 		const circle: Stroke = [];
 		for (let i = 0; i < 30; i++) {

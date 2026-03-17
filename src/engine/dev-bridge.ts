@@ -25,6 +25,7 @@ import {
 	Stamina,
 	TerritoryState,
 	WorldTime,
+	YukaState,
 } from "../ecs/traits/index.ts";
 
 let kWorld: World | null = null;
@@ -66,11 +67,27 @@ export function initDevBridge(world: World): void {
 			});
 			return v;
 		},
-		/** List all creatures with positions */
+		/** List all creatures with positions + Yuka AI state */
 		creatures: () => {
-			const list: Array<{ species: string; x: number; y: number; z: number; hp: number }> = [];
-			kWorld?.query(CreatureTag, CreatureType, Position, CreatureHealth).readEach(([ct, pos, h]) => {
-				list.push({ species: ct.species, x: pos.x, y: pos.y, z: pos.z, hp: h.hp });
+			const list: Array<{
+				species: string;
+				x: number;
+				y: number;
+				z: number;
+				hp: number;
+				yukaVehicle: boolean;
+				fsmState: string;
+			}> = [];
+			kWorld?.query(CreatureTag, CreatureType, Position, CreatureHealth, YukaState).readEach(([ct, pos, h, ys]) => {
+				list.push({
+					species: ct.species,
+					x: pos.x,
+					y: pos.y,
+					z: pos.z,
+					hp: h.hp,
+					yukaVehicle: ys.hasVehicle,
+					fsmState: ys.currentStateName,
+				});
 			});
 			return list;
 		},

@@ -19,6 +19,7 @@ import {
 	CreatureType,
 	Position,
 	Species,
+	YukaState,
 } from "../traits/index.ts";
 import type { CreatureEffects } from "./creature-ai.ts";
 import { spawnHostileCreatures } from "./creature-spawner-hostile.ts";
@@ -199,6 +200,7 @@ function spawnEntity(
 		}),
 		CreatureAnimation({ animState: AnimState.Idle, animTimer: 0, variant }),
 		CreatureHealth({ hp: d.hp, maxHp: d.maxHp, velY: 0, meshIndex: -1 }),
+		YukaState(),
 	);
 	effects?.onCreatureSpawned(entity.id(), species, variant);
 	return entity.id();

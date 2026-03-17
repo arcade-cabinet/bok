@@ -13,7 +13,7 @@ import { buildBlockFaceAtlas, resetBlockFaceAtlas } from "./block-face-atlas.ts"
 import { buildChunkGeometry } from "./chunk-mesh-builder.ts";
 import { type ChunkAccessor, greedyMesh } from "./greedy-mesher.ts";
 import { type VoxelSetEntry, VoxelStore } from "./voxel-store.ts";
-import type { BlockDefinition, TilesetDescriptor, VoxelEntry, VoxelRenderer, VoxelSetOptions } from "./voxel-types.ts";
+import type { BlockDefinition, VoxelEntry, VoxelRenderer } from "./voxel-types.ts";
 
 export type { VoxelSetEntry };
 
@@ -58,7 +58,7 @@ export class VoxelWorld implements VoxelRenderer {
 	async loadTileset(opts: { id: string; src: string; tileSize: number; cols: number; rows: number }): Promise<void> {
 		this.tilesetCols = opts.cols;
 		this.tilesetRows = opts.rows;
-		const texture = new THREE.TextureLoader().load(opts.src);
+		const texture = await new THREE.TextureLoader().loadAsync(opts.src);
 		texture.magFilter = THREE.NearestFilter;
 		texture.minFilter = THREE.NearestFilter;
 		texture.colorSpace = THREE.SRGBColorSpace;

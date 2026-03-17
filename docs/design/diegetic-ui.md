@@ -82,12 +82,17 @@ The central UI element is the **Bok** itself — a physical book the player carr
 
 ## Transition Plan
 
-The shift from non-diegetic to diegetic should be **gradual**:
+The shift from non-diegetic to diegetic is **gradual**:
 
-1. **Phase 1 (Now)**: Keep current HUD. Add meta effects (damage vignette exists, extend to hunger/stamina).
-2. **Phase 2**: Add The Bok as inventory replacement. Keep hotbar as the one non-diegetic concession (it's the bridge between the Bok and the world).
-3. **Phase 3**: Replace vitals bars with meta effects. Add block crack overlay for mining.
-4. **Phase 4**: Add environmental enemy tells. Remove remaining non-diegetic elements except hotbar.
+1. **Phase 1 — Meta Effects**: DONE. Damage vignette (`DamageVignette.tsx`), hunger desaturation (`HungerOverlay.tsx`), underwater overlay (`UnderwaterOverlay.tsx`), Blothogen fog overlay (`BlothogenFogOverlay.tsx`), and MetaVitals component for combined status effects.
+2. **Phase 2 — The Bok**: DONE. BokScreen with four pages: Kartan (map with canvas rendering), Listan (ledger/inventory), Kunskapen (codex with creature entries), Sagan (saga journal). BokIndicator HUD element. Hotbar remains as the one non-diegetic concession.
+3. **Phase 3 — Mining Overlay**: PARTIAL. Mining progress ring exists (circular ring around crosshair in `Crosshair.tsx`). Block crack overlay (spatial texture distortion as the block is mined) is not yet implemented.
+4. **Phase 4 — Environmental Tells**: PARTIAL. Day/night cycle and season tints (`season-data.ts`) exist. Draugar proximity effects (ambient dimming, chromatic aberration — `draugar-proximity.ts`) are implemented. Audio cues not yet implemented (Phase 6, US-048).
+
+**Remaining non-diegetic elements to address:**
+- `TimeDisplay.tsx` — text label "Day X — Phase" should be replaced by sky reading
+- Block crack overlay — spatial mining feedback not yet implemented
+- Audio cues — stamina breathing, hunger rumble, Mörker silence (US-048)
 
 The **hotbar** is the one permanent non-diegetic element. Even the most hardcore diegetic games need a way to show what's in your hands. The hotbar stays, but it should look like it belongs — parchment-textured slots with ink-drawn item icons.
 

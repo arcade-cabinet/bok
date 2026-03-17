@@ -12,9 +12,9 @@ import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
 
 // ─── Spawn Conditions ───
 
-const STRUCTURE_THRESHOLD = 1;
+const _STRUCTURE_THRESHOLD = 1;
 const INSCRIPTION_DESPAWN = 3;
-const SPAWN_DISTANCE = 12;
+const SPAWN_DISTANCE = 5;
 const GRAVITY = 28;
 const WATCH_RANGE = 8;
 const WANDER_SPEED = 0.8;
@@ -50,10 +50,9 @@ export function resetTomteState(): void {
 	hintText = null;
 }
 
-/** Check if Tomte should spawn (first structure built, no Tomte alive). */
-export function shouldSpawnTomte(structuresBuilt: number, discoveredRunes: number): boolean {
+/** Check if Tomte should spawn (immediately on fresh game, despawns after 3 runes). */
+export function shouldSpawnTomte(_structuresBuilt: number, discoveredRunes: number): boolean {
 	if (tomteEntityId >= 0) return false;
-	if (structuresBuilt < STRUCTURE_THRESHOLD) return false;
 	if (discoveredRunes >= INSCRIPTION_DESPAWN) return false;
 	return true;
 }

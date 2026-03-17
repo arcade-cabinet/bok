@@ -7,6 +7,7 @@ import { MetaVitals } from "./MetaVitals.tsx";
 const SCREENSHOT_DIR = "src/ui/hud/__screenshots__";
 
 /** Wrap in a positioned container so overlays have visual context for screenshots. */
+// biome-ignore lint/style/useComponentExportOnlyModules: test-only harness in .ct.tsx
 function Harness(props: MetaVitalsProps) {
 	return (
 		<div style={{ position: "relative", width: 375, height: 667, background: "#1a1a2e" }}>

@@ -18,7 +18,8 @@ Before making any change, understand the relevant domain:
 | **Diegetic UI** | [docs/design/diegetic-ui.md](docs/design/diegetic-ui.md) | Any HUD, menu, or feedback work |
 | **Art Direction** | [docs/design/art-direction.md](docs/design/art-direction.md) | Visuals, colors, creatures, lighting |
 | **ECS** | [docs/architecture/ecs.md](docs/architecture/ecs.md) | Any ECS trait, system, or entity work |
-| **Rendering** | [docs/architecture/rendering.md](docs/architecture/rendering.md) | Any Three.js, Jolly Pixel, or visual work |
+| **Rendering** | [docs/architecture/rendering.md](docs/architecture/rendering.md) | Any Three.js or visual work |
+| **Custom Engine** | [docs/architecture/custom-engine.md](docs/architecture/custom-engine.md) | Engine rewrite, voxel mesher, SDF runes, game loop |
 | **Structures** | [docs/architecture/structures.md](docs/architecture/structures.md) | Workstations, shelter, territory, light zones, decay |
 | **Persistence** | [docs/architecture/persistence.md](docs/architecture/persistence.md) | Save/load, database, delta tracking |
 
@@ -50,12 +51,12 @@ Creatures are assembled from geometric primitives like Scandinavian wooden toys 
 ```text
 src/
 ├── ecs/
-│   ├── traits/index.ts     — All trait definitions (single file)
-│   └── systems/*.ts         — One file per system
+│   ├── traits/index.ts     — All 44 trait definitions (single file)
+│   └── systems/*.ts         — 70+ system files (one file per system)
 ├── engine/
 │   ├── game.ts              — GameBridge, initGame, destroyGame
 │   ├── input-handler.ts     — Keyboard/mouse/touch input
-│   └── behaviors/*.ts       — Jolly Pixel Behaviors (visual only)
+│   └── behaviors/*.ts       — Legacy Jolly Pixel Behaviors (being removed — see custom-engine.md)
 ├── world/
 │   ├── blocks.ts            — Block/item/recipe definitions
 │   ├── noise.ts             — Simplex noise + seed generation
@@ -148,9 +149,9 @@ Every feature follows this process. No exceptions.
 | Library | Owns | Does NOT Touch |
 |---------|------|----------------|
 | **Koota** | All gameplay state (traits, systems) | Three.js, DOM, React |
-| **Jolly Pixel** | Scene graph, actors, behaviors, rendering | ECS mutations, persistence |
+| **Jolly Pixel** | Being removed — see `docs/architecture/custom-engine.md` | — |
 | **React** | UI overlays, HUD, menus, screens | Three.js objects, ECS systems |
-| **Three.js** | 3D math, meshes, materials, cameras | Used only inside Behaviors |
+| **Three.js** | 3D math, scene graph, meshes, materials, cameras | Used directly — not through JP |
 | **SQLite** | Save/load, voxel deltas, player state | Runtime game state |
 | **Tailwind/DaisyUI** | CSS utility classes, component styles | Inline styles (use sparingly) |
 

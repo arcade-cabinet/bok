@@ -25,6 +25,7 @@ import { BlockId } from "./blocks.ts";
 import { applyCaveToStone } from "./cave-generator.ts";
 import { generateChunkLandmarks } from "./landmark-generator.ts";
 import { noise2D } from "./noise.ts";
+import { clampSpawnHeight, forceSpawnBiome, isInSpawnZone, isTreeSuppressed } from "./spawn-zone.ts";
 import { placeTree } from "./tree-generator.ts";
 
 const CHUNK_SIZE = 16;
@@ -148,6 +149,7 @@ export function treeSpawnRate(biome: BiomeId): number {
 
 export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: number, cz: number): void {
 	const entries: VoxelSetOptions[] = [];
+	const inSpawnZone = isInSpawnZone(cx, cz);
 
 	for (let lx = 0; lx < CHUNK_SIZE; lx++) {
 		for (let lz = 0; lz < CHUNK_SIZE; lz++) {
@@ -156,8 +158,11 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 			const layers = sampleNoiseLayers(gx, gz);
 			const rawH = computeHeight(layers);
 			const temp = adjustTemperature(layers.temperature, rawH);
-			const biome = isCorrupted(gx, gz) ? Biome.Blothogen : selectBiome(temp, layers.moisture);
-			const h = adjustBiomeHeight(rawH, biome, gx, gz);
+			const forced = forceSpawnBiome(gx, gz);
+			const biome = forced ?? (isCorrupted(gx, gz) ? Biome.Blothogen : selectBiome(temp, layers.moisture));
+			const rawBiomeH = adjustBiomeHeight(rawH, biome, gx, gz);
+			// Flatten terrain near shrine in spawn zone
+			const h = inSpawnZone ? clampSpawnHeight(gx, gz, rawBiomeH, 12) : rawBiomeH;
 			const hash = posHash(gx, gz);
 			const weights = blendWeights(gx, gz, biome);
 			const rule: SurfaceRule = weights ? blendSurfaceBlock(weights, hash) : BIOME_SURFACE_RULES[biome];
@@ -190,7 +195,9 @@ export function generateChunkTerrain(vr: VoxelRenderer, layerName: string, cx: n
 			// Trees — biome-specific spawn rate, tree line cutoff for Fjällen
 			if (h > WATER_LEVEL + 1 && lx >= 2 && lx <= 13 && lz >= 2 && lz <= 13) {
 				if (biome === Biome.Fjallen && h >= TREE_LINE) continue;
-				const rate = treeSpawnRate(biome);
+				// Suppress trees near shrine in spawn zone
+				if (inSpawnZone && isTreeSuppressed(gx, gz)) continue;
+				const rate = inSpawnZone ? treeSpawnRate(biome) * 0.5 : treeSpawnRate(biome);
 				if (hash < rate) {
 					const tree = weights ? blendTreeType(weights, hash / rate) : getBiomeTrees(biome)[0];
 					placeTree(entries, gx, h, gz, tree);

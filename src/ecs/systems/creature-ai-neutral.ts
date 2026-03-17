@@ -28,7 +28,13 @@ import { OTUR_HUNGER_MULT } from "./vittra-debuff.ts";
 const GRAVITY = 28;
 
 /** Run neutral/boss AI: Vittra debuff/appease, Nacken disorientation, Jatten boss. */
-export function updateNeutralAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
+export function updateNeutralAI(
+	world: World,
+	dt: number,
+	ctx: CreatureUpdateContext,
+	effects?: CreatureEffects,
+	yukaHandled?: Set<number>,
+) {
 	const otur = () => applyOturDebuff(world);
 	const disorient = (dur: number) => applyDisorientation(world, dur);
 	const dmg = (damage: number) => applyDamageToPlayer(world, damage);
@@ -38,6 +44,7 @@ export function updateNeutralAI(world: World, dt: number, ctx: CreatureUpdateCon
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
 		.updateEach(([ai, hp, anim, cType, pos], entity) => {
 			if (ai.aiType !== "neutral" && ai.aiType !== "boss") return;
+			if (yukaHandled?.has(entity.id())) return;
 
 			if (cType.species === Species.Vittra) {
 				updateVittraAI(pos, ai, hp, anim, entity.id(), dt, ctx, otur, effects);

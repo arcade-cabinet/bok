@@ -39,6 +39,9 @@ import { cleanupNackenState } from "./nacken-aura.ts";
 import { cleanupRunvaktareState } from "./runvaktare-ai.ts";
 import { cleanupTomteState, updateTomteAI } from "./tomte-ai.ts";
 import { cleanupVittraState } from "./vittra-debuff.ts";
+import { destroyCreatureVehicle } from "./yuka-bridge.ts";
+import { cleanupYukaCreature } from "./yuka-creature-system.ts";
+import { removeFsmContext } from "./yuka-states-shared.ts";
 
 const GRAVITY = 28;
 
@@ -53,6 +56,10 @@ export function cleanupCreatureState(entityId: number): void {
 	cleanupNackenState(entityId);
 	cleanupJattenState(entityId);
 	cleanupTomteState(entityId);
+	// Yuka AI cleanup
+	destroyCreatureVehicle(entityId);
+	removeFsmContext(entityId);
+	cleanupYukaCreature(entityId);
 }
 
 export interface CreatureUpdateContext {
@@ -72,7 +79,13 @@ export interface CreatureUpdateContext {
 }
 
 /** Run hostile AI: dispatch by species (Mörker, Runväktare, Lindorm, Draugar). */
-export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
+export function updateHostileAI(
+	world: World,
+	dt: number,
+	ctx: CreatureUpdateContext,
+	effects?: CreatureEffects,
+	yukaHandled?: Set<number>,
+) {
 	const DAYTIME_DPS = 2;
 
 	// Pre-pass: collect Mörker and Lyktgubbe positions
@@ -93,6 +106,7 @@ export function updateHostileAI(world: World, dt: number, ctx: CreatureUpdateCon
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
 		.updateEach(([ai, hp, anim, cType, pos], entity) => {
 			if (ai.aiType !== "hostile") return;
+			if (yukaHandled?.has(entity.id())) return;
 
 			if (cType.species === Species.Morker) {
 				if (ctx.isDaytime) {
@@ -142,7 +156,13 @@ function simpleSurfaceY(x: number, z: number): number {
 }
 
 /** Run passive AI: Lyktgubbe drift/scatter, Skogssnigel wander/graze/retract, Trana wade/fish/flee. */
-export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateContext, effects?: CreatureEffects) {
+export function updatePassiveAI(
+	world: World,
+	dt: number,
+	ctx: CreatureUpdateContext,
+	effects?: CreatureEffects,
+	yukaHandled?: Set<number>,
+) {
 	// Collect trana positions for Boids flocking
 	const tranaAgents: Array<{ entityId: number; agent: BoidAgent }> = [];
 	world.query(CreatureTag, CreatureAI, CreatureType, Position).readEach(([ai, cType, pos], entity) => {
@@ -159,6 +179,7 @@ export function updatePassiveAI(world: World, dt: number, ctx: CreatureUpdateCon
 		.query(CreatureTag, CreatureAI, CreatureHealth, CreatureAnimation, CreatureType, Position)
 		.updateEach(([ai, hp, anim, cType, pos], entity) => {
 			if (ai.aiType !== "passive") return;
+			if (yukaHandled?.has(entity.id())) return;
 
 			if (cType.species === Species.Lyktgubbe) {
 				updateLyktgubbeAI(pos, ai, hp, anim, entity, dt, ctx, effects);

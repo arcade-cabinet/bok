@@ -1,27 +1,89 @@
 # Crafting System
 
-## Current Recipes
+## Recipe Count
 
-| Recipe | Cost | Result | Type |
-|--------|------|--------|------|
-| Planks | 1 Wood | 4 Planks | Block |
-| Torches | 1 Wood | 4 Torches | Block |
-| Stone Bricks | 4 Stone | 4 Stone Bricks | Block |
-| Mystic Glass | 1 Sand | 1 Glass | Block |
-| Wooden Axe | 3 Wood | 1 Axe | Item (tool) |
-| Wooden Pickaxe | 5 Wood | 1 Pickaxe | Item (tool) |
-| Stone Pickaxe | 5 Stone | 1 Pickaxe | Item (tool) |
-| Stone Sword | 2 Wood, 3 Stone | 1 Sword | Item (tool) |
+34 recipes across 4 tiers (source: `src/world/blocks.ts` `RECIPES` array):
+
+| Tier | Workstation | Recipe Count |
+|------|------------|-------------|
+| 0 — Hand | None | 8 |
+| 1 — Bench | Crafting Bench | 6 |
+| 2 — Forge | Forge | 14 |
+| 3 — Scriptorium | Scriptorium | 6 |
+
+## Workstation Blocks
+
+| Block | Block ID | Crafted At | Cost |
+|-------|----------|-----------|------|
+| Crafting Bench | 35 | Hand (tier 0) | 4 Planks + 2 Wood |
+| Forge | 36 | Crafting Bench (tier 1) | 8 Stone + 4 Iron Ore + 2 Torch |
+| Scriptorium | 37 | Forge (tier 2) | 4 Treated Planks + 2 Crystal + 1 Rune Stone |
+
+## Recipe Tables
+
+### Tier 0 — Hand (always available)
+
+| Recipe | Cost | Result |
+|--------|------|--------|
+| Wood Planks x4 | 1 Wood | Block |
+| Torches x4 | 1 Wood | Block |
+| Stone Bricks x4 | 4 Stone | Block |
+| Mystic Glass x1 | 1 Sand | Block |
+| Wooden Axe | 3 Wood | Tool |
+| Wooden Pickaxe | 5 Wood | Tool |
+| Cooked Meat | 1 Raw Meat + 1 Torch | Food |
+| Crafting Bench | 4 Planks + 2 Wood | Workstation block |
+
+### Tier 1 — Crafting Bench
+
+| Recipe | Cost | Result |
+|--------|------|--------|
+| Stone Pickaxe | 5 Stone | Tool |
+| Stone Sword | 2 Wood + 3 Stone | Tool |
+| Lantern | 1 Glass + 1 Iron Ore | Light item |
+| Forge | 8 Stone + 4 Iron Ore + 2 Torch | Workstation block |
+| Treated Planks x4 | 4 Planks + 1 Peat | Building material |
+| Crystal Dust x4 | 1 Crystal | Material |
+
+### Tier 2 — Forge
+
+| Recipe | Cost | Result |
+|--------|------|--------|
+| Iron Pickaxe | 5 Iron Ore + 2 Wood | Tool |
+| Iron Axe | 3 Iron Ore + 2 Wood | Tool |
+| Iron Sword | 4 Iron Ore + 1 Wood | Tool |
+| Ember Lantern | 2 Glass + 2 Iron Ore + 1 Copper Ore | Light item |
+| Reinforced Bricks x4 | 4 Stone Bricks + 2 Iron Ore | Building material |
+| Scriptorium | 4 Treated Planks + 2 Crystal + 1 Rune Stone | Workstation block |
+| Chisel | 3 Iron Ore + 1 Crystal | Tool |
+| Iron Helmet | 5 Iron Ore + 1 Copper Ore | Armor |
+| Iron Chestplate | 8 Iron Ore + 2 Copper Ore | Armor |
+| Iron Greaves | 6 Iron Ore + 1 Copper Ore | Armor |
+| Näcken Shell Plate | 3 Iron Ore + 2 Copper Ore + 1 Crystal | Creature-drop armor |
+| Lindorm Scale Mail | 5 Iron Ore + 3 Stone + 1 Crystal | Creature-drop armor |
+| Mörker Cloak | 2 Iron Ore + 3 Peat + 1 Crystal | Creature-drop armor |
+| Runväktare Runeguard | 4 Iron Ore + 1 Rune Stone + 2 Crystal | Creature-drop armor |
+
+### Tier 3 — Scriptorium
+
+| Recipe | Cost | Result |
+|--------|------|--------|
+| Crystal Lens | 2 Glass + 1 Crystal | Material |
+| Glyph Lamp | 1 Crystal Lens + 2 Crystal + 1 Iron Ore | Light item |
+| Enchanted Chisel | 1 Chisel + 2 Crystal + 1 Rune Stone | Tool |
+| Bok Binding | 4 Treated Planks + 2 Crystal + 1 Copper Ore | Bok upgrade |
+| Lore Ink | 2 Crystal Dust + 1 Peat + 1 Cranberry | Bok upgrade |
+| Rune Seal | 4 Rune Stone + 2 Crystal + 2 Iron Ore | Territory block |
 
 ## Design Principles
 
 ### 1. Crafting is Physical
-Crafting should happen at **workstations placed in the world**, not in a floating menu. The current E-key crafting menu is a temporary scaffold. The vision:
+Crafting happens at **workstations placed in the world**, not in a floating menu. Workstations are blocks the player must build and stand near.
 
-- **Hand Crafting**: Only the simplest recipes (planks, torches). Available anywhere.
-- **Crafting Bench**: Placed block. Most tool and block recipes.
-- **Forge**: Placed block. Metal items, smelting.
-- **Scriptorium**: Placed block. Knowledge items, Bok upgrades.
+- **Hand Crafting**: Only the simplest recipes (planks, torches, basic tools). Available anywhere.
+- **Crafting Bench**: Most stone tools, lighting, and intermediate materials.
+- **Forge**: All iron tools, armor, and the Scriptorium itself.
+- **Scriptorium**: Enchanted tools, Bok upgrades, Rune Seals, and Glyph Lamps.
 
 ### 2. Recipes are Discovered, Not Given
 The player starts knowing only hand-craft recipes. New recipes are discovered through:
@@ -33,50 +95,17 @@ The player starts knowing only hand-craft recipes. New recipes are discovered th
 Tier 0 materials transform into tier 1, which combine into tier 2:
 
 ```text
-Wood → Planks → Treated Planks (planks + resin)
+Wood → Planks → Treated Planks (planks + peat)
 Stone → Bricks → Reinforced Bricks (bricks + iron)
 Sand → Glass → Crystal Lens (glass + crystal)
+Crystal → Crystal Dust → Lore Ink (dust + peat + cranberry)
 ```
 
-### 4. Tool Durability (Future)
-Tools should wear out over use, creating a maintenance loop:
+### 4. Tool Durability
+Tools wear out over use, creating a maintenance loop. Durability is tracked in `src/ecs/systems/tool-durability.ts`:
 - Wood tools: 50 uses
 - Stone tools: 150 uses
 - Iron tools: 500 uses
-- Crystal tools: 1000 uses + special effects
-
-## Planned Recipe Categories
-
-### Building Materials
-- Treated Planks (weather-resistant)
-- Reinforced Bricks (blast-resistant)
-- Mossy variants (decorative)
-- Composite blocks (mixed materials)
-
-### Light Sources
-- Torches (4 block radius, temporary)
-- Lanterns (8 block radius, permanent, portable)
-- Ember Lantern (12 block radius, damages Mörker)
-- Glyph Lamp (20 block radius, attracts Lyktgubbar)
-
-### Tools
-- Axes (wood/stone/iron/crystal) — tree harvesting
-- Pickaxes (wood/stone/iron/crystal) — stone/ore mining
-- Swords (stone/iron/crystal) — combat damage
-- Shovel (wood/stone/iron) — soft block speed
-- Chisel (iron/crystal) — decorative block shaping (future)
-
-### Armor (Future)
-- Näcken Shell Plate Armor (physical defense)
-- Lindorm Scale Mail (underground vision)
-- Mörker Cloak (reduced detection at night)
-- Runväktare Runeguard (structure damage resistance)
-
-### Knowledge Items
-- Kunskapen Pages (creature observations)
-- Lore Fragments (world history)
-- Rune Stamps (structure blueprints)
-- Monolith Inscriptions (fast-travel anchors)
 
 ## Crafting UI Direction
 

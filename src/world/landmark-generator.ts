@@ -23,6 +23,7 @@ import {
 	placeSjomarke,
 	placeStenhog,
 } from "./landmark-types.ts";
+import { isInSpawnZone } from "./spawn-zone.ts";
 import { adjustBiomeHeight, computeHeight, isCorrupted, sampleNoiseLayers } from "./terrain-generator.ts";
 
 const CHUNK_SIZE = 16;
@@ -105,6 +106,7 @@ export function selectBiomeLandmark(biome: BiomeId): string {
  * Used by the map to show rune markers on explored chunks.
  */
 export function detectLandmarkType(cx: number, cz: number): string | null {
+	if (isInSpawnZone(cx, cz)) return null;
 	if (chunkHash(cx, cz) > LANDMARK_RATE) return null;
 	const lx = 4 + Math.floor(subHash(cx, cz) * 8);
 	const lz = 4 + Math.floor(subHash(cz, cx) * 8);
@@ -124,6 +126,9 @@ export function detectLandmarkType(cx: number, cz: number): string | null {
  * Pushes landmark blocks into the shared entries array.
  */
 export function generateChunkLandmarks(entries: VoxelSetOptions[], cx: number, cz: number): void {
+	// No landmarks in the 3x3 starting zone — keep the meadow clear
+	if (isInSpawnZone(cx, cz)) return;
+
 	const hash = chunkHash(cx, cz);
 	if (hash > LANDMARK_RATE) return;
 
