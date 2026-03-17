@@ -5,6 +5,7 @@ import {
 	AiType,
 	AnimState,
 	BehaviorState,
+	CameraTransition,
 	ChiselState,
 	Codex,
 	CookingState,
@@ -13,6 +14,7 @@ import {
 	CreatureHealth,
 	CreatureTag,
 	CreatureType,
+	EtchingState,
 	ExploredChunks,
 	Health,
 	Hotbar,
@@ -132,6 +134,8 @@ export function spawnPlayer(world: World, overrides: PlayerOverrides = {}) {
 		RuneFaces,
 		RuneDiscovery,
 		ChiselState(),
+		EtchingState(),
+		CameraTransition(),
 	);
 }
 

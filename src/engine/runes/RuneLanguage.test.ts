@@ -222,7 +222,7 @@ describe("Rune effects", () => {
 	it("emitter runes are identified correctly", () => {
 		expect(isEmitter(RuneId.Kenaz)).toBe(true);
 		expect(isEmitter(RuneId.Sowilo)).toBe(true);
-		expect(isEmitter(RuneId.Fehu)).toBe(true);
+		expect(isEmitter(RuneId.Fehu)).toBe(false);
 		expect(isEmitter(RuneId.Ansuz)).toBe(true);
 		expect(isEmitter(RuneId.Naudiz)).toBe(false);
 		expect(isEmitter(RuneId.Hagalaz)).toBe(false);

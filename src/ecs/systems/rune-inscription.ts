@@ -3,7 +3,17 @@
 // Intercepts mining when chisel is active. Runs BEFORE miningSystem.
 
 import type { World } from "koota";
-import { ChiselState, Hotbar, MiningState, PlayerTag, RuneFaces } from "../traits/index.ts";
+import { computeEtchingTarget } from "../../engine/etching-camera.ts";
+import {
+	CameraTransition,
+	ChiselState,
+	EtchingState,
+	Hotbar,
+	MiningState,
+	PlayerTag,
+	Position,
+	RuneFaces,
+} from "../traits/index.ts";
 import { computeFaceIndex } from "./face-selection.ts";
 import { CHISEL_ITEM_ID, FACE_COUNT, type FaceIndex, packFaceKey, type RuneIdValue } from "./rune-data.ts";
 import { getRuneIndex } from "./rune-index.ts";
@@ -37,8 +47,8 @@ export function runeInscriptionSystem(
 	_effects: RuneInscriptionEffects,
 ) {
 	world
-		.query(PlayerTag, ChiselState, Hotbar, MiningState, RuneFaces)
-		.updateEach(([chisel, hotbar, mining, _runeFaces]) => {
+		.query(PlayerTag, ChiselState, EtchingState, CameraTransition, Position, Hotbar, MiningState, RuneFaces)
+		.updateEach(([chisel, etching, camTrans, pos, hotbar, mining, _runeFaces]) => {
 			// Check if chisel is in the active hotbar slot
 			const slot = hotbar.slots[hotbar.activeSlot];
 			const holdingChisel = slot !== null && slot.type === "item" && slot.id === CHISEL_ITEM_ID;
@@ -54,7 +64,14 @@ export function runeInscriptionSystem(
 				return;
 			}
 
-			// Chisel is active — intercept mining
+			// Don't intercept while etching is active
+			if (etching.active) {
+				mining.active = false;
+				mining.progress = 0;
+				return;
+			}
+
+			// Chisel is active — intercept mining, open etching surface
 			if (mining.active && faceHit) {
 				const face = computeFaceIndex(
 					faceHit.blockX,
@@ -70,7 +87,28 @@ export function runeInscriptionSystem(
 					chisel.selectedY = faceHit.blockY;
 					chisel.selectedZ = faceHit.blockZ;
 					chisel.selectedFace = face;
-					chisel.wheelOpen = true;
+
+					// Open etching surface directly (no wheel)
+					etching.active = true;
+					etching.blockX = faceHit.blockX;
+					etching.blockY = faceHit.blockY;
+					etching.blockZ = faceHit.blockZ;
+					etching.faceIndex = face;
+
+					// Start camera transition to face-on view
+					const target = computeEtchingTarget(faceHit.blockX, faceHit.blockY, faceHit.blockZ, face);
+					camTrans.active = true;
+					camTrans.progress = 0;
+					camTrans.toEtching = true;
+					camTrans.startX = pos.x;
+					camTrans.startY = pos.y;
+					camTrans.startZ = pos.z;
+					camTrans.targetX = target.position.x;
+					camTrans.targetY = target.position.y;
+					camTrans.targetZ = target.position.z;
+					camTrans.lookAtX = target.lookAt.x;
+					camTrans.lookAtY = target.lookAt.y;
+					camTrans.lookAtZ = target.lookAt.z;
 				}
 
 				// Prevent mining — chisel taps don't break blocks
@@ -118,8 +156,6 @@ export function placeRune(
 			}
 		}
 
-		// Close the wheel after placement
-		chisel.wheelOpen = false;
 		chisel.selectedFace = -1;
 
 		// Visual feedback

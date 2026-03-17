@@ -1,1683 +1,1313 @@
 {
-  "name": "Bok — Full Implementation (Phases 0-6 + Runic Computation)",
-  "description": "Complete implementation of Bok, a mobile-first 4X voxel survival game rooted in Swedish folklore, from POC state through shippable product. Covers foundation hardening, Swedish landscape generation, building-block creature system, survival depth, diegetic journal UI (The Bok), runic computation system, and mobile polish.",
-  "branchName": "ralph/bok-full-implementation",
-  "userStories": [
-    {
-      "id": "US-001",
-      "title": "Set Up Vitest Testing Infrastructure",
-      "description": "As a developer, I want Vitest configured for unit testing so that ECS systems and pure functions have automated test coverage.",
-      "acceptanceCriteria": [
-        "vitest added as devDependency with compatible config",
-        "vitest.config.ts created with TypeScript support, path aliases matching vite.config.ts",
-        "pnpm test script added to package.json running vitest run",
-        "pnpm test:watch script added for development (vitest)",
-        "At least one passing test for an existing ECS system (e.g., movementSystem or survivalSystem)",
-        "Test utilities module created at src/test-utils.ts with helpers for creating mock Koota worlds and entities",
-        "CI workflow updated to run pnpm test alongside existing checks",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 1,
-      "passes": true,
-      "notes": "Phase 0 — Foundation Hardening. This is the first story and blocks all others since every subsequent story requires test infrastructure.",
-      "labels": [
-        "phase-0",
-        "foundation",
-        "testing"
-      ],
-      "dependsOn": [],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-002",
-      "title": "Creature Entity Framework",
-      "description": "As a developer, I want a generalized creature framework replacing the hardcoded enemy system so that multiple species with different behaviors can be supported.",
-      "acceptanceCriteria": [
-        "New CreatureType trait with species enum: Morker, Lyktgubbe, Skogssnigle, Trana, Vittra, Nacken, Runvaktare, Lindorm, Draug, Jatten",
-        "New CreatureAI trait with fields: aiType (passive/neutral/hostile/boss), behaviorState, targetEntity, aggroRange, attackRange, attackDamage, attackCooldown, moveSpeed, detectionRange",
-        "New CreatureAnimation trait with fields: animState (idle/walk/chase/attack/flee/burn), animTimer, variant (size/color offsets)",
-        "enemySystem refactored to creatureSystem dispatching AI by CreatureType, supporting passive/neutral/hostile behavior trees",
-        "EnemyRendererBehavior refactored to CreatureRendererBehavior dispatching mesh construction by CreatureType",
-        "CreatureSideEffects interface replacing EnemySideEffects",
-        "Existing Morker behavior preserved through the new framework (no gameplay regression)",
-        "Vitest: unit tests for creature AI dispatch, behavior state transitions, passive/neutral/hostile branching",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 2,
-      "passes": true,
-      "notes": "Phase 0 — Foundation Hardening. Refactors enemy→creature. No UI changes.",
-      "labels": [
-        "phase-0",
-        "foundation",
-        "ecs",
-        "creatures"
-      ],
-      "dependsOn": [
-        "US-001"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-003",
-      "title": "Biome Noise Infrastructure",
-      "description": "As a developer, I want multi-layer noise functions for biome selection so that terrain generation can produce distinct Swedish landscapes.",
-      "acceptanceCriteria": [
-        "Multi-layer noise added to terrain-generator.ts: continental (scale 200), erosion (50), temperature (150), moisture (120)",
-        "Biome selection function: temperature x moisture -> biome enum (Angen, Bokskogen, Fjallen, Skargarden, Myren, Blothogen)",
-        "Per-biome surface rules defined: surface block, subsurface block, depth, water behavior",
-        "Per-biome tree type selection: birch (Angen), beech (Bokskogen), pine (all), spruce (Fjallen edge), dead birch (Blothogen)",
-        "8-block biome blend at boundaries with weighted block selection",
-        "Vitest: unit tests for biome selection function (temperature/moisture -> expected biome), noise layer composition, boundary blending logic",
-        "Terrain generation remains deterministic from seed",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 3,
-      "passes": true,
-      "notes": "Phase 0 — Foundation Hardening. Pure logic, no UI.",
-      "labels": [
-        "phase-0",
-        "foundation",
-        "terrain"
-      ],
-      "dependsOn": [
-        "US-001"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-004",
-      "title": "New Block Types for Biomes",
-      "description": "As a developer, I want expanded block types so that biome-specific terrain and resources can be rendered.",
-      "acceptanceCriteria": [
-        "New blocks added to blocks.ts: BirchWood, BirchLeaves, BeechWood, BeechLeaves, PineWood, PineLeaves, SpruceLeaves, DeadWood, Moss, Mushroom, Peat, Ice, SmoothStone, Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed",
-        "Block properties defined: hardness, color, transparency, special physics (ice=slippery, peat=bouncy, moss=soft)",
-        "New textures in tileset-generator.ts for each block, tileset grid expanded to accommodate",
-        "All texture colors comply with palette in docs/design/art-direction.md",
-        "Vitest: unit tests for block property lookups, block ID->name mappings, texture generation functions",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 4,
-      "passes": true,
-      "notes": "Phase 0 — Foundation Hardening. Pure logic + texture generation, no UI.",
-      "labels": [
-        "phase-0",
-        "foundation",
-        "blocks"
-      ],
-      "dependsOn": [
-        "US-001"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-005",
-      "title": "Inventory Refactor",
-      "description": "As a developer, I want the inventory system to use Record<number, number> instead of named fields so that it scales to arbitrary block/item types.",
-      "acceptanceCriteria": [
-        "Inventory trait changed from named fields to Record<number, number> (blockId/itemId -> count)",
-        "All consumers updated: CraftingMenu.tsx, HotbarDisplay.tsx, miningSystem, questSystem, save/load in db.ts",
-        "Inventory capacity limit field added for future Bok Ledger integration",
-        "Persisted as JSON via JSON.stringify/JSON.parse (no custom encode/decode)",
-        "Vitest: unit tests for inventory add/remove/has operations, capacity checks, serialization round-trip",
-        "Playwright CT: HotbarDisplay and CraftingMenu component tests still pass with new inventory shape",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 5,
-      "passes": true,
-      "notes": "Phase 0 — Foundation Hardening. Touches UI components (HotbarDisplay, CraftingMenu).",
-      "labels": [
-        "phase-0",
-        "foundation",
-        "inventory",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-001"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-006",
-      "title": "Angen, Bokskogen, and Fjallen Biomes",
-      "description": "As a player, I want to explore distinct Swedish landscapes so that the world feels like Scandinavia.",
-      "acceptanceCriteria": [
-        "Angen (meadow): rolling grass, birch trees (white bark, light canopy), gentle terrain, wildflower accents",
-        "Bokskogen (beech forest): dense beech trees (thick trunk, 7x7 canopy), moss floor, mushroom blocks, darker ambient",
-        "Fjallen (mountains): high elevation, exposed stone, snow cap, ice blocks, cave entrances, no trees above tree line",
-        "Each biome generates correctly from noise-based temperature/moisture selection",
-        "Tree generation varies per biome with correct species",
-        "Vitest: unit tests for per-biome surface block selection, tree type dispatch, elevation-based tree line cutoff",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 6,
-      "passes": true,
-      "notes": "Phase 1 — The Swedish Landscape. First three biomes.",
-      "labels": [
-        "phase-1",
-        "landscape",
-        "biomes"
-      ],
-      "dependsOn": [
-        "US-003",
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-007",
-      "title": "Skargarden, Myren, and Blothogen Biomes",
-      "description": "As a player, I want coastal, wetland, and corrupted biomes so that exploration reveals new environments with unique resources.",
-      "acceptanceCriteria": [
-        "Skargarden (archipelago): island clusters in deep water, smooth stone shores, sparse pine",
-        "Myren (bog): flat waterlogged terrain, peat, moss, shallow pools, cranberry bushes",
-        "Blothogen (corrupted): soot ground, dead birch, corrupted stone, permanent darkness bias",
-        "Blothogen generates independently as corruption zones biased toward world edges",
-        "Biome-specific resource availability enforced (peat only in Myren, soot only in Blothogen, etc.)",
-        "Vitest: unit tests for island generation (Skargarden), waterlogging (Myren), corruption zone placement (Blothogen)",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 7,
-      "passes": true,
-      "notes": "Phase 1 — The Swedish Landscape. Second three biomes.",
-      "labels": [
-        "phase-1",
-        "landscape",
-        "biomes"
-      ],
-      "dependsOn": [
-        "US-003",
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-008",
-      "title": "Underground Caves and Ore Veins",
-      "description": "As a player, I want to mine underground to find caves and ores so that resource gathering has depth.",
-      "acceptanceCriteria": [
-        "Cave noise layer (scale 30) using 3D simplex, carving where value exceeds threshold",
-        "Ore placement: iron (y 5-15), copper (y 10-20), crystal (y 20+) in cluster generation",
-        "Underground water pools at cave intersections",
-        "Caves connect into networks, not isolated pockets",
-        "Vitest: unit tests for cave carving threshold, ore depth bands, cluster generation determinism",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "Phase 1 — The Swedish Landscape.",
-      "labels": [
-        "phase-1",
-        "landscape",
-        "terrain",
-        "mining"
-      ],
-      "dependsOn": [
-        "US-003",
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-009",
-      "title": "Landmark Generation",
-      "description": "As a player, I want procedurally placed landmarks so that the world feels like Sweden with ancient structures to discover.",
-      "acceptanceCriteria": [
-        "Stenhogar (cairns): stone stacks on hilltops, 3-5 blocks tall, placed at biome boundaries",
-        "Runstenar (runestones): tall inscribed stone blocks near stenhogar, readable interaction stub",
-        "Fornlamningar (ruins): stone foundations (5x5 to 15x15), partial walls, loot container stubs",
-        "Spawn shrine upgraded: stenhog + runestone + torches replacing generic stone platform",
-        "Biome-specific landmarks: Kolmilor (Bokskogen), Offerkallor (Myren), Sjomarken (Skargarden), Fjallstugor (Fjallen)",
-        "Vitest: unit tests for landmark placement rules (biome-specific, elevation-based), spawn rate per chunk",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "Phase 1 — The Swedish Landscape. Depends on biomes being generated.",
-      "labels": [
-        "phase-1",
-        "landscape",
-        "landmarks"
-      ],
-      "dependsOn": [
-        "US-006",
-        "US-007"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-010",
-      "title": "Tileset Polish",
-      "description": "As a player, I want block textures that match the Swedish art direction so that the world looks handcrafted.",
-      "acceptanceCriteria": [
-        "All new block textures comply with palette from docs/design/art-direction.md",
-        "Wood grain detail: birch (white, horizontal lenticels), beech (smooth grey-brown), pine (dark vertical grain)",
-        "Ore sparkle: metallic pixel highlights in ore textures",
-        "Biome ground textures: moss (deep green, soft), peat (dark brown, fibrous), soot (black, ashy)",
-        "Warm bias maintained: stone/dirt skew +5-10 red channel",
-        "Vitest: unit tests for texture generation function outputs (pixel color sampling)",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 10,
-      "passes": true,
-      "notes": "Phase 1 — The Swedish Landscape. Polish pass on block textures.",
-      "labels": [
-        "phase-1",
-        "landscape",
-        "art"
-      ],
-      "dependsOn": [
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-011",
-      "title": "Multi-Part Creature Renderer",
-      "description": "As a developer, I want a renderer that assembles creatures from geometric primitives so that creatures look like building-block toys.",
-      "acceptanceCriteria": [
-        "Part system: creatures defined as arrays of { geometry, offset, jointParent, jointAxis }, assembled at spawn",
-        "Joint system: hierarchical transforms where parent movement cascades to children",
-        "Scale/color variation: +/-10% size, +/-5% hue per individual from CreatureAnimation.variant",
-        "LOD: reduce to single box mesh beyond 30 blocks distance",
-        "New file src/engine/creature-parts.ts with part definitions and assembly functions",
-        "Vitest: unit tests for part assembly, joint hierarchy, LOD distance threshold, variation ranges",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 11,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Rendering infrastructure for all creatures.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "rendering"
-      ],
-      "dependsOn": [
-        "US-002"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-012",
-      "title": "Procedural Animation Runtime",
-      "description": "As a developer, I want code-driven animation for creatures so that no animation files are needed.",
-      "acceptanceCriteria": [
-        "Sine wave animations for breathing/idle (amplitude, frequency per creature type)",
-        "IK solver for leg placement on terrain (2-bone IK minimum)",
-        "Spring physics for floppy parts (Tomte cap, Trana neck, chain segments)",
-        "Follow-the-leader for segmented creatures (Lindorm body segments)",
-        "State-driven blending: smooth transitions between idle/walk/chase/attack/flee states",
-        "Vitest: unit tests for IK solver (target reach, joint angles), spring physics (damping, convergence), state blending interpolation",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 12,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Animation system used by all creature implementations.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "animation"
-      ],
-      "dependsOn": [
-        "US-011"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-013",
-      "title": "Lyktgubbar (Will-o'-the-Wisps)",
-      "description": "As a player, I want floating orbs of warm light at twilight so that the world feels alive with folklore.",
-      "acceptanceCriteria": [
-        "Build: single glowing sphere with point light and additive blend",
-        "Color: warm amber #ffd700, shifts to cool blue #88ccff over deep water",
-        "Behavior: drift in slow sine patterns, scatter on approach (burst velocity, reform), cluster near runstenar and water",
-        "Spawn in Angen/Bokskogen/Myren during skymning (twilight) and morgon (dawn)",
-        "Vitest: unit tests for drift pattern, scatter/reform logic, spawn time window, water color shift",
-        "Creature framework integration: uses CreatureType.Lyktgubbe, passive AI",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. First passive creature.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "passive"
-      ],
-      "dependsOn": [
-        "US-012"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-014",
-      "title": "Skogssniglar (Forest Snails) and Tranor (Cranes)",
-      "description": "As a player, I want peaceful creatures grazing and wading so that biomes feel like ecosystems.",
-      "acceptanceCriteria": [
-        "Skogssniglar: base capsule + 5 stacked box segments (shell), 4 stubby IK legs. Wander, graze on grass, retract when threatened (becomes static block), drop Shell Plates. Spawn in Angen/Bokskogen/Myren.",
-        "Tranor: elongated box torso, 8-segment chain neck, cone beak, flat box wings, 2 reverse-knee IK legs. Wade in water, fish (neck dips), flee on approach (honk, V-formation with flock via Boids). Spawn near water in Angen/Skargarden.",
-        "Colors match art direction: Skogssniglar (moss #3a5a40 + stone #6b6b6b), Tranor (bjork #e0d5c1 + ink #1a1a2e wingtips)",
-        "Vitest: unit tests for grazing behavior, retract state transition, Boids flocking algorithm, flock formation",
-        "Both creature types correctly despawn/spawn based on biome",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Two passive/neutral creatures.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "passive"
-      ],
-      "dependsOn": [
-        "US-012"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-015",
-      "title": "Morker (Darkness Packs)",
-      "description": "As a player, I want the darkness itself to hunt me at night so that Swedish winter terror drives the combat loop.",
-      "acceptanceCriteria": [
-        "Build: amorphous sphere mesh with vertex displacement noise, 2-4 shifting red emissive eyes, dark particle trail",
-        "Color: deep ink #1a1a2e, eyes ember #ff4444",
-        "Pack AI: spawn in groups of 3-5, alpha/flanking behavior, coordinate pursuit",
-        "Light-averse: take damage within torch radius, flee from fire, size scales inversely with ambient light",
-        "Dissolve at dawn, hunt Lyktgubbar (ecological chain — extinguish ambient light)",
-        "Replace current generic box enemy completely",
-        "Vitest: unit tests for pack formation, flanking positions, light damage calculation, size scaling by ambient light, dawn dissolution",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Primary hostile creature, replaces box enemy.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "hostile"
-      ],
-      "dependsOn": [
-        "US-012"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-016",
-      "title": "Runvaktare, Lindormar, and Draugar",
-      "description": "As a player, I want hostile creatures guarding ruins, tunneling through terrain, and advancing when unseen so that exploration and mining are dangerous.",
-      "acceptanceCriteria": [
-        "Runvaktare: tall stone column (2x4), flat slab head with ember eyes, segmented stone arms. Dormant near ruins (appear as scenery), activate when player mines ruin blocks, slam attack (ground AOE), return to post if player retreats. Drop Runsten Fragments.",
-        "Lindormar: 12-segment chain of rounded boxes, follow-the-leader animation. Tunnel through soft blocks (dirt/sand/grass, not stone), breach near player, arc attack, dive back. Attracted by mining vibrations. Leave permanent tunnels. Drop Lindorm Scales/Fang.",
-        "Draugar: wireframe humanoid, semi-transparent. Advance only when player not looking (dot product check of look direction). Freeze when observed. Massive contact damage. Spawn at burial mounds, teleport back at dawn. Frost blue #aaccee emissive.",
-        "Vitest: unit tests for Runvaktare activation trigger (block mining near ruins), Lindorm tunneling pathfinding (soft vs hard blocks), Draugar observation mechanic (look direction dot product threshold)",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Three hostile creatures with unique mechanics.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "hostile"
-      ],
-      "dependsOn": [
-        "US-012"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-017",
-      "title": "Vittra, Nacken, and Jatten",
-      "description": "As a player, I want unique creature interactions — offerings, observation, and a world boss — so that creatures serve all 4X pillars.",
-      "acceptanceCriteria": [
-        "Vittra: small humanoid (1 block tall), semi-transparent when passive, solid when aggravated. Spawn near mounds in Bokskogen/Myren. Inflict otur debuffs (hunger decay increase, tool durability reduction) when player mines near mounds. Appeased by food offerings placed at mounds.",
-        "Nacken: humanoid sitting on water rocks, translucent green-blue emissive. Disorientation aura on approach (camera sway, reversed controls 3s). Teaches a rune when iron offering thrown in water. One per world region.",
-        "Jatten: 8-block tall humanoid assembled from world blocks. Appears when inscription level 1000+. Attacks player's largest build. Regenerates by pulling blocks from terrain. Drops Runsten Seal on defeat. Yields permanent structure protection.",
-        "Vitest: unit tests for Vittra debuff application/appeasement, Nacken disorientation trigger/iron offering, Jatten inscription level threshold, terrain block consumption for regeneration",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. Three special creatures: neutral, teacher, boss.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "boss",
-        "neutral"
-      ],
-      "dependsOn": [
-        "US-012"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-018",
-      "title": "Norrsken (Northern Lights) World Event",
-      "description": "As a player, I want periodic aurora borealis events so that rare nights offer safety and discovery.",
-      "acceptanceCriteria": [
-        "5% chance per night to trigger Norrsken event lasting 60 seconds",
-        "All creatures become passive during event (mesmerized)",
-        "Rare glowing resource blocks briefly surface on terrain",
-        "Kartan reveals nearby unexplored landmarks (when Kartan exists)",
-        "Rune inscriptions on runstenar glow brighter and readable from further away",
-        "Visual: animated ribbon of light (green #88ff88, purple #aa66cc, blue #66aaff cycling), particle streamers, world tinted with aurora color",
-        "Implemented as WorldEvent system, not creature AI",
-        "Vitest: unit tests for trigger probability, creature pacification, resource surfacing, event duration/cleanup",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 18,
-      "passes": true,
-      "notes": "Phase 2 — Building-Block Creatures. World event system, not a creature.",
-      "labels": [
-        "phase-2",
-        "creatures",
-        "world-event"
-      ],
-      "dependsOn": [
-        "US-002"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-019",
-      "title": "Food and Hunger Rework",
-      "description": "As a player, I want a food system replacing linear hunger decay so that eating is a meaningful survival loop.",
-      "acceptanceCriteria": [
-        "Food items: berries (from bushes in Angen), mushrooms (Bokskogen floor), cranberries (Myren), cooked meat (creature drops + fire)",
-        "Eating mechanic: select food in hotbar, use to consume, restores hunger proportional to food type",
-        "Cooking: place raw food on torch/campfire block, transforms after configurable time",
-        "Hunger effects: below 20% -> slow movement, below 10% -> health drain, 0% -> death",
-        "Vitest: unit tests for hunger decay rates, food restoration values, cooking transformation timer, movement penalty thresholds",
-        "Playwright CT: VitalsBar reflects hunger effects (slow movement indicator)",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 19,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. UI story (VitalsBar).",
-      "labels": [
-        "phase-3",
-        "survival",
-        "food",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-005",
-        "US-006"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-020",
-      "title": "Tool Durability",
-      "description": "As a player, I want tools that wear out so that maintaining my equipment creates a crafting loop.",
-      "acceptanceCriteria": [
-        "Durability field on tool items: wood (50), stone (150), iron (500), crystal (1000)",
-        "Durability drains 1 per mining action or attack",
-        "Tool removed from hotbar at durability 0 with break particles",
-        "Durability bar displayed under tool icon in hotbar",
-        "Vitest: unit tests for durability drain per action, break at zero, tier-specific durability values",
-        "Playwright CT: HotbarDisplay shows durability bar, updates on drain, handles break state",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 20,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. UI story (HotbarDisplay durability bar).",
-      "labels": [
-        "phase-3",
-        "survival",
-        "tools",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-005"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-021",
-      "title": "Workstation Crafting",
-      "description": "As a player, I want physical crafting stations in the world so that crafting is a spatial activity.",
-      "acceptanceCriteria": [
-        "Workstation blocks: Crafting Bench (tier 1), Forge/Stad (tier 2), Scriptorium (tier 3)",
-        "Proximity crafting: being near a workstation unlocks its recipe tier in crafting menu",
-        "Recipe tiers: hand-craft (tier 0, always available), bench (tier 1), forge (tier 2), scriptorium (tier 3)",
-        "New recipes: iron tools, lanterns, ember lanterns, treated planks, reinforced bricks",
-        "Player crafts station block from materials, places it in world, interacts with it",
-        "Vitest: unit tests for proximity detection, recipe tier unlocking, workstation block crafting",
-        "Playwright CT: CraftingMenu shows correct recipes based on nearby workstation tier",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 21,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. UI story (CraftingMenu).",
-      "labels": [
-        "phase-3",
-        "survival",
-        "crafting",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-005",
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-022",
-      "title": "Inscription Level System",
-      "description": "As a developer, I want the world to track player modifications and escalate responses so that expansion has consequences.",
-      "acceptanceCriteria": [
-        "New InscriptionLevel trait: totalBlocksPlaced, totalBlocksMined, structuresBuilt, computed level",
-        "Level formula: totalBlocksPlaced + (totalBlocksMined * 0.5) + (structuresBuilt * 10)",
-        "Increment on place/mine in mining system",
-        "Creature spawn scaling: base rates multiplied by inscription level tiers",
-        "Threshold events: Runvaktare wake at 100+, Lindormar attracted at 300+, Jatten at 1000+",
-        "Persisted in player_state table",
-        "Vitest: unit tests for level calculation formula, spawn rate scaling, threshold triggers, persistence round-trip",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 22,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. Pure ECS logic, no UI.",
-      "labels": [
-        "phase-3",
-        "survival",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-002"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-023",
-      "title": "Structure Recognition",
-      "description": "As a player, I want the game to recognize my builds so that enclosed spaces provide shelter bonuses.",
-      "acceptanceCriteria": [
-        "Enclosed space detection: flood-fill from air blocks, check surrounded by solid blocks on all 6 sides within configurable limit",
-        "Shelter bonus: inside enclosed space -> reduced hunger decay rate, stamina regen boost",
-        "Structure size tracking feeds into inscription level",
-        "Falu red blocks in structures reduce Morker spawn radius in surrounding area",
-        "New src/ecs/systems/structure.ts created",
-        "Vitest: unit tests for flood-fill enclosed detection (open vs closed vs partial), shelter bonus application, Falu red spawn radius reduction",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 23,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. Pure ECS logic, no UI.",
-      "labels": [
-        "phase-3",
-        "survival",
-        "structures",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-004"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-024",
-      "title": "Light as Mechanic",
-      "description": "As a player, I want light sources to affect gameplay beyond visibility so that light management is strategic survival.",
-      "acceptanceCriteria": [
-        "Light radius per source: torch (4), lantern (8), ember lantern (12), glyph lamp (20)",
-        "Morker won't spawn or path within light radius",
-        "Proximity to light deals continuous damage to Morker",
-        "Portable ember lantern in hotbar creates mobile safe zone around player",
-        "Simple light propagation: track light-emitting blocks, compute radius, pass to creature AI",
-        "New src/ecs/systems/light.ts created",
-        "Vitest: unit tests for radius calculation per source type, Morker avoidance pathfinding, damage-over-time in light, mobile lantern radius",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 24,
-      "passes": true,
-      "notes": "Phase 3 — Survival Depth. Interacts with Morker creature.",
-      "labels": [
-        "phase-3",
-        "survival",
-        "light",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-015"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-025",
-      "title": "Bok Shell",
-      "description": "As a player, I want a birch-bark journal overlay so that I can access my map, inventory, knowledge, and saga in a diegetic interface.",
-      "acceptanceCriteria": [
-        "Bok open/close: tap/key opens full-screen parchment overlay",
-        "Page navigation: bottom tabs — Kartan, Listan, Kunskapen, Sagan",
-        "Visual style: birch-bark texture background (#e0d5c1), rune borders, Cinzel font",
-        "Mobile gestures: swipe between pages, tap outside to close",
-        "Transition animation: book opening/closing",
-        "New src/ui/screens/BokScreen.tsx and src/ui/components/BokPage.tsx",
-        "Playwright CT: BokScreen renders with all 4 tabs, tab switching works, open/close transitions",
-        "Playwright e2e: Bok opens from game HUD, tab navigation works, close returns to game",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 25,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). Shell for all journal pages.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-005"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-026",
-      "title": "Kartan (Atlas/Map Page)",
-      "description": "As a player, I want a fog-of-war map in my Bok so that I can track explored terrain and discovered landmarks.",
-      "acceptanceCriteria": [
-        "Chunk tracking: record which chunks player has visited in new ExploredChunks trait",
-        "Mini-map rendering: top-down color-coded grid using biome colors, centered on player",
-        "Fog of war: unexplored = parchment color, explored = biome color, current = bright",
-        "Landmark markers: runstenar, fornlamningar, stenhogar marked with rune icons",
-        "Pinch to zoom on mobile",
-        "New src/ui/components/BokMap.tsx",
-        "Vitest: unit tests for chunk exploration tracking, fog-of-war state, landmark marker placement",
-        "Playwright CT: BokMap renders with correct fog of war, landmarks display, zoom works",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 26,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). Map page.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui",
-        "map"
-      ],
-      "dependsOn": [
-        "US-025",
-        "US-006"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-027",
-      "title": "Kunskapen (Knowledge/Codex Page)",
-      "description": "As a player, I want a creature and lore encyclopedia so that observation and exploration are recorded.",
-      "acceptanceCriteria": [
-        "Creature entries: one per species, starts blank, fills through observation",
-        "Observation mechanic: keep camera pointed at creature for configurable duration -> fills entry progressively (silhouette -> basic shape -> full details)",
-        "Entry content: behavior description, weaknesses, drop tables",
-        "Lore entries: collected from runstenar and fornlamningar inscriptions",
-        "Recipe discovery display: recipes unlocked through exploration shown here",
-        "New Codex trait tracking observation progress per species",
-        "New src/ui/components/BokCodex.tsx",
-        "Vitest: unit tests for observation timer, progressive reveal stages, codex persistence",
-        "Playwright CT: BokCodex renders creature entries at each reveal stage, lore entries display",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 27,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). Codex page.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui",
-        "codex"
-      ],
-      "dependsOn": [
-        "US-025",
-        "US-002"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-028",
-      "title": "Listan (Ledger/Inventory Page)",
-      "description": "As a player, I want a resource overview in my Bok so that I can see what I have at a glance.",
-      "acceptanceCriteria": [
-        "Resource list: all owned resources with counts, sorted by category (blocks, tools, materials, food)",
-        "Crafting integration: tap resource to see available recipes using that resource",
-        "Glanceable design: icons + counts, no clutter, parchment aesthetic",
-        "New src/ui/components/BokLedger.tsx",
-        "Playwright CT: BokLedger renders resource list with correct counts, category sorting, recipe lookup",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 28,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). Inventory/ledger page.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui",
-        "inventory"
-      ],
-      "dependsOn": [
-        "US-025",
-        "US-005"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-029",
-      "title": "Sagan (Saga/Journal Page)",
-      "description": "As a player, I want my journey auto-recorded as narrative so that my progress tells a story.",
-      "acceptanceCriteria": [
-        "Saga entries: auto-generated from milestones (first shelter, first creature kill, first biome discovered, boss defeated, day survived thresholds)",
-        "Active objectives: current goal displayed as saga verse",
-        "Stats display: days survived, blocks placed/mined, creatures observed",
-        "New SagaLog trait tracking milestones and generating prose entries",
-        "New src/ui/components/BokSaga.tsx",
-        "Vitest: unit tests for milestone detection, entry generation, stats aggregation",
-        "Playwright CT: BokSaga renders entries chronologically, stats display correctly",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 29,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). Saga/journal page.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui",
-        "saga"
-      ],
-      "dependsOn": [
-        "US-025",
-        "US-022"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-030",
-      "title": "HUD Diegetification",
-      "description": "As a player, I want floating HUD elements gradually replaced with world-based feedback so that immersion increases.",
-      "acceptanceCriteria": [
-        "Health -> vignette intensity (red = low, pulsing = critical) as meta effect",
-        "Hunger -> movement slowdown + screen desaturation as meta effect",
-        "Time -> removed from HUD, player reads the sky (sun/moon position)",
-        "Quest -> rune glow effect on Bok icon when new info available",
-        "Settings toggle to keep explicit vitals bars for players who prefer numbers",
-        "Vitest: unit tests for vignette intensity mapping from health value, desaturation from hunger",
-        "Playwright CT: VitalsBar respects settings toggle (show/hide), DamageVignette scales with health",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 30,
-      "passes": true,
-      "notes": "Phase 4 — The Bok (Diegetic UI). HUD replacement with diegetic feedback.",
-      "labels": [
-        "phase-4",
-        "bok",
-        "ui",
-        "hud"
-      ],
-      "dependsOn": [
-        "US-025"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-031",
-      "title": "Chisel Tool and Rune Inscription UI",
-      "description": "As a player, I want to etch runes onto block faces with a chisel so that I can give blocks behaviors.",
-      "acceptanceCriteria": [
-        "Chisel tool item (iron tier, craftable at Forge)",
-        "Face selection: holding chisel and tapping a block face highlights that face",
-        "Rune wheel: appears around tap point, drag to select rune, rune etches onto face",
-        "Each block has 6 faces (+x, -x, +y, -y, +z, -z), each can hold one rune or be blank",
-        "Visual feedback: etched faces glow with rune-specific color",
-        "Internal face support: runes on faces between adjacent blocks (hidden from view, still active)",
-        "X-ray view: long-press with chisel to see and modify internal faces",
-        "New src/ui/components/RuneWheel.tsx",
-        "Vitest: unit tests for face selection from ray intersection, rune placement on face, internal face visibility rules",
-        "Playwright CT: RuneWheel renders rune options, drag-to-select works, visual preview on selection",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 31,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Entry point to entire rune system.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "ui",
-        "tools"
-      ],
-      "dependsOn": [
-        "US-020",
-        "US-021"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-032",
-      "title": "Face-Based Rune Storage and Spatial Index",
-      "description": "As a developer, I want efficient per-face rune storage so that signal propagation can quickly find inscribed blocks.",
-      "acceptanceCriteria": [
-        "Per-face rune storage: Map<voxelKey, Map<FaceIndex, RuneId>> per chunk",
-        "FaceIndex type: 0 | 1 | 2 | 3 | 4 | 5 mapping to +x, -x, +y, -y, +z, -z",
-        "Spatial index updated on block place/remove/etch operations",
-        "Sparse face maps: most blocks have 1-3 etched faces",
-        "Index persisted in save data (new table or extended voxel_deltas)",
-        "Vitest: unit tests for index insertion/removal, face lookup, persistence round-trip, sparse storage efficiency",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 32,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Data layer for rune system.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "ecs",
-        "persistence"
-      ],
-      "dependsOn": [
-        "US-031"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-033",
-      "title": "Signal Propagation Engine",
-      "description": "As a developer, I want a BFS-based signal propagation system so that rune behaviors can interact through conducting blocks.",
-      "acceptanceCriteria": [
-        "Signal types: heat, light, force, detection — each with strength (0-15)",
-        "Propagation runs on slow tick (4 ticks/second, every 250ms)",
-        "BFS from each emitter through conducting blocks (stone, iron, copper conduct; wood insulates; crystal amplifies x1.5)",
-        "Face-direction awareness: signal enters/exits through specific faces, rune on face transforms signal",
-        "Per-tick budget: max 128 blocks evaluated, max 32 active emitters, max 16 propagation depth",
-        "Same-type same-direction strengths ADD (max 15), opposing SUBTRACT (min 0), different types pass independently (multiplexed)",
-        "Visited set prevents double-evaluation per tick",
-        "Vitest: unit tests for BFS traversal, material conductivity, signal attenuation, face-direction routing, multiplexing, budget limits",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 33,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Core engine for all rune behaviors.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "ecs",
-        "signal"
-      ],
-      "dependsOn": [
-        "US-032"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-034",
-      "title": "Emitter Runes — Kenaz and Sowilo",
-      "description": "As a player, I want to create heat and light emitters so that I can power runic machines and repel darkness.",
-      "acceptanceCriteria": [
-        "Kenaz (Torch): EMIT(heat) at strength 10 in facing direction, continuous",
-        "Sowilo (Sun): EMIT(light) at strength 10 in facing direction, repels Morker",
-        "Both runes produce visible glow on the etched face (Kenaz = ember #a3452a, Sowilo = gold #c9a84c)",
-        "Particle trail shows signal propagation path at slow tick",
-        "Discovery: Kenaz taught by Tomte at spawn (later story), Sowilo from watching full sunrise",
-        "Vitest: unit tests for signal emission at correct strength and type, propagation through conductors, visual particle spawn",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 34,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. First two runes.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "emitter"
-      ],
-      "dependsOn": [
-        "US-033"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-035",
-      "title": "Interaction Runes — Jera, Fehu, Ansuz, Thurisaz",
-      "description": "As a player, I want runes that transform resources, collect items, detect creatures, and deal damage so that I can build functional machines.",
-      "acceptanceCriteria": [
-        "Jera (Harvest): TRANSFORM — converts input resource to output when signal + input present (ore + heat -> ingot, wood + heat -> charcoal)",
-        "Fehu (Wealth): PULL — attracts nearby loose items/drops within radius toward the inscribed face",
-        "Ansuz (Wisdom): SENSE — detects creatures/player within configurable radius, emits detection signal",
-        "Thurisaz (Thorn): DAMAGE — converts incoming signal to area damage, functions as trap",
-        "Each rune discoverable through world observation per docs/architecture/structures.md discovery table",
-        "Vitest: unit tests for Jera transformation rules (correct input+signal -> output), Fehu pull radius, Ansuz detection radius and signal emission, Thurisaz damage calculation from signal strength",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 35,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Four interaction runes.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "interaction"
-      ],
-      "dependsOn": [
-        "US-033"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-036",
-      "title": "Protection Runes — Algiz, Mannaz, Berkanan",
-      "description": "As a player, I want runes that create wards, calm creatures, and accelerate growth so that my settlement is protected and productive.",
-      "acceptanceCriteria": [
-        "Algiz (Protection): WARD — creates exclusion zone, hostile creatures can't enter radius proportional to signal strength",
-        "Mannaz (Humanity): CALM — neutral creatures in radius become friendly, taming ward",
-        "Berkanan (Birch): GROW — accelerates natural growth in radius (saplings grow faster, crops yield sooner)",
-        "Ward radius visible as subtle particle boundary",
-        "Vitest: unit tests for Algiz exclusion zone radius from signal strength, Mannaz creature behavior override, Berkanan growth multiplier application",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 36,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Three protection runes.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "protection"
-      ],
-      "dependsOn": [
-        "US-033"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-037",
-      "title": "Archetype Recognition and Settlement Founding",
-      "description": "As a player, I want the game to recognize functional archetypes from my rune builds so that settlements emerge naturally.",
-      "acceptanceCriteria": [
-        "Archetype detection: Hearth (heat + enclosed space), Workshop (heat + transform within 5 blocks), Beacon (light strength >20), Ward (active ward radius >5), Trap (sense + damage connected), Farm (grow + saplings/crops), Gate (paired teleport)",
-        "Settlement recognition: Hearth + Workshop + Ward colocated within a chunk",
-        "On settlement founding: Sagan records entry, procedurally generated Swedish place name, Kartan marks location, passive creature behavior shifts",
-        "Settlement growth: adding Farm/Gate/Beacon/multiple Wards enhances settlement",
-        "Vitest: unit tests for each archetype detection condition, settlement threshold (3 colocated archetypes), name generation",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 37,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Settlement emerges from rune archetypes.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "settlement",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-034",
-        "US-035",
-        "US-036",
-        "US-023"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-038",
-      "title": "Computational Runes — Naudiz, Isa, Hagalaz",
-      "description": "As a player, I want NOT, DELAY, and AND gates so that I can build computational circuits from runes.",
-      "acceptanceCriteria": [
-        "Naudiz (Need): INVERT — outputs signal (strength 5) when receiving none, silent when powered. The NOT gate.",
-        "Isa (Ice): DELAY — holds signal for N ticks before releasing (default N=1/250ms, crystal N=2). Enables sequential logic.",
-        "Hagalaz (Hail): GATE — passes signal from one face only if signal also present on perpendicular face. The AND gate.",
-        "Composite gates buildable: NAND (Hagalaz -> Naudiz), OR (two signals at junction), flip-flop (Naudiz + Isa feedback loop), clock oscillator",
-        "Discovery: Naudiz from ruin observation, Isa from ice formation, Hagalaz from hailstorm survival",
-        "Vitest: unit tests for NOT truth table, delay timing accuracy, AND gate truth table, NAND composition, flip-flop stability, clock oscillation period",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 38,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Logic gates for Turing-complete computation.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "computation"
-      ],
-      "dependsOn": [
-        "US-033"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-039",
-      "title": "Self-Modifying Circuits and Feedback Loops",
-      "description": "As a developer, I want circuits that can alter their own topology so that the runic system achieves full computational power.",
-      "acceptanceCriteria": [
-        "Jera on exit face: PLACE(blockType) — when signal exits into air, places a block (consumes signal strength proportional to hardness)",
-        "Thurisaz on exit face: DESTROY — when signal exits into a block, removes that block",
-        "Feedback loop detection: system handles stable oscillators without infinite loops (visited set per tick)",
-        "Self-modifying: circuits can place/remove blocks, changing their own signal paths",
-        "Physical switch: placing/removing a block manually toggles circuit on/off",
-        "Fuse: wood block in signal path with heat signal burns, consuming block and breaking circuit",
-        "Vitest: unit tests for block placement from signal, block destruction from signal, feedback loop termination, fuse consumption",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 39,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Self-modifying circuits for Turing completeness.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "computation",
-        "self-modifying"
-      ],
-      "dependsOn": [
-        "US-038",
-        "US-035"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-040",
-      "title": "Rune Discovery and Kunskapen Integration",
-      "description": "As a player, I want to discover runes through world observation so that learning feels diegetic.",
-      "acceptanceCriteria": [
-        "Each of 15 runes discoverable through specific world interactions per structures.md discovery table",
-        "Discoveries recorded in Kunskapen page of the Bok with rune meaning, behavior description, and discovery context",
-        "Undiscovered runes don't appear in rune wheel",
-        "Discovery state persisted in save data",
-        "Vitest: unit tests for discovery trigger conditions, Kunskapen entry creation, rune wheel filtering by discovery state",
-        "Playwright CT: BokCodex renders rune entries with discovery progress, RuneWheel only shows discovered runes",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 40,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. UI story (BokCodex, RuneWheel).",
-      "labels": [
-        "phase-5",
-        "runes",
-        "discovery",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-027",
-        "US-034"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-041",
-      "title": "Fast Travel System",
-      "description": "As a player, I want to teleport between inscribed runestones so that long-distance traversal is manageable.",
-      "acceptanceCriteria": [
-        "Raido rune inscribed on runestone blocks creates fast-travel anchor",
-        "Travel via Kartan: tap inscribed runestone marker, confirm, teleport with transition effect",
-        "Cost: consumes crystal dust resource per travel",
-        "Raido blocks can also pair for item teleportation in rune networks (inter-chunk signal bridges)",
-        "Vitest: unit tests for anchor registration, travel cost deduction, paired block linking, item teleportation",
-        "Playwright CT: BokMap shows inscribed runestone markers as interactive, travel confirmation dialog works",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 41,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. UI story (BokMap).",
-      "labels": [
-        "phase-5",
-        "runes",
-        "travel",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-026",
-        "US-034"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-042",
-      "title": "Network Runes — Uruz, Tiwaz, Crystal Amplification",
-      "description": "As a player, I want force, combat buff, and signal amplification runes so that my settlement can scale its capabilities.",
-      "acceptanceCriteria": [
-        "Uruz (Strength): PUSH — exerts force on entities in signal direction",
-        "Tiwaz (Victory): BUFF — entities in radius deal more combat damage",
-        "Crystal blocks amplify signal strength x1.5 (resonating material property)",
-        "Full settlement growth system: all archetypes compose into increasingly powerful settlements",
-        "Vitest: unit tests for Uruz force application, Tiwaz damage multiplier, crystal amplification calculation",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 42,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Final runes + settlement scaling.",
-      "labels": [
-        "phase-5",
-        "runes",
-        "network",
-        "settlement"
-      ],
-      "dependsOn": [
-        "US-033",
-        "US-037"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-043",
-      "title": "Territory and Decay",
-      "description": "As a player, I want my territory to attract peaceful creatures and repel hostile ones, but decay if neglected, so that building has lasting consequences.",
-      "acceptanceCriteria": [
-        "Territory calculation: player-placed blocks define territory radius (density field)",
-        "Passive creatures attracted to settled territory, hostile creatures avoid well-lit territory",
-        "Unvisited structures slowly accumulate moss blocks (configurable timer, e.g., 30 game-days)",
-        "Decay prevention: Runsten Seal (Jatten drop) stops decay permanently for the settlement",
-        "Falu red blocks reduce Morker spawn radius",
-        "New src/ecs/systems/territory.ts",
-        "Vitest: unit tests for territory radius calculation, creature response to territory, decay timer, seal application, Falu red effect",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 43,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Territory + decay system.",
-      "labels": [
-        "phase-5",
-        "territory",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-037",
-        "US-023"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-044",
-      "title": "Seasons (Visual)",
-      "description": "As a player, I want seasonal cycles so that the world changes over time with gameplay effects.",
-      "acceptanceCriteria": [
-        "Season cycle: every N game-days cycles through var (spring), sommar (summer), host (autumn), vinter (winter)",
-        "Visual changes: leaf color shift (green -> gold -> bare -> green), snow accumulation in vinter, grass warmth variation",
-        "Gameplay effects: longer nights in vinter (more Morker), shorter in sommar. Hunger drain faster in vinter.",
-        "Creature behavior: Tranor migrate south in host, Morker stronger in vinter",
-        "Vitest: unit tests for season transition timing, night duration per season, hunger drain multiplier, creature migration triggers",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 44,
-      "passes": true,
-      "notes": "Phase 5 — Runes & Advanced Systems. Seasonal cycles affect visuals + gameplay.",
-      "labels": [
-        "phase-5",
-        "seasons",
-        "ecs"
-      ],
-      "dependsOn": [
-        "US-006",
-        "US-015"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-045",
-      "title": "Mobile Controls Refinement",
-      "description": "As a mobile player, I want responsive and comfortable touch controls so that the game feels native on phones.",
-      "acceptanceCriteria": [
-        "Left joystick: virtual analog stick with improved feel (dead zone, ramp curve)",
-        "Right zone: camera drag with adjustable sensitivity",
-        "Action buttons: mine (tap target), place (long-press), jump, Bok, inventory — all in thumb zone (bottom 40%)",
-        "Auto-targeting: nearest enemy selected when attack pressed",
-        "Haptic feedback via Capacitor: light tap (place), medium pulse (break), heavy thud (damage)",
-        "Gesture shortcuts: swipe down for Bok, double-tap for sprint",
-        "All interactive elements minimum 48x48 CSS pixels",
-        "Playwright CT: MobileControls renders correctly, button positions in thumb zone",
-        "Playwright e2e: mobile control layout responds to viewport size changes",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 45,
-      "passes": true,
-      "notes": "Phase 6 — Polish and Mobile Excellence. UI story.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "mobile",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-025"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-046",
-      "title": "Performance Budget",
-      "description": "As a mobile player, I want 60fps on mid-range phones so that the game is playable without dropped frames.",
-      "acceptanceCriteria": [
-        "Chunk LOD: simplified mesh for distant chunks (merge faces, reduce vertices)",
-        "Creature LOD: single-box beyond 30 blocks (from US-011)",
-        "Draw call batching: merge creature meshes where possible",
-        "Render distance toggle: 2/3/4 chunks selectable in settings",
-        "Particle budget: capped per device tier (100 low, 200 medium, 500 high)",
-        "Adaptive quality: auto-detect device capability on startup (Low/Medium/High presets)",
-        "Shadow map scaling: 512x512 mobile, 1024x1024 desktop",
-        "Vitest: unit tests for LOD distance thresholds, quality preset selection logic, particle budget enforcement",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 46,
-      "passes": true,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Performance optimization.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "performance"
-      ],
-      "dependsOn": [
-        "US-011"
-      ],
-      "completionNotes": "Completed by agent"
-    },
-    {
-      "id": "US-047",
-      "title": "Session Design",
-      "description": "As a mobile player, I want short sessions to feel complete so that 5-minute bus rides are satisfying.",
-      "acceptanceCriteria": [
-        "Quick-save on background: auto-save when app loses focus (visibilitychange event)",
-        "Resume context: on load, brief Saga reminder of what player was doing",
-        "Micro-goals: always have a discoverable thing within 1-2 minutes of play",
-        "Pause on lost focus: freeze game state when app backgrounded",
-        "Auto-save every 60 seconds during play",
-        "Vitest: unit tests for save trigger on visibility change, state freeze/resume, auto-save interval",
-        "Playwright e2e: game pauses when tab loses focus, resumes correctly",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 47,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. UI story (session management).",
-      "labels": [
-        "phase-6",
-        "polish",
-        "mobile",
-        "persistence",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-029"
-      ]
-    },
-    {
-      "id": "US-048",
-      "title": "Audio Foundation",
-      "description": "As a player, I want ambient sounds and block/creature audio so that the world is immersive.",
-      "acceptanceCriteria": [
-        "Per-biome ambient loops: birds (Angen), wind (Fjallen), water (Skargarden), silence (Blothogen), insects (Myren), dense forest (Bokskogen)",
-        "Block sounds: mine, place, break — different per material category (wood, stone, ore)",
-        "Creature sounds: procedural (pitch-shifted sine/noise bursts per creature type)",
-        "Mobile: respect mute switch, volume slider in settings",
-        "New src/engine/audio.ts with audio manager",
-        "Vitest: unit tests for biome->audio mapping, material->sound mapping, mute state",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 48,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Audio system.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "audio"
-      ],
-      "dependsOn": [
-        "US-006"
-      ]
-    },
-    {
-      "id": "US-049",
-      "title": "Tomte Entity and Teaching AI",
-      "description": "As a player, I want a grumpy gnome companion who teaches me rune etching through demonstration so that the tutorial is diegetic.",
-      "acceptanceCriteria": [
-        "Tomte: multi-part creature — small rounded box body, sphere head, red cone cap (spring physics), white beard chain (spring), 2 stubby IK legs. Colors: earth brown body, Falu red #8b2500 cap, bjork white #e0d5c1 beard",
-        "Singleton per world with unique AI state machine: Watching, Teaching, Examining, Settling, Hiding, Celebrating",
-        "Day 1 — Introduction: waits at spawn stenhog, hops down, walks to stone, etches Kenaz, points at glow, leaves chisel on ground. No text.",
-        "Days 2-5 — Face etching: demonstrates multi-face etching near player builds. Teaches tap-and-wheel method. After player etches 3+ distinct runes, demonstrates drag-to-etch (expert mode unlock).",
-        "Days 5-15 — Computational discovery: builds small demo circuits (Naudiz inverter, Isa delay, Hagalaz gate) near settlement, only for runes player hasn't used yet.",
-        "Never builds anything the player has already built — fills knowledge gaps only.",
-        "Vitest: unit tests for state machine transitions, knowledge gap detection, demo circuit selection",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 49,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Diegetic tutorial companion.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "creatures",
-        "tutorial"
-      ],
-      "dependsOn": [
-        "US-012",
-        "US-031"
-      ]
-    },
-    {
-      "id": "US-050",
-      "title": "Tomte Settlement Integration",
-      "description": "As a player, I want the Tomte to live in my settlement and react to my builds so that he feels like a living companion.",
-      "acceptanceCriteria": [
-        "Days 15+: Tomte settles at Hearth archetype, sleeps by fire, tends mushroom garden",
-        "Examines novel rune machines: if topology is new to Tomte, inspects with visible curiosity (scratches beard)",
-        "Hides from chaotic self-modifying circuits or Morker proximity (covers eyes, retreats to garden)",
-        "Celebrates when Settlement archetype first achieved (dances, throws cap)",
-        "Sagan integration: Tomte milestones recorded as narrative entries",
-        "Vitest: unit tests for novelty detection (topology comparison), reaction behavior dispatch, settlement-settling trigger",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 50,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Tomte advanced behaviors.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "creatures",
-        "settlement"
-      ],
-      "dependsOn": [
-        "US-049",
-        "US-037"
-      ]
-    },
-    {
-      "id": "US-051",
-      "title": "Drag-to-Etch Expert Mode",
-      "description": "As an experienced player, I want to draw rune patterns by dragging across block faces so that inscription is faster.",
-      "acceptanceCriteria": [
-        "Unlocked after player has etched 3+ distinct rune types (tracked by Tomte)",
-        "Drag pattern determines rune: down = Isa, X = Hagalaz, caret = Kenaz, etc. for each rune",
-        "Both tap-wheel and drag modes remain available after unlock",
-        "Visual feedback: drag trail shows on block face during gesture",
-        "Vitest: unit tests for pattern recognition (gesture path -> rune mapping), unlock condition",
-        "Playwright CT: drag gesture visualization on block face mock",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 51,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Expert rune inscription. UI story.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "runes",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-031"
-      ]
-    },
-    {
-      "id": "US-052",
-      "title": "Emergent Machine Discovery",
-      "description": "As a player, I want the game to recognize novel circuit topologies I've invented so that creativity is rewarded.",
-      "acceptanceCriteria": [
-        "Auto-detect novel circuit topologies not previously built by the player",
-        "Novel machines recorded in Kunskapen with auto-generated description",
-        "Tomte reacts to novel topologies (Examining state)",
-        "Archetype recognition extends to player-invented compound behaviors",
-        "Vitest: unit tests for topology fingerprinting, novelty comparison, Kunskapen entry generation",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 52,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Rewards emergent player creativity.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "runes",
-        "discovery"
-      ],
-      "dependsOn": [
-        "US-027",
-        "US-039"
-      ]
-    },
-    {
-      "id": "US-053",
-      "title": "Playwright E2E Test Suite",
-      "description": "As a developer, I want end-to-end tests covering the React UI layer so that full UI flows are verified.",
-      "acceptanceCriteria": [
-        "Playwright e2e config for full-page tests (separate from CT config)",
-        "Title screen -> New Game -> game starts flow tested",
-        "Death screen -> respawn flow tested",
-        "Bok open -> navigate all tabs -> close flow tested",
-        "CraftingMenu open -> craft item -> inventory updates flow tested",
-        "Mobile controls layout verification at mobile viewport sizes",
-        "Settings toggles (vitals bar, render distance) flow tested",
-        "All e2e tests target React UI layer only (no canvas/Three.js interaction)",
-        "pnpm typecheck passes",
-        "pnpm lint passes",
-        "pnpm test passes",
-        "pnpm test-ct passes",
-        "Playwright e2e tests pass for React UI layer",
-        "Files stay under ~200 LOC with proper decomposition"
-      ],
-      "priority": 53,
-      "passes": false,
-      "notes": "Phase 6 — Polish and Mobile Excellence. Comprehensive e2e coverage.",
-      "labels": [
-        "phase-6",
-        "polish",
-        "testing",
-        "ui"
-      ],
-      "dependsOn": [
-        "US-025",
-        "US-030"
-      ]
-    }
-  ],
-  "metadata": {
-    "updatedAt": "2026-03-16T21:37:17.432Z"
-  }
+	"name": "Bok — Full Implementation (Phases 0-6 + Runic Computation)",
+	"description": "Complete implementation of Bok, a mobile-first 4X voxel survival game rooted in Swedish folklore, from POC state through shippable product. Covers foundation hardening, Swedish landscape generation, building-block creature system, survival depth, diegetic journal UI (The Bok), runic computation system, and mobile polish.",
+	"branchName": "ralph/bok-full-implementation",
+	"userStories": [
+		{
+			"id": "US-001",
+			"title": "Set Up Vitest Testing Infrastructure",
+			"description": "As a developer, I want Vitest configured for unit testing so that ECS systems and pure functions have automated test coverage.",
+			"acceptanceCriteria": [
+				"vitest added as devDependency with compatible config",
+				"vitest.config.ts created with TypeScript support, path aliases matching vite.config.ts",
+				"pnpm test script added to package.json running vitest run",
+				"pnpm test:watch script added for development (vitest)",
+				"At least one passing test for an existing ECS system (e.g., movementSystem or survivalSystem)",
+				"Test utilities module created at src/test-utils.ts with helpers for creating mock Koota worlds and entities",
+				"CI workflow updated to run pnpm test alongside existing checks",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 1,
+			"passes": true,
+			"notes": "Phase 0 — Foundation Hardening. This is the first story and blocks all others since every subsequent story requires test infrastructure.",
+			"labels": ["phase-0", "foundation", "testing"],
+			"dependsOn": [],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-002",
+			"title": "Creature Entity Framework",
+			"description": "As a developer, I want a generalized creature framework replacing the hardcoded enemy system so that multiple species with different behaviors can be supported.",
+			"acceptanceCriteria": [
+				"New CreatureType trait with species enum: Morker, Lyktgubbe, Skogssnigle, Trana, Vittra, Nacken, Runvaktare, Lindorm, Draug, Jatten",
+				"New CreatureAI trait with fields: aiType (passive/neutral/hostile/boss), behaviorState, targetEntity, aggroRange, attackRange, attackDamage, attackCooldown, moveSpeed, detectionRange",
+				"New CreatureAnimation trait with fields: animState (idle/walk/chase/attack/flee/burn), animTimer, variant (size/color offsets)",
+				"enemySystem refactored to creatureSystem dispatching AI by CreatureType, supporting passive/neutral/hostile behavior trees",
+				"EnemyRendererBehavior refactored to CreatureRendererBehavior dispatching mesh construction by CreatureType",
+				"CreatureSideEffects interface replacing EnemySideEffects",
+				"Existing Morker behavior preserved through the new framework (no gameplay regression)",
+				"Vitest: unit tests for creature AI dispatch, behavior state transitions, passive/neutral/hostile branching",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 2,
+			"passes": true,
+			"notes": "Phase 0 — Foundation Hardening. Refactors enemy→creature. No UI changes.",
+			"labels": ["phase-0", "foundation", "ecs", "creatures"],
+			"dependsOn": ["US-001"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-003",
+			"title": "Biome Noise Infrastructure",
+			"description": "As a developer, I want multi-layer noise functions for biome selection so that terrain generation can produce distinct Swedish landscapes.",
+			"acceptanceCriteria": [
+				"Multi-layer noise added to terrain-generator.ts: continental (scale 200), erosion (50), temperature (150), moisture (120)",
+				"Biome selection function: temperature x moisture -> biome enum (Angen, Bokskogen, Fjallen, Skargarden, Myren, Blothogen)",
+				"Per-biome surface rules defined: surface block, subsurface block, depth, water behavior",
+				"Per-biome tree type selection: birch (Angen), beech (Bokskogen), pine (all), spruce (Fjallen edge), dead birch (Blothogen)",
+				"8-block biome blend at boundaries with weighted block selection",
+				"Vitest: unit tests for biome selection function (temperature/moisture -> expected biome), noise layer composition, boundary blending logic",
+				"Terrain generation remains deterministic from seed",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 3,
+			"passes": true,
+			"notes": "Phase 0 — Foundation Hardening. Pure logic, no UI.",
+			"labels": ["phase-0", "foundation", "terrain"],
+			"dependsOn": ["US-001"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-004",
+			"title": "New Block Types for Biomes",
+			"description": "As a developer, I want expanded block types so that biome-specific terrain and resources can be rendered.",
+			"acceptanceCriteria": [
+				"New blocks added to blocks.ts: BirchWood, BirchLeaves, BeechWood, BeechLeaves, PineWood, PineLeaves, SpruceLeaves, DeadWood, Moss, Mushroom, Peat, Ice, SmoothStone, Soot, CorruptedStone, IronOre, CopperOre, Crystal, FaluRed",
+				"Block properties defined: hardness, color, transparency, special physics (ice=slippery, peat=bouncy, moss=soft)",
+				"New textures in tileset-generator.ts for each block, tileset grid expanded to accommodate",
+				"All texture colors comply with palette in docs/design/art-direction.md",
+				"Vitest: unit tests for block property lookups, block ID->name mappings, texture generation functions",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 4,
+			"passes": true,
+			"notes": "Phase 0 — Foundation Hardening. Pure logic + texture generation, no UI.",
+			"labels": ["phase-0", "foundation", "blocks"],
+			"dependsOn": ["US-001"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-005",
+			"title": "Inventory Refactor",
+			"description": "As a developer, I want the inventory system to use Record<number, number> instead of named fields so that it scales to arbitrary block/item types.",
+			"acceptanceCriteria": [
+				"Inventory trait changed from named fields to Record<number, number> (blockId/itemId -> count)",
+				"All consumers updated: CraftingMenu.tsx, HotbarDisplay.tsx, miningSystem, questSystem, save/load in db.ts",
+				"Inventory capacity limit field added for future Bok Ledger integration",
+				"Persisted as JSON via JSON.stringify/JSON.parse (no custom encode/decode)",
+				"Vitest: unit tests for inventory add/remove/has operations, capacity checks, serialization round-trip",
+				"Playwright CT: HotbarDisplay and CraftingMenu component tests still pass with new inventory shape",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 5,
+			"passes": true,
+			"notes": "Phase 0 — Foundation Hardening. Touches UI components (HotbarDisplay, CraftingMenu).",
+			"labels": ["phase-0", "foundation", "inventory", "ui"],
+			"dependsOn": ["US-001"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-006",
+			"title": "Angen, Bokskogen, and Fjallen Biomes",
+			"description": "As a player, I want to explore distinct Swedish landscapes so that the world feels like Scandinavia.",
+			"acceptanceCriteria": [
+				"Angen (meadow): rolling grass, birch trees (white bark, light canopy), gentle terrain, wildflower accents",
+				"Bokskogen (beech forest): dense beech trees (thick trunk, 7x7 canopy), moss floor, mushroom blocks, darker ambient",
+				"Fjallen (mountains): high elevation, exposed stone, snow cap, ice blocks, cave entrances, no trees above tree line",
+				"Each biome generates correctly from noise-based temperature/moisture selection",
+				"Tree generation varies per biome with correct species",
+				"Vitest: unit tests for per-biome surface block selection, tree type dispatch, elevation-based tree line cutoff",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 6,
+			"passes": true,
+			"notes": "Phase 1 — The Swedish Landscape. First three biomes.",
+			"labels": ["phase-1", "landscape", "biomes"],
+			"dependsOn": ["US-003", "US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-007",
+			"title": "Skargarden, Myren, and Blothogen Biomes",
+			"description": "As a player, I want coastal, wetland, and corrupted biomes so that exploration reveals new environments with unique resources.",
+			"acceptanceCriteria": [
+				"Skargarden (archipelago): island clusters in deep water, smooth stone shores, sparse pine",
+				"Myren (bog): flat waterlogged terrain, peat, moss, shallow pools, cranberry bushes",
+				"Blothogen (corrupted): soot ground, dead birch, corrupted stone, permanent darkness bias",
+				"Blothogen generates independently as corruption zones biased toward world edges",
+				"Biome-specific resource availability enforced (peat only in Myren, soot only in Blothogen, etc.)",
+				"Vitest: unit tests for island generation (Skargarden), waterlogging (Myren), corruption zone placement (Blothogen)",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 7,
+			"passes": true,
+			"notes": "Phase 1 — The Swedish Landscape. Second three biomes.",
+			"labels": ["phase-1", "landscape", "biomes"],
+			"dependsOn": ["US-003", "US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-008",
+			"title": "Underground Caves and Ore Veins",
+			"description": "As a player, I want to mine underground to find caves and ores so that resource gathering has depth.",
+			"acceptanceCriteria": [
+				"Cave noise layer (scale 30) using 3D simplex, carving where value exceeds threshold",
+				"Ore placement: iron (y 5-15), copper (y 10-20), crystal (y 20+) in cluster generation",
+				"Underground water pools at cave intersections",
+				"Caves connect into networks, not isolated pockets",
+				"Vitest: unit tests for cave carving threshold, ore depth bands, cluster generation determinism",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 8,
+			"passes": true,
+			"notes": "Phase 1 — The Swedish Landscape.",
+			"labels": ["phase-1", "landscape", "terrain", "mining"],
+			"dependsOn": ["US-003", "US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-009",
+			"title": "Landmark Generation",
+			"description": "As a player, I want procedurally placed landmarks so that the world feels like Sweden with ancient structures to discover.",
+			"acceptanceCriteria": [
+				"Stenhogar (cairns): stone stacks on hilltops, 3-5 blocks tall, placed at biome boundaries",
+				"Runstenar (runestones): tall inscribed stone blocks near stenhogar, readable interaction stub",
+				"Fornlamningar (ruins): stone foundations (5x5 to 15x15), partial walls, loot container stubs",
+				"Spawn shrine upgraded: stenhog + runestone + torches replacing generic stone platform",
+				"Biome-specific landmarks: Kolmilor (Bokskogen), Offerkallor (Myren), Sjomarken (Skargarden), Fjallstugor (Fjallen)",
+				"Vitest: unit tests for landmark placement rules (biome-specific, elevation-based), spawn rate per chunk",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 9,
+			"passes": true,
+			"notes": "Phase 1 — The Swedish Landscape. Depends on biomes being generated.",
+			"labels": ["phase-1", "landscape", "landmarks"],
+			"dependsOn": ["US-006", "US-007"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-010",
+			"title": "Tileset Polish",
+			"description": "As a player, I want block textures that match the Swedish art direction so that the world looks handcrafted.",
+			"acceptanceCriteria": [
+				"All new block textures comply with palette from docs/design/art-direction.md",
+				"Wood grain detail: birch (white, horizontal lenticels), beech (smooth grey-brown), pine (dark vertical grain)",
+				"Ore sparkle: metallic pixel highlights in ore textures",
+				"Biome ground textures: moss (deep green, soft), peat (dark brown, fibrous), soot (black, ashy)",
+				"Warm bias maintained: stone/dirt skew +5-10 red channel",
+				"Vitest: unit tests for texture generation function outputs (pixel color sampling)",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 10,
+			"passes": true,
+			"notes": "Phase 1 — The Swedish Landscape. Polish pass on block textures.",
+			"labels": ["phase-1", "landscape", "art"],
+			"dependsOn": ["US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-011",
+			"title": "Multi-Part Creature Renderer",
+			"description": "As a developer, I want a renderer that assembles creatures from geometric primitives so that creatures look like building-block toys.",
+			"acceptanceCriteria": [
+				"Part system: creatures defined as arrays of { geometry, offset, jointParent, jointAxis }, assembled at spawn",
+				"Joint system: hierarchical transforms where parent movement cascades to children",
+				"Scale/color variation: +/-10% size, +/-5% hue per individual from CreatureAnimation.variant",
+				"LOD: reduce to single box mesh beyond 30 blocks distance",
+				"New file src/engine/creature-parts.ts with part definitions and assembly functions",
+				"Vitest: unit tests for part assembly, joint hierarchy, LOD distance threshold, variation ranges",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 11,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Rendering infrastructure for all creatures.",
+			"labels": ["phase-2", "creatures", "rendering"],
+			"dependsOn": ["US-002"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-012",
+			"title": "Procedural Animation Runtime",
+			"description": "As a developer, I want code-driven animation for creatures so that no animation files are needed.",
+			"acceptanceCriteria": [
+				"Sine wave animations for breathing/idle (amplitude, frequency per creature type)",
+				"IK solver for leg placement on terrain (2-bone IK minimum)",
+				"Spring physics for floppy parts (Tomte cap, Trana neck, chain segments)",
+				"Follow-the-leader for segmented creatures (Lindorm body segments)",
+				"State-driven blending: smooth transitions between idle/walk/chase/attack/flee states",
+				"Vitest: unit tests for IK solver (target reach, joint angles), spring physics (damping, convergence), state blending interpolation",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 12,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Animation system used by all creature implementations.",
+			"labels": ["phase-2", "creatures", "animation"],
+			"dependsOn": ["US-011"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-013",
+			"title": "Lyktgubbar (Will-o'-the-Wisps)",
+			"description": "As a player, I want floating orbs of warm light at twilight so that the world feels alive with folklore.",
+			"acceptanceCriteria": [
+				"Build: single glowing sphere with point light and additive blend",
+				"Color: warm amber #ffd700, shifts to cool blue #88ccff over deep water",
+				"Behavior: drift in slow sine patterns, scatter on approach (burst velocity, reform), cluster near runstenar and water",
+				"Spawn in Angen/Bokskogen/Myren during skymning (twilight) and morgon (dawn)",
+				"Vitest: unit tests for drift pattern, scatter/reform logic, spawn time window, water color shift",
+				"Creature framework integration: uses CreatureType.Lyktgubbe, passive AI",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 13,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. First passive creature.",
+			"labels": ["phase-2", "creatures", "passive"],
+			"dependsOn": ["US-012"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-014",
+			"title": "Skogssniglar (Forest Snails) and Tranor (Cranes)",
+			"description": "As a player, I want peaceful creatures grazing and wading so that biomes feel like ecosystems.",
+			"acceptanceCriteria": [
+				"Skogssniglar: base capsule + 5 stacked box segments (shell), 4 stubby IK legs. Wander, graze on grass, retract when threatened (becomes static block), drop Shell Plates. Spawn in Angen/Bokskogen/Myren.",
+				"Tranor: elongated box torso, 8-segment chain neck, cone beak, flat box wings, 2 reverse-knee IK legs. Wade in water, fish (neck dips), flee on approach (honk, V-formation with flock via Boids). Spawn near water in Angen/Skargarden.",
+				"Colors match art direction: Skogssniglar (moss #3a5a40 + stone #6b6b6b), Tranor (bjork #e0d5c1 + ink #1a1a2e wingtips)",
+				"Vitest: unit tests for grazing behavior, retract state transition, Boids flocking algorithm, flock formation",
+				"Both creature types correctly despawn/spawn based on biome",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 14,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Two passive/neutral creatures.",
+			"labels": ["phase-2", "creatures", "passive"],
+			"dependsOn": ["US-012"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-015",
+			"title": "Morker (Darkness Packs)",
+			"description": "As a player, I want the darkness itself to hunt me at night so that Swedish winter terror drives the combat loop.",
+			"acceptanceCriteria": [
+				"Build: amorphous sphere mesh with vertex displacement noise, 2-4 shifting red emissive eyes, dark particle trail",
+				"Color: deep ink #1a1a2e, eyes ember #ff4444",
+				"Pack AI: spawn in groups of 3-5, alpha/flanking behavior, coordinate pursuit",
+				"Light-averse: take damage within torch radius, flee from fire, size scales inversely with ambient light",
+				"Dissolve at dawn, hunt Lyktgubbar (ecological chain — extinguish ambient light)",
+				"Replace current generic box enemy completely",
+				"Vitest: unit tests for pack formation, flanking positions, light damage calculation, size scaling by ambient light, dawn dissolution",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 15,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Primary hostile creature, replaces box enemy.",
+			"labels": ["phase-2", "creatures", "hostile"],
+			"dependsOn": ["US-012"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-016",
+			"title": "Runvaktare, Lindormar, and Draugar",
+			"description": "As a player, I want hostile creatures guarding ruins, tunneling through terrain, and advancing when unseen so that exploration and mining are dangerous.",
+			"acceptanceCriteria": [
+				"Runvaktare: tall stone column (2x4), flat slab head with ember eyes, segmented stone arms. Dormant near ruins (appear as scenery), activate when player mines ruin blocks, slam attack (ground AOE), return to post if player retreats. Drop Runsten Fragments.",
+				"Lindormar: 12-segment chain of rounded boxes, follow-the-leader animation. Tunnel through soft blocks (dirt/sand/grass, not stone), breach near player, arc attack, dive back. Attracted by mining vibrations. Leave permanent tunnels. Drop Lindorm Scales/Fang.",
+				"Draugar: wireframe humanoid, semi-transparent. Advance only when player not looking (dot product check of look direction). Freeze when observed. Massive contact damage. Spawn at burial mounds, teleport back at dawn. Frost blue #aaccee emissive.",
+				"Vitest: unit tests for Runvaktare activation trigger (block mining near ruins), Lindorm tunneling pathfinding (soft vs hard blocks), Draugar observation mechanic (look direction dot product threshold)",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 16,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Three hostile creatures with unique mechanics.",
+			"labels": ["phase-2", "creatures", "hostile"],
+			"dependsOn": ["US-012"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-017",
+			"title": "Vittra, Nacken, and Jatten",
+			"description": "As a player, I want unique creature interactions — offerings, observation, and a world boss — so that creatures serve all 4X pillars.",
+			"acceptanceCriteria": [
+				"Vittra: small humanoid (1 block tall), semi-transparent when passive, solid when aggravated. Spawn near mounds in Bokskogen/Myren. Inflict otur debuffs (hunger decay increase, tool durability reduction) when player mines near mounds. Appeased by food offerings placed at mounds.",
+				"Nacken: humanoid sitting on water rocks, translucent green-blue emissive. Disorientation aura on approach (camera sway, reversed controls 3s). Teaches a rune when iron offering thrown in water. One per world region.",
+				"Jatten: 8-block tall humanoid assembled from world blocks. Appears when inscription level 1000+. Attacks player's largest build. Regenerates by pulling blocks from terrain. Drops Runsten Seal on defeat. Yields permanent structure protection.",
+				"Vitest: unit tests for Vittra debuff application/appeasement, Nacken disorientation trigger/iron offering, Jatten inscription level threshold, terrain block consumption for regeneration",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 17,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. Three special creatures: neutral, teacher, boss.",
+			"labels": ["phase-2", "creatures", "boss", "neutral"],
+			"dependsOn": ["US-012"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-018",
+			"title": "Norrsken (Northern Lights) World Event",
+			"description": "As a player, I want periodic aurora borealis events so that rare nights offer safety and discovery.",
+			"acceptanceCriteria": [
+				"5% chance per night to trigger Norrsken event lasting 60 seconds",
+				"All creatures become passive during event (mesmerized)",
+				"Rare glowing resource blocks briefly surface on terrain",
+				"Kartan reveals nearby unexplored landmarks (when Kartan exists)",
+				"Rune inscriptions on runstenar glow brighter and readable from further away",
+				"Visual: animated ribbon of light (green #88ff88, purple #aa66cc, blue #66aaff cycling), particle streamers, world tinted with aurora color",
+				"Implemented as WorldEvent system, not creature AI",
+				"Vitest: unit tests for trigger probability, creature pacification, resource surfacing, event duration/cleanup",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 18,
+			"passes": true,
+			"notes": "Phase 2 — Building-Block Creatures. World event system, not a creature.",
+			"labels": ["phase-2", "creatures", "world-event"],
+			"dependsOn": ["US-002"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-019",
+			"title": "Food and Hunger Rework",
+			"description": "As a player, I want a food system replacing linear hunger decay so that eating is a meaningful survival loop.",
+			"acceptanceCriteria": [
+				"Food items: berries (from bushes in Angen), mushrooms (Bokskogen floor), cranberries (Myren), cooked meat (creature drops + fire)",
+				"Eating mechanic: select food in hotbar, use to consume, restores hunger proportional to food type",
+				"Cooking: place raw food on torch/campfire block, transforms after configurable time",
+				"Hunger effects: below 20% -> slow movement, below 10% -> health drain, 0% -> death",
+				"Vitest: unit tests for hunger decay rates, food restoration values, cooking transformation timer, movement penalty thresholds",
+				"Playwright CT: VitalsBar reflects hunger effects (slow movement indicator)",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 19,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. UI story (VitalsBar).",
+			"labels": ["phase-3", "survival", "food", "ui"],
+			"dependsOn": ["US-005", "US-006"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-020",
+			"title": "Tool Durability",
+			"description": "As a player, I want tools that wear out so that maintaining my equipment creates a crafting loop.",
+			"acceptanceCriteria": [
+				"Durability field on tool items: wood (50), stone (150), iron (500), crystal (1000)",
+				"Durability drains 1 per mining action or attack",
+				"Tool removed from hotbar at durability 0 with break particles",
+				"Durability bar displayed under tool icon in hotbar",
+				"Vitest: unit tests for durability drain per action, break at zero, tier-specific durability values",
+				"Playwright CT: HotbarDisplay shows durability bar, updates on drain, handles break state",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 20,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. UI story (HotbarDisplay durability bar).",
+			"labels": ["phase-3", "survival", "tools", "ui"],
+			"dependsOn": ["US-005"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-021",
+			"title": "Workstation Crafting",
+			"description": "As a player, I want physical crafting stations in the world so that crafting is a spatial activity.",
+			"acceptanceCriteria": [
+				"Workstation blocks: Crafting Bench (tier 1), Forge/Stad (tier 2), Scriptorium (tier 3)",
+				"Proximity crafting: being near a workstation unlocks its recipe tier in crafting menu",
+				"Recipe tiers: hand-craft (tier 0, always available), bench (tier 1), forge (tier 2), scriptorium (tier 3)",
+				"New recipes: iron tools, lanterns, ember lanterns, treated planks, reinforced bricks",
+				"Player crafts station block from materials, places it in world, interacts with it",
+				"Vitest: unit tests for proximity detection, recipe tier unlocking, workstation block crafting",
+				"Playwright CT: CraftingMenu shows correct recipes based on nearby workstation tier",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 21,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. UI story (CraftingMenu).",
+			"labels": ["phase-3", "survival", "crafting", "ui"],
+			"dependsOn": ["US-005", "US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-022",
+			"title": "Inscription Level System",
+			"description": "As a developer, I want the world to track player modifications and escalate responses so that expansion has consequences.",
+			"acceptanceCriteria": [
+				"New InscriptionLevel trait: totalBlocksPlaced, totalBlocksMined, structuresBuilt, computed level",
+				"Level formula: totalBlocksPlaced + (totalBlocksMined * 0.5) + (structuresBuilt * 10)",
+				"Increment on place/mine in mining system",
+				"Creature spawn scaling: base rates multiplied by inscription level tiers",
+				"Threshold events: Runvaktare wake at 100+, Lindormar attracted at 300+, Jatten at 1000+",
+				"Persisted in player_state table",
+				"Vitest: unit tests for level calculation formula, spawn rate scaling, threshold triggers, persistence round-trip",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 22,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. Pure ECS logic, no UI.",
+			"labels": ["phase-3", "survival", "ecs"],
+			"dependsOn": ["US-002"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-023",
+			"title": "Structure Recognition",
+			"description": "As a player, I want the game to recognize my builds so that enclosed spaces provide shelter bonuses.",
+			"acceptanceCriteria": [
+				"Enclosed space detection: flood-fill from air blocks, check surrounded by solid blocks on all 6 sides within configurable limit",
+				"Shelter bonus: inside enclosed space -> reduced hunger decay rate, stamina regen boost",
+				"Structure size tracking feeds into inscription level",
+				"Falu red blocks in structures reduce Morker spawn radius in surrounding area",
+				"New src/ecs/systems/structure.ts created",
+				"Vitest: unit tests for flood-fill enclosed detection (open vs closed vs partial), shelter bonus application, Falu red spawn radius reduction",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 23,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. Pure ECS logic, no UI.",
+			"labels": ["phase-3", "survival", "structures", "ecs"],
+			"dependsOn": ["US-004"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-024",
+			"title": "Light as Mechanic",
+			"description": "As a player, I want light sources to affect gameplay beyond visibility so that light management is strategic survival.",
+			"acceptanceCriteria": [
+				"Light radius per source: torch (4), lantern (8), ember lantern (12), glyph lamp (20)",
+				"Morker won't spawn or path within light radius",
+				"Proximity to light deals continuous damage to Morker",
+				"Portable ember lantern in hotbar creates mobile safe zone around player",
+				"Simple light propagation: track light-emitting blocks, compute radius, pass to creature AI",
+				"New src/ecs/systems/light.ts created",
+				"Vitest: unit tests for radius calculation per source type, Morker avoidance pathfinding, damage-over-time in light, mobile lantern radius",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 24,
+			"passes": true,
+			"notes": "Phase 3 — Survival Depth. Interacts with Morker creature.",
+			"labels": ["phase-3", "survival", "light", "ecs"],
+			"dependsOn": ["US-015"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-025",
+			"title": "Bok Shell",
+			"description": "As a player, I want a birch-bark journal overlay so that I can access my map, inventory, knowledge, and saga in a diegetic interface.",
+			"acceptanceCriteria": [
+				"Bok open/close: tap/key opens full-screen parchment overlay",
+				"Page navigation: bottom tabs — Kartan, Listan, Kunskapen, Sagan",
+				"Visual style: birch-bark texture background (#e0d5c1), rune borders, Cinzel font",
+				"Mobile gestures: swipe between pages, tap outside to close",
+				"Transition animation: book opening/closing",
+				"New src/ui/screens/BokScreen.tsx and src/ui/components/BokPage.tsx",
+				"Playwright CT: BokScreen renders with all 4 tabs, tab switching works, open/close transitions",
+				"Playwright e2e: Bok opens from game HUD, tab navigation works, close returns to game",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 25,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). Shell for all journal pages.",
+			"labels": ["phase-4", "bok", "ui"],
+			"dependsOn": ["US-005"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-026",
+			"title": "Kartan (Atlas/Map Page)",
+			"description": "As a player, I want a fog-of-war map in my Bok so that I can track explored terrain and discovered landmarks.",
+			"acceptanceCriteria": [
+				"Chunk tracking: record which chunks player has visited in new ExploredChunks trait",
+				"Mini-map rendering: top-down color-coded grid using biome colors, centered on player",
+				"Fog of war: unexplored = parchment color, explored = biome color, current = bright",
+				"Landmark markers: runstenar, fornlamningar, stenhogar marked with rune icons",
+				"Pinch to zoom on mobile",
+				"New src/ui/components/BokMap.tsx",
+				"Vitest: unit tests for chunk exploration tracking, fog-of-war state, landmark marker placement",
+				"Playwright CT: BokMap renders with correct fog of war, landmarks display, zoom works",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 26,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). Map page.",
+			"labels": ["phase-4", "bok", "ui", "map"],
+			"dependsOn": ["US-025", "US-006"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-027",
+			"title": "Kunskapen (Knowledge/Codex Page)",
+			"description": "As a player, I want a creature and lore encyclopedia so that observation and exploration are recorded.",
+			"acceptanceCriteria": [
+				"Creature entries: one per species, starts blank, fills through observation",
+				"Observation mechanic: keep camera pointed at creature for configurable duration -> fills entry progressively (silhouette -> basic shape -> full details)",
+				"Entry content: behavior description, weaknesses, drop tables",
+				"Lore entries: collected from runstenar and fornlamningar inscriptions",
+				"Recipe discovery display: recipes unlocked through exploration shown here",
+				"New Codex trait tracking observation progress per species",
+				"New src/ui/components/BokCodex.tsx",
+				"Vitest: unit tests for observation timer, progressive reveal stages, codex persistence",
+				"Playwright CT: BokCodex renders creature entries at each reveal stage, lore entries display",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 27,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). Codex page.",
+			"labels": ["phase-4", "bok", "ui", "codex"],
+			"dependsOn": ["US-025", "US-002"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-028",
+			"title": "Listan (Ledger/Inventory Page)",
+			"description": "As a player, I want a resource overview in my Bok so that I can see what I have at a glance.",
+			"acceptanceCriteria": [
+				"Resource list: all owned resources with counts, sorted by category (blocks, tools, materials, food)",
+				"Crafting integration: tap resource to see available recipes using that resource",
+				"Glanceable design: icons + counts, no clutter, parchment aesthetic",
+				"New src/ui/components/BokLedger.tsx",
+				"Playwright CT: BokLedger renders resource list with correct counts, category sorting, recipe lookup",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 28,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). Inventory/ledger page.",
+			"labels": ["phase-4", "bok", "ui", "inventory"],
+			"dependsOn": ["US-025", "US-005"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-029",
+			"title": "Sagan (Saga/Journal Page)",
+			"description": "As a player, I want my journey auto-recorded as narrative so that my progress tells a story.",
+			"acceptanceCriteria": [
+				"Saga entries: auto-generated from milestones (first shelter, first creature kill, first biome discovered, boss defeated, day survived thresholds)",
+				"Active objectives: current goal displayed as saga verse",
+				"Stats display: days survived, blocks placed/mined, creatures observed",
+				"New SagaLog trait tracking milestones and generating prose entries",
+				"New src/ui/components/BokSaga.tsx",
+				"Vitest: unit tests for milestone detection, entry generation, stats aggregation",
+				"Playwright CT: BokSaga renders entries chronologically, stats display correctly",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 29,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). Saga/journal page.",
+			"labels": ["phase-4", "bok", "ui", "saga"],
+			"dependsOn": ["US-025", "US-022"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-030",
+			"title": "HUD Diegetification",
+			"description": "As a player, I want floating HUD elements gradually replaced with world-based feedback so that immersion increases.",
+			"acceptanceCriteria": [
+				"Health -> vignette intensity (red = low, pulsing = critical) as meta effect",
+				"Hunger -> movement slowdown + screen desaturation as meta effect",
+				"Time -> removed from HUD, player reads the sky (sun/moon position)",
+				"Quest -> rune glow effect on Bok icon when new info available",
+				"Settings toggle to keep explicit vitals bars for players who prefer numbers",
+				"Vitest: unit tests for vignette intensity mapping from health value, desaturation from hunger",
+				"Playwright CT: VitalsBar respects settings toggle (show/hide), DamageVignette scales with health",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 30,
+			"passes": true,
+			"notes": "Phase 4 — The Bok (Diegetic UI). HUD replacement with diegetic feedback.",
+			"labels": ["phase-4", "bok", "ui", "hud"],
+			"dependsOn": ["US-025"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-031",
+			"title": "Chisel Tool and Rune Inscription UI",
+			"description": "As a player, I want to etch runes onto block faces with a chisel so that I can give blocks behaviors.",
+			"acceptanceCriteria": [
+				"Chisel tool item (iron tier, craftable at Forge)",
+				"Face selection: holding chisel and tapping a block face highlights that face",
+				"Rune wheel: appears around tap point, drag to select rune, rune etches onto face",
+				"Each block has 6 faces (+x, -x, +y, -y, +z, -z), each can hold one rune or be blank",
+				"Visual feedback: etched faces glow with rune-specific color",
+				"Internal face support: runes on faces between adjacent blocks (hidden from view, still active)",
+				"X-ray view: long-press with chisel to see and modify internal faces",
+				"New src/ui/components/RuneWheel.tsx",
+				"Vitest: unit tests for face selection from ray intersection, rune placement on face, internal face visibility rules",
+				"Playwright CT: RuneWheel renders rune options, drag-to-select works, visual preview on selection",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 31,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Entry point to entire rune system.",
+			"labels": ["phase-5", "runes", "ui", "tools"],
+			"dependsOn": ["US-020", "US-021"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-032",
+			"title": "Face-Based Rune Storage and Spatial Index",
+			"description": "As a developer, I want efficient per-face rune storage so that signal propagation can quickly find inscribed blocks.",
+			"acceptanceCriteria": [
+				"Per-face rune storage: Map<voxelKey, Map<FaceIndex, RuneId>> per chunk",
+				"FaceIndex type: 0 | 1 | 2 | 3 | 4 | 5 mapping to +x, -x, +y, -y, +z, -z",
+				"Spatial index updated on block place/remove/etch operations",
+				"Sparse face maps: most blocks have 1-3 etched faces",
+				"Index persisted in save data (new table or extended voxel_deltas)",
+				"Vitest: unit tests for index insertion/removal, face lookup, persistence round-trip, sparse storage efficiency",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 32,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Data layer for rune system.",
+			"labels": ["phase-5", "runes", "ecs", "persistence"],
+			"dependsOn": ["US-031"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-033",
+			"title": "Signal Propagation Engine",
+			"description": "As a developer, I want a BFS-based signal propagation system so that rune behaviors can interact through conducting blocks.",
+			"acceptanceCriteria": [
+				"Signal types: heat, light, force, detection — each with strength (0-15)",
+				"Propagation runs on slow tick (4 ticks/second, every 250ms)",
+				"BFS from each emitter through conducting blocks (stone, iron, copper conduct; wood insulates; crystal amplifies x1.5)",
+				"Face-direction awareness: signal enters/exits through specific faces, rune on face transforms signal",
+				"Per-tick budget: max 128 blocks evaluated, max 32 active emitters, max 16 propagation depth",
+				"Same-type same-direction strengths ADD (max 15), opposing SUBTRACT (min 0), different types pass independently (multiplexed)",
+				"Visited set prevents double-evaluation per tick",
+				"Vitest: unit tests for BFS traversal, material conductivity, signal attenuation, face-direction routing, multiplexing, budget limits",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 33,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Core engine for all rune behaviors.",
+			"labels": ["phase-5", "runes", "ecs", "signal"],
+			"dependsOn": ["US-032"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-034",
+			"title": "Emitter Runes — Kenaz and Sowilo",
+			"description": "As a player, I want to create heat and light emitters so that I can power runic machines and repel darkness.",
+			"acceptanceCriteria": [
+				"Kenaz (Torch): EMIT(heat) at strength 10 in facing direction, continuous",
+				"Sowilo (Sun): EMIT(light) at strength 10 in facing direction, repels Morker",
+				"Both runes produce visible glow on the etched face (Kenaz = ember #a3452a, Sowilo = gold #c9a84c)",
+				"Particle trail shows signal propagation path at slow tick",
+				"Discovery: Kenaz taught by Tomte at spawn (later story), Sowilo from watching full sunrise",
+				"Vitest: unit tests for signal emission at correct strength and type, propagation through conductors, visual particle spawn",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 34,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. First two runes.",
+			"labels": ["phase-5", "runes", "emitter"],
+			"dependsOn": ["US-033"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-035",
+			"title": "Interaction Runes — Jera, Fehu, Ansuz, Thurisaz",
+			"description": "As a player, I want runes that transform resources, collect items, detect creatures, and deal damage so that I can build functional machines.",
+			"acceptanceCriteria": [
+				"Jera (Harvest): TRANSFORM — converts input resource to output when signal + input present (ore + heat -> ingot, wood + heat -> charcoal)",
+				"Fehu (Wealth): PULL — attracts nearby loose items/drops within radius toward the inscribed face",
+				"Ansuz (Wisdom): SENSE — detects creatures/player within configurable radius, emits detection signal",
+				"Thurisaz (Thorn): DAMAGE — converts incoming signal to area damage, functions as trap",
+				"Each rune discoverable through world observation per docs/architecture/structures.md discovery table",
+				"Vitest: unit tests for Jera transformation rules (correct input+signal -> output), Fehu pull radius, Ansuz detection radius and signal emission, Thurisaz damage calculation from signal strength",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 35,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Four interaction runes.",
+			"labels": ["phase-5", "runes", "interaction"],
+			"dependsOn": ["US-033"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-036",
+			"title": "Protection Runes — Algiz, Mannaz, Berkanan",
+			"description": "As a player, I want runes that create wards, calm creatures, and accelerate growth so that my settlement is protected and productive.",
+			"acceptanceCriteria": [
+				"Algiz (Protection): WARD — creates exclusion zone, hostile creatures can't enter radius proportional to signal strength",
+				"Mannaz (Humanity): CALM — neutral creatures in radius become friendly, taming ward",
+				"Berkanan (Birch): GROW — accelerates natural growth in radius (saplings grow faster, crops yield sooner)",
+				"Ward radius visible as subtle particle boundary",
+				"Vitest: unit tests for Algiz exclusion zone radius from signal strength, Mannaz creature behavior override, Berkanan growth multiplier application",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 36,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Three protection runes.",
+			"labels": ["phase-5", "runes", "protection"],
+			"dependsOn": ["US-033"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-037",
+			"title": "Archetype Recognition and Settlement Founding",
+			"description": "As a player, I want the game to recognize functional archetypes from my rune builds so that settlements emerge naturally.",
+			"acceptanceCriteria": [
+				"Archetype detection: Hearth (heat + enclosed space), Workshop (heat + transform within 5 blocks), Beacon (light strength >20), Ward (active ward radius >5), Trap (sense + damage connected), Farm (grow + saplings/crops), Gate (paired teleport)",
+				"Settlement recognition: Hearth + Workshop + Ward colocated within a chunk",
+				"On settlement founding: Sagan records entry, procedurally generated Swedish place name, Kartan marks location, passive creature behavior shifts",
+				"Settlement growth: adding Farm/Gate/Beacon/multiple Wards enhances settlement",
+				"Vitest: unit tests for each archetype detection condition, settlement threshold (3 colocated archetypes), name generation",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 37,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Settlement emerges from rune archetypes.",
+			"labels": ["phase-5", "runes", "settlement", "ecs"],
+			"dependsOn": ["US-034", "US-035", "US-036", "US-023"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-038",
+			"title": "Computational Runes — Naudiz, Isa, Hagalaz",
+			"description": "As a player, I want NOT, DELAY, and AND gates so that I can build computational circuits from runes.",
+			"acceptanceCriteria": [
+				"Naudiz (Need): INVERT — outputs signal (strength 5) when receiving none, silent when powered. The NOT gate.",
+				"Isa (Ice): DELAY — holds signal for N ticks before releasing (default N=1/250ms, crystal N=2). Enables sequential logic.",
+				"Hagalaz (Hail): GATE — passes signal from one face only if signal also present on perpendicular face. The AND gate.",
+				"Composite gates buildable: NAND (Hagalaz -> Naudiz), OR (two signals at junction), flip-flop (Naudiz + Isa feedback loop), clock oscillator",
+				"Discovery: Naudiz from ruin observation, Isa from ice formation, Hagalaz from hailstorm survival",
+				"Vitest: unit tests for NOT truth table, delay timing accuracy, AND gate truth table, NAND composition, flip-flop stability, clock oscillation period",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 38,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Logic gates for Turing-complete computation.",
+			"labels": ["phase-5", "runes", "computation"],
+			"dependsOn": ["US-033"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-039",
+			"title": "Self-Modifying Circuits and Feedback Loops",
+			"description": "As a developer, I want circuits that can alter their own topology so that the runic system achieves full computational power.",
+			"acceptanceCriteria": [
+				"Jera on exit face: PLACE(blockType) — when signal exits into air, places a block (consumes signal strength proportional to hardness)",
+				"Thurisaz on exit face: DESTROY — when signal exits into a block, removes that block",
+				"Feedback loop detection: system handles stable oscillators without infinite loops (visited set per tick)",
+				"Self-modifying: circuits can place/remove blocks, changing their own signal paths",
+				"Physical switch: placing/removing a block manually toggles circuit on/off",
+				"Fuse: wood block in signal path with heat signal burns, consuming block and breaking circuit",
+				"Vitest: unit tests for block placement from signal, block destruction from signal, feedback loop termination, fuse consumption",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 39,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Self-modifying circuits for Turing completeness.",
+			"labels": ["phase-5", "runes", "computation", "self-modifying"],
+			"dependsOn": ["US-038", "US-035"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-040",
+			"title": "Rune Discovery and Kunskapen Integration",
+			"description": "As a player, I want to discover runes through world observation so that learning feels diegetic.",
+			"acceptanceCriteria": [
+				"Each of 15 runes discoverable through specific world interactions per structures.md discovery table",
+				"Discoveries recorded in Kunskapen page of the Bok with rune meaning, behavior description, and discovery context",
+				"Undiscovered runes don't appear in rune wheel",
+				"Discovery state persisted in save data",
+				"Vitest: unit tests for discovery trigger conditions, Kunskapen entry creation, rune wheel filtering by discovery state",
+				"Playwright CT: BokCodex renders rune entries with discovery progress, RuneWheel only shows discovered runes",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 40,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. UI story (BokCodex, RuneWheel).",
+			"labels": ["phase-5", "runes", "discovery", "ui"],
+			"dependsOn": ["US-027", "US-034"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-041",
+			"title": "Fast Travel System",
+			"description": "As a player, I want to teleport between inscribed runestones so that long-distance traversal is manageable.",
+			"acceptanceCriteria": [
+				"Raido rune inscribed on runestone blocks creates fast-travel anchor",
+				"Travel via Kartan: tap inscribed runestone marker, confirm, teleport with transition effect",
+				"Cost: consumes crystal dust resource per travel",
+				"Raido blocks can also pair for item teleportation in rune networks (inter-chunk signal bridges)",
+				"Vitest: unit tests for anchor registration, travel cost deduction, paired block linking, item teleportation",
+				"Playwright CT: BokMap shows inscribed runestone markers as interactive, travel confirmation dialog works",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 41,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. UI story (BokMap).",
+			"labels": ["phase-5", "runes", "travel", "ui"],
+			"dependsOn": ["US-026", "US-034"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-042",
+			"title": "Network Runes — Uruz, Tiwaz, Crystal Amplification",
+			"description": "As a player, I want force, combat buff, and signal amplification runes so that my settlement can scale its capabilities.",
+			"acceptanceCriteria": [
+				"Uruz (Strength): PUSH — exerts force on entities in signal direction",
+				"Tiwaz (Victory): BUFF — entities in radius deal more combat damage",
+				"Crystal blocks amplify signal strength x1.5 (resonating material property)",
+				"Full settlement growth system: all archetypes compose into increasingly powerful settlements",
+				"Vitest: unit tests for Uruz force application, Tiwaz damage multiplier, crystal amplification calculation",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 42,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Final runes + settlement scaling.",
+			"labels": ["phase-5", "runes", "network", "settlement"],
+			"dependsOn": ["US-033", "US-037"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-043",
+			"title": "Territory and Decay",
+			"description": "As a player, I want my territory to attract peaceful creatures and repel hostile ones, but decay if neglected, so that building has lasting consequences.",
+			"acceptanceCriteria": [
+				"Territory calculation: player-placed blocks define territory radius (density field)",
+				"Passive creatures attracted to settled territory, hostile creatures avoid well-lit territory",
+				"Unvisited structures slowly accumulate moss blocks (configurable timer, e.g., 30 game-days)",
+				"Decay prevention: Runsten Seal (Jatten drop) stops decay permanently for the settlement",
+				"Falu red blocks reduce Morker spawn radius",
+				"New src/ecs/systems/territory.ts",
+				"Vitest: unit tests for territory radius calculation, creature response to territory, decay timer, seal application, Falu red effect",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 43,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Territory + decay system.",
+			"labels": ["phase-5", "territory", "ecs"],
+			"dependsOn": ["US-037", "US-023"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-044",
+			"title": "Seasons (Visual)",
+			"description": "As a player, I want seasonal cycles so that the world changes over time with gameplay effects.",
+			"acceptanceCriteria": [
+				"Season cycle: every N game-days cycles through var (spring), sommar (summer), host (autumn), vinter (winter)",
+				"Visual changes: leaf color shift (green -> gold -> bare -> green), snow accumulation in vinter, grass warmth variation",
+				"Gameplay effects: longer nights in vinter (more Morker), shorter in sommar. Hunger drain faster in vinter.",
+				"Creature behavior: Tranor migrate south in host, Morker stronger in vinter",
+				"Vitest: unit tests for season transition timing, night duration per season, hunger drain multiplier, creature migration triggers",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 44,
+			"passes": true,
+			"notes": "Phase 5 — Runes & Advanced Systems. Seasonal cycles affect visuals + gameplay.",
+			"labels": ["phase-5", "seasons", "ecs"],
+			"dependsOn": ["US-006", "US-015"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-045",
+			"title": "Mobile Controls Refinement",
+			"description": "As a mobile player, I want responsive and comfortable touch controls so that the game feels native on phones.",
+			"acceptanceCriteria": [
+				"Left joystick: virtual analog stick with improved feel (dead zone, ramp curve)",
+				"Right zone: camera drag with adjustable sensitivity",
+				"Action buttons: mine (tap target), place (long-press), jump, Bok, inventory — all in thumb zone (bottom 40%)",
+				"Auto-targeting: nearest enemy selected when attack pressed",
+				"Haptic feedback via Capacitor: light tap (place), medium pulse (break), heavy thud (damage)",
+				"Gesture shortcuts: swipe down for Bok, double-tap for sprint",
+				"All interactive elements minimum 48x48 CSS pixels",
+				"Playwright CT: MobileControls renders correctly, button positions in thumb zone",
+				"Playwright e2e: mobile control layout responds to viewport size changes",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 45,
+			"passes": true,
+			"notes": "Phase 6 — Polish and Mobile Excellence. UI story.",
+			"labels": ["phase-6", "polish", "mobile", "ui"],
+			"dependsOn": ["US-025"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-046",
+			"title": "Performance Budget",
+			"description": "As a mobile player, I want 60fps on mid-range phones so that the game is playable without dropped frames.",
+			"acceptanceCriteria": [
+				"Chunk LOD: simplified mesh for distant chunks (merge faces, reduce vertices)",
+				"Creature LOD: single-box beyond 30 blocks (from US-011)",
+				"Draw call batching: merge creature meshes where possible",
+				"Render distance toggle: 2/3/4 chunks selectable in settings",
+				"Particle budget: capped per device tier (100 low, 200 medium, 500 high)",
+				"Adaptive quality: auto-detect device capability on startup (Low/Medium/High presets)",
+				"Shadow map scaling: 512x512 mobile, 1024x1024 desktop",
+				"Vitest: unit tests for LOD distance thresholds, quality preset selection logic, particle budget enforcement",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 46,
+			"passes": true,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Performance optimization.",
+			"labels": ["phase-6", "polish", "performance"],
+			"dependsOn": ["US-011"],
+			"completionNotes": "Completed by agent"
+		},
+		{
+			"id": "US-047",
+			"title": "Session Design",
+			"description": "As a mobile player, I want short sessions to feel complete so that 5-minute bus rides are satisfying.",
+			"acceptanceCriteria": [
+				"Quick-save on background: auto-save when app loses focus (visibilitychange event)",
+				"Resume context: on load, brief Saga reminder of what player was doing",
+				"Micro-goals: always have a discoverable thing within 1-2 minutes of play",
+				"Pause on lost focus: freeze game state when app backgrounded",
+				"Auto-save every 60 seconds during play",
+				"Vitest: unit tests for save trigger on visibility change, state freeze/resume, auto-save interval",
+				"Playwright e2e: game pauses when tab loses focus, resumes correctly",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 47,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. UI story (session management).",
+			"labels": ["phase-6", "polish", "mobile", "persistence", "ui"],
+			"dependsOn": ["US-029"]
+		},
+		{
+			"id": "US-048",
+			"title": "Audio Foundation",
+			"description": "As a player, I want ambient sounds and block/creature audio so that the world is immersive.",
+			"acceptanceCriteria": [
+				"Per-biome ambient loops: birds (Angen), wind (Fjallen), water (Skargarden), silence (Blothogen), insects (Myren), dense forest (Bokskogen)",
+				"Block sounds: mine, place, break — different per material category (wood, stone, ore)",
+				"Creature sounds: procedural (pitch-shifted sine/noise bursts per creature type)",
+				"Mobile: respect mute switch, volume slider in settings",
+				"New src/engine/audio.ts with audio manager",
+				"Vitest: unit tests for biome->audio mapping, material->sound mapping, mute state",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 48,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Audio system.",
+			"labels": ["phase-6", "polish", "audio"],
+			"dependsOn": ["US-006"]
+		},
+		{
+			"id": "US-049",
+			"title": "Tomte Entity and Teaching AI",
+			"description": "As a player, I want a grumpy gnome companion who teaches me rune etching through demonstration so that the tutorial is diegetic.",
+			"acceptanceCriteria": [
+				"Tomte: multi-part creature — small rounded box body, sphere head, red cone cap (spring physics), white beard chain (spring), 2 stubby IK legs. Colors: earth brown body, Falu red #8b2500 cap, bjork white #e0d5c1 beard",
+				"Singleton per world with unique AI state machine: Watching, Teaching, Examining, Settling, Hiding, Celebrating",
+				"Day 1 — Introduction: waits at spawn stenhog, hops down, walks to stone, etches Kenaz, points at glow, leaves chisel on ground. No text.",
+				"Days 2-5 — Face etching: demonstrates multi-face etching near player builds. Teaches tap-and-wheel method. After player etches 3+ distinct runes, demonstrates drag-to-etch (expert mode unlock).",
+				"Days 5-15 — Computational discovery: builds small demo circuits (Naudiz inverter, Isa delay, Hagalaz gate) near settlement, only for runes player hasn't used yet.",
+				"Never builds anything the player has already built — fills knowledge gaps only.",
+				"Vitest: unit tests for state machine transitions, knowledge gap detection, demo circuit selection",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 49,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Diegetic tutorial companion.",
+			"labels": ["phase-6", "polish", "creatures", "tutorial"],
+			"dependsOn": ["US-012", "US-031"]
+		},
+		{
+			"id": "US-050",
+			"title": "Tomte Settlement Integration",
+			"description": "As a player, I want the Tomte to live in my settlement and react to my builds so that he feels like a living companion.",
+			"acceptanceCriteria": [
+				"Days 15+: Tomte settles at Hearth archetype, sleeps by fire, tends mushroom garden",
+				"Examines novel rune machines: if topology is new to Tomte, inspects with visible curiosity (scratches beard)",
+				"Hides from chaotic self-modifying circuits or Morker proximity (covers eyes, retreats to garden)",
+				"Celebrates when Settlement archetype first achieved (dances, throws cap)",
+				"Sagan integration: Tomte milestones recorded as narrative entries",
+				"Vitest: unit tests for novelty detection (topology comparison), reaction behavior dispatch, settlement-settling trigger",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 50,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Tomte advanced behaviors.",
+			"labels": ["phase-6", "polish", "creatures", "settlement"],
+			"dependsOn": ["US-049", "US-037"]
+		},
+		{
+			"id": "US-051",
+			"title": "Drag-to-Etch Expert Mode",
+			"description": "As an experienced player, I want to draw rune patterns by dragging across block faces so that inscription is faster.",
+			"acceptanceCriteria": [
+				"Unlocked after player has etched 3+ distinct rune types (tracked by Tomte)",
+				"Drag pattern determines rune: down = Isa, X = Hagalaz, caret = Kenaz, etc. for each rune",
+				"Both tap-wheel and drag modes remain available after unlock",
+				"Visual feedback: drag trail shows on block face during gesture",
+				"Vitest: unit tests for pattern recognition (gesture path -> rune mapping), unlock condition",
+				"Playwright CT: drag gesture visualization on block face mock",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 51,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Expert rune inscription. UI story.",
+			"labels": ["phase-6", "polish", "runes", "ui"],
+			"dependsOn": ["US-031"]
+		},
+		{
+			"id": "US-052",
+			"title": "Emergent Machine Discovery",
+			"description": "As a player, I want the game to recognize novel circuit topologies I've invented so that creativity is rewarded.",
+			"acceptanceCriteria": [
+				"Auto-detect novel circuit topologies not previously built by the player",
+				"Novel machines recorded in Kunskapen with auto-generated description",
+				"Tomte reacts to novel topologies (Examining state)",
+				"Archetype recognition extends to player-invented compound behaviors",
+				"Vitest: unit tests for topology fingerprinting, novelty comparison, Kunskapen entry generation",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 52,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Rewards emergent player creativity.",
+			"labels": ["phase-6", "polish", "runes", "discovery"],
+			"dependsOn": ["US-027", "US-039"]
+		},
+		{
+			"id": "US-053",
+			"title": "Playwright E2E Test Suite",
+			"description": "As a developer, I want end-to-end tests covering the React UI layer so that full UI flows are verified.",
+			"acceptanceCriteria": [
+				"Playwright e2e config for full-page tests (separate from CT config)",
+				"Title screen -> New Game -> game starts flow tested",
+				"Death screen -> respawn flow tested",
+				"Bok open -> navigate all tabs -> close flow tested",
+				"CraftingMenu open -> craft item -> inventory updates flow tested",
+				"Mobile controls layout verification at mobile viewport sizes",
+				"Settings toggles (vitals bar, render distance) flow tested",
+				"All e2e tests target React UI layer only (no canvas/Three.js interaction)",
+				"pnpm typecheck passes",
+				"pnpm lint passes",
+				"pnpm test passes",
+				"pnpm test-ct passes",
+				"Playwright e2e tests pass for React UI layer",
+				"Files stay under ~200 LOC with proper decomposition"
+			],
+			"priority": 53,
+			"passes": false,
+			"notes": "Phase 6 — Polish and Mobile Excellence. Comprehensive e2e coverage.",
+			"labels": ["phase-6", "polish", "testing", "ui"],
+			"dependsOn": ["US-025", "US-030"]
+		}
+	],
+	"metadata": {
+		"updatedAt": "2026-03-16T22:05:58.124Z"
+	}
 }

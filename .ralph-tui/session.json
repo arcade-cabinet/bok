@@ -1,471 +1,388 @@
 {
   "version": 1,
-  "sessionId": "04ab82d4-1d7b-4f5d-a4c6-74976aa7547a",
-  "status": "running",
-  "startedAt": "2026-03-16T07:58:42.525Z",
-  "updatedAt": "2026-03-16T21:37:17.432Z",
-  "currentIteration": 45,
+  "sessionId": "0e4c5ff9-7b27-4842-adca-1204406d9a48",
+  "status": "failed",
+  "startedAt": "2026-03-17T03:16:55.754Z",
+  "updatedAt": "2026-03-17T03:16:55.834Z",
+  "currentIteration": 0,
   "maxIterations": 0,
-  "tasksCompleted": 45,
+  "tasksCompleted": 0,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
     "plugin": "json",
-    "totalTasks": 0,
-    "tasks": []
+    "prdPath": "./tasks/rune-civilization-prd.json",
+    "totalTasks": 61,
+    "tasks": [
+      {
+        "id": "RC-001",
+        "title": "Resource Pickup from Rune Circuits",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-002",
+        "title": "Combat Runes — Thurisaz Damage + Algiz Shield + Tiwaz Boost",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-003",
+        "title": "Ansuz Sensor Proximity Detection",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-004",
+        "title": "Custom rAF Game Loop",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-005",
+        "title": "Custom Scene Manager",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-006",
+        "title": "Custom Greedy Voxel Mesher",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-007",
+        "title": "Settlement Archetype Detection",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-008",
+        "title": "Tomte Tutorial AI State Machine",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-009",
+        "title": "Tone.js Swedish Audio Foundation",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-010",
+        "title": "Seasonal Cycle Mechanics",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-011",
+        "title": "Farming and Crop System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-012",
+        "title": "Equipment and Armor System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-013",
+        "title": "Diegetic Vitals — Meta Screen Effects",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-014",
+        "title": "Mining Crack Overlay Renderer",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-015",
+        "title": "Creature Ecosystem Interactions",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-016",
+        "title": "Rune Discovery Gating",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-017",
+        "title": "Jätten Boss Encounter System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-018",
+        "title": "Session Pause/Resume Polish",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-019",
+        "title": "Wire Combat + Sensor Rune Systems into Game Loop",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-020",
+        "title": "Rewrite game.ts to Custom Engine",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-021",
+        "title": "Rune-Aware Face Splitting in Mesher",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-022",
+        "title": "Settlement Bonus Effects",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-023",
+        "title": "Settlement Indicator HUD",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-024",
+        "title": "Tomte Spawn Conditions",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-025",
+        "title": "Tomte Creature Parts",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-026",
+        "title": "TomteHint HUD Tooltip",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-027",
+        "title": "Emergent Machine Discovery",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-028",
+        "title": "Biome Ambient Audio Layers",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-029",
+        "title": "Creature Audio Integration",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-030",
+        "title": "Seasonal Visual Effects",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-031",
+        "title": "Jätten Encounter Triggers and Warning System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-032",
+        "title": "X-Ray Chisel View",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-033",
+        "title": "Advanced Crafting Tiers — Forge and Scriptorium Recipes",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-034",
+        "title": "Migrate BlockHighlightBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-035",
+        "title": "Migrate CelestialBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-036",
+        "title": "Migrate ViewModelBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-037",
+        "title": "Migrate ParticlesBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-038",
+        "title": "Migrate AmbientParticlesBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-039",
+        "title": "Migrate CreatureRendererBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-040",
+        "title": "Migrate EnemyRendererBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-041",
+        "title": "Migrate InputBehavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-042",
+        "title": "Wire Settlement Systems",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-043",
+        "title": "Wire Tomte Systems",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-044",
+        "title": "Wire Custom Mesher into Chunk Rendering",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-045",
+        "title": "Norrsken Aurora Event System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-046",
+        "title": "Draugar Observation Behavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-047",
+        "title": "Lindormar Tunneling Behavior",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-048",
+        "title": "Blothögen Corrupted Biome Content",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-049",
+        "title": "Progression Arc — Discovery Quest System",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-050",
+        "title": "Remove All JP Dependencies",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-051",
+        "title": "Save Slot Management UI",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-052",
+        "title": "Settings Screen — Audio, Graphics, Controls",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-053",
+        "title": "PWA Service Worker",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-054",
+        "title": "Depth 0 Verification Gate",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-055",
+        "title": "Depth 1 Verification Gate",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-056",
+        "title": "Depth 2 Verification Gate",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-057",
+        "title": "Playwright E2E Smoke Test Suite",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-058",
+        "title": "Capacitor Native Build",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-059",
+        "title": "Accessibility Audit",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-060",
+        "title": "Performance Profiling Pass",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "RC-061",
+        "title": "Final Integration Verification",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
   },
-  "iterations": [
-    {
-      "iteration": 1,
-      "status": "completed",
-      "taskId": "US-001",
-      "taskTitle": "Set Up Vitest Testing Infrastructure",
-      "taskCompleted": true,
-      "durationMs": 329753,
-      "startedAt": "2026-03-16T07:59:08.246Z",
-      "endedAt": "2026-03-16T08:04:37.999Z"
-    },
-    {
-      "iteration": 2,
-      "status": "completed",
-      "taskId": "US-002",
-      "taskTitle": "Creature Entity Framework",
-      "taskCompleted": true,
-      "durationMs": 745023,
-      "startedAt": "2026-03-16T08:04:39.108Z",
-      "endedAt": "2026-03-16T08:17:04.131Z"
-    },
-    {
-      "iteration": 3,
-      "status": "completed",
-      "taskId": "US-003",
-      "taskTitle": "Biome Noise Infrastructure",
-      "taskCompleted": true,
-      "durationMs": 1305897,
-      "startedAt": "2026-03-16T08:17:05.188Z",
-      "endedAt": "2026-03-16T08:38:51.085Z"
-    },
-    {
-      "iteration": 4,
-      "status": "completed",
-      "taskId": "US-004",
-      "taskTitle": "New Block Types for Biomes",
-      "taskCompleted": true,
-      "durationMs": 719028,
-      "startedAt": "2026-03-16T08:38:52.239Z",
-      "endedAt": "2026-03-16T08:50:51.267Z"
-    },
-    {
-      "iteration": 5,
-      "status": "completed",
-      "taskId": "US-005",
-      "taskTitle": "Inventory Refactor",
-      "taskCompleted": true,
-      "durationMs": 497099,
-      "startedAt": "2026-03-16T08:50:52.534Z",
-      "endedAt": "2026-03-16T08:59:09.633Z"
-    },
-    {
-      "iteration": 6,
-      "status": "completed",
-      "taskId": "US-006",
-      "taskTitle": "Angen, Bokskogen, and Fjallen Biomes",
-      "taskCompleted": true,
-      "durationMs": 667031,
-      "startedAt": "2026-03-16T08:59:10.737Z",
-      "endedAt": "2026-03-16T09:10:17.768Z"
-    },
-    {
-      "iteration": 7,
-      "status": "completed",
-      "taskId": "US-007",
-      "taskTitle": "Skargarden, Myren, and Blothogen Biomes",
-      "taskCompleted": true,
-      "durationMs": 822454,
-      "startedAt": "2026-03-16T09:10:18.869Z",
-      "endedAt": "2026-03-16T09:24:01.323Z"
-    },
-    {
-      "iteration": 8,
-      "status": "completed",
-      "taskId": "US-008",
-      "taskTitle": "Underground Caves and Ore Veins",
-      "taskCompleted": true,
-      "durationMs": 920226,
-      "startedAt": "2026-03-16T09:24:02.416Z",
-      "endedAt": "2026-03-16T09:39:22.642Z"
-    },
-    {
-      "iteration": 9,
-      "status": "completed",
-      "taskId": "US-009",
-      "taskTitle": "Landmark Generation",
-      "taskCompleted": true,
-      "durationMs": 639822,
-      "startedAt": "2026-03-16T09:39:23.731Z",
-      "endedAt": "2026-03-16T09:50:03.553Z"
-    },
-    {
-      "iteration": 10,
-      "status": "completed",
-      "taskId": "US-010",
-      "taskTitle": "Tileset Polish",
-      "taskCompleted": true,
-      "durationMs": 683182,
-      "startedAt": "2026-03-16T09:50:04.648Z",
-      "endedAt": "2026-03-16T10:01:27.830Z"
-    },
-    {
-      "iteration": 11,
-      "status": "completed",
-      "taskId": "US-011",
-      "taskTitle": "Multi-Part Creature Renderer",
-      "taskCompleted": true,
-      "durationMs": 807722,
-      "startedAt": "2026-03-16T10:01:28.927Z",
-      "endedAt": "2026-03-16T10:14:56.649Z"
-    },
-    {
-      "iteration": 12,
-      "status": "completed",
-      "taskId": "US-012",
-      "taskTitle": "Procedural Animation Runtime",
-      "taskCompleted": true,
-      "durationMs": 620677,
-      "startedAt": "2026-03-16T10:14:57.738Z",
-      "endedAt": "2026-03-16T10:25:18.415Z"
-    },
-    {
-      "iteration": 13,
-      "status": "completed",
-      "taskId": "US-013",
-      "taskTitle": "Lyktgubbar (Will-o'-the-Wisps)",
-      "taskCompleted": true,
-      "durationMs": 748541,
-      "startedAt": "2026-03-16T10:25:19.500Z",
-      "endedAt": "2026-03-16T10:37:48.041Z"
-    },
-    {
-      "iteration": 14,
-      "status": "completed",
-      "taskId": "US-014",
-      "taskTitle": "Skogssniglar (Forest Snails) and Tranor (Cranes)",
-      "taskCompleted": true,
-      "durationMs": 936141,
-      "startedAt": "2026-03-16T10:37:49.133Z",
-      "endedAt": "2026-03-16T10:53:25.274Z"
-    },
-    {
-      "iteration": 15,
-      "status": "completed",
-      "taskId": "US-015",
-      "taskTitle": "Morker (Darkness Packs)",
-      "taskCompleted": true,
-      "durationMs": 1613295,
-      "startedAt": "2026-03-16T10:53:26.370Z",
-      "endedAt": "2026-03-16T11:20:19.665Z"
-    },
-    {
-      "iteration": 16,
-      "status": "completed",
-      "taskId": "US-016",
-      "taskTitle": "Runvaktare, Lindormar, and Draugar",
-      "taskCompleted": true,
-      "durationMs": 915540,
-      "startedAt": "2026-03-16T11:20:20.752Z",
-      "endedAt": "2026-03-16T11:35:36.292Z"
-    },
-    {
-      "iteration": 17,
-      "status": "completed",
-      "taskId": "US-017",
-      "taskTitle": "Vittra, Nacken, and Jatten",
-      "taskCompleted": true,
-      "durationMs": 960425,
-      "startedAt": "2026-03-16T11:35:37.397Z",
-      "endedAt": "2026-03-16T11:51:37.822Z"
-    },
-    {
-      "iteration": 18,
-      "status": "completed",
-      "taskId": "US-018",
-      "taskTitle": "Norrsken (Northern Lights) World Event",
-      "taskCompleted": true,
-      "durationMs": 668290,
-      "startedAt": "2026-03-16T11:51:38.879Z",
-      "endedAt": "2026-03-16T12:02:47.169Z"
-    },
-    {
-      "iteration": 19,
-      "status": "completed",
-      "taskId": "US-019",
-      "taskTitle": "Food and Hunger Rework",
-      "taskCompleted": true,
-      "durationMs": 1125296,
-      "startedAt": "2026-03-16T12:02:48.273Z",
-      "endedAt": "2026-03-16T12:21:33.569Z"
-    },
-    {
-      "iteration": 20,
-      "status": "completed",
-      "taskId": "US-020",
-      "taskTitle": "Tool Durability",
-      "taskCompleted": true,
-      "durationMs": 1243060,
-      "startedAt": "2026-03-16T12:21:34.632Z",
-      "endedAt": "2026-03-16T12:42:17.692Z"
-    },
-    {
-      "iteration": 21,
-      "status": "completed",
-      "taskId": "US-021",
-      "taskTitle": "Workstation Crafting",
-      "taskCompleted": true,
-      "durationMs": 1173832,
-      "startedAt": "2026-03-16T12:42:18.830Z",
-      "endedAt": "2026-03-16T13:01:52.662Z"
-    },
-    {
-      "iteration": 22,
-      "status": "completed",
-      "taskId": "US-022",
-      "taskTitle": "Inscription Level System",
-      "taskCompleted": true,
-      "durationMs": 992093,
-      "startedAt": "2026-03-16T13:01:53.753Z",
-      "endedAt": "2026-03-16T13:18:25.846Z"
-    },
-    {
-      "iteration": 23,
-      "status": "completed",
-      "taskId": "US-023",
-      "taskTitle": "Structure Recognition",
-      "taskCompleted": true,
-      "durationMs": 810983,
-      "startedAt": "2026-03-16T13:18:26.961Z",
-      "endedAt": "2026-03-16T13:31:57.944Z"
-    },
-    {
-      "iteration": 24,
-      "status": "completed",
-      "taskId": "US-024",
-      "taskTitle": "Light as Mechanic",
-      "taskCompleted": true,
-      "durationMs": 645827,
-      "startedAt": "2026-03-16T13:31:59.045Z",
-      "endedAt": "2026-03-16T13:42:44.872Z"
-    },
-    {
-      "iteration": 25,
-      "status": "completed",
-      "taskId": "US-025",
-      "taskTitle": "Bok Shell",
-      "taskCompleted": true,
-      "durationMs": 611100,
-      "startedAt": "2026-03-16T13:42:45.973Z",
-      "endedAt": "2026-03-16T13:52:57.073Z"
-    },
-    {
-      "iteration": 26,
-      "status": "completed",
-      "taskId": "US-026",
-      "taskTitle": "Kartan (Atlas/Map Page)",
-      "taskCompleted": true,
-      "durationMs": 703875,
-      "startedAt": "2026-03-16T13:52:58.173Z",
-      "endedAt": "2026-03-16T14:04:42.048Z"
-    },
-    {
-      "iteration": 27,
-      "status": "completed",
-      "taskId": "US-027",
-      "taskTitle": "Kunskapen (Knowledge/Codex Page)",
-      "taskCompleted": true,
-      "durationMs": 2392953,
-      "startedAt": "2026-03-16T14:04:43.182Z",
-      "endedAt": "2026-03-16T14:44:36.135Z"
-    },
-    {
-      "iteration": 28,
-      "status": "completed",
-      "taskId": "US-028",
-      "taskTitle": "Listan (Ledger/Inventory Page)",
-      "taskCompleted": true,
-      "durationMs": 358198,
-      "startedAt": "2026-03-16T14:44:37.241Z",
-      "endedAt": "2026-03-16T14:50:35.439Z"
-    },
-    {
-      "iteration": 29,
-      "status": "completed",
-      "taskId": "US-029",
-      "taskTitle": "Sagan (Saga/Journal Page)",
-      "taskCompleted": true,
-      "durationMs": 2410910,
-      "startedAt": "2026-03-16T14:50:36.542Z",
-      "endedAt": "2026-03-16T15:30:47.452Z"
-    },
-    {
-      "iteration": 30,
-      "status": "completed",
-      "taskId": "US-030",
-      "taskTitle": "HUD Diegetification",
-      "taskCompleted": true,
-      "durationMs": 1922619,
-      "startedAt": "2026-03-16T15:30:48.578Z",
-      "endedAt": "2026-03-16T16:02:51.197Z"
-    },
-    {
-      "iteration": 31,
-      "status": "completed",
-      "taskId": "US-031",
-      "taskTitle": "Chisel Tool and Rune Inscription UI",
-      "taskCompleted": true,
-      "durationMs": 941157,
-      "startedAt": "2026-03-16T16:02:52.322Z",
-      "endedAt": "2026-03-16T16:18:33.479Z"
-    },
-    {
-      "iteration": 32,
-      "status": "completed",
-      "taskId": "US-032",
-      "taskTitle": "Face-Based Rune Storage and Spatial Index",
-      "taskCompleted": true,
-      "durationMs": 944205,
-      "startedAt": "2026-03-16T16:18:34.561Z",
-      "endedAt": "2026-03-16T16:34:18.766Z"
-    },
-    {
-      "iteration": 33,
-      "status": "completed",
-      "taskId": "US-033",
-      "taskTitle": "Signal Propagation Engine",
-      "taskCompleted": true,
-      "durationMs": 2600059,
-      "startedAt": "2026-03-16T16:34:19.832Z",
-      "endedAt": "2026-03-16T17:17:39.891Z"
-    },
-    {
-      "iteration": 34,
-      "status": "completed",
-      "taskId": "US-034",
-      "taskTitle": "Emitter Runes — Kenaz and Sowilo",
-      "taskCompleted": true,
-      "durationMs": 931032,
-      "startedAt": "2026-03-16T17:17:41.026Z",
-      "endedAt": "2026-03-16T17:33:12.058Z"
-    },
-    {
-      "iteration": 35,
-      "status": "completed",
-      "taskId": "US-035",
-      "taskTitle": "Interaction Runes — Jera, Fehu, Ansuz, Thurisaz",
-      "taskCompleted": true,
-      "durationMs": 2257386,
-      "startedAt": "2026-03-16T17:33:13.983Z",
-      "endedAt": "2026-03-16T18:10:51.369Z"
-    },
-    {
-      "iteration": 36,
-      "status": "completed",
-      "taskId": "US-036",
-      "taskTitle": "Protection Runes — Algiz, Mannaz, Berkanan",
-      "taskCompleted": true,
-      "durationMs": 633950,
-      "startedAt": "2026-03-16T18:10:52.443Z",
-      "endedAt": "2026-03-16T18:21:26.393Z"
-    },
-    {
-      "iteration": 37,
-      "status": "completed",
-      "taskId": "US-037",
-      "taskTitle": "Archetype Recognition and Settlement Founding",
-      "taskCompleted": true,
-      "durationMs": 1118085,
-      "startedAt": "2026-03-16T18:21:27.462Z",
-      "endedAt": "2026-03-16T18:40:05.547Z"
-    },
-    {
-      "iteration": 38,
-      "status": "completed",
-      "taskId": "US-038",
-      "taskTitle": "Computational Runes — Naudiz, Isa, Hagalaz",
-      "taskCompleted": true,
-      "durationMs": 800161,
-      "startedAt": "2026-03-16T18:40:06.629Z",
-      "endedAt": "2026-03-16T18:53:26.790Z"
-    },
-    {
-      "iteration": 39,
-      "status": "completed",
-      "taskId": "US-039",
-      "taskTitle": "Self-Modifying Circuits and Feedback Loops",
-      "taskCompleted": true,
-      "durationMs": 731681,
-      "startedAt": "2026-03-16T18:53:28.055Z",
-      "endedAt": "2026-03-16T19:05:39.736Z"
-    },
-    {
-      "iteration": 40,
-      "status": "completed",
-      "taskId": "US-040",
-      "taskTitle": "Rune Discovery and Kunskapen Integration",
-      "taskCompleted": true,
-      "durationMs": 2922938,
-      "startedAt": "2026-03-16T19:05:40.827Z",
-      "endedAt": "2026-03-16T19:54:23.765Z"
-    },
-    {
-      "iteration": 41,
-      "status": "completed",
-      "taskId": "US-041",
-      "taskTitle": "Fast Travel System",
-      "taskCompleted": true,
-      "durationMs": 796517,
-      "startedAt": "2026-03-16T19:54:24.858Z",
-      "endedAt": "2026-03-16T20:07:41.375Z"
-    },
-    {
-      "iteration": 42,
-      "status": "completed",
-      "taskId": "US-042",
-      "taskTitle": "Network Runes — Uruz, Tiwaz, Crystal Amplification",
-      "taskCompleted": true,
-      "durationMs": 1116424,
-      "startedAt": "2026-03-16T20:07:42.500Z",
-      "endedAt": "2026-03-16T20:26:18.924Z"
-    },
-    {
-      "iteration": 43,
-      "status": "completed",
-      "taskId": "US-043",
-      "taskTitle": "Territory and Decay",
-      "taskCompleted": true,
-      "durationMs": 774540,
-      "startedAt": "2026-03-16T20:26:20.016Z",
-      "endedAt": "2026-03-16T20:39:14.556Z"
-    },
-    {
-      "iteration": 44,
-      "status": "completed",
-      "taskId": "US-044",
-      "taskTitle": "Seasons (Visual)",
-      "taskCompleted": true,
-      "durationMs": 1188478,
-      "startedAt": "2026-03-16T20:39:16.200Z",
-      "endedAt": "2026-03-16T20:59:04.678Z"
-    },
-    {
-      "iteration": 45,
-      "status": "completed",
-      "taskId": "US-045",
-      "taskTitle": "Mobile Controls Refinement",
-      "taskCompleted": true,
-      "durationMs": 1119216,
-      "startedAt": "2026-03-16T20:59:05.760Z",
-      "endedAt": "2026-03-16T21:17:44.976Z"
-    }
-  ],
+  "iterations": [],
   "skippedTaskIds": [],
   "cwd": "/Users/jbogaty/src/arcade-cabinet/bok",
   "activeTaskIds": [],

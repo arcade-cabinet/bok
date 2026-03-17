@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createTestWorld, spawnPlayer } from "../../test-utils.ts";
-import { ChiselState, Hotbar, MiningState, RuneFaces } from "../traits/index.ts";
+import { ChiselState, EtchingState, Hotbar, MiningState, RuneFaces } from "../traits/index.ts";
 import { CHISEL_ITEM_ID, Face, RuneId } from "./rune-data.ts";
 import type { FaceHit, RuneInscriptionEffects } from "./rune-inscription.ts";
 import { getRuneOnFace, placeRune, runeInscriptionSystem } from "./rune-inscription.ts";
@@ -42,7 +42,7 @@ describe("rune-inscription", () => {
 			expect(chisel?.active).toBe(false);
 		});
 
-		it("intercepts mining when chisel is active", () => {
+		it("intercepts mining when chisel is active and opens etching", () => {
 			const world = createTestWorld();
 			const player = spawnPlayer(world);
 
@@ -72,7 +72,12 @@ describe("rune-inscription", () => {
 			expect(chisel?.selectedX).toBe(5);
 			expect(chisel?.selectedY).toBe(10);
 			expect(chisel?.selectedZ).toBe(15);
-			expect(chisel?.wheelOpen).toBe(true);
+
+			// Etching surface should be active
+			const etching = player.get(EtchingState);
+			expect(etching?.active).toBe(true);
+			expect(etching?.blockX).toBe(5);
+			expect(etching?.faceIndex).toBe(Face.PosX);
 		});
 
 		it("does not intercept mining without chisel", () => {
@@ -111,7 +116,7 @@ describe("rune-inscription", () => {
 			expect(runeFaces?.faces["5,10,15"]?.[Face.PosX]).toBe(RuneId.Fehu);
 		});
 
-		it("closes the wheel after placement", () => {
+		it("clears selectedFace after placement", () => {
 			const world = createTestWorld();
 			const player = spawnPlayer(world);
 
@@ -120,16 +125,14 @@ describe("rune-inscription", () => {
 				hotbar.activeSlot = 0;
 			});
 
-			// Open the wheel first
+			// Set up selected face
 			world.query(ChiselState).updateEach(([chisel]) => {
-				chisel.wheelOpen = true;
 				chisel.selectedFace = Face.PosX;
 			});
 
 			placeRune(world, 5, 10, 15, Face.PosX, RuneId.Fehu, noopEffects);
 
 			const chisel = player.get(ChiselState);
-			expect(chisel?.wheelOpen).toBe(false);
 			expect(chisel?.selectedFace).toBe(-1);
 		});
 

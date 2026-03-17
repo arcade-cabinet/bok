@@ -57,7 +57,7 @@ pnpm test-ct          # playwright component tests
 | Language | TypeScript 5.9 | Strict mode |
 | Lint/Fmt | Biome 2.4 | Single tool for lint + format |
 | Package Mgr | pnpm | Fast, strict |
-| Testing | Vitest 4 (unit) + Playwright CT 1.58 (component) | TDD approach |
+| Testing | Vitest 4 (unit) + Vitest Browser Mode (component CT) | Visual TDD — test first, screenshot every layer |
 | Mobile Native | Capacitor 8 | PWA + native bridge |
 | 3D Math | Three.js 0.182 | Used only inside Behaviors |
 
@@ -246,18 +246,82 @@ When starting any work session, read these files in order:
 4. **Side-effect pattern** -- ECS systems never import Three.js; use callbacks
 5. **Run `pnpm biome check --write .` and `pnpm tsc -b` before committing**
 6. **Read the relevant docs/ files before making changes in that domain**
-7. **Max ~200 LOC per file** -- decompose aggressively, extract utilities and sub-components
+7. **Max ~200 LOC per file** -- design for 200 LOC upfront, don't write 450 and decompose after
 8. **Never use `Math.random()`** -- use `worldRng()` for game logic, `cosmeticRng()` for visuals (both in `src/world/noise.ts`)
+9. **Visual TDD** -- write the CT test FIRST, render the component, screenshot it, verify visually. Then implement the next layer. See "Development Process" below.
+10. **Layered development** -- each session adds a new proven layer. Never rip out working flows to replace them. New features = new files wired at minimal integration points.
+
+## Development Process (MANDATORY)
+
+This project follows **visual test-driven layered development**. This is not optional.
+
+### The Process
+
+1. **Write the CT test first** -- before any implementation. The test defines what the layer looks like and how it behaves.
+2. **Render the component** in Vitest Browser Mode using `vitest-browser-react`.
+3. **Screenshot it** with `await page.screenshot({ path: ... })` -- visual proof the layer works.
+4. **Assert data attributes and behavior** -- not just "does text exist" but structural verification.
+5. **Only then** build the next layer on top.
+
+### Gold Standard: RuneSimulator.ct.tsx
+
+The `src/engine/runes/RuneSimulator.ct.tsx` test file is the reference implementation. It demonstrates:
+- Rendering a visual component with test data
+- Asserting data attributes on individual cells
+- Taking screenshots at each stage
+- Building up complexity: basic grid → inscription → signal propagation → world effects
+- Each test proves one visual layer before the next test adds more
+
+### Anti-Patterns (DO NOT DO)
+
+- Writing implementation first, bolting tests on after
+- CT tests that only check "does this text appear" without visual verification
+- Writing 400+ LOC and decomposing after the fact (design for 200 LOC from the start)
+- Ripping out existing working flows (RuneWheel, etc.) to replace them in one session
+- Touching App.tsx, game.ts, and 5 other files for what should be 3 new files
+
+### Vitest Browser Mode CT Pattern
+
+```tsx
+// Component.ct.tsx
+import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
+import { MyComponent } from "./MyComponent.tsx";
+
+const SCREENSHOT_DIR = "src/path/to/__screenshots__";
+
+describe("MyComponent", () => {
+  test("renders base state", async () => {
+    const screen = await render(<MyComponent prop={value} />);
+    await expect.element(screen.getByTestId("my-el")).toBeVisible();
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/base-state.png` });
+  });
+
+  test("next layer builds on base", async () => {
+    const screen = await render(<MyComponent prop={value} extra={true} />);
+    await expect.element(screen.getByTestId("extra")).toHaveAttribute("data-active", "true");
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/with-extra.png` });
+  });
+});
+```
+
+### Running CT Tests
+
+```bash
+# Vitest Browser Mode (current)
+pnpm vitest run --project browser src/path/to/Component.ct.tsx
+```
 
 ## Testing
 
-949 unit tests across 50 test files. 104 Playwright CT tests across 14 component test files.
+1950+ unit tests across 114 test files. Vitest Browser Mode CT tests for visual components.
 
-Write tests first for:
-- Pure utility functions (grid math, RNG, noise)
-- ECS systems (mock world, verify state changes)
-- Persistence layer (verify serialization roundtrips)
-- Component rendering (Playwright CT for all `.tsx` components)
+**Write tests FIRST** — this is visual TDD, not "test after":
+- Pure utility functions: unit test first, then implement
+- ECS systems: mock world in test, verify state changes, then implement
+- React components: CT test first with screenshots, then implement
+- Reference: `src/engine/runes/RuneSimulator.ct.tsx` is the gold standard
 
 Test files live adjacent to source: `*.test.ts` for unit tests, `*.ct.tsx` for component tests.
 
@@ -268,10 +332,13 @@ pnpm test
 # Watch mode
 pnpm test:watch
 
-# Run component tests
-pnpm test-ct
+# Run specific browser component tests (Vitest Browser Mode)
+pnpm vitest run --project browser src/path/to/Component.ct.tsx
 
-# Run a specific test file
+# Run all browser tests
+pnpm vitest run --project browser
+
+# Run a specific unit test file
 pnpm test -- mining
 ```
 

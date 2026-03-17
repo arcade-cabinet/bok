@@ -1,13 +1,15 @@
 {
-	"id": "04ab82d4-1d7b-4f5d-a4c6-74976aa7547a",
-	"status": "running",
-	"startedAt": "2026-03-16T07:58:42.408Z",
-	"updatedAt": "2026-03-16T21:17:45.055Z",
-	"agentPlugin": "claude",
-	"trackerPlugin": "json",
-	"currentIteration": 45,
-	"maxIterations": 0,
-	"totalTasks": 0,
-	"tasksCompleted": 45,
-	"cwd": "/Users/jbogaty/src/arcade-cabinet/bok"
+  "id": "0e4c5ff9-7b27-4842-adca-1204406d9a48",
+  "status": "failed",
+  "startedAt": "2026-03-17T03:16:55.615Z",
+  "updatedAt": "2026-03-17T03:16:55.839Z",
+  "agentPlugin": "claude",
+  "trackerPlugin": "json",
+  "prdPath": "./tasks/rune-civilization-prd.json",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "totalTasks": 0,
+  "tasksCompleted": 0,
+  "cwd": "/Users/jbogaty/src/arcade-cabinet/bok",
+  "endedAt": "2026-03-17T03:16:55.839Z"
 }

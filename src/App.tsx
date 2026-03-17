@@ -3,15 +3,23 @@ import type { InventoryData } from "./ecs/inventory.ts";
 import { addItem, canAfford, deductCost } from "./ecs/inventory.ts";
 import { getDiscoveredLandmarks } from "./ecs/systems/exploration.ts";
 import { worldToChunk } from "./ecs/systems/map-data.ts";
+import { findMicroGoal } from "./ecs/systems/micro-goals.ts";
 import { CRYSTAL_DUST_ID } from "./ecs/systems/raido-data.ts";
 import type { FaceIndex, RuneIdValue } from "./ecs/systems/rune-data.ts";
+import { PLACEABLE_RUNES } from "./ecs/systems/rune-data.ts";
 import { placeRune } from "./ecs/systems/rune-inscription.ts";
 import { computeActiveObjective, computeSagaStats } from "./ecs/systems/saga-data.ts";
+import { AUTO_SAVE_INTERVAL_MS } from "./ecs/systems/session-data.ts";
+import type { ResumeContext } from "./ecs/systems/session-resume.ts";
+import { generateResumeContext } from "./ecs/systems/session-resume.ts";
 import { getMaxDurability } from "./ecs/systems/tool-durability.ts";
 import type { BlockIdValue, HotbarSlot } from "./ecs/traits/index.ts";
 import {
+	CameraTransition,
 	ChiselState,
 	Codex,
+	CreatureTag,
+	EtchingState,
 	ExploredChunks,
 	Health,
 	Hotbar,
@@ -45,10 +53,15 @@ import {
 	kootaWorld,
 	placeBlock,
 	readPlayerStateForSave,
+	releasePointerLock,
+	requestPointerLock,
 	restorePlayerState,
+	setGamePaused,
 	travelToAnchor,
 } from "./engine/game.ts";
 import { isMobile } from "./engine/input-config.ts";
+import type { PredictionContext } from "./engine/runes/rune-predictor.ts";
+import { topPredictions } from "./engine/runes/rune-predictor.ts";
 import {
 	createSaveSlot,
 	initDatabase,
@@ -61,15 +74,17 @@ import {
 	saveVoxelDelta,
 } from "./persistence/db.ts";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
-import { RuneWheel } from "./ui/components/RuneWheel.tsx";
 import { BokIndicator } from "./ui/hud/BokIndicator.tsx";
 import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
+import { EtchingSurface } from "./ui/hud/EtchingSurface.tsx";
 import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
 import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
 import { triggerGameHaptic } from "./ui/hud/haptics.ts";
+import { MicroGoalHint } from "./ui/hud/MicroGoalHint.tsx";
 import { MobileControls } from "./ui/hud/MobileControls.tsx";
 import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
+import { ResumeBanner } from "./ui/hud/ResumeBanner.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
 import { VitalsBar } from "./ui/hud/VitalsBar.tsx";
 import type { MapData } from "./ui/screens/BokScreen.tsx";
@@ -79,8 +94,6 @@ import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
 import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
 import { biomeAt } from "./world/landmark-generator.ts";
-
-const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 type GamePhase = "title" | "playing" | "dead";
 
@@ -110,6 +123,10 @@ export default function App() {
 		}
 	});
 	const lastSeenSagaCountRef = useRef(0);
+	const [resumeContext, setResumeContext] = useState<ResumeContext | null>(null);
+	const [microGoal, setMicroGoal] = useState<import("./ecs/systems/micro-goals.ts").MicroGoal | null>(null);
+	const recentRunePlacementsRef = useRef<RuneIdValue[]>([]);
+	const runePlacementCountsRef = useRef<Record<number, number>>({});
 
 	// Poll ECS state for HUD (runs on animationFrame)
 	const [hudState, setHudState] = useState({
@@ -137,6 +154,12 @@ export default function App() {
 		chiselSelectedZ: 0,
 		chiselSelectedFace: -1 as number,
 		discoveredRunes: [] as number[],
+		etchingActive: false,
+		etchingRuneId: 0 as number,
+		etchingBlockX: 0,
+		etchingBlockY: 0,
+		etchingBlockZ: 0,
+		etchingFaceIndex: -1 as number,
 		lookingAtBlock: false,
 		joystickActive: false,
 		joystickX: 0,
@@ -210,6 +233,15 @@ export default function App() {
 
 			kootaWorld.query(PlayerTag, RuneDiscovery).readEach(([disc]) => {
 				playerUpdate.discoveredRunes = [...disc.discovered];
+			});
+
+			kootaWorld.query(PlayerTag, EtchingState).readEach(([etching]) => {
+				playerUpdate.etchingActive = etching.active;
+				playerUpdate.etchingRuneId = etching.selectedRuneId;
+				playerUpdate.etchingBlockX = etching.blockX;
+				playerUpdate.etchingBlockY = etching.blockY;
+				playerUpdate.etchingBlockZ = etching.blockZ;
+				playerUpdate.etchingFaceIndex = etching.faceIndex;
 			});
 
 			kootaWorld.query(WorldTime).readEach(([time]) => {
@@ -307,6 +339,56 @@ export default function App() {
 		return () => cancelAnimationFrame(raf);
 	}, [phase, bokOpen, hudState.dayCount]);
 
+	// Micro-goal scan — throttled to every 2 seconds
+	useEffect(() => {
+		if (phase !== "playing") return;
+
+		const scan = () => {
+			let pcx = 0;
+			let pcz = 0;
+			let visited: ReadonlySet<number> = new Set();
+			let inShelter = false;
+			let wsTier = 0;
+			let discoveredCount = 0;
+			let hasCreature = false;
+
+			kootaWorld
+				.query(PlayerTag, Position, ExploredChunks, ShelterState, WorkstationProximity)
+				.readEach(([pos, explored, shelter, ws]) => {
+					[pcx, pcz] = worldToChunk(pos.x, pos.z);
+					visited = explored.visited;
+					inShelter = shelter.inShelter;
+					wsTier = ws.maxTier;
+				});
+
+			kootaWorld.query(PlayerTag, RuneDiscovery).readEach(([disc]) => {
+				discoveredCount = disc.discovered.size;
+			});
+
+			// Check if any creature exists (simple presence check)
+			kootaWorld.query(CreatureTag, Position).readEach(() => {
+				hasCreature = true;
+			});
+
+			const undiscoveredRunes = PLACEABLE_RUNES.length - discoveredCount;
+			const goal = findMicroGoal(
+				pcx,
+				pcz,
+				visited,
+				hudState.timeOfDay,
+				inShelter,
+				hasCreature,
+				undiscoveredRunes,
+				wsTier,
+			);
+			setMicroGoal(goal);
+		};
+
+		scan();
+		const interval = setInterval(scan, 2000);
+		return () => clearInterval(interval);
+	}, [phase, hudState.timeOfDay]);
+
 	const performSave = useCallback(async (): Promise<void> => {
 		const slotId = saveSlotRef.current;
 		if (slotId === null) return;
@@ -330,6 +412,22 @@ export default function App() {
 		return () => clearInterval(interval);
 	}, [phase, performSave]);
 
+	// Pause + quick-save on tab hidden, resume on visible
+	useEffect(() => {
+		if (phase !== "playing") return;
+
+		const onVisibilityChange = () => {
+			if (document.hidden) {
+				setGamePaused(true);
+				performSave();
+			} else {
+				setGamePaused(false);
+			}
+		};
+		document.addEventListener("visibilitychange", onVisibilityChange);
+		return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+	}, [phase, performSave]);
+
 	// Disable voxel delta tracking when leaving playing phase
 	useEffect(() => {
 		if (phase !== "playing") {
@@ -348,10 +446,9 @@ export default function App() {
 				setCraftingOpen((prev) => {
 					const next = !prev;
 					if (next) {
-						document.exitPointerLock();
+						releasePointerLock();
 					} else {
-						const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-						canvas?.requestPointerLock();
+						requestPointerLock();
 					}
 					return next;
 				});
@@ -361,11 +458,10 @@ export default function App() {
 				setBokOpen((prev) => {
 					const next = !prev;
 					if (next) {
-						document.exitPointerLock();
+						releasePointerLock();
 						lastSeenSagaCountRef.current = hudState.sagaEntryCount;
 					} else {
-						const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-						canvas?.requestPointerLock();
+						requestPointerLock();
 					}
 					return next;
 				});
@@ -447,6 +543,30 @@ export default function App() {
 				saveVoxelDelta(slot.id, x, y, z, blockId).catch((err) => console.error("Delta save failed:", err));
 			});
 
+			// Generate resume context from restored state
+			let sagaEntries: Array<{ text: string }> = [];
+			let inShelter = false;
+			let hasKilled = false;
+			let achieved = new Set<string>();
+			kootaWorld.query(PlayerTag, SagaLog, ShelterState).readEach(([saga, shelter]) => {
+				sagaEntries = saga.entries;
+				inShelter = shelter.inShelter;
+				hasKilled = saga.creaturesKilled > 0;
+				achieved = saga.achieved;
+			});
+			const objective = computeActiveObjective(playerData.dayCount, inShelter, hasKilled, achieved);
+			setResumeContext(
+				generateResumeContext(
+					playerData.dayCount,
+					playerData.timeOfDay,
+					playerData.health,
+					playerData.hunger,
+					inShelter,
+					sagaEntries,
+					objective?.text ?? null,
+				),
+			);
+
 			setPhase("playing");
 		} catch (err) {
 			console.error("Failed to continue game:", err);
@@ -493,28 +613,52 @@ export default function App() {
 		});
 	}, []);
 
-	const handleRuneSelect = useCallback(
-		(runeId: RuneIdValue) => {
-			const { chiselSelectedX, chiselSelectedY, chiselSelectedZ, chiselSelectedFace } = hudState;
-			if (chiselSelectedFace < 0) return;
+	// ─── Etching: inscribe callback (from EtchingSurface) ───
+	const handleInscribe = useCallback(
+		(runeId: RuneIdValue, _score: number) => {
+			const { etchingBlockX, etchingBlockY, etchingBlockZ, etchingFaceIndex } = hudState;
+			if (etchingFaceIndex < 0) return;
+
 			const effects = { spawnParticles: () => {} };
 			placeRune(
 				kootaWorld,
-				chiselSelectedX,
-				chiselSelectedY,
-				chiselSelectedZ,
-				chiselSelectedFace as FaceIndex,
+				etchingBlockX,
+				etchingBlockY,
+				etchingBlockZ,
+				etchingFaceIndex as FaceIndex,
 				runeId,
 				effects,
 			);
+
+			// Track for prediction context
+			recentRunePlacementsRef.current = [runeId, ...recentRunePlacementsRef.current.slice(0, 9)];
+			runePlacementCountsRef.current[runeId] = (runePlacementCountsRef.current[runeId] ?? 0) + 1;
+
+			// Close etching + return camera
+			kootaWorld.query(PlayerTag, EtchingState).updateEach(([etching]) => {
+				etching.active = false;
+				etching.faceIndex = -1;
+			});
+			kootaWorld.query(PlayerTag, ChiselState).updateEach(([chisel]) => {
+				chisel.selectedFace = -1;
+			});
+			kootaWorld.query(PlayerTag, CameraTransition).updateEach(([ct]) => {
+				ct.active = false;
+			});
 		},
 		[hudState],
 	);
 
-	const handleRuneWheelClose = useCallback(() => {
+	const handleEtchCancel = useCallback(() => {
+		kootaWorld.query(PlayerTag, EtchingState).updateEach(([etching]) => {
+			etching.active = false;
+			etching.faceIndex = -1;
+		});
 		kootaWorld.query(PlayerTag, ChiselState).updateEach(([chisel]) => {
-			chisel.wheelOpen = false;
 			chisel.selectedFace = -1;
+		});
+		kootaWorld.query(PlayerTag, CameraTransition).updateEach(([ct]) => {
+			ct.active = false;
 		});
 	}, []);
 
@@ -594,6 +738,9 @@ export default function App() {
 							lookingAtBlock={hudState.lookingAtBlock}
 						/>
 
+						<ResumeBanner context={resumeContext} onDismiss={() => setResumeContext(null)} />
+						<MicroGoalHint goal={!resumeContext ? microGoal : null} />
+
 						<div className="absolute top-4 right-4 flex items-center gap-3">
 							<BokIndicator
 								hasNewInfo={hudState.sagaEntryCount > lastSeenSagaCountRef.current}
@@ -603,10 +750,9 @@ export default function App() {
 									setBokOpen((prev) => {
 										const next = !prev;
 										if (next) {
-											document.exitPointerLock();
+											releasePointerLock();
 										} else {
-											const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-											canvas?.requestPointerLock();
+											requestPointerLock();
 										}
 										return next;
 									});
@@ -637,24 +783,34 @@ export default function App() {
 							onCraft={handleCraft}
 							onClose={() => {
 								setCraftingOpen(false);
-								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-								canvas?.requestPointerLock();
+								requestPointerLock();
 							}}
 						/>
 
-						<RuneWheel
-							isOpen={hudState.chiselWheelOpen}
-							onSelectRune={handleRuneSelect}
-							onClose={handleRuneWheelClose}
-							discoveredRunes={hudState.discoveredRunes}
-						/>
+						{hudState.etchingActive &&
+							(() => {
+								const predCtx: PredictionContext = {
+									discovered: hudState.discoveredRunes as RuneIdValue[],
+									recentPlacements: recentRunePlacementsRef.current,
+									adjacentRunes: [],
+									placementCounts: runePlacementCountsRef.current,
+								};
+								return (
+									<EtchingSurface
+										predictions={topPredictions(predCtx)}
+										discoveredRunes={hudState.discoveredRunes as RuneIdValue[]}
+										onInscribe={handleInscribe}
+										onCancel={handleEtchCancel}
+										isTouch={mobileMode}
+									/>
+								);
+							})()}
 
 						<BokScreen
 							isOpen={bokOpen}
 							onClose={() => {
 								setBokOpen(false);
-								const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-								canvas?.requestPointerLock();
+								requestPointerLock();
 							}}
 							mapData={mapData ?? undefined}
 							codexData={codexData ?? undefined}
@@ -666,8 +822,7 @@ export default function App() {
 									const success = travelToAnchor(anchor, cost);
 									if (success) {
 										setBokOpen(false);
-										const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
-										canvas?.requestPointerLock();
+										requestPointerLock();
 									}
 									return success;
 								},

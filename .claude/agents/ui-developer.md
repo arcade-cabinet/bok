@@ -103,24 +103,44 @@ export function MyComponent({ value, onAction }: MyComponentProps) {
 }
 ```
 
-### Playwright Component Test Pattern
+### Vitest Browser Mode CT Pattern (CURRENT)
+
+Tests use `vitest-browser-react` with Vitest Browser Mode — NOT Playwright CT. Every test takes a screenshot for visual verification.
+
 ```tsx
 // MyComponent.ct.tsx
-import { test, expect } from "@playwright/experimental-ct-react";
-import { MyComponent } from "./MyComponent";
+import { describe, expect, test, vi } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
+import { MyComponent } from "./MyComponent.tsx";
 
-test("renders with value", async ({ mount }) => {
-  const component = await mount(<MyComponent value={42} onAction={() => {}} />);
-  await expect(component).toContainText("42");
-});
+const SCREENSHOT_DIR = "src/ui/hud/__screenshots__";
 
-test("calls onAction when button clicked", async ({ mount }) => {
-  let called = false;
-  const component = await mount(<MyComponent value={0} onAction={() => { called = true; }} />);
-  await component.getByRole("button").click();
-  expect(called).toBe(true);
+describe("MyComponent", () => {
+  test("renders base state with screenshot", async () => {
+    const screen = await render(<MyComponent value={42} onAction={() => {}} />);
+    await expect.element(screen.getByTestId("my-value")).toHaveTextContent("42");
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/base-state.png` });
+  });
+
+  test("responds to interaction", async () => {
+    const onAction = vi.fn();
+    const screen = await render(<MyComponent value={0} onAction={onAction} />);
+    await screen.getByTestId("action-btn").click();
+    expect(onAction).toHaveBeenCalledOnce();
+    await page.screenshot({ path: `${SCREENSHOT_DIR}/after-click.png` });
+  });
 });
 ```
+
+**Run:** `pnpm vitest run --project browser src/ui/hud/MyComponent.ct.tsx`
+
+### Visual TDD Process
+
+1. Write the `.ct.tsx` test FIRST — before implementation
+2. Each test renders, asserts data attributes, takes a screenshot
+3. Build layers: base render → props → interaction → visual states
+4. The screenshots are proof each layer works — never skip them
 
 ### Accessibility Checklist
 - `type="button"` on all `<button>` elements

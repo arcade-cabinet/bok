@@ -54,20 +54,28 @@ import {
 } from "../ecs/systems/rune-discovery-system.ts";
 import { getRuneIndex, resetRuneIndex } from "../ecs/systems/rune-index.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
+import { resetRuneWorldTickState, runeWorldTickSystem } from "../ecs/systems/rune-world-tick.ts";
+import { InscriptionIndex as SimInscriptionIndex } from "./runes/inscription.ts";
+import { MaterialId } from "./runes/material.ts";
+import { WorldState as RuneWorldState } from "./runes/world-state.ts";
+import { createTickState, type TickState } from "./runes/world-tick.ts";
 import { registerSagaBiomeResolver, resetSagaState } from "../ecs/systems/saga.ts";
 import { resetSeasonState } from "../ecs/systems/season.ts";
 import { resetSelfModifyState } from "../ecs/systems/self-modify-system.ts";
+import { isGamePaused, resetPauseState } from "../ecs/systems/session-pause.ts";
 import { resetSettlementState } from "../ecs/systems/settlement-system.ts";
 import { resetTerritoryState } from "../ecs/systems/territory.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import type { AnimStateId } from "../ecs/traits/index.ts";
 import {
+	CameraTransition,
 	ChiselState,
 	Codex,
 	CookingState,
 	CreatureAnimation,
 	CreatureHealth,
 	CreatureTag,
+	EtchingState,
 	ExploredChunks,
 	Health,
 	Hotbar,
@@ -149,6 +157,10 @@ let ambientParticlesBehavior: AmbientParticlesBehavior | null = null;
 let creatureRendererBehavior: CreatureRendererBehavior | null = null;
 
 let ambientLight: THREE.AmbientLight | null = null;
+
+// Rune world simulation state (module-scoped, reset on destroy)
+let runeWorldState: RuneWorldState | null = null;
+let runeTickState: TickState | null = null;
 let sunLight: THREE.DirectionalLight | null = null;
 let resizeHandler: (() => void) | null = null;
 let combatDrainTimer = 0;
@@ -173,6 +185,7 @@ class GameBridge extends Behavior {
 
 	update(dt: number) {
 		if (dt <= 0 || dt > 0.1) return;
+		if (isGamePaused()) return;
 
 		// Core ECS systems
 		movementSystem(kootaWorld, dt);
@@ -204,6 +217,37 @@ class GameBridge extends Behavior {
 		runRuneDiscoverySystem(kootaWorld, dt, spawn);
 		runWorldEventSystem(kootaWorld, dt, spawn, ambientLight);
 
+		// Rune world simulation tick
+		if (runeWorldState && runeTickState) {
+			const simIndex = new SimInscriptionIndex();
+			kootaWorld.query(PlayerTag, RuneFaces).readEach(([rf]) => {
+				for (const [key, faces] of Object.entries(rf.faces)) {
+					const [bx, by, bz] = key.split(",").map(Number);
+					for (let fi = 0; fi < faces.length; fi++) {
+						if (faces[fi] !== 0) {
+							const normals = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+							const [nx, ny, nz] = normals[fi];
+							simIndex.add({
+								x: bx, y: by, z: bz,
+								nx, ny, nz,
+								glyph: faces[fi] as import("../ecs/systems/rune-data.ts").RuneIdValue,
+								material: MaterialId.Stone,
+								strength: 10,
+							});
+						}
+					}
+				}
+			});
+			runeWorldTickSystem(simIndex, () => MaterialId.Stone, runeWorldState, runeTickState, new Map());
+		}
+
+		// Advance camera transition progress
+		kootaWorld.query(PlayerTag, CameraTransition).updateEach(([ct]) => {
+			if (ct.active && ct.progress < 1) {
+				ct.progress = Math.min(1, ct.progress + dt / ct.duration);
+			}
+		});
+
 		// Sync Koota → Three.js camera + Behaviors
 		this.syncPlayerToCamera();
 		this.syncViewModelState();
@@ -216,6 +260,25 @@ class GameBridge extends Behavior {
 	private syncPlayerToCamera() {
 		const cam = threeCamera;
 		if (!cam) return;
+
+		// Camera transition override for etching mode
+		let transitionActive = false;
+		kootaWorld.query(PlayerTag, CameraTransition).readEach(([ct]) => {
+			if (ct.active) {
+				transitionActive = true;
+				const t = Math.min(ct.progress, 1);
+				// Smooth ease-in-out
+				const ease = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+				cam.position.set(
+					ct.startX + (ct.targetX - ct.startX) * ease,
+					ct.startY + (ct.targetY - ct.startY) * ease,
+					ct.startZ + (ct.targetZ - ct.startZ) * ease,
+				);
+				cam.lookAt(ct.lookAtX, ct.lookAtY, ct.lookAtZ);
+			}
+		});
+		if (transitionActive) return;
+
 		kootaWorld
 			.query(PlayerTag, Position, Rotation, MoveInput, PhysicsBody, ToolSwing, PlayerState)
 			.readEach(([pos, rot, input, body, toolSwing, state]) => {
@@ -487,10 +550,16 @@ export async function initGame(canvas: HTMLCanvasElement, seed: string): Promise
 		RuneFaces,
 		RuneDiscovery,
 		ChiselState(),
+		EtchingState(),
+		CameraTransition(),
 	);
 	kootaWorld.query(PlayerTag, RuneDiscovery).updateEach(([disc]) => {
 		grantTutorialRunes(disc.discovered);
 	});
+
+	// Initialize rune world simulation
+	runeWorldState = new RuneWorldState();
+	runeTickState = createTickState();
 	kootaWorld.spawn(WorldTime({ timeOfDay: 0.25, dayDuration: 900, dayCount: 1 }), WorldSeed({ seed }), SeasonState());
 	kootaWorld.spawn(NorrskenEvent());
 
@@ -549,6 +618,16 @@ export function getBlockHighlight() {
 }
 export function getParticlesBehavior() {
 	return particlesBehavior;
+}
+
+/** Release pointer lock via JP's Input system (keeps internal state in sync). */
+export function releasePointerLock() {
+	jpRuntime?.world.input.unlockMouse();
+}
+
+/** Re-enable pointer lock via JP's Input system (next canvas click will lock). */
+export function requestPointerLock() {
+	jpRuntime?.world.input.lockMouse();
 }
 
 // ─── Block placement ───
@@ -622,6 +701,7 @@ export function travelToAnchor(target: TravelAnchor, cost: number): boolean {
 	if (success) spawn(target.x + 0.5, target.y + 2, target.z + 0.5, 0x6a5acd, 20);
 	return success;
 }
+export { setGamePaused } from "../ecs/systems/session-pause.ts";
 export function applyRenderDistance(distance: number) {
 	setRenderDistanceOverride(distance);
 	if (threeScene?.fog instanceof THREE.Fog) {
@@ -656,6 +736,9 @@ export function destroyGame(): void {
 	chunkData.clear();
 	combatDrainTimer = 0;
 	resetRuneIndex();
+	resetRuneWorldTickState();
+	runeWorldState = null;
+	runeTickState = null;
 	resetEmitterState();
 	resetInteractionRuneState();
 	resetProtectionRuneState();
@@ -672,5 +755,6 @@ export function destroyGame(): void {
 	resetSeasonState();
 	resetJoystickState();
 	resetQualityState();
+	resetPauseState();
 	kootaWorld.reset();
 }

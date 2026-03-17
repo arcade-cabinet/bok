@@ -387,6 +387,52 @@ export const ChiselState = trait({
 	wheelOpen: false,
 });
 
+// ─── Rune Etching ───
+
+/** Tracks active rune etching state (glyph tracing on a block face). */
+export const EtchingState = trait({
+	/** Whether etching mode is active. */
+	active: false,
+	/** The rune the player selected from the wheel. */
+	selectedRuneId: 0 as number,
+	/** Block position being etched. */
+	blockX: 0,
+	blockY: 0,
+	blockZ: 0,
+	/** Face index being etched (0–5). */
+	faceIndex: -1 as number,
+	/** Quality score from the last trace attempt [0, 1]. */
+	lastScore: 0,
+	/** Whether the last trace was accepted. */
+	lastAccepted: false,
+});
+
+// ─── Camera Transition ───
+
+/** Tracks smooth camera transition for etching mode. */
+export const CameraTransition = trait({
+	/** Whether a transition is in progress. */
+	active: false,
+	/** Progress [0, 1] through the transition. */
+	progress: 0,
+	/** Duration in seconds. */
+	duration: 0.4,
+	/** Start position. */
+	startX: 0,
+	startY: 0,
+	startZ: 0,
+	/** Target position. */
+	targetX: 0,
+	targetY: 0,
+	targetZ: 0,
+	/** LookAt target. */
+	lookAtX: 0,
+	lookAtY: 0,
+	lookAtZ: 0,
+	/** Whether we're transitioning TO etching (true) or BACK to FPS (false). */
+	toEtching: false,
+});
+
 // ─── Tool Swing / ViewModel ───
 export const ToolSwing = trait({
 	progress: 0,

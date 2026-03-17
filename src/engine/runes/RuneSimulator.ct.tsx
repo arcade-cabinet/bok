@@ -6,6 +6,8 @@ import type { SurfaceInscription } from "./inscription.ts";
 import type { MaterialIdValue } from "./material.ts";
 import { MaterialId } from "./material.ts";
 import { RuneSimulator } from "./RuneSimulator.tsx";
+import { ResourceId } from "./resource.ts";
+import type { BerkananConfig } from "./world-tick.ts";
 
 const SCREENSHOT_DIR = "src/engine/runes/__screenshots__";
 
@@ -380,5 +382,126 @@ describe("RuneSimulator - live signal propagation", () => {
 		await page.screenshot({ path: `${SCREENSHOT_DIR}/and-gate-after.png` });
 
 		await expect.element(screen.getByTestId("tick-count")).toHaveTextContent("Tick: 3");
+	});
+});
+
+// ─── World Effects Visual Tests ───
+
+/** Create an inscription with explicit normal direction. */
+function insDir(x: number, z: number, glyph: number, nx: number, ny: number, nz: number): SurfaceInscription {
+	return {
+		x,
+		y: 0,
+		z,
+		nx,
+		ny,
+		nz,
+		glyph: glyph as SurfaceInscription["glyph"],
+		material: MaterialId.Stone,
+		strength: 10,
+	};
+}
+
+describe("RuneSimulator - world effects", () => {
+	test("Berkanan generates resources visually", async () => {
+		const grid = uniformGrid(5, 1, MaterialId.Stone);
+		const inscriptions = [
+			ins(0, 0, RuneId.Kenaz), // power source
+			ins(2, 0, RuneId.Berkanan), // resource generator
+		];
+		const config: BerkananConfig = new Map([["2,0,0", ResourceId.Ore]]);
+
+		const screen = await render(
+			<RuneSimulator
+				width={5}
+				height={1}
+				materials={grid}
+				inscriptions={inscriptions}
+				showControls
+				worldEnabled
+				berkananConfig={config}
+			/>,
+		);
+
+		// Before ticks: no resources
+		const resBefore = screen.container.querySelector("[data-testid^='resource-']");
+		expect(resBefore).toBeNull();
+
+		// Run enough ticks for Berkanan to generate (cooldown = 4)
+		for (let i = 0; i < 6; i++) {
+			await screen.getByTestId("tick-btn").click();
+		}
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/berkanan-resource-gen.png` });
+
+		// Resource dot should appear at Berkanan's cell
+		const resAfter = screen.container.querySelector("[data-testid='resource-2-0']");
+		expect(resAfter).not.toBeNull();
+	});
+
+	test("production chain shows resources flowing through pipeline", async () => {
+		// Kenaz → Berkanan:ore → Fehu → Jera → Uruz → output
+		const grid = uniformGrid(8, 1, MaterialId.Stone);
+		const inscriptions = [
+			ins(0, 0, RuneId.Kenaz),
+			ins(2, 0, RuneId.Berkanan),
+			insDir(4, 0, RuneId.Fehu, 0, 1, 0),
+			insDir(5, 0, RuneId.Jera, 0, 1, 0),
+			insDir(6, 0, RuneId.Uruz, 1, 0, 0), // push +x
+		];
+		const config: BerkananConfig = new Map([["2,0,0", ResourceId.Ore]]);
+
+		const screen = await render(
+			<RuneSimulator
+				width={8}
+				height={1}
+				materials={grid}
+				inscriptions={inscriptions}
+				showControls
+				worldEnabled
+				berkananConfig={config}
+			/>,
+		);
+
+		// Run 20 ticks to let the chain produce
+		for (let i = 0; i < 20; i++) {
+			await screen.getByTestId("tick-btn").click();
+		}
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/production-chain-20ticks.png` });
+
+		// At least one resource should exist somewhere in the grid
+		const resources = screen.container.querySelectorAll("[data-testid^='resource-']");
+		expect(resources.length).toBeGreaterThan(0);
+	});
+
+	test("resource dots show quantity and type", async () => {
+		const grid = uniformGrid(3, 1, MaterialId.Stone);
+		const inscriptions = [ins(0, 0, RuneId.Kenaz), ins(1, 0, RuneId.Berkanan)];
+		const config: BerkananConfig = new Map([["1,0,0", ResourceId.Wheat]]);
+
+		const screen = await render(
+			<RuneSimulator
+				width={3}
+				height={1}
+				materials={grid}
+				inscriptions={inscriptions}
+				showControls
+				worldEnabled
+				berkananConfig={config}
+			/>,
+		);
+
+		// Run enough ticks for multiple Berkanan generations
+		for (let i = 0; i < 12; i++) {
+			await screen.getByTestId("tick-btn").click();
+		}
+
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/resource-wheat-qty.png` });
+
+		// Verify resource data attributes
+		const berkananCell = screen.container.querySelector("[data-testid='cell-1-0']");
+		const resName = berkananCell?.getAttribute("data-resource");
+		expect(resName).toBe("wheat");
 	});
 });

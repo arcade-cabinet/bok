@@ -46,7 +46,7 @@ function getIsaDelay(mat: MaterialIdValue): number {
 // ─── Emitter Runes ───
 
 /** Runes that always emit signal (emitters). */
-const EMITTERS = new Set<RuneIdValue>([RuneId.Kenaz, RuneId.Sowilo, RuneId.Fehu, RuneId.Ansuz]);
+const EMITTERS = new Set<RuneIdValue>([RuneId.Kenaz, RuneId.Sowilo, RuneId.Ansuz]);
 
 /** Check if a rune is a constant emitter. */
 export function isEmitter(glyph: RuneIdValue): boolean {

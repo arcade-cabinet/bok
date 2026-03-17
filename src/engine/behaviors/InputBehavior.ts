@@ -35,6 +35,11 @@ export class InputBehavior extends Behavior {
 	awake() {
 		this.needUpdate = true;
 		this.touchMode = this.actor.world.input.isTouchpadAvailable();
+		// Pre-set pointer lock flag so the first canvas click triggers requestPointerLock().
+		// JP's mouse.lock() only sets a flag — actual locking happens in onMouseDown.
+		if (!this.touchMode) {
+			this.actor.world.input.lockMouse();
+		}
 	}
 
 	update(_dt: number) {
@@ -94,9 +99,8 @@ export class InputBehavior extends Behavior {
 			});
 		}
 
-		if (input.wasMouseButtonJustPressed("left") && !input.mouse.locked) {
-			input.lockMouse();
-		}
+		// Note: pointer lock is requested via JP's Mouse.onMouseDown when #wantsPointerLock is set.
+		// We set that flag in awake(), so clicking canvas always re-locks after menu close.
 	}
 
 	private pollTouch(input: Input) {

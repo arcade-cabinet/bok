@@ -93,6 +93,34 @@ src/
 5. Add to `Inventory` trait if mineable
 6. Add recipes if craftable
 
+## Development Process (MANDATORY)
+
+### Visual Test-Driven Layered Development
+
+Every feature follows this process. No exceptions.
+
+1. **Test first.** Write the `.ct.tsx` Vitest Browser Mode test BEFORE the implementation. The test defines what the layer looks like.
+2. **Screenshot verification.** Every CT test takes a screenshot with `await page.screenshot()`. Visual proof the layer works.
+3. **Layer by layer.** Each test proves one layer. The next test builds on top. Never skip ahead.
+4. **New files, minimal integration.** New features = new files. Wire into existing flows at ONE integration point. Don't rewrite existing flows.
+5. **200 LOC by design.** Plan file decomposition upfront. Never write a 400 LOC file and split it after.
+
+### Gold Standard
+
+`src/engine/runes/RuneSimulator.ct.tsx` is the reference. It demonstrates:
+- Rendering with test data, asserting data attributes on individual elements
+- Screenshots at each stage as visual proof
+- Building complexity in layers: grid → inscriptions → signal → world effects
+- Each describe block proves one layer before the next adds more
+
+### What NOT To Do
+
+- Write implementation first, test after (tests become rubber-stamps, not design drivers)
+- CT tests that only check text content without visual/structural verification
+- Touch 5+ existing files for what should be 3 new files
+- Rip out working UI flows and replace them in one session
+- Skip the screenshot step ("it probably looks fine")
+
 ## Code Standards
 
 ### Formatting & Language
@@ -127,11 +155,13 @@ src/
 | **Tailwind/DaisyUI** | CSS utility classes, component styles | Inline styles (use sparingly) |
 
 ### Testing
-- **Playwright Component Testing (CT)** for all React components — visual testing of individual components in isolation before full e2e.
+- **Vitest Browser Mode CT** for all React components — visual testing with screenshots in isolation.
 - **Test files live next to source:** `Component.ct.tsx` beside `Component.tsx`.
-- **Run component tests:** `pnpm test-ct`
-- **Write tests before or alongside new UI components** — TDD for UI.
-- **Every `.tsx` component should have a `.ct.tsx` test** covering: renders correctly, handles props, responds to user interaction, accessibility attributes.
+- **Run component tests:** `pnpm vitest run --project browser`
+- **Write the CT test FIRST** — before the component implementation. The test drives the design.
+- **Every test takes a screenshot** — `await page.screenshot({ path: ... })`. Visual proof each layer works.
+- **Every `.tsx` component must have a `.ct.tsx` test** covering: renders correctly (screenshot), handles props (data attributes), responds to user interaction, visual state changes (more screenshots).
+- **Reference:** `src/engine/runes/RuneSimulator.ct.tsx` is the gold standard for visual TDD.
 
 ### PRNG
 - **Never use `Math.random()` anywhere.** Use `worldRng()` for deterministic game logic (terrain, spawns, drops). Use `cosmeticRng()` for non-deterministic visual-only effects (particles, screen shake).
