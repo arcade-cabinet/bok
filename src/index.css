@@ -1,0 +1,231 @@
+@import "tailwindcss" source("../");
+
+:root {
+	--font-display: "Cinzel", serif;
+	--font-body: "Inter", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", monospace;
+	--color-bok-parchment: #e0d5c1;
+	--color-bok-ink: #1a1a2e;
+	--color-bok-gold: #c9a84c;
+	--color-bok-ember: #a3452a;
+	--color-bok-moss: #3a5a40;
+	--color-bok-sky: #87ceeb;
+	--color-bok-night: #050510;
+	--color-bok-stone: #6b6b6b;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background-color: #000;
+	font-family: var(--font-body);
+	user-select: none;
+	-webkit-user-select: none;
+	touch-action: none;
+}
+
+#game-canvas {
+	display: block;
+}
+
+.font-display {
+	font-family: var(--font-display);
+}
+
+.font-body {
+	font-family: var(--font-body);
+}
+
+.font-mono {
+	font-family: var(--font-mono);
+}
+
+.text-parchment {
+	color: var(--color-bok-parchment);
+}
+
+.text-gold {
+	color: var(--color-bok-gold);
+}
+
+.glass-panel {
+	background: rgba(10, 10, 15, 0.6);
+	backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 12px;
+}
+
+.bok-panel {
+	background: rgba(26, 26, 46, 0.8);
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(201, 168, 76, 0.15);
+	border-radius: 4px;
+	box-shadow:
+		inset 0 1px 0 rgba(201, 168, 76, 0.08),
+		0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.vignette-damage {
+	background: radial-gradient(circle, transparent 40%, rgba(180, 0, 0, 0.6) 100%);
+	transition: opacity 0.1s ease-out;
+}
+
+@keyframes pulse-low-health {
+	0% {
+		opacity: 0.15;
+	}
+	50% {
+		opacity: 0.5;
+	}
+	100% {
+		opacity: 0.15;
+	}
+}
+
+.animate-low-health {
+	animation: pulse-low-health 1.5s infinite;
+}
+
+@keyframes float-up {
+	0% {
+		transform: translateY(0) rotate(0deg);
+		opacity: 0;
+	}
+	10% {
+		opacity: 0.4;
+	}
+	90% {
+		opacity: 0.4;
+	}
+	100% {
+		transform: translateY(-100vh) rotate(360deg);
+		opacity: 0;
+	}
+}
+
+@keyframes title-emerge {
+	0% {
+		opacity: 0;
+		transform: translateY(30px);
+		letter-spacing: 8px;
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+		letter-spacing: 4px;
+	}
+}
+
+@keyframes subtitle-fade {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 0.7;
+	}
+}
+
+@keyframes cta-pulse {
+	0%,
+	100% {
+		opacity: 0.8;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+/* Bok journal open/close animations */
+@keyframes bok-open-anim {
+	0% {
+		opacity: 0;
+		transform: perspective(800px) rotateY(-30deg) scale(0.9);
+	}
+	100% {
+		opacity: 1;
+		transform: perspective(800px) rotateY(0deg) scale(1);
+	}
+}
+
+@keyframes bok-close-anim {
+	0% {
+		opacity: 1;
+		transform: perspective(800px) rotateY(0deg) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: perspective(800px) rotateY(-30deg) scale(0.9);
+	}
+}
+
+.bok-open {
+	animation: bok-open-anim 0.3s ease-out both;
+}
+
+.bok-close {
+	animation: bok-close-anim 0.25s ease-in both;
+}
+
+/* DaisyUI-like button styles (inline since DaisyUI v5 + Tailwind v4 has compat issues) */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 8px;
+	padding: 8px 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s;
+	border: none;
+}
+
+.btn:hover {
+	filter: brightness(1.1);
+}
+
+.btn-lg {
+	padding: 16px 48px;
+	font-size: 1.1rem;
+}
+
+.btn-ghost {
+	background: transparent;
+}
+
+.btn-ghost:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-xs {
+	padding: 4px 8px;
+	font-size: 0.75rem;
+}
+
+/* Rune glow pulse for BokIndicator when new saga info is available */
+@keyframes rune-glow-pulse {
+	0%,
+	100% {
+		filter: brightness(1) drop-shadow(0 0 4px var(--color-bok-gold));
+	}
+	50% {
+		filter: brightness(1.3) drop-shadow(0 0 12px var(--color-bok-gold));
+	}
+}
+
+.rune-glow {
+	animation: rune-glow-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

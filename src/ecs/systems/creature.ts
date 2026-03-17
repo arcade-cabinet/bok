@@ -1,0 +1,157 @@
+/**
+ * Creature system — main entry point replacing enemySystem.
+ * Dispatches spawning by species and AI updates by archetype.
+ */
+
+import type { World } from "koota";
+import {
+	CreatureHealth,
+	CreatureTag,
+	InscriptionLevel,
+	MiningState,
+	PlayerState,
+	PlayerTag,
+	Position,
+	Rotation,
+	SeasonState,
+	ShelterState,
+	WorldTime,
+} from "../traits/index.ts";
+import type { CreatureEffects, CreatureUpdateContext } from "./creature-ai.ts";
+import { cleanupCreatureState, updateHostileAI, updateNeutralAI, updatePassiveAI } from "./creature-ai.ts";
+import { spawnCreatures } from "./creature-spawner.ts";
+import { computeInscriptionLevel } from "./inscription-level.ts";
+import { yukaCreatureUpdate } from "./yuka-creature-system.ts";
+
+const DESPAWN_DISTANCE = 50;
+
+export type { CreatureEffects };
+
+export function creatureSystem(world: World, dt: number, effects?: CreatureEffects) {
+	let timeOfDay = 0.25;
+	world.query(WorldTime).readEach(([time]) => {
+		timeOfDay = time.timeOfDay;
+	});
+	const isDaytime = timeOfDay > 0 && timeOfDay < 0.5;
+
+	// Get player position, yaw, inscription level, and mining state
+	let px = 0,
+		py = 0,
+		pz = 0,
+		pYaw = 0;
+	let playerAlive = false;
+	let insLevel = 0;
+	let miningActive = false;
+	let mineX = 0;
+	let mineY = 0;
+	let mineZ = 0;
+	let structuresBuilt = 0;
+	let discoveredRunes = 0;
+	world
+		.query(PlayerTag, Position, PlayerState, Rotation, InscriptionLevel, MiningState)
+		.readEach(([pos, state, rot, ins, mining]) => {
+			px = pos.x;
+			py = pos.y;
+			pz = pos.z;
+			pYaw = rot.yaw;
+			playerAlive = !state.isDead;
+			insLevel = computeInscriptionLevel(ins.totalBlocksPlaced, ins.totalBlocksMined, ins.structuresBuilt);
+			structuresBuilt = ins.structuresBuilt;
+			discoveredRunes = ins.totalBlocksMined; // proxy — actual rune count tracked elsewhere
+			miningActive = mining.active;
+			mineX = mining.targetX;
+			mineY = mining.targetY;
+			mineZ = mining.targetZ;
+		});
+
+	// Count + despawn distant creatures
+	let creatureCount = 0;
+	world.query(CreatureTag, Position).updateEach(([pos], entity) => {
+		const dx = px - pos.x;
+		const dz = pz - pos.z;
+		const dist = Math.sqrt(dx * dx + dz * dz);
+		if (dist > DESPAWN_DISTANCE) {
+			cleanupCreatureState(entity.id());
+			effects?.onCreatureDied(entity.id());
+			entity.destroy();
+			return;
+		}
+		creatureCount++;
+	});
+
+	// Read shelter state for Mörker spawn reduction (separate query for backward compat)
+	let morkerSpawnMult = 1;
+	world.query(PlayerTag, ShelterState).readEach(([shelter]) => {
+		morkerSpawnMult = shelter.morkerSpawnMult;
+	});
+
+	// Read season modifiers (separate query for backward compat)
+	let seasonMorkerMult = 1;
+	let tranaMigrating = false;
+	world.query(SeasonState).readEach(([season]) => {
+		seasonMorkerMult = season.morkerMult;
+		tranaMigrating = season.tranaMigrating;
+	});
+
+	// Spawn — inscription level + season + shelter affect rates
+	spawnCreatures(
+		world,
+		px,
+		pz,
+		playerAlive,
+		isDaytime,
+		creatureCount,
+		effects,
+		timeOfDay,
+		insLevel,
+		morkerSpawnMult,
+		seasonMorkerMult,
+		tranaMigrating,
+		structuresBuilt,
+		discoveredRunes,
+	);
+
+	// Update AI by archetype
+	const ctx: CreatureUpdateContext = {
+		playerX: px,
+		playerY: py,
+		playerZ: pz,
+		playerYaw: pYaw,
+		playerAlive,
+		isDaytime,
+		timeOfDay,
+		miningActive,
+		mineX,
+		mineY,
+		mineZ,
+	};
+
+	// Yuka AI runs first — returns set of entity IDs it handled
+	const yukaHandled = yukaCreatureUpdate(world, dt, ctx, effects);
+
+	// Legacy AI runs for creatures NOT handled by Yuka
+	updateHostileAI(world, dt, ctx, effects, yukaHandled);
+	updatePassiveAI(world, dt, ctx, effects, yukaHandled);
+	updateNeutralAI(world, dt, ctx, effects, yukaHandled);
+}
+
+/**
+ * Damage a creature by entity ID. Called from combat system.
+ */
+export function damageCreature(
+	world: World,
+	entityId: number,
+	damage: number,
+	effects?: { spawnParticles: (x: number, y: number, z: number, color: string | number, count: number) => void },
+) {
+	world.query(CreatureTag, CreatureHealth, Position).updateEach(([hp, pos], entity) => {
+		if (entity.id() === entityId) {
+			hp.hp -= damage;
+			effects?.spawnParticles(pos.x, pos.y, pos.z, 0xff0000, 5);
+		}
+	});
+}
+
+export type { CreatureEffects as EnemySideEffects };
+// ─── Legacy aliases ───
+export { creatureSystem as enemySystem, damageCreature as damageEnemy };

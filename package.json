@@ -1,0 +1,53 @@
+{
+	"name": "bok",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"description": "Bok — A narrative voxel survival game built on Jolly Pixel",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"preview": "vite preview",
+		"typecheck": "tsc -b --dry",
+		"test": "vitest run --project unit",
+		"test:watch": "vitest --project unit",
+		"test-ct": "vitest run --project browser",
+		"test-e2e": "playwright test -c playwright-e2e.config.ts"
+	},
+	"dependencies": {
+		"@capacitor-community/sqlite": "^8.0.1",
+		"@capacitor/cli": "^8.2.0",
+		"@capacitor/core": "^8.2.0",
+		"@dimforge/rapier3d-compat": "^0.14.0",
+		"jeep-sqlite": "^2.8.0",
+		"koota": "^0.6.5",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"sql.js": "^1.11.0",
+		"three": "^0.182.0",
+		"tone": "^15.1.22",
+		"yuka": "^0.7.8"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.7",
+		"@playwright/experimental-ct-react": "^1.58.2",
+		"@playwright/test": "^1.58.2",
+		"@tailwindcss/vite": "^4.2.1",
+		"@types/node": "^24.12.0",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"@types/three": "^0.182.0",
+		"@types/yuka": "^0.7.4",
+		"@vitejs/plugin-react": "^6.0.0",
+		"@vitest/browser-playwright": "^4.1.0",
+		"daisyui": "^5.0.0",
+		"tailwindcss": "^4.0.0",
+		"typescript": "~5.9.3",
+		"vite": "^8.0.0",
+		"vitest": "^4.1.0",
+		"vitest-browser-react": "^2.1.0"
+	},
+	"packageManager": "pnpm@9.5.0+sha512.140036830124618d624a2187b50d04289d5a087f326c9edfc0ccd733d76c4f52c3a313d4fc148794a2a9d81553016004e6742e8cf850670268a7387fc220c903"
+}
