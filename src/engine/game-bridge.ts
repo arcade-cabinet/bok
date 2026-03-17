@@ -7,11 +7,14 @@ import type { World } from "koota";
 import type * as THREE from "three";
 import type { CreatureEffects } from "../ecs/systems/creature.ts";
 import {
+	chiselXraySystem,
 	codexSystem,
 	cookingSystem,
 	creatureSystem,
 	eatingSystem,
 	explorationSystem,
+	farmingSystem,
+	getActiveGrowthZones,
 	lightSystem,
 	miningSystem,
 	movementSystem,
@@ -29,6 +32,7 @@ import type { BlockHit, MiningSideEffects } from "../ecs/systems/mining.ts";
 import type { FaceHit, RuneInscriptionEffects } from "../ecs/systems/rune-inscription.ts";
 import { seasonEffectsSystem } from "../ecs/systems/season-effects.ts";
 import { isGamePaused } from "../ecs/systems/session-pause.ts";
+import { tomteSpawnSystem } from "../ecs/systems/tomte-spawn.ts";
 import { COMBAT_DRAIN_COOLDOWN, drainDurability } from "../ecs/systems/tool-durability.ts";
 import {
 	CameraTransition,
@@ -40,6 +44,7 @@ import {
 	PlayerTag,
 	Position,
 	ToolSwing,
+	WorldTime,
 } from "../ecs/traits/index.ts";
 import { cosmeticRng } from "../world/noise.ts";
 import { getVoxelAt, isBlockSolid, setVoxelAt } from "../world/voxel-helpers.ts";
@@ -147,6 +152,19 @@ export class GameBridge extends Behavior {
 		this.runCreatureSystem(dt);
 		codexSystem(world, dt);
 		sagaSystem(world, dt);
+
+		// Chisel x-ray (after rune inscription system sets chisel.active)
+		chiselXraySystem(world, dt);
+
+		// Farming — read dayCount from WorldTime, feed growth zones
+		let dayCount = 1;
+		world.query(WorldTime).readEach(([time]) => {
+			dayCount = time.dayCount;
+		});
+		farmingSystem(world, dayCount, getActiveGrowthZones());
+
+		// Tomte tutorial companion spawn/despawn
+		tomteSpawnSystem(world);
 		runRuneDiscoverySystem(world, dt, spawn);
 		runWorldEventSystem(world, dt, spawn, this.getAmbientLight());
 
@@ -195,7 +213,16 @@ export class GameBridge extends Behavior {
 	}
 
 	private runMiningSystem(dt: number) {
-		const hit: BlockHit | null = getBlockHighlightRenderer()?.lastHit ?? null;
+		const bhr = getBlockHighlightRenderer();
+		const hit: BlockHit | null = bhr?.lastHit ?? null;
+		// Push mining progress to the crack overlay
+		if (bhr) {
+			let progress = 0;
+			this.world.query(PlayerTag, MiningState).readEach(([mining]) => {
+				progress = mining.active ? mining.progress : 0;
+			});
+			bhr.miningProgress = progress;
+		}
 		const effects: MiningSideEffects = {
 			removeBlock: (x, y, z) => {
 				setVoxelAt("Ground", x, y, z, 0);

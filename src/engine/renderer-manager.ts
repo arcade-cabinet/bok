@@ -38,6 +38,7 @@ import { BlockHighlightRenderer } from "./block-highlight-renderer.ts";
 import { CelestialRenderer } from "./celestial-renderer.ts";
 import { CreatureRenderer } from "./creature-renderer.ts";
 import { ParticlesRenderer } from "./particles-renderer.ts";
+import { RuneVisualRenderer } from "./rune-visual-renderer.ts";
 import { ViewModelRenderer } from "./viewmodel-renderer.ts";
 
 // Module-level renderer references
@@ -47,6 +48,7 @@ let viewModelRenderer: ViewModelRenderer | null = null;
 let particlesRenderer: ParticlesRenderer | null = null;
 let ambientParticlesRenderer: AmbientParticlesRenderer | null = null;
 let creatureRenderer: CreatureRenderer | null = null;
+let runeVisualRenderer: RuneVisualRenderer | null = null;
 
 export function createRenderers(
 	scene: THREE.Scene,
@@ -66,6 +68,8 @@ export function createRenderers(
 	blockHighlightRenderer = new BlockHighlightRenderer();
 	blockHighlightRenderer.setup(scene, camera, (x, y, z) => getVoxelAt(x, y, z));
 	viewModelRenderer = new ViewModelRenderer(camera);
+	runeVisualRenderer = new RuneVisualRenderer();
+	runeVisualRenderer.setup(scene);
 }
 
 export function updateRenderers(dt: number): void {
@@ -75,6 +79,7 @@ export function updateRenderers(dt: number): void {
 	particlesRenderer?.update(dt);
 	ambientParticlesRenderer?.update(dt);
 	creatureRenderer?.update(dt);
+	runeVisualRenderer?.update(dt);
 }
 
 export function disposeRenderers(): void {
@@ -89,6 +94,8 @@ export function disposeRenderers(): void {
 	ambientParticlesRenderer = null;
 	creatureRenderer?.dispose();
 	creatureRenderer = null;
+	runeVisualRenderer?.dispose();
+	runeVisualRenderer = null;
 }
 
 // ─── Renderer accessors (for game.ts internal use) ───

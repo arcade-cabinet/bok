@@ -77,6 +77,9 @@ import {
 	saveVoxelDelta,
 } from "./persistence/db.ts";
 import { CraftingMenu } from "./ui/components/CraftingMenu.tsx";
+import { SettingsPanel } from "./ui/components/SettingsPanel.tsx";
+import { useSettings } from "./ui/hooks/useSettings.ts";
+import { BlothogenFogOverlay } from "./ui/hud/BlothogenFogOverlay.tsx";
 import { BokIndicator } from "./ui/hud/BokIndicator.tsx";
 import { Crosshair } from "./ui/hud/Crosshair.tsx";
 import { DamageVignette } from "./ui/hud/DamageVignette.tsx";
@@ -84,11 +87,14 @@ import { EtchingSurface } from "./ui/hud/EtchingSurface.tsx";
 import { HotbarDisplay } from "./ui/hud/HotbarDisplay.tsx";
 import { HungerOverlay } from "./ui/hud/HungerOverlay.tsx";
 import { triggerGameHaptic } from "./ui/hud/haptics.ts";
+import { MetaVitals } from "./ui/hud/MetaVitals.tsx";
 import { MicroGoalHint } from "./ui/hud/MicroGoalHint.tsx";
 import { MobileControls } from "./ui/hud/MobileControls.tsx";
 import type { MobileButtonId } from "./ui/hud/mobile-controls-data.ts";
+import { QuestTracker } from "./ui/hud/QuestTracker.tsx";
 import { ResumeBanner } from "./ui/hud/ResumeBanner.tsx";
 import { ScreenReaderAnnouncer } from "./ui/hud/ScreenReaderAnnouncer.tsx";
+import { SettingsButton } from "./ui/hud/SettingsButton.tsx";
 import { SettlementIndicator } from "./ui/hud/SettlementIndicator.tsx";
 import { TomteHint } from "./ui/hud/TomteHint.tsx";
 import { UnderwaterOverlay } from "./ui/hud/UnderwaterOverlay.tsx";
@@ -97,6 +103,7 @@ import type { MapData } from "./ui/screens/BokScreen.tsx";
 import { BokScreen } from "./ui/screens/BokScreen.tsx";
 import { DeathScreen } from "./ui/screens/DeathScreen.tsx";
 import { TitleScreen } from "./ui/screens/TitleScreen.tsx";
+import { Biome } from "./world/biomes.ts";
 import type { RecipeTier } from "./world/blocks.ts";
 import { RECIPES } from "./world/blocks.ts";
 import { biomeAt } from "./world/landmark-generator.ts";
@@ -107,6 +114,8 @@ export default function App() {
 	const [phase, setPhase] = useState<GamePhase>("title");
 	const [craftingOpen, setCraftingOpen] = useState(false);
 	const [bokOpen, setBokOpen] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
+	const { settings, updateSetting, rebindKey, updateMobileConfig } = useSettings();
 	const mobileMode = isMobile();
 	const prevDamageFlashRef = useRef(0);
 	const [hasSaveSlot, setHasSaveSlot] = useState(false);
@@ -121,13 +130,8 @@ export default function App() {
 	} | null>(null);
 	const [ledgerItems, setLedgerItems] = useState<Record<number, number> | null>(null);
 	const [sagaData, setSagaData] = useState<import("./ui/components/BokSaga.tsx").BokSagaProps | null>(null);
-	const [showVitalsBars, setShowVitalsBars] = useState(() => {
-		try {
-			return localStorage.getItem("bok-show-vitals") !== "false";
-		} catch {
-			return true;
-		}
-	});
+	// Derived from settings hook — no local state needed
+	const showVitalsBars = settings.showVitals;
 	const lastSeenSagaCountRef = useRef(0);
 	const [resumeContext, setResumeContext] = useState<ResumeContext | null>(null);
 	const [microGoal, setMicroGoal] = useState<import("./ecs/systems/micro-goals.ts").MicroGoal | null>(null);
@@ -175,6 +179,8 @@ export default function App() {
 		joystickY: 0,
 		joystickCenterX: 0,
 		joystickCenterY: 0,
+		playerBiome: 0,
+		prevHealth: 100,
 	});
 
 	// Init database + check for existing saves on mount
@@ -207,8 +213,9 @@ export default function App() {
 					PlayerState,
 					PhysicsBody,
 					WorkstationProximity,
+					Position,
 				)
-				.readEach(([health, hunger, stamina, inv, hotbar, mining, quest, state, body, ws]) => {
+				.readEach(([health, hunger, stamina, inv, hotbar, mining, quest, state, body, ws, pos]) => {
 					playerUpdate = {
 						health: health.current,
 						hunger: hunger.current,
@@ -225,6 +232,8 @@ export default function App() {
 						isSwimming: body.isSwimming,
 						isDead: state.isDead,
 						workstationTier: ws.maxTier as RecipeTier,
+						prevHealth: hudState.health,
+						playerBiome: biomeAt(Math.floor(pos.x), Math.floor(pos.z)),
 					};
 
 					if (state.isDead) {
@@ -482,20 +491,16 @@ export default function App() {
 				});
 			}
 			if (e.code === "KeyV") {
-				setShowVitalsBars((prev) => {
-					const next = !prev;
-					try {
-						localStorage.setItem("bok-show-vitals", String(next));
-					} catch {
-						/* localStorage unavailable */
-					}
-					return next;
-				});
+				updateSetting("showVitals", !settings.showVitals);
+			}
+			if (e.code === "Escape" && settingsOpen) {
+				setSettingsOpen(false);
+				requestPointerLock();
 			}
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
-	}, [phase, hudState.sagaEntryCount]);
+	}, [phase, hudState.sagaEntryCount, settings.showVitals, settingsOpen, updateSetting]);
 
 	const handleStartGame = useCallback(async (seed: string) => {
 		const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
@@ -738,6 +743,13 @@ export default function App() {
 					<HungerOverlay hunger={hudState.hunger} />
 					<DamageVignette health={hudState.health} damageFlash={hudState.damageFlash} />
 					<UnderwaterOverlay isUnderwater={hudState.isSwimming} />
+					<BlothogenFogOverlay active={hudState.playerBiome === Biome.Blothogen} />
+					<MetaVitals
+						health={hudState.health}
+						hunger={hudState.hunger}
+						stamina={hudState.stamina}
+						prevHealth={hudState.prevHealth}
+					/>
 				</>
 			)}
 
@@ -758,10 +770,19 @@ export default function App() {
 
 						<ResumeBanner context={resumeContext} onDismiss={() => setResumeContext(null)} />
 						<MicroGoalHint goal={!resumeContext ? microGoal : null} />
+						<QuestTracker step={hudState.questStep} progress={hudState.questProgress} />
 						<SettlementIndicator name={settlementName} levelName={settlementLevelName} />
 						<TomteHint hint={tomteHint} />
 
-						<div className="absolute top-4 right-4 flex items-center gap-3">
+						<div className="absolute top-4 right-4 flex items-center gap-2">
+							<SettingsButton
+								onOpen={() => {
+									setBokOpen(false);
+									setCraftingOpen(false);
+									setSettingsOpen(true);
+									releasePointerLock();
+								}}
+							/>
 							<BokIndicator
 								hasNewInfo={hudState.sagaEntryCount > lastSeenSagaCountRef.current}
 								onOpen={() => {
@@ -779,6 +800,18 @@ export default function App() {
 								}}
 							/>
 						</div>
+
+						<SettingsPanel
+							isOpen={settingsOpen}
+							settings={settings}
+							onUpdateSetting={updateSetting}
+							onRebind={rebindKey}
+							onMobileConfig={updateMobileConfig}
+							onClose={() => {
+								setSettingsOpen(false);
+								requestPointerLock();
+							}}
+						/>
 
 						<div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-auto">
 							<VitalsBar
