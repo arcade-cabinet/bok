@@ -137,6 +137,61 @@ export const NorrskenEvent = trait({
 	wasNight: false,
 });
 
+// ─── Farming ───
+export interface FarmPlotEntry {
+	/** Crop type (CropType enum value from farming.ts). */
+	cropType: number;
+	/** Growth stage (GrowthStage enum value from farming.ts). */
+	stage: number;
+	/** Progress toward next stage [0, 1). */
+	growthProgress: number;
+}
+/** Tracks planted crops. Key: "x,y,z" block position → plot data. */
+export const FarmPlots = trait(
+	(): { plots: Record<string, FarmPlotEntry>; lastProcessedDay: number } => ({
+		plots: {},
+		lastProcessedDay: -1,
+	}),
+);
+
+// ─── Equipment ───
+export interface EquipmentSlots {
+	head: number | null;
+	chest: number | null;
+	legs: number | null;
+	accessory: number | null;
+}
+export const Equipment = trait(
+	(): EquipmentSlots => ({
+		head: null,
+		chest: null,
+		legs: null,
+		accessory: null,
+	}),
+);
+
+// ─── Settlement Bonuses ───
+/** Active settlement bonuses applied to the player based on detected archetypes. */
+export const SettlementBonusState = trait({
+	/** Combat damage multiplier from Smedja (Workshop). */
+	combatMult: 1,
+	/** Hunger decay multiplier from Kvarn (Farm). Lower = slower hunger. */
+	foodMult: 1,
+	/** Detection radius bonus from Vakttorn (Beacon). Added to creature detection. */
+	detectionBonus: 0,
+	/** Damage reduction multiplier from Försvarsverk (Ward). Lower = less damage taken. */
+	defenseMult: 1,
+});
+
+// ─── Tomte Hint (Tutorial) ───
+/** Singleton trait holding the current Tomte tutorial speech-bubble text. */
+export const TomteHint = trait({
+	/** The hint text to display. Empty string = hidden. */
+	text: "",
+	/** Whether the bubble is visible. */
+	visible: false,
+});
+
 // ─── Creature Traits ───
 
 /** All creature species in the game, from Swedish folklore. */
@@ -151,6 +206,7 @@ export const Species = {
 	Lindorm: "lindorm",
 	Draug: "draug",
 	Jatten: "jatten",
+	Tomte: "tomte",
 } as const;
 export type SpeciesId = (typeof Species)[keyof typeof Species];
 

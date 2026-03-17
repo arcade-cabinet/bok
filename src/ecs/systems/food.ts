@@ -8,6 +8,8 @@ import { BlockId } from "../../world/blocks.ts";
 export const FoodId = {
 	RawMeat: 201,
 	CookedMeat: 202,
+	Wheat: 203,
+	Berry: 204,
 } as const;
 
 /** Hunger restoration values for all edible items (blocks and items). */
