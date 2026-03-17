@@ -17,10 +17,16 @@ export function Crosshair({ isMining, miningProgress, lookingAtBlock }: Crosshai
 		<div
 			className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center"
 			aria-hidden="true"
+			data-testid="crosshair"
 		>
 			{/* Mining progress ring — only while actively mining */}
 			{isMining && (
-				<svg className="absolute -rotate-90 w-8 h-8" viewBox="0 0 30 30" aria-hidden="true">
+				<svg
+					className="absolute -rotate-90 w-8 h-8"
+					viewBox="0 0 30 30"
+					aria-hidden="true"
+					data-testid="crosshair-ring"
+				>
 					<circle
 						cx="15"
 						cy="15"

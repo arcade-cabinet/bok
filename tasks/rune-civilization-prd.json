@@ -21,10 +21,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 4 \u2014 bridges proven rune simulation into real inventory",
-			"labels": [
-				"runes",
-				"ecs-system"
-			],
+			"labels": ["runes", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -44,11 +41,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 5 \u2014 runes as 4X eXterminate pillar. Single file handles all three.",
-			"labels": [
-				"runes",
-				"combat",
-				"ecs-system"
-			],
+			"labels": ["runes", "combat", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -67,11 +60,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 5 \u2014 runes as eXplore sensor network",
-			"labels": [
-				"runes",
-				"sensors",
-				"ecs-system"
-			],
+			"labels": ["runes", "sensors", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -88,10 +77,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 6 \u2014 JP removal phase 1",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
+			"labels": ["engine", "jp-removal"],
 			"dependsOn": []
 		},
 		{
@@ -109,10 +95,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 6 \u2014 JP removal phase 1",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
+			"labels": ["engine", "jp-removal"],
 			"dependsOn": []
 		},
 		{
@@ -130,10 +113,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 7 \u2014 custom voxel renderer",
-			"labels": [
-				"engine",
-				"voxel"
-			],
+			"labels": ["engine", "voxel"],
 			"dependsOn": []
 		},
 		{
@@ -151,10 +131,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 9 \u2014 eXpand pillar",
-			"labels": [
-				"settlements",
-				"ecs-system"
-			],
+			"labels": ["settlements", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -172,11 +149,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Step 10 \u2014 diegetic tutorial",
-			"labels": [
-				"creatures",
-				"tutorial",
-				"ecs-system"
-			],
+			"labels": ["creatures", "tutorial", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -198,10 +171,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Tone.js for synthesis, NOT sample files. Swedish folk instrument tones programmed.",
-			"labels": [
-				"audio",
-				"polish"
-			],
+			"labels": ["audio", "polish"],
 			"dependsOn": []
 		},
 		{
@@ -222,10 +192,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Visual seasons done (US-044), this adds mechanical effects",
-			"labels": [
-				"seasons",
-				"ecs-system"
-			],
+			"labels": ["seasons", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -245,10 +212,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Ties runes to 4X eXploit pillar \u2014 Berkanan accelerates growth",
-			"labels": [
-				"farming",
-				"ecs-system"
-			],
+			"labels": ["farming", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -268,11 +232,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Creature drops \u2192 armor progression loop",
-			"labels": [
-				"equipment",
-				"crafting",
-				"ecs-system"
-			],
+			"labels": ["equipment", "crafting", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -292,11 +252,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Replaces reliance on vitals bars \u2014 diegetic-ui.md spec",
-			"labels": [
-				"ui",
-				"diegetic",
-				"hud"
-			],
+			"labels": ["ui", "diegetic", "hud"],
 			"dependsOn": []
 		},
 		{
@@ -316,10 +272,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "diegetic-ui.md \u2014 spatial mining feedback replacing ring indicator",
-			"labels": [
-				"rendering",
-				"diegetic"
-			],
+			"labels": ["rendering", "diegetic"],
 			"dependsOn": []
 		},
 		{
@@ -339,11 +292,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Brings Swedish ecosystem to life \u2014 creatures aren't independent",
-			"labels": [
-				"creatures",
-				"ecosystem",
-				"ecs-system"
-			],
+			"labels": ["creatures", "ecosystem", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -364,11 +313,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Rune discovery is narrative, not tutorial \u2014 the world teaches",
-			"labels": [
-				"runes",
-				"progression",
-				"ecs-system"
-			],
+			"labels": ["runes", "progression", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -388,11 +333,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "Endgame content \u2014 creatures.md + progression.md Act V",
-			"labels": [
-				"boss",
-				"creatures",
-				"ecs-system"
-			],
+			"labels": ["boss", "creatures", "ecs-system"],
 			"dependsOn": []
 		},
 		{
@@ -410,11 +351,7 @@
 			"priority": 1,
 			"passes": true,
 			"notes": "US-047 completion \u2014 mobile session design",
-			"labels": [
-				"mobile",
-				"session",
-				"persistence"
-			],
+			"labels": ["mobile", "session", "persistence"],
 			"dependsOn": []
 		},
 		{
@@ -432,14 +369,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"integration",
-				"game-loop"
-			],
-			"dependsOn": [
-				"RC-002",
-				"RC-003"
-			]
+			"labels": ["integration", "game-loop"],
+			"dependsOn": ["RC-002", "RC-003"]
 		},
 		{
 			"id": "RC-020",
@@ -456,14 +387,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "Step 6 \u2014 biggest risk task",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-004",
-				"RC-005"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-004", "RC-005"]
 		},
 		{
 			"id": "RC-021",
@@ -479,14 +404,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"voxel",
-				"runes"
-			],
-			"dependsOn": [
-				"RC-006"
-			]
+			"labels": ["engine", "voxel", "runes"],
+			"dependsOn": ["RC-006"]
 		},
 		{
 			"id": "RC-022",
@@ -502,13 +421,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"settlements",
-				"ecs-system"
-			],
-			"dependsOn": [
-				"RC-007"
-			]
+			"labels": ["settlements", "ecs-system"],
+			"dependsOn": ["RC-007"]
 		},
 		{
 			"id": "RC-023",
@@ -524,14 +438,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"ui",
-				"hud",
-				"settlements"
-			],
-			"dependsOn": [
-				"RC-007"
-			]
+			"labels": ["ui", "hud", "settlements"],
+			"dependsOn": ["RC-007"]
 		},
 		{
 			"id": "RC-024",
@@ -548,13 +456,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"creatures",
-				"tutorial"
-			],
-			"dependsOn": [
-				"RC-008"
-			]
+			"labels": ["creatures", "tutorial"],
+			"dependsOn": ["RC-008"]
 		},
 		{
 			"id": "RC-025",
@@ -569,13 +472,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"creatures",
-				"rendering"
-			],
-			"dependsOn": [
-				"RC-008"
-			]
+			"labels": ["creatures", "rendering"],
+			"dependsOn": ["RC-008"]
 		},
 		{
 			"id": "RC-026",
@@ -591,13 +489,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"ui",
-				"tutorial"
-			],
-			"dependsOn": [
-				"RC-008"
-			]
+			"labels": ["ui", "tutorial"],
+			"dependsOn": ["RC-008"]
 		},
 		{
 			"id": "RC-027",
@@ -614,14 +507,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"runes",
-				"discovery",
-				"codex"
-			],
-			"dependsOn": [
-				"RC-001"
-			]
+			"labels": ["runes", "discovery", "codex"],
+			"dependsOn": ["RC-001"]
 		},
 		{
 			"id": "RC-028",
@@ -643,13 +530,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "All synthesized via Tone.js, no sample files",
-			"labels": [
-				"audio",
-				"biomes"
-			],
-			"dependsOn": [
-				"RC-009"
-			]
+			"labels": ["audio", "biomes"],
+			"dependsOn": ["RC-009"]
 		},
 		{
 			"id": "RC-029",
@@ -669,13 +551,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "Procedural via Tone.js \u2014 pitch-shifted sine/noise bursts",
-			"labels": [
-				"audio",
-				"creatures"
-			],
-			"dependsOn": [
-				"RC-009"
-			]
+			"labels": ["audio", "creatures"],
+			"dependsOn": ["RC-009"]
 		},
 		{
 			"id": "RC-030",
@@ -695,13 +572,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "Visual only \u2014 mechanical effects are in RC-010",
-			"labels": [
-				"seasons",
-				"rendering"
-			],
-			"dependsOn": [
-				"RC-010"
-			]
+			"labels": ["seasons", "rendering"],
+			"dependsOn": ["RC-010"]
 		},
 		{
 			"id": "RC-031",
@@ -720,13 +592,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "Creates dread before the boss shows up",
-			"labels": [
-				"boss",
-				"ecs-system"
-			],
-			"dependsOn": [
-				"RC-017"
-			]
+			"labels": ["boss", "ecs-system"],
+			"dependsOn": ["RC-017"]
 		},
 		{
 			"id": "RC-032",
@@ -744,10 +611,7 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "structures.md spec \u2014 needed for debugging complex circuits",
-			"labels": [
-				"runes",
-				"rendering"
-			],
+			"labels": ["runes", "rendering"],
 			"dependsOn": []
 		},
 		{
@@ -767,13 +631,8 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "crafting.md planned recipes \u2014 completes crafting progression",
-			"labels": [
-				"crafting",
-				"progression"
-			],
-			"dependsOn": [
-				"RC-012"
-			]
+			"labels": ["crafting", "progression"],
+			"dependsOn": ["RC-012"]
 		},
 		{
 			"id": "RC-034",
@@ -788,93 +647,52 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "Step 8 \u2014 behavior migration",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-035",
 			"title": "Migrate CelestialBehavior",
 			"description": "Convert sun/moon/stars from JP Behavior to plain class.",
-			"acceptanceCriteria": [
-				"celestial-renderer.ts (~115 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["celestial-renderer.ts (~115 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-036",
 			"title": "Migrate ViewModelBehavior",
 			"description": "Convert first-person held item from JP Behavior.",
-			"acceptanceCriteria": [
-				"viewmodel-renderer.ts (~135 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["viewmodel-renderer.ts (~135 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-037",
 			"title": "Migrate ParticlesBehavior",
 			"description": "Convert instanced mesh particles from JP Behavior.",
-			"acceptanceCriteria": [
-				"particles-renderer.ts (~91 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["particles-renderer.ts (~91 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-038",
 			"title": "Migrate AmbientParticlesBehavior",
 			"description": "Convert floating atmospheric particles from JP Behavior.",
-			"acceptanceCriteria": [
-				"ambient-particles-renderer.ts (~83 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["ambient-particles-renderer.ts (~83 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-039",
@@ -888,33 +706,19 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "Largest behavior (254 LOC) \u2014 likely needs decomposition",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-040",
 			"title": "Migrate EnemyRendererBehavior",
 			"description": "Merge into creature-renderer or keep as hostile variant.",
-			"acceptanceCriteria": [
-				"Merged or converted (~152 LOC)",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Merged or converted (~152 LOC)", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-041",
@@ -929,54 +733,30 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-042",
 			"title": "Wire Settlement Systems",
 			"description": "Add settlement detector + bonus to game loop, indicator to App.tsx.",
-			"acceptanceCriteria": [
-				"Minimal game.ts + App.tsx touch",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Minimal game.ts + App.tsx touch", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"integration"
-			],
-			"dependsOn": [
-				"RC-022",
-				"RC-023"
-			]
+			"labels": ["integration"],
+			"dependsOn": ["RC-022", "RC-023"]
 		},
 		{
 			"id": "RC-043",
 			"title": "Wire Tomte Systems",
 			"description": "Add tomte-ai + spawner to game loop, hint to App.tsx, Tomte to creature renderer.",
-			"acceptanceCriteria": [
-				"Minimal integration",
-				"pnpm tsc -b passes",
-				"pnpm test passes"
-			],
+			"acceptanceCriteria": ["Minimal integration", "pnpm tsc -b passes", "pnpm test passes"],
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"integration"
-			],
-			"dependsOn": [
-				"RC-024",
-				"RC-025",
-				"RC-026"
-			]
+			"labels": ["integration"],
+			"dependsOn": ["RC-024", "RC-025", "RC-026"]
 		},
 		{
 			"id": "RC-044",
@@ -991,13 +771,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"engine",
-				"voxel"
-			],
-			"dependsOn": [
-				"RC-021"
-			]
+			"labels": ["engine", "voxel"],
+			"dependsOn": ["RC-021"]
 		},
 		{
 			"id": "RC-045",
@@ -1017,13 +792,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "NorrskenEvent trait already exists \u2014 this adds the full event logic",
-			"labels": [
-				"world-events",
-				"creatures"
-			],
-			"dependsOn": [
-				"RC-015"
-			]
+			"labels": ["world-events", "creatures"],
+			"dependsOn": ["RC-015"]
 		},
 		{
 			"id": "RC-046",
@@ -1043,13 +813,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "creatures.md \u2014 Draugar are the creepiest creature in the game",
-			"labels": [
-				"creatures",
-				"ecs-system"
-			],
-			"dependsOn": [
-				"RC-015"
-			]
+			"labels": ["creatures", "ecs-system"],
+			"dependsOn": ["RC-015"]
 		},
 		{
 			"id": "RC-047",
@@ -1068,14 +833,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "creatures.md \u2014 Lindormar reshape the landscape",
-			"labels": [
-				"creatures",
-				"terrain",
-				"ecs-system"
-			],
-			"dependsOn": [
-				"RC-015"
-			]
+			"labels": ["creatures", "terrain", "ecs-system"],
+			"dependsOn": ["RC-015"]
 		},
 		{
 			"id": "RC-048",
@@ -1094,14 +853,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "biomes.md \u2014 the endgame danger zone",
-			"labels": [
-				"biomes",
-				"terrain",
-				"rendering"
-			],
-			"dependsOn": [
-				"RC-010"
-			]
+			"labels": ["biomes", "terrain", "rendering"],
+			"dependsOn": ["RC-010"]
 		},
 		{
 			"id": "RC-049",
@@ -1123,14 +876,8 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "progression.md \u2014 replaces tutorial quest scaffold",
-			"labels": [
-				"progression",
-				"ecs-system"
-			],
-			"dependsOn": [
-				"RC-017",
-				"RC-007"
-			]
+			"labels": ["progression", "ecs-system"],
+			"dependsOn": ["RC-017", "RC-007"]
 		},
 		{
 			"id": "RC-050",
@@ -1146,21 +893,8 @@
 			"priority": 4,
 			"passes": true,
 			"notes": "Final JP removal \u2014 all behaviors migrated",
-			"labels": [
-				"engine",
-				"jp-removal"
-			],
-			"dependsOn": [
-				"RC-034",
-				"RC-035",
-				"RC-036",
-				"RC-037",
-				"RC-038",
-				"RC-039",
-				"RC-040",
-				"RC-041",
-				"RC-044"
-			]
+			"labels": ["engine", "jp-removal"],
+			"dependsOn": ["RC-034", "RC-035", "RC-036", "RC-037", "RC-038", "RC-039", "RC-040", "RC-041", "RC-044"]
 		},
 		{
 			"id": "RC-051",
@@ -1177,13 +911,8 @@
 			"priority": 4,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"ui",
-				"persistence"
-			],
-			"dependsOn": [
-				"RC-020"
-			]
+			"labels": ["ui", "persistence"],
+			"dependsOn": ["RC-020"]
 		},
 		{
 			"id": "RC-052",
@@ -1201,13 +930,8 @@
 			"priority": 4,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"ui",
-				"settings"
-			],
-			"dependsOn": [
-				"RC-009"
-			]
+			"labels": ["ui", "settings"],
+			"dependsOn": ["RC-009"]
 		},
 		{
 			"id": "RC-053",
@@ -1224,10 +948,7 @@
 			"priority": 4,
 			"passes": true,
 			"notes": "mobile-first.md \u2014 PWA before native",
-			"labels": [
-				"mobile",
-				"pwa"
-			],
+			"labels": ["mobile", "pwa"],
 			"dependsOn": []
 		},
 		{
@@ -1244,9 +965,7 @@
 			"priority": 2,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"verification"
-			],
+			"labels": ["verification"],
 			"dependsOn": [
 				"RC-001",
 				"RC-002",
@@ -1280,9 +999,7 @@
 			"priority": 3,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"verification"
-			],
+			"labels": ["verification"],
 			"dependsOn": [
 				"RC-019",
 				"RC-020",
@@ -1313,9 +1030,7 @@
 			"priority": 4,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"verification"
-			],
+			"labels": ["verification"],
 			"dependsOn": [
 				"RC-034",
 				"RC-035",
@@ -1351,13 +1066,8 @@
 			"priority": 5,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"testing",
-				"e2e"
-			],
-			"dependsOn": [
-				"RC-050"
-			]
+			"labels": ["testing", "e2e"],
+			"dependsOn": ["RC-050"]
 		},
 		{
 			"id": "RC-058",
@@ -1375,13 +1085,8 @@
 			"priority": 5,
 			"passes": true,
 			"notes": "Capacitor 8 already configured",
-			"labels": [
-				"mobile",
-				"native"
-			],
-			"dependsOn": [
-				"RC-050"
-			]
+			"labels": ["mobile", "native"],
+			"dependsOn": ["RC-050"]
 		},
 		{
 			"id": "RC-059",
@@ -1400,12 +1105,8 @@
 			"priority": 5,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"accessibility"
-			],
-			"dependsOn": [
-				"RC-050"
-			]
+			"labels": ["accessibility"],
+			"dependsOn": ["RC-050"]
 		},
 		{
 			"id": "RC-060",
@@ -1424,12 +1125,8 @@
 			"priority": 5,
 			"passes": true,
 			"notes": "",
-			"labels": [
-				"performance"
-			],
-			"dependsOn": [
-				"RC-050"
-			]
+			"labels": ["performance"],
+			"dependsOn": ["RC-050"]
 		},
 		{
 			"id": "RC-061",
@@ -1449,20 +1146,8 @@
 			"priority": 6,
 			"passes": true,
 			"notes": "Ship gate \u2014 game is complete after this passes",
-			"labels": [
-				"verification",
-				"ship"
-			],
-			"dependsOn": [
-				"RC-050",
-				"RC-054",
-				"RC-055",
-				"RC-056",
-				"RC-057",
-				"RC-058",
-				"RC-059",
-				"RC-060"
-			]
+			"labels": ["verification", "ship"],
+			"dependsOn": ["RC-050", "RC-054", "RC-055", "RC-056", "RC-057", "RC-058", "RC-059", "RC-060"]
 		}
 	]
 }

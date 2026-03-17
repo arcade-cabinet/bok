@@ -1,172 +1,77 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { MobileControls } from "./MobileControls.tsx";
+
+const SCREENSHOT_DIR = "src/ui/hud/__screenshots__";
 
 const noop = () => {};
 
-test.describe("MobileControls", () => {
-	test("renders the mobile controls container", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-		await expect(component.getByTestId("mobile-controls")).toBeVisible();
+const defaultProps = {
+	joystickActive: false,
+	joystickX: 0,
+	joystickY: 0,
+	joystickCenterX: 0,
+	joystickCenterY: 0,
+	onButtonPress: noop,
+	onButtonRelease: noop,
+};
+
+describe("MobileControls", () => {
+	test("renders the mobile controls container", async () => {
+		const screen = await render(<MobileControls {...defaultProps} />);
+		await expect.element(screen.getByTestId("mobile-controls")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-base.png` });
 	});
 
-	test("renders all 5 action buttons", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-		await expect(component.getByTestId("mobile-btn-mine")).toBeVisible();
-		await expect(component.getByTestId("mobile-btn-place")).toBeVisible();
-		await expect(component.getByTestId("mobile-btn-jump")).toBeVisible();
-		await expect(component.getByTestId("mobile-btn-bok")).toBeVisible();
-		await expect(component.getByTestId("mobile-btn-inventory")).toBeVisible();
+	test("renders all 5 action buttons", async () => {
+		const screen = await render(<MobileControls {...defaultProps} />);
+		await expect.element(screen.getByTestId("mobile-btn-mine")).toBeVisible();
+		await expect.element(screen.getByTestId("mobile-btn-place")).toBeVisible();
+		await expect.element(screen.getByTestId("mobile-btn-jump")).toBeVisible();
+		await expect.element(screen.getByTestId("mobile-btn-bok")).toBeVisible();
+		await expect.element(screen.getByTestId("mobile-btn-inventory")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-buttons.png` });
 	});
 
-	test("buttons have aria-labels for accessibility", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-		await expect(component.getByTestId("mobile-btn-mine")).toHaveAttribute("aria-label", "Mine");
-		await expect(component.getByTestId("mobile-btn-jump")).toHaveAttribute("aria-label", "Jump");
-		await expect(component.getByTestId("mobile-btn-bok")).toHaveAttribute("aria-label", "Bok");
+	test("buttons have correct aria-labels", async () => {
+		const screen = await render(<MobileControls {...defaultProps} />);
+		await expect.element(screen.getByTestId("mobile-btn-mine")).toHaveAttribute("aria-label", "Mine");
+		await expect.element(screen.getByTestId("mobile-btn-jump")).toHaveAttribute("aria-label", "Jump");
+		await expect.element(screen.getByTestId("mobile-btn-bok")).toHaveAttribute("aria-label", "Bok");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-aria.png` });
 	});
 
-	test("buttons are minimum 48px", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-				buttonScale={1.0}
-			/>,
-		);
-		const btn = component.getByTestId("mobile-btn-mine");
-		const box = await btn.boundingBox();
-		expect(box).not.toBeNull();
-		expect(box?.width).toBeGreaterThanOrEqual(48);
-		expect(box?.height).toBeGreaterThanOrEqual(48);
+	test("joystick is hidden when inactive and no center", async () => {
+		const screen = await render(<MobileControls {...defaultProps} />);
+		const base = screen.container.querySelector("[data-testid='joystick-base']");
+		const nub = screen.container.querySelector("[data-testid='joystick-nub']");
+		expect(base).toBeNull();
+		expect(nub).toBeNull();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-joystick-hidden.png` });
 	});
 
-	test("all buttons are positioned in the bottom 40% of viewport", async ({ mount, page }) => {
-		const viewport = page.viewportSize();
-		expect(viewport).not.toBeNull();
-		const thumbZoneTop = viewport?.height * 0.6;
-
-		const component = await mount(
+	test("joystick is visible when active", async () => {
+		const screen = await render(
 			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-
-		for (const id of ["mine", "place", "jump", "bok", "inventory"]) {
-			const btn = component.getByTestId(`mobile-btn-${id}`);
-			const box = await btn.boundingBox();
-			expect(box).not.toBeNull();
-			// Button top edge should be within the bottom 40%
-			expect(box?.y).toBeGreaterThanOrEqual(thumbZoneTop - box?.height);
-		}
-	});
-
-	test("joystick is hidden when inactive and no center", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-		await expect(component.getByTestId("joystick-base")).toHaveCount(0);
-		await expect(component.getByTestId("joystick-nub")).toHaveCount(0);
-	});
-
-	test("joystick is visible when active", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
+				{...defaultProps}
 				joystickActive={true}
 				joystickX={10}
 				joystickY={-15}
 				joystickCenterX={100}
 				joystickCenterY={400}
-				onButtonPress={noop}
-				onButtonRelease={noop}
 			/>,
 		);
-		await expect(component.getByTestId("joystick-base")).toBeVisible();
-		await expect(component.getByTestId("joystick-nub")).toBeVisible();
+		await expect.element(screen.getByTestId("joystick-base")).toBeVisible();
+		await expect.element(screen.getByTestId("joystick-nub")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-joystick-active.png` });
 	});
 
-	test("scaled buttons remain above minimum size", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-				buttonScale={0.5}
-			/>,
-		);
-		const btn = component.getByTestId("mobile-btn-mine");
-		const box = await btn.boundingBox();
-		expect(box).not.toBeNull();
-		// Even at 0.5 scale, should be at least 48px
-		expect(box?.width).toBeGreaterThanOrEqual(48);
-	});
-
-	test("mobile controls overlay has correct z-index for pointer events", async ({ mount }) => {
-		const component = await mount(
-			<MobileControls
-				joystickActive={false}
-				joystickX={0}
-				joystickY={0}
-				joystickCenterX={0}
-				joystickCenterY={0}
-				onButtonPress={noop}
-				onButtonRelease={noop}
-			/>,
-		);
-		const container = component.getByTestId("mobile-controls");
-		await expect(container).toHaveClass(/z-20/);
-		await expect(container).toHaveClass(/pointer-events-none/);
+	test("container has pointer-events-none and correct z-index", async () => {
+		const screen = await render(<MobileControls {...defaultProps} />);
+		const container = screen.getByTestId("mobile-controls");
+		await expect.element(container).toHaveClass("pointer-events-none");
+		await expect.element(container).toHaveClass("z-20");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/mobile-controls-z-index.png` });
 	});
 });

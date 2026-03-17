@@ -1,5 +1,5 @@
-import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import { describe, expect, it } from "vitest";
+import type { VoxelSetOptions } from "../engine/voxel-types.ts";
 import { Biome } from "./biomes.ts";
 import { BlockId } from "./blocks.ts";
 import {

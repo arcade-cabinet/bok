@@ -1,67 +1,76 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { packChunk } from "../../ecs/systems/map-data.ts";
 import type { TravelAnchor } from "../../ecs/systems/raido-travel.ts";
 import { Biome } from "../../world/biomes.ts";
 import { BokMap } from "./BokMap.tsx";
 
+const SCREENSHOT_DIR = "src/ui/components/__screenshots__";
+
 const mockBiomeAt = () => Biome.Angen;
 const emptyLandmarks: never[] = [];
 
-test.describe("BokMap", () => {
-	test("renders map container", async ({ mount }) => {
+describe("BokMap", () => {
+	test("renders map container", async () => {
 		const visited = new Set([packChunk(0, 0)]);
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={emptyLandmarks} />,
 		);
-		await expect(component.getByTestId("bok-map")).toBeVisible();
+		await expect.element(screen.getByTestId("bok-map")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-base.png` });
 	});
 
-	test("renders canvas element", async ({ mount }) => {
+	test("renders canvas element", async () => {
 		const visited = new Set([packChunk(0, 0)]);
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={emptyLandmarks} />,
 		);
-		await expect(component.getByTestId("bok-map-canvas")).toBeVisible();
+		await expect.element(screen.getByTestId("bok-map-canvas")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-canvas.png` });
 	});
 
-	test("canvas has aria-label", async ({ mount }) => {
+	test("canvas has aria-label", async () => {
 		const visited = new Set([packChunk(0, 0)]);
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={emptyLandmarks} />,
 		);
-		await expect(component.getByTestId("bok-map-canvas")).toHaveAttribute("aria-label", "World map");
+		await expect.element(screen.getByTestId("bok-map-canvas")).toHaveAttribute("aria-label", "World map");
 	});
 
-	test("shows zoom hint text", async ({ mount }) => {
+	test("shows zoom hint text", async () => {
 		const visited = new Set<number>();
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={emptyLandmarks} />,
 		);
-		await expect(component.getByText("Pinch to zoom")).toBeVisible();
+		await expect.element(screen.getByText("Pinch to zoom")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-empty.png` });
 	});
 
-	test("renders with explored chunks", async ({ mount }) => {
+	test("renders with explored chunks", async () => {
 		const visited = new Set([packChunk(0, 0), packChunk(1, 0), packChunk(0, 1)]);
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={emptyLandmarks} />,
 		);
 		// Canvas should be present and visible (rendering verified by unit tests)
-		await expect(component.getByTestId("bok-map-canvas")).toBeVisible();
+		await expect.element(screen.getByTestId("bok-map-canvas")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-explored.png` });
 	});
 
-	test("renders with landmark markers", async ({ mount }) => {
+	test("renders with landmark markers", async () => {
 		const visited = new Set([packChunk(1, 1)]);
 		const landmarks = [{ cx: 1, cz: 1, type: "runsten" as const }];
-		const component = await mount(
+		const screen = await render(
 			<BokMap visited={visited} playerCx={0} playerCz={0} biomeAt={mockBiomeAt} landmarks={landmarks} />,
 		);
-		await expect(component.getByTestId("bok-map")).toBeVisible();
+		await expect.element(screen.getByTestId("bok-map")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-landmarks.png` });
 	});
 
-	test("shows travel hint when anchors present", async ({ mount }) => {
+	test("shows travel hint when anchors present", async () => {
 		const visited = new Set([packChunk(0, 0)]);
 		const anchors: TravelAnchor[] = [{ x: 10, y: 5, z: 10, cx: 0, cz: 0 }];
-		const component = await mount(
+		const screen = await render(
 			<BokMap
 				visited={visited}
 				playerCx={0}
@@ -71,13 +80,14 @@ test.describe("BokMap", () => {
 				travelAnchors={anchors}
 			/>,
 		);
-		await expect(component.getByText("Tap ᚱ to travel")).toBeVisible();
+		await expect.element(screen.getByText("Tap ᚱ to travel")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-travel-hint.png` });
 	});
 
-	test("renders with travel anchors", async ({ mount }) => {
+	test("renders with travel anchors", async () => {
 		const visited = new Set([packChunk(0, 0)]);
 		const anchors: TravelAnchor[] = [{ x: 10, y: 5, z: 10, cx: 0, cz: 0 }];
-		const component = await mount(
+		const screen = await render(
 			<BokMap
 				visited={visited}
 				playerCx={0}
@@ -88,6 +98,7 @@ test.describe("BokMap", () => {
 				onTravelRequest={() => {}}
 			/>,
 		);
-		await expect(component.getByTestId("bok-map-canvas")).toBeVisible();
+		await expect.element(screen.getByTestId("bok-map-canvas")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-map-travel-anchors.png` });
 	});
 });

@@ -21,7 +21,7 @@ export function SettingsControls({
 	onInvertY,
 }: ControlsSettingsProps) {
 	return (
-		<div className="space-y-4">
+		<div data-testid="settings-controls" className="space-y-4">
 			<SensitivitySlider
 				label="Mouse Sensitivity"
 				value={mouseSensitivity}

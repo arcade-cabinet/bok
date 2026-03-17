@@ -34,7 +34,7 @@ export function SettingsGraphics({
 	onShadowQuality,
 }: GraphicsSettingsProps) {
 	return (
-		<div className="space-y-4">
+		<div data-testid="settings-graphics" className="space-y-4">
 			<SettingRow label="Render Distance">
 				<div className="flex items-center gap-3 w-full">
 					<input

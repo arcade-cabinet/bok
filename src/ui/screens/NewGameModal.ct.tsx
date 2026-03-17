@@ -1,70 +1,66 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test, vi } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { NewGameModal } from "./NewGameModal.tsx";
 
-test.describe("NewGameModal", () => {
-	test("renders with seed input and shuffle button", async ({ mount }) => {
-		const component = await mount(<NewGameModal onStart={() => {}} onClose={() => {}} />);
-		await expect(component.locator("#seed-input")).toBeVisible();
-		await expect(component.getByLabel("Shuffle seed")).toBeVisible();
+const SCREENSHOT_DIR = "src/ui/screens/__screenshots__";
+
+describe("NewGameModal", () => {
+	test("renders with seed input and shuffle button", async () => {
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={() => {}} />);
+		await expect.element(screen.container.querySelector("#seed-input") as HTMLElement).toBeVisible();
+		await expect.element(screen.getByLabelText("Shuffle seed")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/new-game-modal-base.png` });
 	});
 
-	test("generates adjective-adjective-noun seed on mount", async ({ mount }) => {
-		const component = await mount(<NewGameModal onStart={() => {}} onClose={() => {}} />);
-		const input = component.locator("#seed-input");
-		const value = await input.inputValue();
+	test("generates adjective-adjective-noun seed on mount", async () => {
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={() => {}} />);
+		const input = screen.container.querySelector("#seed-input") as HTMLInputElement;
+		expect(input).not.toBeNull();
 		// Should have at least 2 words (adjective adjective noun)
-		expect(value.split(" ").length).toBeGreaterThanOrEqual(2);
+		expect(input.value.split(" ").length).toBeGreaterThanOrEqual(2);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/new-game-modal-seed.png` });
 	});
 
-	test("shuffle button changes the seed", async ({ mount }) => {
-		const component = await mount(<NewGameModal onStart={() => {}} onClose={() => {}} />);
-		const input = component.locator("#seed-input");
-		const before = await input.inputValue();
-		await component.getByLabel("Shuffle seed").click();
-		const after = await input.inputValue();
+	test("shuffle button changes the seed", async () => {
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={() => {}} />);
+		const input = screen.container.querySelector("#seed-input") as HTMLInputElement;
+		const before = input.value;
+		await screen.getByLabelText("Shuffle seed").click();
+		const after = input.value;
 		// Seeds should differ (extremely unlikely to be the same)
 		expect(after).not.toBe(before);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/new-game-modal-shuffled.png` });
 	});
 
-	test("Awaken button calls onStart with seed", async ({ mount }) => {
-		let receivedSeed = "";
-		const component = await mount(
-			<NewGameModal
-				onStart={(seed) => {
-					receivedSeed = seed;
-				}}
-				onClose={() => {}}
-			/>,
-		);
-		await component.getByRole("button", { name: "Awaken" }).click();
-		expect(receivedSeed.length).toBeGreaterThan(0);
+	test("Awaken button calls onStart with seed", async () => {
+		const onStart = vi.fn();
+		const screen = await render(<NewGameModal onStart={onStart} onClose={() => {}} />);
+		await screen.getByRole("button", { name: "Awaken" }).click();
+		expect(onStart).toHaveBeenCalled();
+		expect(onStart.mock.calls[0][0].length).toBeGreaterThan(0);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/new-game-modal-awaken.png` });
 	});
 
-	test("Back button calls onClose", async ({ mount }) => {
-		let closed = false;
-		const component = await mount(
-			<NewGameModal
-				onStart={() => {}}
-				onClose={() => {
-					closed = true;
-				}}
-			/>,
-		);
-		await component.getByRole("button", { name: "Back" }).click();
-		expect(closed).toBe(true);
+	test("Back button calls onClose", async () => {
+		const onClose = vi.fn();
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={onClose} />);
+		await screen.getByRole("button", { name: "Back" }).click();
+		expect(onClose).toHaveBeenCalled();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/new-game-modal-back.png` });
 	});
 
-	test("has ARIA dialog role", async ({ mount }) => {
-		const component = await mount(<NewGameModal onStart={() => {}} onClose={() => {}} />);
-		await expect(component.locator("[role='dialog']")).toBeVisible();
+	test("has ARIA dialog role", async () => {
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={() => {}} />);
+		const dialog = screen.container.querySelector("[role='dialog']");
+		expect(dialog).not.toBeNull();
 	});
 
-	test("all buttons have type=button", async ({ mount }) => {
-		const component = await mount(<NewGameModal onStart={() => {}} onClose={() => {}} />);
-		const buttons = component.locator("button");
-		const count = await buttons.count();
-		for (let i = 0; i < count; i++) {
-			await expect(buttons.nth(i)).toHaveAttribute("type", "button");
+	test("all buttons have type=button", async () => {
+		const screen = await render(<NewGameModal onStart={() => {}} onClose={() => {}} />);
+		const buttons = screen.container.querySelectorAll("button");
+		for (const btn of buttons) {
+			expect(btn.getAttribute("type")).toBe("button");
 		}
 	});
 });

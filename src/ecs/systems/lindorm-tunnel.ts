@@ -13,16 +13,16 @@ import {
 	BREACH_SPEED,
 	BREACH_TRIGGER_RANGE,
 	LINDORM_HP,
+	type LindormData,
 	LindormPhase,
+	type LindormPhaseId,
 	SEGMENT_COUNT,
 	SEGMENT_SPACING,
 	TUNNEL_DEPTH,
 	TUNNEL_DURATION,
 	TUNNEL_SPEED,
-	VIBRATION_RANGE,
-	type LindormData,
-	type LindormPhaseId,
 	type TunnelBlock,
+	VIBRATION_RANGE,
 } from "./lindorm-tunnel-data.ts";
 
 export type { LindormData, LindormPhaseId, TunnelBlock };

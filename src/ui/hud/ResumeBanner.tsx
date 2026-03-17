@@ -30,6 +30,7 @@ export function ResumeBanner({ context, onDismiss }: ResumeBannerProps) {
 	return (
 		<button
 			type="button"
+			data-testid="resume-banner"
 			aria-label="Resume context — tap to dismiss"
 			className={`absolute top-6 left-1/2 -translate-x-1/2 max-w-sm w-[90%]
 				bg-stone-900/85 border border-amber-700/60 rounded-lg px-4 py-3

@@ -8,7 +8,7 @@
  * Rune-aware: faces in the runeFaces set are never merged (kept as 1×1 quads).
  */
 
-import { FACE_AXES, dimSize } from "./greedy-mesher-data.ts";
+import { dimSize, FACE_AXES } from "./greedy-mesher-data.ts";
 
 /** Face direction enum — the 6 cube faces. */
 export const FaceDir = {

@@ -1,79 +1,98 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test, vi } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { SettingsModal } from "./SettingsModal.tsx";
 
-test.describe("SettingsModal", () => {
-	test("renders with dialog role and aria attributes", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		const dialog = component.getByRole("dialog");
-		await expect(dialog).toHaveAttribute("aria-modal", "true");
-		await expect(dialog).toHaveAttribute("aria-label", "Settings");
+const SCREENSHOT_DIR = "src/ui/screens/__screenshots__";
+
+describe("SettingsModal", () => {
+	test("renders with dialog role and aria attributes", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		const dialog = screen.container.querySelector("[role='dialog']");
+		expect(dialog?.getAttribute("aria-modal")).toBe("true");
+		expect(dialog?.getAttribute("aria-label")).toBe("Settings");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-base.png` });
 	});
 
-	test("renders Settings title", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		await expect(component.getByText("Settings")).toBeVisible();
+	test("renders Settings title", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		await expect.element(screen.getByText("Settings")).toBeVisible();
 	});
 
-	test("renders all 3 tabs", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		const tabs = component.getByTestId("settings-tabs");
-		await expect(tabs.getByText("Keybindings")).toBeVisible();
-		await expect(tabs.getByText("Display")).toBeVisible();
-		await expect(tabs.getByText("Audio")).toBeVisible();
+	test("renders all 4 tabs", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		const tabs = screen.getByTestId("settings-tabs");
+		await expect.element(tabs).toBeVisible();
+		await expect.element(screen.getByText("Keybindings")).toBeVisible();
+		await expect.element(screen.getByText("Audio")).toBeVisible();
+		await expect.element(screen.getByText("Graphics")).toBeVisible();
+		await expect.element(screen.getByText("Controls")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-tabs.png` });
 	});
 
-	test("starts on Keybindings tab with all bindings", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		await expect(component.getByTestId("settings-tab-keybindings")).toHaveAttribute("aria-selected", "true");
-		await expect(component.getByText("Move")).toBeVisible();
-		await expect(component.getByText("W A S D")).toBeVisible();
-		await expect(component.getByText("Mine")).toBeVisible();
-		await expect(component.getByText("Bok Journal")).toBeVisible();
+	test("starts on Keybindings tab with all bindings", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		const keybindingsTab = screen.getByTestId("settings-tab-keybindings");
+		await expect.element(keybindingsTab).toHaveAttribute("aria-selected", "true");
+		// Action labels match input-config.ts actionLabel()
+		await expect.element(screen.getByText("Move Forward")).toBeVisible();
+		await expect.element(screen.getByText("Mine")).toBeVisible();
+		await expect.element(screen.getByText("Bok Journal")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-keybindings.png` });
 	});
 
-	test("switches to Display tab with controls", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		await component.getByTestId("settings-tab-display").click();
-		await expect(component.getByTestId("settings-tab-display")).toHaveAttribute("aria-selected", "true");
-		await expect(component.getByText("Quality Preset")).toBeVisible();
-		await expect(component.getByText("Show Vitals Bars")).toBeVisible();
-		await expect(component.getByText("Render Distance")).toBeVisible();
+	test("switches to Audio tab with volume sliders", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		await screen.getByTestId("settings-tab-audio").click();
+		await expect.element(screen.getByTestId("settings-tab-audio")).toHaveAttribute("aria-selected", "true");
+		await expect.element(screen.getByText("Master Volume")).toBeVisible();
+		await expect.element(screen.getByText("Ambient Volume")).toBeVisible();
+		await expect.element(screen.getByText("Interaction Volume")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-audio.png` });
 	});
 
-	test("switches to Audio tab with volume sliders", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		await component.getByTestId("settings-tab-audio").click();
-		await expect(component.getByTestId("settings-tab-audio")).toHaveAttribute("aria-selected", "true");
-		await expect(component.getByText("Master Volume")).toBeVisible();
-		await expect(component.getByText("Music Volume")).toBeVisible();
-		await expect(component.getByText("SFX Volume")).toBeVisible();
+	test("switches to Graphics tab with controls", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		await screen.getByTestId("settings-tab-graphics").click();
+		await expect.element(screen.getByTestId("settings-tab-graphics")).toHaveAttribute("aria-selected", "true");
+		await expect.element(screen.getByText("Render Distance")).toBeVisible();
+		await expect.element(screen.getByText("Particle Density")).toBeVisible();
+		await expect.element(screen.getByText("Shadow Quality")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-graphics.png` });
 	});
 
-	test("calls onClose when Back is clicked", async ({ mount }) => {
-		let closed = false;
-		const component = await mount(
-			<SettingsModal
-				onClose={() => {
-					closed = true;
-				}}
-			/>,
-		);
-		await component.getByText("Back").click();
-		await expect.poll(() => closed, { timeout: 500 }).toBe(true);
+	test("switches to Controls tab", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		await screen.getByTestId("settings-tab-controls").click();
+		await expect.element(screen.getByTestId("settings-tab-controls")).toHaveAttribute("aria-selected", "true");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-controls.png` });
 	});
 
-	test("all buttons have type=button", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		const buttons = component.locator("button");
-		const count = await buttons.count();
-		for (let i = 0; i < count; i++) {
-			await expect(buttons.nth(i)).toHaveAttribute("type", "button");
+	test("calls onClose when Back is clicked", async () => {
+		const onClose = vi.fn();
+		const screen = await render(<SettingsModal onClose={onClose} />);
+		// Click Back button directly via DOM to avoid strict mode ambiguity
+		const backBtn = Array.from(screen.container.querySelectorAll("button")).find(
+			(btn) => btn.textContent?.trim() === "Back",
+		) as HTMLButtonElement;
+		expect(backBtn).not.toBeNull();
+		backBtn.click();
+		expect(onClose).toHaveBeenCalled();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-back.png` });
+	});
+
+	test("all buttons have type=button", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		const buttons = screen.container.querySelectorAll("button");
+		for (const btn of buttons) {
+			expect(btn.getAttribute("type")).toBe("button");
 		}
 	});
 
-	test("has rune border decorations", async ({ mount }) => {
-		const component = await mount(<SettingsModal onClose={() => {}} />);
-		const decorations = component.locator("[aria-hidden='true']");
-		await expect(decorations).toHaveCount(2);
+	test("has rune border decorations", async () => {
+		const screen = await render(<SettingsModal onClose={() => {}} />);
+		const decorations = screen.container.querySelectorAll("[aria-hidden='true']");
+		expect(decorations.length).toBe(2);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/settings-modal-rune-borders.png` });
 	});
 });

@@ -25,7 +25,7 @@ export function SettingsAudio({
 	onMuted,
 }: AudioSettingsProps) {
 	return (
-		<div className="space-y-4">
+		<div data-testid="settings-audio" className="space-y-4">
 			<VolumeSlider label="Master Volume" value={masterVolume} onChange={onMasterVolume} />
 			<VolumeSlider label="Ambient Volume" value={ambientVolume} onChange={onAmbientVolume} />
 			<VolumeSlider label="Interaction Volume" value={interactionVolume} onChange={onInteractionVolume} />

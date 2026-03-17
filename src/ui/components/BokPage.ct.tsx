@@ -1,34 +1,42 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { BokPage } from "./BokPage.tsx";
 
-test.describe("BokPage", () => {
-	test("renders title", async ({ mount }) => {
-		const component = await mount(<BokPage title="Test Page" />);
-		await expect(component.getByText("Test Page")).toBeVisible();
+const SCREENSHOT_DIR = "src/ui/components/__screenshots__";
+
+describe("BokPage", () => {
+	test("renders title", async () => {
+		const screen = await render(<BokPage title="Test Page" />);
+		await expect.element(screen.getByText("Test Page")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-page-base.png` });
 	});
 
-	test("renders children content", async ({ mount }) => {
-		const component = await mount(
+	test("renders children content", async () => {
+		const screen = await render(
 			<BokPage title="My Page">
 				<p>Custom content here</p>
 			</BokPage>,
 		);
-		await expect(component.getByText("Custom content here")).toBeVisible();
+		await expect.element(screen.getByText("Custom content here")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-page-with-content.png` });
 	});
 
-	test("shows placeholder when no children", async ({ mount }) => {
-		const component = await mount(<BokPage title="Empty Page" />);
-		await expect(component.getByText("These pages are yet unwritten...")).toBeVisible();
+	test("shows placeholder when no children", async () => {
+		const screen = await render(<BokPage title="Empty Page" />);
+		await expect.element(screen.getByText("These pages are yet unwritten...")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-page-empty.png` });
 	});
 
-	test("has rune border decorations", async ({ mount }) => {
-		const component = await mount(<BokPage title="Runes" />);
-		const decorations = component.locator("[aria-hidden='true']");
-		await expect(decorations).toHaveCount(2);
+	test("has rune border decorations", async () => {
+		const screen = await render(<BokPage title="Runes" />);
+		const decorations = screen.container.querySelectorAll("[aria-hidden='true']");
+		expect(decorations.length).toBe(2);
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-page-rune-borders.png` });
 	});
 
-	test("has data-testid", async ({ mount }) => {
-		const component = await mount(<BokPage title="Test" />);
-		await expect(component.getByTestId("bok-page")).toBeVisible();
+	test("has data-testid", async () => {
+		const screen = await render(<BokPage title="Test" />);
+		await expect.element(screen.getByTestId("bok-page")).toBeVisible();
 	});
 });

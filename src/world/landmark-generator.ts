@@ -18,8 +18,8 @@ import {
 	placeFornlamning,
 	placeKolmila,
 	placeOfferkalla,
-	placeRunsten,
 	placeRuinedStoneCircle,
+	placeRunsten,
 	placeSjomarke,
 	placeStenhog,
 } from "./landmark-types.ts";

@@ -1,7 +1,11 @@
-import { expect, test } from "@playwright/experimental-ct-react";
+import { describe, expect, test } from "vitest";
+import { page } from "vitest/browser";
+import { render } from "vitest-browser-react";
 import { BlockId } from "../../world/blocks.ts";
 import type { BokLedgerProps } from "./BokLedger.tsx";
 import { BokLedger } from "./BokLedger.tsx";
+
+const SCREENSHOT_DIR = "src/ui/components/__screenshots__";
 
 function makeProps(overrides: Partial<BokLedgerProps> = {}): BokLedgerProps {
 	return {
@@ -10,24 +14,26 @@ function makeProps(overrides: Partial<BokLedgerProps> = {}): BokLedgerProps {
 	};
 }
 
-test.describe("BokLedger", () => {
-	test("renders empty state when no items", async ({ mount }) => {
-		const component = await mount(<BokLedger {...makeProps()} />);
-		await expect(component.getByTestId("bok-ledger")).toBeVisible();
-		await expect(component.getByText("Your packs are empty...")).toBeVisible();
+describe("BokLedger", () => {
+	test("renders empty state when no items", async () => {
+		const screen = await render(<BokLedger {...makeProps()} />);
+		await expect.element(screen.getByTestId("bok-ledger")).toBeVisible();
+		await expect.element(screen.getByText("Your packs are empty...")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-empty.png` });
 	});
 
-	test("renders resource list with correct counts", async ({ mount }) => {
+	test("renders resource list with correct counts", async () => {
 		const props = makeProps({
 			items: { [BlockId.Wood]: 10, [BlockId.Stone]: 25 },
 		});
-		const component = await mount(<BokLedger {...props} />);
-		await expect(component.getByTestId(`ledger-item-${BlockId.Wood}`)).toBeVisible();
-		await expect(component.getByTestId(`ledger-count-${BlockId.Wood}`)).toHaveText("10");
-		await expect(component.getByTestId(`ledger-count-${BlockId.Stone}`)).toHaveText("25");
+		const screen = await render(<BokLedger {...props} />);
+		await expect.element(screen.getByTestId(`ledger-item-${BlockId.Wood}`)).toBeVisible();
+		await expect.element(screen.getByTestId(`ledger-count-${BlockId.Wood}`)).toHaveTextContent("10");
+		await expect.element(screen.getByTestId(`ledger-count-${BlockId.Stone}`)).toHaveTextContent("25");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-populated.png` });
 	});
 
-	test("groups items by category", async ({ mount }) => {
+	test("groups items by category", async () => {
 		const props = makeProps({
 			items: {
 				[BlockId.Wood]: 5,
@@ -35,73 +41,78 @@ test.describe("BokLedger", () => {
 				22: 2, // Mushroom (food)
 			},
 		});
-		const component = await mount(<BokLedger {...props} />);
-		await expect(component.getByTestId("ledger-category-blocks")).toBeVisible();
-		await expect(component.getByTestId("ledger-category-materials")).toBeVisible();
-		await expect(component.getByTestId("ledger-category-food")).toBeVisible();
+		const screen = await render(<BokLedger {...props} />);
+		await expect.element(screen.getByTestId("ledger-category-blocks")).toBeVisible();
+		await expect.element(screen.getByTestId("ledger-category-materials")).toBeVisible();
+		await expect.element(screen.getByTestId("ledger-category-food")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-categories.png` });
 	});
 
-	test("classifies tools into tools category", async ({ mount }) => {
+	test("classifies tools into tools category", async () => {
 		const props = makeProps({
 			items: { 101: 1, 108: 1 }, // Wood Axe, Lantern
 		});
-		const component = await mount(<BokLedger {...props} />);
-		await expect(component.getByTestId("ledger-category-tools")).toBeVisible();
-		await expect(component.getByText("Wood Axe")).toBeVisible();
-		await expect(component.getByText("Lantern")).toBeVisible();
+		const screen = await render(<BokLedger {...props} />);
+		await expect.element(screen.getByTestId("ledger-category-tools")).toBeVisible();
+		await expect.element(screen.getByText("Wood Axe")).toBeVisible();
+		await expect.element(screen.getByText("Lantern")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-tools.png` });
 	});
 
-	test("shows recipes when tapping a resource", async ({ mount }) => {
+	test("shows recipes when tapping a resource", async () => {
 		const props = makeProps({
 			items: { [BlockId.Wood]: 10 },
 		});
-		const component = await mount(<BokLedger {...props} />);
+		const screen = await render(<BokLedger {...props} />);
 
 		// Tap on Wood
-		await component.getByTestId(`ledger-item-${BlockId.Wood}`).click();
-		await expect(component.getByTestId("ledger-recipes")).toBeVisible();
-		// Wood is used in Planks, Torches, Wood Axe, Wood Pickaxe, etc.
-		await expect(component.getByText("Recipes using Wood")).toBeVisible();
+		await screen.getByTestId(`ledger-item-${BlockId.Wood}`).click();
+		await expect.element(screen.getByTestId("ledger-recipes")).toBeVisible();
+		await expect.element(screen.getByText("Recipes using Wood")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-recipes-open.png` });
 	});
 
-	test("shows no-recipes message for unused resources", async ({ mount }) => {
+	test("shows no-recipes message for unused resources", async () => {
 		const props = makeProps({
 			items: { [BlockId.Grass]: 5 },
 		});
-		const component = await mount(<BokLedger {...props} />);
+		const screen = await render(<BokLedger {...props} />);
 
-		await component.getByTestId(`ledger-item-${BlockId.Grass}`).click();
-		await expect(component.getByText("No known recipes use this resource.")).toBeVisible();
+		await screen.getByTestId(`ledger-item-${BlockId.Grass}`).click();
+		await expect.element(screen.getByText("No known recipes use this resource.")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-no-recipes.png` });
 	});
 
-	test("deselects resource on second tap", async ({ mount }) => {
+	test("deselects resource on second tap", async () => {
 		const props = makeProps({
 			items: { [BlockId.Wood]: 10 },
 		});
-		const component = await mount(<BokLedger {...props} />);
+		const screen = await render(<BokLedger {...props} />);
 
 		// Select
-		await component.getByTestId(`ledger-item-${BlockId.Wood}`).click();
-		await expect(component.getByTestId("ledger-recipes")).toBeVisible();
+		await screen.getByTestId(`ledger-item-${BlockId.Wood}`).click();
+		await expect.element(screen.getByTestId("ledger-recipes")).toBeVisible();
 
-		// Deselect
-		await component.getByTestId(`ledger-item-${BlockId.Wood}`).click();
-		await expect(component.getByTestId("ledger-recipes")).not.toBeVisible();
+		// Deselect — recipes panel is conditionally rendered, won't be in DOM
+		await screen.getByTestId(`ledger-item-${BlockId.Wood}`).click();
+		expect(screen.container.querySelector("[data-testid='ledger-recipes']")).toBeNull();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-deselected.png` });
 	});
 
-	test("displays recipe details with costs and tier", async ({ mount }) => {
+	test("displays recipe details with costs and tier", async () => {
 		const props = makeProps({
 			items: { [BlockId.Wood]: 10 },
 		});
-		const component = await mount(<BokLedger {...props} />);
+		const screen = await render(<BokLedger {...props} />);
 
-		await component.getByTestId(`ledger-item-${BlockId.Wood}`).click();
+		await screen.getByTestId(`ledger-item-${BlockId.Wood}`).click();
 		// Wood Planks recipe exists
-		await expect(component.getByTestId("recipe-planks")).toBeVisible();
-		await expect(component.getByText("Wood Planks x4")).toBeVisible();
+		await expect.element(screen.getByTestId("recipe-planks")).toBeVisible();
+		await expect.element(screen.getByText("Wood Planks x4")).toBeVisible();
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-recipe-detail.png` });
 	});
 
-	test("sorts entries by category then name", async ({ mount }) => {
+	test("sorts entries by category then name", async () => {
 		const props = makeProps({
 			items: {
 				[BlockId.Stone]: 5,
@@ -110,11 +121,11 @@ test.describe("BokLedger", () => {
 				22: 1, // Mushroom
 			},
 		});
-		const component = await mount(<BokLedger {...props} />);
+		const screen = await render(<BokLedger {...props} />);
 
 		// Blocks section should come before Materials section
-		const sections = component.locator("[data-testid^='ledger-category-']");
-		const firstSection = sections.first();
-		await expect(firstSection).toHaveAttribute("data-testid", "ledger-category-blocks");
+		const firstSection = screen.container.querySelectorAll("[data-testid^='ledger-category-']")[0];
+		expect(firstSection?.getAttribute("data-testid")).toBe("ledger-category-blocks");
+		await page.screenshot({ path: `${SCREENSHOT_DIR}/bok-ledger-sorted.png` });
 	});
 });
