@@ -27,6 +27,11 @@ yarn.lock
 *.sln
 *.sw?
 
+# Ralph TUI session state
+.ralph-tui/session.json
+.ralph-tui/session-meta.json
+.ralph-tui/worktrees/
+
 # Playwright
 /test-results/
 /playwright-report/
