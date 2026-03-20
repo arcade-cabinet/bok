@@ -105,6 +105,14 @@ const blockDefs: BlockDefinition[] = [
   },
 ];
 
+// --- Performance Scaling ---
+// Adjust quality based on device capability
+const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+const webGLRenderer = (jpWorld.renderer as any).webGLRenderer as THREE.WebGLRenderer;
+if (webGLRenderer) {
+  webGLRenderer.setPixelRatio(pixelRatio);
+}
+
 // --- Scene Setup ---
 const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
 scene.background = new THREE.Color('#87ceeb');
