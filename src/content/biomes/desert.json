@@ -1,0 +1,29 @@
+{
+  "id": "desert",
+  "name": "Sunscorched Dunes",
+  "description": "Endless sand dunes with hidden oases and crumbling ruins. Heat shimmers distort the horizon.",
+  "terrain": {
+    "noiseOctaves": 2,
+    "noiseFrequency": 0.015,
+    "noiseAmplitude": 12,
+    "waterLevel": 2,
+    "baseHeight": 4,
+    "blocks": {
+      "surface": 10,
+      "subsurface": 11,
+      "stone": 12,
+      "water": 13,
+      "accent": 14
+    }
+  },
+  "enemies": [
+    { "enemyId": "sand-wraith", "weight": 0.5, "minDifficulty": 1 },
+    { "enemyId": "scorpion", "weight": 0.5, "minDifficulty": 1 }
+  ],
+  "bossId": "pharaoh-construct",
+  "music": "music/desert-exploration.ogg",
+  "ambience": "sfx/desert-ambience.ogg",
+  "skyColor": "#E8D5A3",
+  "fogColor": "#C2A355",
+  "fogDensity": 0.008
+}

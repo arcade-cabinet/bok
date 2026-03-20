@@ -5,6 +5,13 @@ import {
 
 // Static imports for all content (Vite resolves JSON imports)
 import forestBiome from './biomes/forest.json';
+import desertBiome from './biomes/desert.json';
+import tundraBiome from './biomes/tundra.json';
+import volcanicBiome from './biomes/volcanic.json';
+import swampBiome from './biomes/swamp.json';
+import crystalCavesBiome from './biomes/crystal-caves.json';
+import skyRuinsBiome from './biomes/sky-ruins.json';
+import deepOceanBiome from './biomes/deep-ocean.json';
 import slimeEnemy from './enemies/slime.json';
 import woodenSword from './weapons/wooden-sword.json';
 import ancientTreant from './bosses/ancient-treant.json';
@@ -16,7 +23,10 @@ export class ContentRegistry {
   readonly #bosses = new Map<string, BossConfig>();
 
   constructor() {
-    this.#registerBiomes([forestBiome]);
+    this.#registerBiomes([
+      forestBiome, desertBiome, tundraBiome, volcanicBiome,
+      swampBiome, crystalCavesBiome, skyRuinsBiome, deepOceanBiome,
+    ]);
     this.#registerEnemies([slimeEnemy]);
     this.#registerWeapons([woodenSword]);
     this.#registerBosses([ancientTreant]);

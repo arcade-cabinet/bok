@@ -1,0 +1,29 @@
+{
+  "id": "crystal-caves",
+  "name": "Prismatic Depths",
+  "description": "Vast underground caverns lined with luminous crystal formations. Light refracts in dazzling patterns.",
+  "terrain": {
+    "noiseOctaves": 4,
+    "noiseFrequency": 0.035,
+    "noiseAmplitude": 10,
+    "waterLevel": 2,
+    "baseHeight": 7,
+    "blocks": {
+      "surface": 50,
+      "subsurface": 51,
+      "stone": 52,
+      "water": 53,
+      "accent": 54
+    }
+  },
+  "enemies": [
+    { "enemyId": "crystal-sentinel", "weight": 0.45, "minDifficulty": 1 },
+    { "enemyId": "gem-spider", "weight": 0.55, "minDifficulty": 1 }
+  ],
+  "bossId": "crystal-hydra",
+  "music": "music/crystal-caves-exploration.ogg",
+  "ambience": "sfx/crystal-caves-ambience.ogg",
+  "skyColor": "#1A0A2E",
+  "fogColor": "#4B0082",
+  "fogDensity": 0.018
+}
