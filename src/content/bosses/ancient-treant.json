@@ -1,0 +1,36 @@
+{
+  "id": "ancient-treant",
+  "name": "Ancient Treant",
+  "biome": "forest",
+  "health": 500,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "root-strike", "type": "melee", "damage": 20, "cooldown": 2.0, "range": 3.0, "telegraph": 0.8 },
+        { "name": "leaf-storm", "type": "aoe", "damage": 10, "cooldown": 5.0, "range": 8.0, "telegraph": 1.0 }
+      ],
+      "description": "Root attacks — dodge the ground markers"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "root-strike", "type": "melee", "damage": 25, "cooldown": 1.8, "range": 3.0, "telegraph": 0.6 },
+        { "name": "summon-saplings", "type": "summon", "damage": 0, "cooldown": 8.0, "range": 15.0, "telegraph": 1.5 }
+      ],
+      "arenaChange": "saplings-spawn",
+      "description": "Summons sapling minions while attacking faster"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "root-frenzy", "type": "melee", "damage": 30, "cooldown": 1.0, "range": 4.0, "telegraph": 0.4 },
+        { "name": "leaf-storm", "type": "aoe", "damage": 15, "cooldown": 3.0, "range": 10.0, "telegraph": 0.6 },
+        { "name": "summon-saplings", "type": "summon", "damage": 0, "cooldown": 6.0, "range": 15.0, "telegraph": 1.0 }
+      ],
+      "arenaChange": "roots-everywhere",
+      "description": "Enraged — all attacks faster and stronger"
+    }
+  ],
+  "tomePageDrop": "dash"
+}

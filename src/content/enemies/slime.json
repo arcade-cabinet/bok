@@ -1,0 +1,23 @@
+{
+  "id": "slime",
+  "name": "Forest Slime",
+  "health": 30,
+  "speed": 2.0,
+  "damage": 8,
+  "attackPattern": "wander-chase",
+  "attacks": [
+    {
+      "name": "bounce",
+      "type": "melee",
+      "damage": 8,
+      "cooldown": 1.5,
+      "range": 1.2,
+      "telegraph": 0.3
+    }
+  ],
+  "drops": [
+    { "itemId": "slime-gel", "chance": 0.5, "minAmount": 1, "maxAmount": 2 },
+    { "itemId": "health-potion", "chance": 0.1, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "splits-on-death"
+}

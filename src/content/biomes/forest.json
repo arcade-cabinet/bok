@@ -1,0 +1,29 @@
+{
+  "id": "forest",
+  "name": "Whispering Woods",
+  "description": "Dense canopy of ancient trees. Limited visibility but rich resources.",
+  "terrain": {
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.03,
+    "noiseAmplitude": 8,
+    "waterLevel": 3,
+    "baseHeight": 5,
+    "blocks": {
+      "surface": 1,
+      "subsurface": 2,
+      "stone": 3,
+      "water": 4,
+      "accent": 5
+    }
+  },
+  "enemies": [
+    { "enemyId": "slime", "weight": 0.6, "minDifficulty": 1 },
+    { "enemyId": "skeleton-archer", "weight": 0.4, "minDifficulty": 1 }
+  ],
+  "bossId": "ancient-treant",
+  "music": "music/forest-exploration.ogg",
+  "ambience": "sfx/forest-ambience.ogg",
+  "skyColor": "#87CEEB",
+  "fogColor": "#2d5a27",
+  "fogDensity": 0.015
+}
