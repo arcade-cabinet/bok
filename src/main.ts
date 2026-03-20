@@ -380,6 +380,59 @@ const PLAYER_SPEED = 6;
   }
 });
 
+// --- HUD Overlay (safe DOM construction — no innerHTML) ---
+function createHUD(): void {
+  const hud = document.createElement('div');
+  hud.id = 'hud';
+  hud.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;';
+
+  // Health bar
+  const healthBox = document.createElement('div');
+  healthBox.style.cssText = 'position:absolute;top:16px;left:16px;background:rgba(253,246,227,0.85);border:2px solid #8b5a2b;border-radius:6px;padding:8px 14px;font-family:Georgia,serif;color:#2c1e16;';
+  const healthLabel = document.createElement('div');
+  healthLabel.textContent = 'Health';
+  healthLabel.style.cssText = 'font-size:12px;margin-bottom:4px;';
+  const healthTrack = document.createElement('div');
+  healthTrack.style.cssText = 'width:150px;height:14px;background:#3a2a1a;border-radius:3px;overflow:hidden;';
+  const healthFill = document.createElement('div');
+  healthFill.id = 'health-fill';
+  healthFill.style.cssText = 'width:100%;height:100%;background:#c0392b;transition:width 0.3s;';
+  healthTrack.appendChild(healthFill);
+  const healthText = document.createElement('div');
+  healthText.id = 'health-text';
+  healthText.textContent = '100 / 100';
+  healthText.style.cssText = 'font-size:11px;margin-top:2px;';
+  healthBox.append(healthLabel, healthTrack, healthText);
+
+  // Crosshair
+  const crosshair = document.createElement('div');
+  crosshair.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;background:white;border-radius:50%;box-shadow:0 0 4px rgba(0,0,0,0.5);';
+
+  // Hotbar
+  const hotbar = document.createElement('div');
+  hotbar.style.cssText = 'position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:4px;';
+  for (let i = 1; i <= 5; i++) {
+    const slot = document.createElement('div');
+    slot.style.cssText = `width:48px;height:48px;border:2px solid ${i===1?'#fdf6e3':'#8b5a2b'};background:rgba(253,246,227,${i===1?'0.9':'0.6'});border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;color:#2c1e16;font-size:11px;`;
+    if (i === 1) slot.textContent = 'Sword';
+    hotbar.appendChild(slot);
+  }
+
+  // Info panel
+  const info = document.createElement('div');
+  info.style.cssText = 'position:absolute;top:16px;right:16px;background:rgba(253,246,227,0.85);border:2px solid #8b5a2b;border-radius:6px;padding:8px 14px;font-family:Georgia,serif;color:#2c1e16;font-size:12px;';
+  const enemyLine = document.createElement('div');
+  enemyLine.textContent = 'Enemies: 8';
+  enemyLine.id = 'enemy-count-line';
+  const biomeLine = document.createElement('div');
+  biomeLine.textContent = 'Biome: Forest';
+  info.append(enemyLine, biomeLine);
+
+  hud.append(healthBox, crosshair, hotbar, info);
+  document.body.appendChild(hud);
+}
+createHUD();
+
 // --- Boot ---
 console.log('[Bok] Loading runtime...');
 loadRuntime(runtime)
