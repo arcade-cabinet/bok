@@ -119,7 +119,8 @@ scene.add(ambientLight, dirLight);
 // --- VoxelRenderer (terrain — uses JollyPixel's Actor + VoxelRenderer component) ---
 // This is the CORRECT integration: VoxelRenderer as ActorComponent with Rapier config.
 // VoxelColliderBuilder auto-generates compound box colliders for terrain chunks.
-const voxelMap = jpWorld.createActor('terrain')
+// Cast needed: VoxelRenderer expects engine@0.182's Actor type
+const voxelMap = (jpWorld.createActor('terrain') as any)
   .addComponentAndGet(VoxelRenderer, {
     chunkSize: 16,
     layers: ['Ground'],
@@ -139,7 +140,7 @@ const tilesetTexture = new THREE.Texture(tileset.canvas);
 tilesetTexture.magFilter = THREE.NearestFilter;
 tilesetTexture.minFilter = THREE.NearestFilter;
 tilesetTexture.needsUpdate = true;
-voxelMap.tilesetManager.registerTexture(
+(voxelMap as any).tilesetManager.registerTexture(
   { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: 3, rows: 3 },
   tilesetTexture as any,
 );
@@ -210,6 +211,70 @@ for (let x = 0; x < ISLAND_SIZE; x++) {
   }
 }
 
+// --- Build a surface height lookup for placing entities on terrain ---
+const surfaceHeight = new Map<string, number>();
+for (let x = 0; x < ISLAND_SIZE; x++) {
+  for (let z = 0; z < ISLAND_SIZE; z++) {
+    for (let y = 20; y >= 0; y--) {
+      const voxel = voxelMap.getVoxel('Ground', { x, y, z });
+      if (voxel && voxel.blockId !== 4 && voxel.blockId !== 7) { // not water or leaves
+        surfaceHeight.set(`${x},${z}`, y + 1); // stand on top
+        break;
+      }
+    }
+  }
+}
+
+function getSurfaceY(x: number, z: number): number {
+  const ix = Math.round(x);
+  const iz = Math.round(z);
+  return surfaceHeight.get(`${ix},${iz}`) ?? BASE_HEIGHT + 1;
+}
+
+// --- Spawn Enemies (Yuka AI + Three.js meshes) ---
+import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
+
+const yukaManager = new YukaEntityManager();
+const enemyMeshes: Array<{ mesh: THREE.Mesh; vehicle: Vehicle }> = [];
+
+const ENEMY_COUNT = 8;
+const enemyGeom = new THREE.BoxGeometry(0.7, 1.4, 0.7);
+const enemyMat = new THREE.MeshLambertMaterial({ color: 0xcc2222 });
+
+const enemyPrng = new PRNG(terrainSeed + '-enemies');
+for (let i = 0; i < ENEMY_COUNT; i++) {
+  // Pick random position on the island (avoid edges and water)
+  let ex: number, ez: number, ey: number;
+  do {
+    ex = 5 + Math.floor(enemyPrng.next() * (ISLAND_SIZE - 10));
+    ez = 5 + Math.floor(enemyPrng.next() * (ISLAND_SIZE - 10));
+    ey = getSurfaceY(ex, ez);
+  } while (ey <= 3); // skip water-level positions
+
+  // Three.js mesh
+  const mesh = new THREE.Mesh(enemyGeom, enemyMat);
+  mesh.position.set(ex + 0.5, ey + 0.7, ez + 0.5);
+  mesh.castShadow = true;
+  scene.add(mesh);
+
+  // Yuka Vehicle for AI steering
+  const vehicle = new Vehicle();
+  vehicle.position.set(ex + 0.5, ey + 0.7, ez + 0.5);
+  vehicle.maxSpeed = 2;
+  vehicle.mass = 1;
+
+  // Sync Yuka → Three.js mesh via render callback
+  // Yuka's npm typings are incomplete — setRenderComponent exists on GameEntity
+  (vehicle as any).setRenderComponent(mesh, (renderObj: THREE.Mesh) => {
+    renderObj.position.set(vehicle.position.x, vehicle.position.y, vehicle.position.z);
+  });
+
+  yukaManager.add(vehicle);
+  enemyMeshes.push({ mesh, vehicle });
+}
+
+console.log(`[Bok] Spawned ${ENEMY_COUNT} enemies on terrain`);
+
 // --- First-Person Camera (JollyPixel Camera3DControls) ---
 // Camera3DControls is JollyPixel's built-in FPS camera with WASD + mouse look.
 // It extends Behavior → registers as RenderComponent → ThreeRenderer renders from it.
@@ -265,6 +330,30 @@ const PLAYER_SPEED = 6;
 
   // Poll input
   inputSystem.update(gameWorld);
+
+  // Yuka AI update — moves enemy vehicles, syncs to meshes
+  yukaManager.update(dt);
+
+  // Make enemies wander toward player when close
+  for (const { vehicle } of enemyMeshes) {
+    const dx = camera.position.x - vehicle.position.x;
+    const dz = camera.position.z - vehicle.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 15 && dist > 1.5) {
+      // Chase player
+      vehicle.velocity.set(dx / dist * 2, 0, dz / dist * 2);
+    } else if (dist >= 15) {
+      // Wander randomly
+      vehicle.velocity.set(
+        (Math.random() - 0.5) * 0.5,
+        0,
+        (Math.random() - 0.5) * 0.5,
+      );
+    } else {
+      // In attack range — stop
+      vehicle.velocity.set(0, 0, 0);
+    }
+  }
 
   // Camera look (mouse delta)
   const look = gameWorld.get(LookIntent);
