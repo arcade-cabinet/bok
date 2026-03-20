@@ -51,9 +51,9 @@ describe('IslandGenerator', () => {
   it('includes chest positions', () => {
     const blueprint = IslandGenerator.generate(FOREST_BIOME, 'chest-test', 1);
     expect(blueprint.chestPositions.length).toBeGreaterThan(0);
-    for (const pos of blueprint.chestPositions) {
-      expect(pos.x).toBeGreaterThanOrEqual(0);
-      expect(pos.z).toBeGreaterThanOrEqual(0);
+    for (const chest of blueprint.chestPositions) {
+      expect(chest.position.x).toBeGreaterThanOrEqual(0);
+      expect(chest.position.z).toBeGreaterThanOrEqual(0);
     }
   });
 
