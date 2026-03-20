@@ -52,6 +52,14 @@ export class InMemoryDatabase implements DatabaseAdapter {
         }
       }
 
+      // Handle OR REPLACE: remove existing row with same primary key (first column)
+      const isReplace = /INSERT OR REPLACE/i.test(sql);
+      if (isReplace && rows.length > 0) {
+        const pk = row[0];
+        const idx = rows.findIndex((r) => (r as unknown[])[0] === pk);
+        if (idx !== -1) rows.splice(idx, 1);
+      }
+
       rows.push(row);
       this.#tables.set(table, rows);
       return;
