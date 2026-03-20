@@ -279,6 +279,55 @@ for (let i = 0; i < ENEMY_COUNT; i++) {
 
 console.log(`[Bok] Spawned ${ENEMY_COUNT} enemies on terrain`);
 
+// --- Boss (Ancient Treant — larger, tougher, at far end of island) ---
+const BOSS_POS = { x: ISLAND_SIZE - 8, z: ISLAND_SIZE - 8 };
+const bossY = getSurfaceY(BOSS_POS.x, BOSS_POS.z);
+const bossGeom = new THREE.BoxGeometry(1.5, 3.0, 1.5);
+const bossMat = new THREE.MeshLambertMaterial({ color: 0x660033 });
+const bossMesh = new THREE.Mesh(bossGeom, bossMat);
+bossMesh.position.set(BOSS_POS.x, bossY + 1.5, BOSS_POS.z);
+bossMesh.castShadow = true;
+scene.add(bossMesh);
+
+const bossVehicle = new Vehicle();
+bossVehicle.position.set(BOSS_POS.x, bossY + 1.5, BOSS_POS.z);
+bossVehicle.maxSpeed = 1.5;
+bossVehicle.mass = 3;
+(bossVehicle as any).setRenderComponent(bossMesh, (obj: THREE.Mesh) => {
+  obj.position.set(bossVehicle.position.x, bossVehicle.position.y, bossVehicle.position.z);
+});
+yukaManager.add(bossVehicle);
+
+const boss = {
+  mesh: bossMesh,
+  vehicle: bossVehicle,
+  health: 150,
+  maxHealth: 150,
+  attackCooldown: 2.0,
+  phase: 1,
+  defeated: false,
+};
+// Boss also added to enemyMeshes for combat (higher HP, same attack logic)
+enemyMeshes.push({ mesh: bossMesh, vehicle: bossVehicle, health: 150, attackCooldown: 2.0 });
+
+// Add boss health bar to HUD
+const bossHealthContainer = document.createElement('div');
+bossHealthContainer.id = 'boss-health';
+bossHealthContainer.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);display:none;z-index:101;pointer-events:none;text-align:center;';
+const bossName = document.createElement('div');
+bossName.textContent = 'Ancient Treant';
+bossName.style.cssText = 'font-family:Georgia,serif;color:#fdf6e3;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,0.8);margin-bottom:4px;';
+const bossTrack = document.createElement('div');
+bossTrack.style.cssText = 'width:300px;height:10px;background:#3a2a1a;border-radius:3px;overflow:hidden;border:1px solid #8b5a2b;';
+const bossFill = document.createElement('div');
+bossFill.id = 'boss-health-fill';
+bossFill.style.cssText = 'width:100%;height:100%;background:#8e24aa;transition:width 0.3s;';
+bossTrack.appendChild(bossFill);
+bossHealthContainer.append(bossName, bossTrack);
+document.body.appendChild(bossHealthContainer);
+
+console.log(`[Bok] Boss spawned at (${BOSS_POS.x}, ${bossY}, ${BOSS_POS.z})`);
+
 // --- First-Person Camera (JollyPixel Camera3DControls) ---
 // Camera3DControls is JollyPixel's built-in FPS camera with WASD + mouse look.
 // It extends Behavior → registers as RenderComponent → ThreeRenderer renders from it.
@@ -501,6 +550,7 @@ canvas.addEventListener('mousedown', (e) => {
       }, 100);
 
       if (target.health <= 0) {
+        const isBoss = target.mesh === bossMesh;
         // Enemy dies — remove from scene
         scene.remove(target.mesh);
         yukaManager.remove(target.vehicle);
@@ -508,7 +558,66 @@ canvas.addEventListener('mousedown', (e) => {
         // Update HUD
         const countEl = document.getElementById('enemy-count-line');
         if (countEl) countEl.textContent = `Enemies: ${enemyMeshes.length}`;
+
+        if (isBoss && !boss.defeated) {
+          boss.defeated = true;
+          const bossHpEl = document.getElementById('boss-health');
+          if (bossHpEl) bossHpEl.style.display = 'none';
+          // Victory screen
+          gameWorld.set(GamePhase, { phase: 'victory' });
+          const victoryScreen = document.createElement('div');
+          victoryScreen.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,0.85);';
+          const vPanel = document.createElement('div');
+          vPanel.style.cssText = 'background:#fdf6e3;border:3px solid #8b5a2b;border-radius:12px;padding:48px;text-align:center;';
+          const vTitle = document.createElement('h1');
+          vTitle.textContent = 'A NEW PAGE IS WRITTEN';
+          vTitle.style.cssText = 'font-family:Georgia,serif;font-size:32px;color:#2c1e16;margin:0 0 8px 0;';
+          const vSub = document.createElement('div');
+          vSub.textContent = 'You have unlocked: Dash';
+          vSub.style.cssText = 'font-family:Georgia,serif;font-size:16px;color:#8b5a2b;margin-bottom:8px;font-style:italic;';
+          const vDesc = document.createElement('div');
+          vDesc.textContent = 'The Ancient Treant falls. A new ability inscribes itself into your Tome.';
+          vDesc.style.cssText = 'font-family:Georgia,serif;font-size:13px;color:#2c1e16;margin-bottom:24px;';
+          const vBtn = document.createElement('button');
+          vBtn.textContent = 'CONTINUE';
+          vBtn.style.cssText = 'padding:12px 32px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:16px;cursor:pointer;pointer-events:auto;';
+          vBtn.addEventListener('click', () => location.reload());
+          vPanel.append(vTitle, vSub, vDesc, vBtn);
+          victoryScreen.appendChild(vPanel);
+          document.body.appendChild(victoryScreen);
+        }
       }
+    }
+  }
+
+  // Boss proximity — show health bar when close
+  if (!boss.defeated) {
+    const bdx = camera.position.x - bossMesh.position.x;
+    const bdz = camera.position.z - bossMesh.position.z;
+    const bDist = Math.sqrt(bdx * bdx + bdz * bdz);
+    const bossHpEl = document.getElementById('boss-health');
+    if (bDist < 20) {
+      if (bossHpEl) bossHpEl.style.display = '';
+      // Find boss in enemyMeshes to read health
+      const bossEntry = enemyMeshes.find(e => e.mesh === bossMesh);
+      if (bossEntry) {
+        const pct = Math.max(0, bossEntry.health / boss.maxHealth) * 100;
+        const fillEl = document.getElementById('boss-health-fill');
+        if (fillEl) fillEl.style.width = `${pct}%`;
+        // Phase transitions
+        if (pct <= 66 && boss.phase === 1) {
+          boss.phase = 2;
+          (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0x990044);
+          bossVehicle.maxSpeed = 2.5; // Faster in phase 2
+        }
+        if (pct <= 33 && boss.phase === 2) {
+          boss.phase = 3;
+          (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0xcc0033);
+          bossVehicle.maxSpeed = 3.5; // Even faster in phase 3
+        }
+      }
+    } else if (bossHpEl) {
+      bossHpEl.style.display = 'none';
     }
   }
 
