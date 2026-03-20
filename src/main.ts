@@ -419,6 +419,7 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'Escape') togglePause();
 });
 let playerAttacking = false;
+let playerAttackCooldown = 0;
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0 && document.pointerLockElement) {
     playerAttacking = true;
@@ -569,8 +570,38 @@ function updateLoot(dt: number): void {
     const sinYaw = Math.sin(yaw);
     const worldX = dirX * cosYaw - dirZ * sinYaw;
     const worldZ = dirX * sinYaw + dirZ * cosYaw;
-    camera.position.x += worldX * speed * dt;
-    camera.position.z += worldZ * speed * dt;
+
+    const newX = camera.position.x + worldX * speed * dt;
+    const newZ = camera.position.z + worldZ * speed * dt;
+
+    // Auto-platforming: check terrain height at new position
+    const targetY = getSurfaceY(Math.round(newX), Math.round(newZ));
+    const currentY = camera.position.y - 1.6; // eye height offset
+    const heightDiff = targetY - currentY;
+
+    if (heightDiff <= 1.1 && heightDiff >= -3) {
+      // Can walk up 1 block or down 3 — auto-step
+      camera.position.x = newX;
+      camera.position.z = newZ;
+
+      // Smooth vertical lerp for stepping feel
+      const targetEye = targetY + 1.6;
+      if (Math.abs(camera.position.y - targetEye) > 0.05) {
+        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 12);
+        // Head bob on step
+        if (heightDiff > 0.3) {
+          camera.position.y += Math.sin(Date.now() * 0.02) * 0.03;
+        }
+      }
+    }
+    // else: blocked by terrain — don't move (wall collision)
+  } else {
+    // When standing still, settle to terrain height
+    const standY = getSurfaceY(Math.round(camera.position.x), Math.round(camera.position.z));
+    const targetEye = standY + 1.6;
+    if (Math.abs(camera.position.y - targetEye) > 0.05) {
+      camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 8);
+    }
   }
 
   // Mobile attack/dodge
@@ -588,12 +619,32 @@ function updateLoot(dt: number): void {
     scene.fog.color.copy(dayNight.skyColor);
   }
 
-  // --- Combat ---
-  // Player attacks on left mouse click (while pointer locked)
-  if (playerAttacking && gameWorld.get(GamePhase)?.phase === 'playing') {
+  // --- Combat (contextual — proximity triggers attack) ---
+  // Auto-attack nearest enemy when very close (contact combat)
+  // Also supports manual click for ranged engagement
+  const ATTACK_RANGE = 2.5;
+  const CONTACT_RANGE = 1.8;
+  const PLAYER_DAMAGE = 15;
+
+  // Attack cooldown
+  playerAttackCooldown = Math.max(0, playerAttackCooldown - dt);
+
+  // Check for contact combat (auto-attack on proximity)
+  if (gameWorld.get(GamePhase)?.phase === 'playing' && !playerAttacking && playerAttackCooldown <= 0) {
+    for (const em of enemyMeshes) {
+      const cdx = camera.position.x - em.mesh.position.x;
+      const cdz = camera.position.z - em.mesh.position.z;
+      const cDist = Math.sqrt(cdx * cdx + cdz * cdz);
+      if (cDist < CONTACT_RANGE) {
+        playerAttacking = true; // Trigger auto-attack
+        break;
+      }
+    }
+  }
+
+  if (playerAttacking && gameWorld.get(GamePhase)?.phase === 'playing' && playerAttackCooldown <= 0) {
     playerAttacking = false;
-    const ATTACK_RANGE = 3.0;
-    const PLAYER_DAMAGE = 15;
+    playerAttackCooldown = 0.4; // 0.4s between attacks
 
     let closestIdx = -1;
     let closestDist = ATTACK_RANGE;
