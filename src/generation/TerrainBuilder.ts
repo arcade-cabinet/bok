@@ -1,4 +1,4 @@
-import type { BiomeConfig } from '../content/types';
+import type { BiomeConfig } from '../content/index';
 import { PRNG, SimplexNoise } from './noise';
 
 /** Output of terrain generation — heightmap + block type data. */

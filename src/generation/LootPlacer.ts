@@ -1,4 +1,4 @@
-import type { Vec3 } from '../shared/types';
+import type { Vec3 } from '../shared/index';
 import type { TerrainData } from './TerrainBuilder';
 import { PRNG } from './noise';
 

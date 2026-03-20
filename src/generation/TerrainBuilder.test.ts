@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TerrainBuilder } from './TerrainBuilder';
-import type { BiomeConfig } from '../content/types';
+import type { BiomeConfig } from '../content/index';
 
 const FOREST_BIOME: BiomeConfig = {
   id: 'forest',

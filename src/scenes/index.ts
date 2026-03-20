@@ -12,3 +12,4 @@ export { IslandScene } from './IslandScene.ts';
 export { BossArenaScene } from './BossArenaScene.ts';
 export { IslandSelectScene, type BiomeCard } from './IslandSelectScene.ts';
 export { SailingScene } from './SailingScene.ts';
+export { ResultsScene, type RunStats } from './ResultsScene.ts';

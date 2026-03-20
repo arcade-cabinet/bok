@@ -1,5 +1,5 @@
-import type { BiomeConfig } from '../content/types';
-import type { Vec3 } from '../shared/types';
+import type { BiomeConfig } from '../content/index';
+import type { Vec3 } from '../shared/index';
 import { TerrainBuilder, type TerrainData } from './TerrainBuilder';
 import { EnemyPlacer, type EnemySpawn } from './EnemyPlacer';
 import { LootPlacer, type ChestPlacement } from './LootPlacer';

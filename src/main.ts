@@ -3,13 +3,14 @@ import { createWorld } from 'koota';
 import {
   Time, GamePhase, MovementIntent, LookIntent, IslandState,
 } from './traits/index.ts';
-import { MAX_DELTA } from './shared/constants.ts';
+import { MAX_DELTA } from './shared/index.ts';
 import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
-import { SceneDirector } from './scenes/SceneDirector.ts';
-import { MainMenuScene } from './scenes/MainMenuScene.ts';
-import { IslandScene } from './scenes/IslandScene.ts';
-import { BossArenaScene } from './scenes/BossArenaScene.ts';
+import { SaveManager } from './persistence/index.ts';
+import {
+  SceneDirector, MainMenuScene, HubScene, IslandSelectScene,
+  SailingScene, IslandScene, BossArenaScene, ResultsScene,
+} from './scenes/index.ts';
 
 // --- Canvas ---
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
@@ -23,6 +24,12 @@ canvas.addEventListener('click', () => {
 });
 
 // --- Koota World (single source of truth) ---
+//
+// MovementIntent and LookIntent are registered as WORLD-LEVEL singletons
+// (not per-entity traits) because this is a single-player game with one
+// controlled character. The InputSystem writes these once per frame, and
+// the active scene reads them for the player entity. This avoids querying
+// for the player entity just to read input, and simplifies the data flow.
 const gameWorld = createWorld(Time, GamePhase, MovementIntent, LookIntent, IslandState);
 
 // --- Content Registry (Zod-validated JSON configs) ---
@@ -38,10 +45,22 @@ const inputSystem = new InputSystem(canvas);
 
 // --- Scene Director ---
 const sceneDirector = new SceneDirector();
+
+// H11: Register ALL scenes
 sceneDirector.register('mainMenu', new MainMenuScene(gameWorld, runtime));
-// HubScene registered separately — requires SceneDirector + SaveManager wired by hub task
-sceneDirector.register('island', new IslandScene(gameWorld, runtime, content, inputSystem));
+
+// HubScene requires SceneDirector + ActionMap + SaveManager
+SaveManager.createInMemory().then((saveManager) => {
+  sceneDirector.register('hub', new HubScene(
+    gameWorld, runtime, sceneDirector, inputSystem.actionMap, saveManager,
+  ));
+});
+
+sceneDirector.register('islandSelect', new IslandSelectScene(gameWorld, runtime, sceneDirector));
+sceneDirector.register('sailing', new SailingScene(gameWorld, runtime, sceneDirector));
+sceneDirector.register('island', new IslandScene(gameWorld, runtime, content, inputSystem, sceneDirector));
 sceneDirector.register('bossArena', new BossArenaScene(gameWorld, runtime));
+sceneDirector.register('results', new ResultsScene(gameWorld, runtime, sceneDirector));
 
 // --- Frame Loop (wired into JollyPixel's beforeUpdate) ---
 runtime.world.on('beforeUpdate', (rawDt: number) => {
@@ -55,20 +74,19 @@ runtime.world.on('beforeUpdate', (rawDt: number) => {
     elapsed: (prevTime?.elapsed ?? 0) + dt,
   });
 
-  // 2. Poll input → write MovementIntent/LookIntent/attack actions
+  // 2. Poll input -> write MovementIntent/LookIntent/attack actions
   inputSystem.update(gameWorld);
 
-  // 3-7. Delegate to active scene (AI, movement, combat, physics, render sync)
+  // 3+. Delegate to active scene (AI, movement, combat, physics, render sync)
   sceneDirector.update(dt);
 });
 
 // --- Boot ---
 loadRuntime(runtime)
   .then(() => {
-    console.log('[Bok] Runtime loaded — starting Forest island vertical slice');
-    // Start directly on island scene for vertical slice testing
-    sceneDirector.transition('island');
-    gameWorld.set(GamePhase, { phase: 'exploring' });
+    console.log('[Bok] Runtime loaded — starting main menu');
+    sceneDirector.transition('mainMenu');
+    gameWorld.set(GamePhase, { phase: 'menu' });
   })
   .catch((error) => {
     console.error('[Bok] Failed to load runtime:', error);

@@ -1,13 +1,14 @@
 import type { World, Entity } from 'koota';
 import { Scene } from './Scene.ts';
 import { Position, Velocity, Health, IsPlayer, MovementIntent, LookIntent } from '../traits/index.ts';
-import { TerrainBuilder, type TerrainData } from '../generation/TerrainBuilder.ts';
-import { SaveManager, type GameState } from '../persistence/index.ts';
+import { TerrainBuilder, type TerrainData } from '../generation/index.ts';
+import { SaveManager } from '../persistence/index.ts';
 import type { SceneDirector } from './SceneDirector.ts';
-import type { ActionMap } from '../input/ActionMap.ts';
-import type { BiomeConfig } from '../content/types.ts';
-import type { Vec3 } from '../shared/types.ts';
-import { PLAYER_MOVE_SPEED } from '../shared/constants.ts';
+import type { ActionMap } from '../input/index.ts';
+import type { BiomeConfig } from '../content/index.ts';
+import type { Vec3 } from '../shared/index.ts';
+import { PLAYER_MOVE_SPEED } from '../shared/index.ts';
+import { Minimap, type MinimapMarker } from '../ui/index.ts';
 import * as THREE from 'three';
 
 import buildingsData from '../content/hub/buildings.json';
@@ -245,6 +246,9 @@ export class HubScene extends Scene {
   #showingOverlay = false;
   #stateLoaded = false;
 
+  // UI (M7)
+  #minimap: Minimap | null = null;
+
   // Camera
   #camera: THREE.PerspectiveCamera | null = null;
   readonly #cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -297,6 +301,11 @@ export class HubScene extends Scene {
     // Spawn NPC entities
     this.#spawnNPCs();
 
+    // M7: Create minimap for hub (guarded for headless/test environments)
+    if (typeof document !== 'undefined') {
+      this.#minimap = new Minimap(document.body);
+    }
+
     console.log(
       `[HubScene] Hub ready — ${this.#buildings.length} buildings, ${this.#npcs.length} NPCs, ` +
       `${this.#structureBlocks.length} structure blocks`,
@@ -309,6 +318,7 @@ export class HubScene extends Scene {
     this.#checkBuildingProximity();
     this.#handleInteraction();
     this.#syncCameraToPlayer();
+    this.#updateMinimap();
   }
 
   exit(): void {
@@ -332,6 +342,30 @@ export class HubScene extends Scene {
     this.#nearbyBuilding = null;
     this.#showingOverlay = false;
     this.#structureBlocks = [];
+
+    // M7: Destroy minimap
+    this.#minimap?.destroy();
+    this.#minimap = null;
+  }
+
+  // --- Minimap ---
+
+  #updateMinimap(): void {
+    if (!this.#minimap || !this.#playerEntity) return;
+
+    const pos = this.#playerEntity.get(Position);
+    if (!pos) return;
+
+    // Collect NPC markers
+    const markers: MinimapMarker[] = [];
+    for (const npc of this.#npcEntities) {
+      const npcPos = npc.get(Position);
+      if (npcPos) {
+        markers.push({ x: npcPos.x, z: npcPos.z, type: 'chest' }); // NPCs shown as chest markers
+      }
+    }
+
+    this.#minimap.update(pos.x, pos.z, markers);
   }
 
   // --- Terrain & structures ---

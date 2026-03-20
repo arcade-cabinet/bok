@@ -265,8 +265,8 @@ describe('Integration: Full Run Simulation', () => {
     expect(actionMap.isActive('moveLeft')).toBe(true);
     expect(actionMap.isActive('moveBack')).toBe(false);
 
-    // Simulate dodge
-    actionMap.setKeyDown('Space');
+    // Simulate dodge (Q key — Space is jump)
+    actionMap.setKeyDown('KeyQ');
     expect(actionMap.isActive('dodge')).toBe(true);
 
     // Release

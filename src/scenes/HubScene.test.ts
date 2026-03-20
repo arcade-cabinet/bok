@@ -3,7 +3,7 @@ import { createWorld } from 'koota';
 import type { World } from 'koota';
 import { HubScene } from './HubScene.ts';
 import { SceneDirector } from './SceneDirector.ts';
-import { ActionMap } from '../input/ActionMap.ts';
+import { ActionMap } from '../input/index.ts';
 import { SaveManager } from '../persistence/index.ts';
 import { Position, IsPlayer, MovementIntent, LookIntent } from '../traits/index.ts';
 

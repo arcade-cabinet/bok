@@ -31,7 +31,8 @@ describe('ActionMap', () => {
   it('provides default desktop bindings', () => {
     const map = ActionMap.desktopDefaults();
     expect(map.getAction('KeyW')).toBe('moveForward');
-    expect(map.getAction('Space')).toBe('dodge');
+    expect(map.getAction('Space')).toBe('jump');
+    expect(map.getAction('KeyQ')).toBe('dodge');
     expect(map.getAction('KeyE')).toBe('interact');
   });
 });
