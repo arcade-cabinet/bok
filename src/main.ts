@@ -425,6 +425,64 @@ canvas.addEventListener('mousedown', (e) => {
   }
 });
 
+// --- Loot Drop System ---
+interface LootDrop {
+  mesh: THREE.Mesh;
+  type: string;
+  position: THREE.Vector3;
+}
+const lootDrops: LootDrop[] = [];
+const lootGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+const lootMats: Record<string, THREE.MeshLambertMaterial> = {
+  'health-potion': new THREE.MeshLambertMaterial({ color: 0xff4444 }),
+  'tome-page': new THREE.MeshLambertMaterial({ color: 0xffdd00 }),
+};
+
+function spawnLootDrop(pos: THREE.Vector3, type: string): void {
+  const mat = lootMats[type] ?? lootMats['health-potion'];
+  const mesh = new THREE.Mesh(lootGeom, mat);
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  lootDrops.push({ mesh, type, position: pos });
+}
+
+// Pickup detection + loot rotation runs in frame loop
+function updateLoot(dt: number): void {
+  for (let i = lootDrops.length - 1; i >= 0; i--) {
+    const drop = lootDrops[i];
+    // Spin the drop
+    drop.mesh.rotation.y += dt * 3;
+    drop.mesh.position.y = drop.position.y + Math.sin(Date.now() * 0.003) * 0.15;
+
+    // Check player proximity for pickup
+    const dx = camera.position.x - drop.mesh.position.x;
+    const dz = camera.position.z - drop.mesh.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 1.5) {
+      // Pickup!
+      scene.remove(drop.mesh);
+      lootDrops.splice(i, 1);
+      if (drop.type === 'health-potion') {
+        playerHealth = Math.min(100, playerHealth + 25);
+        const fill = document.getElementById('health-fill');
+        const text = document.getElementById('health-text');
+        if (fill) fill.style.width = `${playerHealth}%`;
+        if (text) text.textContent = `${playerHealth} / 100`;
+      }
+      // Brief pickup flash
+      const flash = document.createElement('div');
+      flash.textContent = drop.type === 'health-potion' ? '+25 HP' : 'Tome Page!';
+      flash.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-family:Georgia,serif;font-size:20px;color:#fdf6e3;text-shadow:0 2px 4px rgba(0,0,0,0.8);z-index:150;pointer-events:none;transition:opacity 0.8s,transform 0.8s;';
+      document.body.appendChild(flash);
+      requestAnimationFrame(() => {
+        flash.style.opacity = '0';
+        flash.style.transform = 'translate(-50%, -80%)';
+      });
+      setTimeout(() => flash.remove(), 800);
+    }
+  }
+}
+
 // --- Physics: step Rapier on JollyPixel's fixed update ---
 (jpWorld as any).on('beforeFixedUpdate', () => {
   rapierWorld.step();
@@ -520,6 +578,9 @@ canvas.addEventListener('mousedown', (e) => {
     if (mobileControls.consumeAttack()) playerAttacking = true;
   }
 
+  // --- Loot update (spin + pickup detection) ---
+  updateLoot(dt);
+
   // --- Day/Night Cycle update ---
   dayNight.update(dt);
   (scene.background as THREE.Color)?.copy(dayNight.skyColor);
@@ -571,6 +632,11 @@ canvas.addEventListener('mousedown', (e) => {
         if (countEl) countEl.textContent = `Enemies: ${enemyMeshes.length}`;
 
         playEnemyDeath();
+        // Drop loot at enemy position
+        const dropPos = target.mesh.position.clone();
+        dropPos.y += 0.3;
+        spawnLootDrop(dropPos, isBoss ? 'tome-page' : 'health-potion');
+
         if (isBoss && !boss.defeated) {
           boss.defeated = true;
           playVictory();
