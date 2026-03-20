@@ -317,6 +317,41 @@ const PLAYER_SPEED = 6;
 
 // Combat state
 let playerHealth = 100;
+
+// --- Pause Menu ---
+let paused = false;
+function togglePause(): void {
+  if (gameWorld.get(GamePhase)?.phase === 'dead') return;
+  paused = !paused;
+  const existing = document.getElementById('pause-menu');
+  if (paused && !existing) {
+    if (document.pointerLockElement) document.exitPointerLock();
+    const overlay = document.createElement('div');
+    overlay.id = 'pause-menu';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:250;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,0.7);';
+    const panel = document.createElement('div');
+    panel.style.cssText = 'background:#fdf6e3;border:3px solid #8b5a2b;border-radius:12px;padding:36px 48px;text-align:center;';
+    const title = document.createElement('h2');
+    title.textContent = 'PAUSED';
+    title.style.cssText = 'font-family:Georgia,serif;font-size:32px;color:#2c1e16;margin:0 0 24px 0;';
+    const resumeBtn = document.createElement('button');
+    resumeBtn.textContent = 'Resume';
+    resumeBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-bottom:8px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:15px;cursor:pointer;pointer-events:auto;';
+    resumeBtn.addEventListener('click', () => togglePause());
+    const quitBtn = document.createElement('button');
+    quitBtn.textContent = 'Quit to Menu';
+    quitBtn.style.cssText = 'display:block;width:100%;padding:10px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;color:#2c1e16;font-family:Georgia,serif;font-size:15px;cursor:pointer;pointer-events:auto;';
+    quitBtn.addEventListener('click', () => location.reload());
+    panel.append(title, resumeBtn, quitBtn);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+  } else if (!paused && existing) {
+    existing.remove();
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape') togglePause();
+});
 let playerAttacking = false;
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0 && document.pointerLockElement) {
@@ -332,6 +367,7 @@ canvas.addEventListener('mousedown', (e) => {
 // --- Frame Loop (wired into JollyPixel's beforeUpdate) ---
 // beforeUpdate emits [dt: number] — delta time in seconds
 (jpWorld as any).on('beforeUpdate', (rawDt: number) => {
+  if (paused || gameWorld.get(GamePhase)?.phase === 'dead') return;
   const dt = Math.min(rawDt, MAX_DELTA);
 
   // Update Koota time
