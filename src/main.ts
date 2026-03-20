@@ -15,6 +15,7 @@ import {
   Time, GamePhase, MovementIntent, LookIntent, IslandState,
 } from './traits/index.ts';
 import { MAX_DELTA } from './shared/index.ts';
+import { playSwordSwing, playHitImpact, playPlayerHurt, playEnemyDeath, playBossPhase, playVictory, startAmbient } from './audio/GameAudio.ts';
 import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
 
@@ -538,9 +539,11 @@ canvas.addEventListener('mousedown', (e) => {
       }
     }
 
+    playSwordSwing();
     if (closestIdx >= 0) {
       const target = enemyMeshes[closestIdx];
       target.health -= PLAYER_DAMAGE;
+      playHitImpact();
       // Flash enemy red-white on hit
       (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(0xffffff);
       setTimeout(() => {
@@ -559,8 +562,10 @@ canvas.addEventListener('mousedown', (e) => {
         const countEl = document.getElementById('enemy-count-line');
         if (countEl) countEl.textContent = `Enemies: ${enemyMeshes.length}`;
 
+        playEnemyDeath();
         if (isBoss && !boss.defeated) {
           boss.defeated = true;
+          playVictory();
           const bossHpEl = document.getElementById('boss-health');
           if (bossHpEl) bossHpEl.style.display = 'none';
           // Victory screen
@@ -607,11 +612,13 @@ canvas.addEventListener('mousedown', (e) => {
         // Phase transitions
         if (pct <= 66 && boss.phase === 1) {
           boss.phase = 2;
+          playBossPhase();
           (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0x990044);
           bossVehicle.maxSpeed = 2.5; // Faster in phase 2
         }
         if (pct <= 33 && boss.phase === 2) {
           boss.phase = 3;
+          playBossPhase();
           (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0xcc0033);
           bossVehicle.maxSpeed = 3.5; // Even faster in phase 3
         }
@@ -631,6 +638,7 @@ canvas.addEventListener('mousedown', (e) => {
       if (enemy.attackCooldown <= 0) {
         enemy.attackCooldown = 1.5; // Attack every 1.5s
         playerHealth = Math.max(0, playerHealth - 10);
+        playPlayerHurt();
         // Update health bar
         const fill = document.getElementById('health-fill');
         const text = document.getElementById('health-text');
@@ -761,6 +769,7 @@ function createMainMenu(): void {
     if (hud) hud.style.display = '';
     gameWorld.set(GamePhase, { phase: 'playing' });
     if (mobileControls) mobileControls.show();
+    startAmbient();
     console.log('[Bok] Game started with seed:', seedInput.value);
   });
 

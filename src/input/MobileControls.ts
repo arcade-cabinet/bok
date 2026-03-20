@@ -1,64 +1,69 @@
 /**
- * Mobile touch controls overlay — virtual joystick + camera swipe + action buttons.
- * Only shown when touch is detected (no pointer lock available).
+ * Split-half touch controls for mobile.
+ * Left half: drag to move (relative to initial touch point)
+ * Right half: drag to look around (camera rotation)
+ * Double-tap right side: attack
+ *
+ * This matches the desktop paradigm: WASD (left) + mouse (right).
  */
 
 export interface MobileControlState {
   moveX: number;  // -1 to 1
   moveZ: number;  // -1 to 1
-  lookDX: number; // delta pixels this frame
+  lookDX: number; // pixels this frame
   lookDY: number;
   attacking: boolean;
-  dodging: boolean;
 }
 
 export class MobileControls {
-  readonly #container: HTMLDivElement;
   readonly #state: MobileControlState = {
-    moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, attacking: false, dodging: false,
+    moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, attacking: false,
   };
 
-  // Joystick state
-  #joystickActive = false;
-  #joystickTouchId: number | null = null;
-  #joystickCenterX = 0;
-  #joystickCenterY = 0;
-  readonly #joystickRadius = 50;
-  #joystickKnob: HTMLDivElement;
-  #joystickBase: HTMLDivElement;
+  // Left half: movement
+  #moveTouchId: number | null = null;
+  #moveOriginX = 0;
+  #moveOriginY = 0;
+  readonly #moveRadius = 60; // pixels from origin = full speed
 
-  // Camera look state
+  // Right half: camera
   #cameraTouchId: number | null = null;
   #cameraLastX = 0;
   #cameraLastY = 0;
 
-  #visible = false;
+  // Double-tap detection for attack
+  #lastTapTime = 0;
+
+  #overlay: HTMLDivElement;
 
   constructor() {
-    this.#container = document.createElement('div');
-    this.#container.id = 'mobile-controls';
-    this.#container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;pointer-events:none;display:none;';
+    // Minimal overlay — just shows split indicator
+    this.#overlay = document.createElement('div');
+    this.#overlay.id = 'mobile-controls';
+    this.#overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;pointer-events:none;display:none;';
 
-    // Virtual joystick (left side)
-    this.#joystickBase = document.createElement('div');
-    this.#joystickBase.style.cssText = 'position:absolute;bottom:80px;left:40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);pointer-events:auto;touch-action:none;';
-    this.#joystickKnob = document.createElement('div');
-    this.#joystickKnob.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.5);border:2px solid rgba(255,255,255,0.7);';
-    this.#joystickBase.appendChild(this.#joystickKnob);
+    // Split line indicator
+    const splitLine = document.createElement('div');
+    splitLine.style.cssText = 'position:absolute;top:10%;left:50%;width:1px;height:80%;background:rgba(255,255,255,0.1);';
 
-    // Action buttons (right side)
-    const attackBtn = this.#createButton('Attack', 'right:40px;bottom:120px;', () => { this.#state.attacking = true; });
-    const dodgeBtn = this.#createButton('Dodge', 'right:40px;bottom:60px;', () => { this.#state.dodging = true; });
+    // Labels
+    const moveLabel = document.createElement('div');
+    moveLabel.textContent = 'MOVE';
+    moveLabel.style.cssText = 'position:absolute;bottom:20px;left:25%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
+    const lookLabel = document.createElement('div');
+    lookLabel.textContent = 'LOOK';
+    lookLabel.style.cssText = 'position:absolute;bottom:20px;left:75%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
 
-    // Camera zone label
-    const cameraLabel = document.createElement('div');
-    cameraLabel.textContent = 'Swipe to look';
-    cameraLabel.style.cssText = 'position:absolute;top:50%;right:20px;transform:translateY(-50%);color:rgba(255,255,255,0.3);font-family:Georgia,serif;font-size:12px;pointer-events:none;';
+    // Attack button (bottom right)
+    const attackBtn = document.createElement('div');
+    attackBtn.textContent = 'ATK';
+    attackBtn.style.cssText = 'position:absolute;bottom:30px;right:30px;width:56px;height:56px;border-radius:50%;background:rgba(192,57,43,0.6);border:2px solid rgba(192,57,43,0.8);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:13px;color:#fdf6e3;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;';
+    attackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.#state.attacking = true; }, { passive: false });
 
-    this.#container.append(this.#joystickBase, attackBtn, dodgeBtn, cameraLabel);
-    document.body.appendChild(this.#container);
+    this.#overlay.append(splitLine, moveLabel, lookLabel, attackBtn);
+    document.body.appendChild(this.#overlay);
 
-    // Touch handlers on the whole canvas
+    // Touch handlers on canvas
     const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
     if (canvas) {
       canvas.addEventListener('touchstart', this.#onTouchStart, { passive: false });
@@ -67,24 +72,8 @@ export class MobileControls {
     }
   }
 
-  #createButton(label: string, posCSS: string, onTap: () => void): HTMLDivElement {
-    const btn = document.createElement('div');
-    btn.textContent = label;
-    btn.style.cssText = `position:absolute;${posCSS}width:64px;height:64px;border-radius:50%;background:rgba(253,246,227,0.7);border:2px solid #8b5a2b;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:12px;color:#2c1e16;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;`;
-    btn.addEventListener('touchstart', (e) => { e.preventDefault(); onTap(); }, { passive: false });
-    return btn;
-  }
-
-  show(): void {
-    if (this.#visible) return;
-    this.#visible = true;
-    this.#container.style.display = '';
-  }
-
-  hide(): void {
-    this.#visible = false;
-    this.#container.style.display = 'none';
-  }
+  show(): void { this.#overlay.style.display = ''; }
+  hide(): void { this.#overlay.style.display = 'none'; }
 
   get state(): MobileControlState { return this.#state; }
 
@@ -101,29 +90,28 @@ export class MobileControls {
     return v;
   }
 
-  consumeDodge(): boolean {
-    const v = this.#state.dodging;
-    this.#state.dodging = false;
-    return v;
-  }
-
   #onTouchStart = (e: TouchEvent): void => {
     e.preventDefault();
     const halfW = window.innerWidth / 2;
 
     for (const touch of Array.from(e.changedTouches)) {
-      if (touch.clientX < halfW && this.#joystickTouchId === null) {
-        // Left side — joystick
-        this.#joystickTouchId = touch.identifier;
-        this.#joystickActive = true;
-        const rect = this.#joystickBase.getBoundingClientRect();
-        this.#joystickCenterX = rect.left + rect.width / 2;
-        this.#joystickCenterY = rect.top + rect.height / 2;
+      if (touch.clientX < halfW && this.#moveTouchId === null) {
+        // Left half — movement origin
+        this.#moveTouchId = touch.identifier;
+        this.#moveOriginX = touch.clientX;
+        this.#moveOriginY = touch.clientY;
       } else if (touch.clientX >= halfW && this.#cameraTouchId === null) {
-        // Right side — camera look
+        // Right half — camera
         this.#cameraTouchId = touch.identifier;
         this.#cameraLastX = touch.clientX;
         this.#cameraLastY = touch.clientY;
+
+        // Double-tap detection for attack
+        const now = Date.now();
+        if (now - this.#lastTapTime < 300) {
+          this.#state.attacking = true;
+        }
+        this.#lastTapTime = now;
       }
     }
   };
@@ -131,23 +119,16 @@ export class MobileControls {
   #onTouchMove = (e: TouchEvent): void => {
     e.preventDefault();
     for (const touch of Array.from(e.changedTouches)) {
-      if (touch.identifier === this.#joystickTouchId) {
-        const dx = touch.clientX - this.#joystickCenterX;
-        const dy = touch.clientY - this.#joystickCenterY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const clampedDist = Math.min(dist, this.#joystickRadius);
-        const angle = Math.atan2(dy, dx);
-        const nx = (Math.cos(angle) * clampedDist) / this.#joystickRadius;
-        const ny = (Math.sin(angle) * clampedDist) / this.#joystickRadius;
-
-        this.#state.moveX = nx;
-        this.#state.moveZ = ny;
-
-        // Move knob visually
-        this.#joystickKnob.style.transform = `translate(calc(-50% + ${nx * this.#joystickRadius}px), calc(-50% + ${ny * this.#joystickRadius}px))`;
+      if (touch.identifier === this.#moveTouchId) {
+        // Movement: drag relative to origin, clamped to radius
+        const dx = touch.clientX - this.#moveOriginX;
+        const dy = touch.clientY - this.#moveOriginY;
+        this.#state.moveX = Math.max(-1, Math.min(1, dx / this.#moveRadius));
+        this.#state.moveZ = Math.max(-1, Math.min(1, dy / this.#moveRadius));
       }
 
       if (touch.identifier === this.#cameraTouchId) {
+        // Camera look: accumulate delta
         this.#state.lookDX += touch.clientX - this.#cameraLastX;
         this.#state.lookDY += touch.clientY - this.#cameraLastY;
         this.#cameraLastX = touch.clientX;
@@ -158,12 +139,10 @@ export class MobileControls {
 
   #onTouchEnd = (e: TouchEvent): void => {
     for (const touch of Array.from(e.changedTouches)) {
-      if (touch.identifier === this.#joystickTouchId) {
-        this.#joystickTouchId = null;
-        this.#joystickActive = false;
+      if (touch.identifier === this.#moveTouchId) {
+        this.#moveTouchId = null;
         this.#state.moveX = 0;
         this.#state.moveZ = 0;
-        this.#joystickKnob.style.transform = 'translate(-50%, -50%)';
       }
       if (touch.identifier === this.#cameraTouchId) {
         this.#cameraTouchId = null;
@@ -172,7 +151,7 @@ export class MobileControls {
   };
 
   destroy(): void {
-    this.#container.remove();
+    this.#overlay.remove();
   }
 }
 
