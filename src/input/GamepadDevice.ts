@@ -7,6 +7,7 @@ export class GamepadDevice {
 
   poll(): void {
     const gamepads = navigator.getGamepads();
+    // v1: single gamepad support
     const gp = gamepads[0];
     if (!gp) return;
 

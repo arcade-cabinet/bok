@@ -2,7 +2,7 @@ export type GameAction =
   | 'moveForward' | 'moveBack' | 'moveLeft' | 'moveRight'
   | 'attack' | 'dodge' | 'parry' | 'interact' | 'tome' | 'pause'
   | 'hotbar1' | 'hotbar2' | 'hotbar3' | 'hotbar4' | 'hotbar5'
-  | 'jump' | 'sprint';
+  | 'jump' | 'sprint' | 'look';
 
 export class ActionMap {
   readonly #keyToAction = new Map<string, GameAction>();
@@ -41,7 +41,8 @@ export class ActionMap {
     map.bindKey('KeyS', 'moveBack');
     map.bindKey('KeyA', 'moveLeft');
     map.bindKey('KeyD', 'moveRight');
-    map.bindKey('Space', 'dodge');
+    map.bindKey('Space', 'jump');
+    map.bindKey('KeyQ', 'dodge');
     map.bindKey('ShiftLeft', 'sprint');
     map.bindKey('KeyE', 'interact');
     map.bindKey('Tab', 'tome');

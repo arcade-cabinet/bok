@@ -67,6 +67,7 @@ export class PostProcessing {
     if (healthPercent > 20) {
       if (this.#lowHealthActive) {
         this.#lowHealthActive = false;
+        this.#pulsePhase = 0;
         this.#overlay.style.boxShadow = 'none';
       }
       return;

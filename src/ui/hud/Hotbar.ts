@@ -8,6 +8,7 @@ export class Hotbar {
   readonly #container: HTMLDivElement;
   readonly #slots: HTMLDivElement[] = [];
   #activeIndex = 0;
+  readonly #abort = new AbortController();
 
   constructor(parent: HTMLElement) {
     this.#container = document.createElement('div');
@@ -63,8 +64,8 @@ export class Hotbar {
 
     this.#updateHighlight();
 
-    document.addEventListener('keydown', this.#onKeyDown);
-    document.addEventListener('wheel', this.#onWheel, { passive: true });
+    document.addEventListener('keydown', this.#onKeyDown, { signal: this.#abort.signal });
+    document.addEventListener('wheel', this.#onWheel, { passive: true, signal: this.#abort.signal });
 
     parent.appendChild(this.#container);
   }
@@ -105,8 +106,7 @@ export class Hotbar {
   };
 
   destroy(): void {
-    document.removeEventListener('keydown', this.#onKeyDown);
-    document.removeEventListener('wheel', this.#onWheel);
+    this.#abort.abort();
     this.#container.remove();
   }
 }

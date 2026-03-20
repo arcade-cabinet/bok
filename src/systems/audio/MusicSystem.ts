@@ -13,7 +13,6 @@ export class MusicSystem {
   readonly #audio: AudioManager;
   #current: TrackState | null = null;
   #paused = false;
-  #pauseTime = 0;
   #currentUrl = '';
 
   constructor(audio: AudioManager = AudioManager.getInstance()) {
@@ -96,16 +95,15 @@ export class MusicSystem {
 
   pause(): void {
     if (!this.#current || this.#paused) return;
-    const ctx = this.#audio.getContext();
-    this.#pauseTime = ctx.currentTime;
-    ctx.suspend();
+    this.#current.gain.gain.setValueAtTime(this.#current.gain.gain.value, this.#audio.getContext().currentTime);
+    this.#current.gain.gain.linearRampToValueAtTime(0, this.#audio.getContext().currentTime + 0.05);
     this.#paused = true;
   }
 
   resume(): void {
-    if (!this.#paused) return;
-    const ctx = this.#audio.getContext();
-    ctx.resume();
+    if (!this.#current || !this.#paused) return;
+    this.#current.gain.gain.setValueAtTime(0, this.#audio.getContext().currentTime);
+    this.#current.gain.gain.linearRampToValueAtTime(1.0, this.#audio.getContext().currentTime + 0.05);
     this.#paused = false;
   }
 
