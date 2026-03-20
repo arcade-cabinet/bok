@@ -235,7 +235,7 @@ function getSurfaceY(x: number, z: number): number {
 import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 
 const yukaManager = new YukaEntityManager();
-const enemyMeshes: Array<{ mesh: THREE.Mesh; vehicle: Vehicle }> = [];
+const enemyMeshes: Array<{ mesh: THREE.Mesh; vehicle: Vehicle; health: number; attackCooldown: number }> = [];
 
 const ENEMY_COUNT = 8;
 const enemyGeom = new THREE.BoxGeometry(0.7, 1.4, 0.7);
@@ -270,7 +270,7 @@ for (let i = 0; i < ENEMY_COUNT; i++) {
   });
 
   yukaManager.add(vehicle);
-  enemyMeshes.push({ mesh, vehicle });
+  enemyMeshes.push({ mesh, vehicle, health: 30, attackCooldown: 1.5 });
 }
 
 console.log(`[Bok] Spawned ${ENEMY_COUNT} enemies on terrain`);
@@ -310,6 +310,15 @@ canvas.addEventListener('click', () => {
 const cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 const CAMERA_SENSITIVITY = 0.002;
 const PLAYER_SPEED = 6;
+
+// Combat state
+let playerHealth = 100;
+let playerAttacking = false;
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0 && document.pointerLockElement) {
+    playerAttacking = true;
+  }
+});
 
 // --- Physics: step Rapier on JollyPixel's fixed update ---
 (jpWorld as any).on('beforeFixedUpdate', () => {
@@ -377,6 +386,96 @@ const PLAYER_SPEED = 6;
 
     camera.position.x += worldX * speed * dt;
     camera.position.z += worldZ * speed * dt;
+  }
+
+  // --- Combat ---
+  // Player attacks on left mouse click (while pointer locked)
+  if (playerAttacking && gameWorld.get(GamePhase)?.phase === 'playing') {
+    playerAttacking = false;
+    const ATTACK_RANGE = 3.0;
+    const PLAYER_DAMAGE = 15;
+
+    let closestIdx = -1;
+    let closestDist = ATTACK_RANGE;
+    for (let i = 0; i < enemyMeshes.length; i++) {
+      const em = enemyMeshes[i];
+      const edx = camera.position.x - em.mesh.position.x;
+      const edz = camera.position.z - em.mesh.position.z;
+      const eDist = Math.sqrt(edx * edx + edz * edz);
+      if (eDist < closestDist) {
+        closestDist = eDist;
+        closestIdx = i;
+      }
+    }
+
+    if (closestIdx >= 0) {
+      const target = enemyMeshes[closestIdx];
+      target.health -= PLAYER_DAMAGE;
+      // Flash enemy red-white on hit
+      (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(0xffffff);
+      setTimeout(() => {
+        if (target.mesh.parent) {
+          (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(0xcc2222);
+        }
+      }, 100);
+
+      if (target.health <= 0) {
+        // Enemy dies — remove from scene
+        scene.remove(target.mesh);
+        yukaManager.remove(target.vehicle);
+        enemyMeshes.splice(closestIdx, 1);
+        // Update HUD
+        const countEl = document.getElementById('enemy-count-line');
+        if (countEl) countEl.textContent = `Enemies: ${enemyMeshes.length}`;
+      }
+    }
+  }
+
+  // Enemies attack player when in range
+  for (const enemy of enemyMeshes) {
+    const edx = camera.position.x - enemy.mesh.position.x;
+    const edz = camera.position.z - enemy.mesh.position.z;
+    const eDist = Math.sqrt(edx * edx + edz * edz);
+    if (eDist < 1.8) {
+      enemy.attackCooldown -= dt;
+      if (enemy.attackCooldown <= 0) {
+        enemy.attackCooldown = 1.5; // Attack every 1.5s
+        playerHealth = Math.max(0, playerHealth - 10);
+        // Update health bar
+        const fill = document.getElementById('health-fill');
+        const text = document.getElementById('health-text');
+        if (fill) fill.style.width = `${(playerHealth / 100) * 100}%`;
+        if (text) text.textContent = `${playerHealth} / 100`;
+        // Damage flash
+        const flashEl = document.createElement('div');
+        flashEl.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(200,0,0,0.3);pointer-events:none;z-index:150;transition:opacity 0.3s;';
+        document.body.appendChild(flashEl);
+        setTimeout(() => { flashEl.style.opacity = '0'; }, 50);
+        setTimeout(() => { flashEl.remove(); }, 350);
+
+        if (playerHealth <= 0) {
+          // Player death
+          gameWorld.set(GamePhase, { phase: 'dead' });
+          const deathScreen = document.createElement('div');
+          deathScreen.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,0.9);';
+          const deathPanel = document.createElement('div');
+          deathPanel.style.cssText = 'background:#fdf6e3;border:3px solid #8b5a2b;border-radius:12px;padding:48px;text-align:center;';
+          const deathTitle = document.createElement('h1');
+          deathTitle.textContent = 'THE CHAPTER ENDS';
+          deathTitle.style.cssText = 'font-family:Georgia,serif;font-size:36px;color:#2c1e16;margin:0 0 16px 0;';
+          const deathSub = document.createElement('div');
+          deathSub.textContent = 'The ink fades, but the story can be rewritten.';
+          deathSub.style.cssText = 'font-family:Georgia,serif;font-size:14px;color:#8b5a2b;margin-bottom:24px;font-style:italic;';
+          const restartBtn = document.createElement('button');
+          restartBtn.textContent = 'TURN THE PAGE';
+          restartBtn.style.cssText = 'padding:12px 32px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:16px;cursor:pointer;pointer-events:auto;';
+          restartBtn.addEventListener('click', () => { location.reload(); });
+          deathPanel.append(deathTitle, deathSub, restartBtn);
+          deathScreen.appendChild(deathPanel);
+          document.body.appendChild(deathScreen);
+        }
+      }
+    }
   }
 });
 
