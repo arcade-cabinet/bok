@@ -1,0 +1,68 @@
+[
+  {
+    "id": "armory",
+    "name": "Armory",
+    "description": "Upgrade to unlock better starting gear for each run.",
+    "maxLevel": 5,
+    "levels": [
+      { "level": 1, "effect": "Start with wooden sword", "cost": { "wood": 50, "stone": 50 } },
+      { "level": 2, "effect": "Start with iron sword", "cost": { "wood": 100, "stone": 100 } },
+      { "level": 3, "effect": "Start with crystal blade", "cost": { "wood": 200, "stone": 200 } },
+      { "level": 4, "effect": "Start with choice of rare weapon", "cost": { "wood": 400, "stone": 400 } },
+      { "level": 5, "effect": "Start with choice of any weapon", "cost": { "wood": 800, "stone": 800 } }
+    ],
+    "position": { "x": 10, "y": 0, "z": 5 }
+  },
+  {
+    "id": "docks",
+    "name": "Docks",
+    "description": "Upgrade to see more island choices when setting sail.",
+    "maxLevel": 5,
+    "levels": [
+      { "level": 1, "effect": "1 island choice per run", "cost": { "wood": 30, "stone": 30 } },
+      { "level": 2, "effect": "2 island choices per run", "cost": { "wood": 80, "stone": 80 } },
+      { "level": 3, "effect": "3 island choices per run", "cost": { "wood": 150, "stone": 150 } },
+      { "level": 4, "effect": "4 island choices per run", "cost": { "wood": 300, "stone": 300 } },
+      { "level": 5, "effect": "5 island choices per run", "cost": { "wood": 600, "stone": 600 } }
+    ],
+    "position": { "x": -15, "y": 0, "z": 10 }
+  },
+  {
+    "id": "library",
+    "name": "Library",
+    "description": "Upgrade to empower Tome page abilities.",
+    "maxLevel": 5,
+    "levels": [
+      { "level": 1, "effect": "Tome ability power +20%", "cost": { "wood": 100, "stone": 100 } },
+      { "level": 2, "effect": "Tome ability power +40%", "cost": { "wood": 200, "stone": 200 } },
+      { "level": 3, "effect": "Tome ability power +60%", "cost": { "wood": 400, "stone": 400 } },
+      { "level": 4, "effect": "Tome ability power +80%", "cost": { "wood": 800, "stone": 800 } },
+      { "level": 5, "effect": "Tome ability power +100%", "cost": { "wood": 1500, "stone": 1500 } }
+    ],
+    "position": { "x": 5, "y": 0, "z": -10 }
+  },
+  {
+    "id": "market",
+    "name": "Market",
+    "description": "Upgrade to unlock NPC shops on islands.",
+    "maxLevel": 3,
+    "levels": [
+      { "level": 1, "effect": "No shops on islands", "cost": { "wood": 75, "stone": 75 } },
+      { "level": 2, "effect": "Basic shops appear on islands", "cost": { "wood": 200, "stone": 200 } },
+      { "level": 3, "effect": "Full shops with rare items appear", "cost": { "wood": 500, "stone": 500 } }
+    ],
+    "position": { "x": -5, "y": 0, "z": -8 }
+  },
+  {
+    "id": "forge",
+    "name": "Forge",
+    "description": "Upgrade to craft gear between runs.",
+    "maxLevel": 3,
+    "levels": [
+      { "level": 1, "effect": "Basic crafting recipes", "cost": { "wood": 60, "stone": 60 } },
+      { "level": 2, "effect": "Advanced crafting recipes", "cost": { "wood": 150, "stone": 150 } },
+      { "level": 3, "effect": "Master crafting recipes", "cost": { "wood": 400, "stone": 400 } }
+    ],
+    "position": { "x": 12, "y": 0, "z": -5 }
+  }
+]

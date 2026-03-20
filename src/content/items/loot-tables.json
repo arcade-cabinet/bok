@@ -1,0 +1,72 @@
+{
+  "chestTiers": [
+    {
+      "id": "wooden",
+      "name": "Wooden Chest",
+      "pools": ["common"]
+    },
+    {
+      "id": "iron",
+      "name": "Iron Chest",
+      "pools": ["common", "uncommon"]
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal Chest",
+      "pools": ["uncommon", "rare", "legendary"]
+    }
+  ],
+  "pools": [
+    {
+      "id": "common",
+      "weight": 0.6,
+      "items": [
+        { "itemId": "wood", "weight": 0.35, "minAmount": 3, "maxAmount": 8 },
+        { "itemId": "stone", "weight": 0.35, "minAmount": 3, "maxAmount": 8 },
+        { "itemId": "coal", "weight": 0.15, "minAmount": 1, "maxAmount": 3 },
+        { "itemId": "herbs", "weight": 0.15, "minAmount": 1, "maxAmount": 3 }
+      ]
+    },
+    {
+      "id": "uncommon",
+      "weight": 0.25,
+      "items": [
+        { "itemId": "iron-ore", "weight": 0.3, "minAmount": 1, "maxAmount": 4 },
+        { "itemId": "emerald", "weight": 0.2, "minAmount": 1, "maxAmount": 2 },
+        { "itemId": "ruby", "weight": 0.2, "minAmount": 1, "maxAmount": 2 },
+        { "itemId": "mushroom", "weight": 0.15, "minAmount": 1, "maxAmount": 3 },
+        { "itemId": "honey", "weight": 0.15, "minAmount": 1, "maxAmount": 2 }
+      ]
+    },
+    {
+      "id": "rare",
+      "weight": 0.1,
+      "items": [
+        { "itemId": "magma-crystal", "weight": 0.25, "minAmount": 1, "maxAmount": 2 },
+        { "itemId": "frost-shard", "weight": 0.25, "minAmount": 1, "maxAmount": 2 },
+        { "itemId": "void-essence", "weight": 0.25, "minAmount": 1, "maxAmount": 1 },
+        { "itemId": "ancient-bone", "weight": 0.25, "minAmount": 1, "maxAmount": 2 }
+      ]
+    },
+    {
+      "id": "legendary",
+      "weight": 0.05,
+      "items": [
+        { "itemId": "dragon-scale", "weight": 0.25, "minAmount": 1, "maxAmount": 1 },
+        { "itemId": "star-fragment", "weight": 0.25, "minAmount": 1, "maxAmount": 1 },
+        { "itemId": "tome-ink", "weight": 0.25, "minAmount": 1, "maxAmount": 1 },
+        { "itemId": "phoenix-feather", "weight": 0.25, "minAmount": 1, "maxAmount": 1 }
+      ]
+    }
+  ],
+  "biomePools": [
+    { "biomeId": "forest", "bonusItems": [{ "itemId": "wood", "weight": 0.3, "minAmount": 2, "maxAmount": 5 }] },
+    { "biomeId": "desert", "bonusItems": [{ "itemId": "ancient-bone", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
+    { "biomeId": "tundra", "bonusItems": [{ "itemId": "frost-shard", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
+    { "biomeId": "volcanic", "bonusItems": [{ "itemId": "magma-crystal", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
+    { "biomeId": "swamp", "bonusItems": [{ "itemId": "mushroom", "weight": 0.3, "minAmount": 1, "maxAmount": 3 }] },
+    { "biomeId": "crystal-caves", "bonusItems": [{ "itemId": "emerald", "weight": 0.25, "minAmount": 1, "maxAmount": 2 }] },
+    { "biomeId": "sky-ruins", "bonusItems": [{ "itemId": "star-fragment", "weight": 0.1, "minAmount": 1, "maxAmount": 1 }] },
+    { "biomeId": "deep-ocean", "bonusItems": [{ "itemId": "void-essence", "weight": 0.15, "minAmount": 1, "maxAmount": 1 }] }
+  ]
+}
