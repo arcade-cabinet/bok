@@ -1,0 +1,85 @@
+import { describe, it, expect, vi } from 'vitest';
+import { createWorld } from 'koota';
+import { SceneDirector } from './SceneDirector.ts';
+import { Scene } from './Scene.ts';
+import type { World } from 'koota';
+
+class TestScene extends Scene {
+  enter = vi.fn();
+  update = vi.fn();
+  exit = vi.fn();
+
+  constructor(name: string, world: World) {
+    super(name, world, null);
+  }
+}
+
+describe('SceneDirector', () => {
+  it('starts with no current scene', () => {
+    const director = new SceneDirector();
+    expect(director.getCurrentScene()).toBeNull();
+  });
+
+  it('transitions to initial scene and calls enter', () => {
+    const world = createWorld();
+    const director = new SceneDirector();
+    const menu = new TestScene('mainMenu', world);
+
+    director.register('mainMenu', menu);
+    director.transition('mainMenu');
+
+    expect(director.getCurrentScene()).toBe('mainMenu');
+    expect(menu.enter).toHaveBeenCalledOnce();
+    expect(menu.exit).not.toHaveBeenCalled();
+
+    world.destroy();
+  });
+
+  it('calls exit on old scene then enter on new scene during transition', () => {
+    const world = createWorld();
+    const director = new SceneDirector();
+    const menu = new TestScene('mainMenu', world);
+    const hub = new TestScene('hub', world);
+
+    const callOrder: string[] = [];
+    menu.exit.mockImplementation(() => callOrder.push('menu.exit'));
+    hub.enter.mockImplementation(() => callOrder.push('hub.enter'));
+
+    director.register('mainMenu', menu);
+    director.register('hub', hub);
+    director.transition('mainMenu');
+    director.transition('hub');
+
+    expect(director.getCurrentScene()).toBe('hub');
+    expect(menu.exit).toHaveBeenCalledOnce();
+    expect(hub.enter).toHaveBeenCalledOnce();
+    expect(callOrder).toEqual(['menu.exit', 'hub.enter']);
+
+    world.destroy();
+  });
+
+  it('delegates update to current scene', () => {
+    const world = createWorld();
+    const director = new SceneDirector();
+    const menu = new TestScene('mainMenu', world);
+
+    director.register('mainMenu', menu);
+    director.transition('mainMenu');
+    director.update(0.016);
+
+    expect(menu.update).toHaveBeenCalledWith(0.016);
+
+    world.destroy();
+  });
+
+  it('does not call update when no scene is active', () => {
+    const director = new SceneDirector();
+    // Should not throw
+    director.update(0.016);
+  });
+
+  it('throws when transitioning to unregistered scene', () => {
+    const director = new SceneDirector();
+    expect(() => director.transition('hub')).toThrow('Scene "hub" not registered');
+  });
+});
