@@ -6,7 +6,8 @@
  */
 import RAPIER from '@dimforge/rapier3d';
 import { Runtime, loadRuntime } from '@jolly-pixel/runtime';
-import { VoxelRenderer, Face, type BlockDefinition } from '@jolly-pixel/voxel.renderer';
+import { VoxelRenderer, Face, type BlockDefinition, type TileRef } from '@jolly-pixel/voxel.renderer';
+import { generateTileset, TILES } from './rendering/TilesetGenerator.ts';
 import { createWorld } from 'koota';
 import * as THREE from 'three';
 
@@ -37,7 +38,7 @@ const runtime = new Runtime(canvas, {
 });
 const { world: jpWorld } = runtime;
 
-// --- Block Definitions (terrain block types) ---
+// --- Block Definitions (using programmatic game tileset) ---
 const blockDefs: BlockDefinition[] = [
   {
     id: 1,
@@ -45,9 +46,10 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: true,
     faceTextures: {
-      [Face.PosY]: { tilesetId: 'default', col: 0, row: 2 }, // grass top
+      [Face.PosY]: TILES.GRASS_TOP as TileRef,
+      [Face.NegY]: TILES.DIRT as TileRef,
     },
-    defaultTexture: { tilesetId: 'default', col: 0, row: 1 }, // dirt sides
+    defaultTexture: TILES.DIRT as TileRef,
   },
   {
     id: 2,
@@ -55,7 +57,7 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: true,
     faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 0, row: 1 },
+    defaultTexture: TILES.DIRT as TileRef,
   },
   {
     id: 3,
@@ -63,7 +65,7 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: true,
     faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 2, row: 0 },
+    defaultTexture: TILES.STONE as TileRef,
   },
   {
     id: 4,
@@ -71,7 +73,7 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: false,
     faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 1, row: 2 },
+    defaultTexture: TILES.WATER as TileRef,
   },
   {
     id: 5,
@@ -79,15 +81,18 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: true,
     faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 2, row: 2 },
+    defaultTexture: TILES.SAND as TileRef,
   },
   {
     id: 6,
     name: 'Wood',
     shapeId: 'cube',
     collidable: true,
-    faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 1, row: 0 },
+    faceTextures: {
+      [Face.PosY]: TILES.WOOD_TOP as TileRef,
+      [Face.NegY]: TILES.WOOD_TOP as TileRef,
+    },
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
   },
   {
     id: 7,
@@ -95,7 +100,7 @@ const blockDefs: BlockDefinition[] = [
     shapeId: 'cube',
     collidable: false,
     faceTextures: {},
-    defaultTexture: { tilesetId: 'default', col: 1, row: 1 },
+    defaultTexture: TILES.LEAVES as TileRef,
   },
 ];
 
@@ -127,12 +132,17 @@ const voxelMap = jpWorld.createActor('terrain')
     },
   });
 
-// Load tileset texture via VoxelRenderer's built-in TilesetManager
-await voxelMap.loadTileset({
-  id: 'default',
-  src: 'tileset/UV_cube.png',
-  tileSize: 32,
-});
+// Generate and load programmatic tileset (bright game-ready colors)
+const tileset = generateTileset();
+// Register the generated texture directly with TilesetManager
+const tilesetTexture = new THREE.Texture(tileset.canvas);
+tilesetTexture.magFilter = THREE.NearestFilter;
+tilesetTexture.minFilter = THREE.NearestFilter;
+tilesetTexture.needsUpdate = true;
+voxelMap.tilesetManager.registerTexture(
+  { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: 3, rows: 3 },
+  tilesetTexture as any,
+);
 
 // --- Generate Terrain ---
 // Simple procedural terrain: noise-based heightmap using our PRNG + SimplexNoise
@@ -282,5 +292,12 @@ loadRuntime(runtime)
   .catch((error) => {
     console.error('[Bok] Failed to load runtime:', error);
   });
+
+// Expose to window for debug panel
+(window as any)._bokJPWorld = jpWorld;
+(window as any)._bokCamera = camera;
+(window as any)._bokVoxelMap = voxelMap;
+(window as any)._bokRapier = rapierWorld;
+(window as any)._bokGameWorld = gameWorld;
 
 export { gameWorld, runtime, rapierWorld, voxelMap, content };
