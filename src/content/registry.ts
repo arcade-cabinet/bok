@@ -74,7 +74,10 @@ export class ContentRegistry {
       warHammer, battleAxe, twinDaggers, trident,
       shortBow, crossbow, fireStaff, iceWand, lightningRod, crystalSling,
     ]);
-    this.#registerBosses([ancientTreant]);
+    this.#registerBosses([
+      ancientTreant, pharaohConstruct, frostWyrm, magmaKing,
+      mireHag, crystalHydra, stormTitan, abyssalLeviathan,
+    ]);
   }
 
   #registerBiomes(raw: unknown[]): void {

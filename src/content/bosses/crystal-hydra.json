@@ -1,0 +1,38 @@
+{
+  "id": "crystal-hydra",
+  "name": "Crystal Hydra",
+  "biome": "crystal-caves",
+  "health": 650,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "crystal-beam", "type": "ranged", "damage": 22, "cooldown": 3.0, "range": 14.0, "telegraph": 1.0 },
+        { "name": "head-slam", "type": "melee", "damage": 20, "cooldown": 2.5, "range": 3.5, "telegraph": 0.8 }
+      ],
+      "description": "Single crystal beam — sidestep the laser line"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "multi-beam", "type": "ranged", "damage": 18, "cooldown": 3.5, "range": 14.0, "telegraph": 0.8 },
+        { "name": "crystal-shatter", "type": "aoe", "damage": 15, "cooldown": 5.0, "range": 8.0, "telegraph": 1.0 },
+        { "name": "head-slam", "type": "melee", "damage": 25, "cooldown": 2.0, "range": 4.0, "telegraph": 0.6 }
+      ],
+      "arenaChange": "split-heads",
+      "description": "Heads split — multiple beams sweep the arena simultaneously"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "laser-grid", "type": "aoe", "damage": 30, "cooldown": 5.0, "range": 15.0, "telegraph": 1.2 },
+        { "name": "multi-beam", "type": "ranged", "damage": 24, "cooldown": 2.5, "range": 14.0, "telegraph": 0.6 },
+        { "name": "crystal-shatter", "type": "aoe", "damage": 22, "cooldown": 3.5, "range": 10.0, "telegraph": 0.7 },
+        { "name": "head-slam", "type": "melee", "damage": 30, "cooldown": 1.5, "range": 4.0, "telegraph": 0.4 }
+      ],
+      "arenaChange": "laser-grid-floor",
+      "description": "Laser grid covers the room — find the gaps between crossing beams"
+    }
+  ],
+  "tomePageDrop": "shadow-step"
+}

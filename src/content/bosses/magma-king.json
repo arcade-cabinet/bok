@@ -1,0 +1,38 @@
+{
+  "id": "magma-king",
+  "name": "Magma King",
+  "biome": "volcanic",
+  "health": 700,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "lava-throw", "type": "ranged", "damage": 20, "cooldown": 2.5, "range": 12.0, "telegraph": 0.8 },
+        { "name": "magma-slam", "type": "melee", "damage": 25, "cooldown": 3.0, "range": 4.0, "telegraph": 0.9 }
+      ],
+      "description": "Lava projectiles — keep moving and close distance"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "floor-eruption", "type": "aoe", "damage": 22, "cooldown": 4.0, "range": 8.0, "telegraph": 1.0 },
+        { "name": "lava-throw", "type": "ranged", "damage": 25, "cooldown": 2.0, "range": 12.0, "telegraph": 0.6 },
+        { "name": "magma-slam", "type": "melee", "damage": 30, "cooldown": 2.5, "range": 4.0, "telegraph": 0.7 }
+      ],
+      "arenaChange": "lava-eruption-zones",
+      "description": "Floor eruptions create lava zones — watch for glowing tiles"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "meteor-rain", "type": "aoe", "damage": 35, "cooldown": 5.0, "range": 15.0, "telegraph": 1.2 },
+        { "name": "floor-eruption", "type": "aoe", "damage": 28, "cooldown": 3.0, "range": 10.0, "telegraph": 0.8 },
+        { "name": "lava-throw", "type": "ranged", "damage": 30, "cooldown": 1.5, "range": 14.0, "telegraph": 0.5 },
+        { "name": "magma-slam", "type": "melee", "damage": 35, "cooldown": 2.0, "range": 5.0, "telegraph": 0.5 }
+      ],
+      "arenaChange": "meteor-rain",
+      "description": "Meteors rain from above while lava covers the arena"
+    }
+  ],
+  "tomePageDrop": "fire-lance"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "pharaoh-construct",
+  "name": "Pharaoh Construct",
+  "biome": "desert",
+  "health": 600,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "sand-wave", "type": "aoe", "damage": 15, "cooldown": 3.0, "range": 8.0, "telegraph": 1.0 },
+        { "name": "pillar-summon", "type": "summon", "damage": 0, "cooldown": 7.0, "range": 12.0, "telegraph": 1.5 }
+      ],
+      "description": "Sand waves sweep across the arena — dodge between the gaps"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "quicksand-trap", "type": "aoe", "damage": 10, "cooldown": 4.0, "range": 6.0, "telegraph": 0.8 },
+        { "name": "sand-wave", "type": "aoe", "damage": 20, "cooldown": 2.5, "range": 8.0, "telegraph": 0.8 },
+        { "name": "scepter-strike", "type": "melee", "damage": 25, "cooldown": 1.5, "range": 3.0, "telegraph": 0.5 }
+      ],
+      "arenaChange": "quicksand-zones",
+      "description": "Quicksand traps appear — standing still is death"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "arena-collapse", "type": "aoe", "damage": 30, "cooldown": 6.0, "range": 15.0, "telegraph": 1.2 },
+        { "name": "sand-wave", "type": "aoe", "damage": 25, "cooldown": 2.0, "range": 10.0, "telegraph": 0.6 },
+        { "name": "scepter-strike", "type": "melee", "damage": 30, "cooldown": 1.2, "range": 3.5, "telegraph": 0.4 },
+        { "name": "pillar-summon", "type": "summon", "damage": 0, "cooldown": 5.0, "range": 12.0, "telegraph": 1.0 }
+      ],
+      "arenaChange": "collapsing-floor",
+      "description": "Arena collapses — shrinking safe zone with all attacks active"
+    }
+  ],
+  "tomePageDrop": "ground-pound"
+}

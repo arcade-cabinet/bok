@@ -1,0 +1,38 @@
+{
+  "id": "storm-titan",
+  "name": "Storm Titan",
+  "biome": "sky-ruins",
+  "health": 750,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "wind-blast", "type": "aoe", "damage": 15, "cooldown": 3.0, "range": 10.0, "telegraph": 0.8 },
+        { "name": "titan-stomp", "type": "melee", "damage": 25, "cooldown": 2.5, "range": 4.0, "telegraph": 0.9 }
+      ],
+      "description": "Wind blasts knock you toward the edge — brace near center"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "lightning-strike", "type": "aoe", "damage": 28, "cooldown": 3.5, "range": 5.0, "telegraph": 1.0 },
+        { "name": "wind-blast", "type": "aoe", "damage": 20, "cooldown": 2.5, "range": 12.0, "telegraph": 0.6 },
+        { "name": "titan-stomp", "type": "melee", "damage": 30, "cooldown": 2.0, "range": 4.5, "telegraph": 0.7 }
+      ],
+      "arenaChange": "lightning-zones",
+      "description": "Targeted lightning strikes — watch for the ground markers"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "platform-destroy", "type": "aoe", "damage": 40, "cooldown": 8.0, "range": 15.0, "telegraph": 2.0 },
+        { "name": "lightning-strike", "type": "aoe", "damage": 35, "cooldown": 2.5, "range": 6.0, "telegraph": 0.7 },
+        { "name": "wind-blast", "type": "aoe", "damage": 25, "cooldown": 2.0, "range": 14.0, "telegraph": 0.5 },
+        { "name": "titan-stomp", "type": "melee", "damage": 35, "cooldown": 1.5, "range": 5.0, "telegraph": 0.5 }
+      ],
+      "arenaChange": "crumbling-platforms",
+      "description": "Platforms crumble — shrinking arena with lightning and wind everywhere"
+    }
+  ],
+  "tomePageDrop": "wind-jump"
+}
