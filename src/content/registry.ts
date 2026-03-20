@@ -1,6 +1,8 @@
 import {
   BiomeConfigSchema, EnemyConfigSchema, WeaponConfigSchema, BossConfigSchema,
+  HubBuildingConfigSchema, NPCConfigSchema, LootTableConfigSchema, CraftingRecipeConfigSchema,
   type BiomeConfig, type EnemyConfig, type WeaponConfig, type BossConfig,
+  type HubBuildingConfig, type NPCConfig, type LootTableConfig, type CraftingRecipeConfig,
 } from './types.ts';
 
 // Static imports for all content (Vite resolves JSON imports)
@@ -51,12 +53,20 @@ import mireHag from './bosses/mire-hag.json';
 import crystalHydra from './bosses/crystal-hydra.json';
 import stormTitan from './bosses/storm-titan.json';
 import abyssalLeviathan from './bosses/abyssal-leviathan.json';
+import hubBuildings from './hub/buildings.json';
+import hubNpcs from './hub/npcs.json';
+import lootTables from './items/loot-tables.json';
+import craftingRecipes from './items/crafting-recipes.json';
 
 export class ContentRegistry {
   readonly #biomes = new Map<string, BiomeConfig>();
   readonly #enemies = new Map<string, EnemyConfig>();
   readonly #weapons = new Map<string, WeaponConfig>();
   readonly #bosses = new Map<string, BossConfig>();
+  readonly #buildings = new Map<string, HubBuildingConfig>();
+  readonly #npcs = new Map<string, NPCConfig>();
+  readonly #craftingRecipes = new Map<string, CraftingRecipeConfig>();
+  #lootTables: LootTableConfig | null = null;
 
   constructor() {
     this.#registerBiomes([
@@ -78,6 +88,10 @@ export class ContentRegistry {
       ancientTreant, pharaohConstruct, frostWyrm, magmaKing,
       mireHag, crystalHydra, stormTitan, abyssalLeviathan,
     ]);
+    this.#registerBuildings(hubBuildings);
+    this.#registerNPCs(hubNpcs);
+    this.#lootTables = LootTableConfigSchema.parse(lootTables);
+    this.#registerCraftingRecipes(craftingRecipes);
   }
 
   #registerBiomes(raw: unknown[]): void {
@@ -108,6 +122,27 @@ export class ContentRegistry {
     }
   }
 
+  #registerBuildings(raw: unknown[]): void {
+    for (const data of raw) {
+      const config = HubBuildingConfigSchema.parse(data);
+      this.#buildings.set(config.id, config);
+    }
+  }
+
+  #registerNPCs(raw: unknown[]): void {
+    for (const data of raw) {
+      const config = NPCConfigSchema.parse(data);
+      this.#npcs.set(config.id, config);
+    }
+  }
+
+  #registerCraftingRecipes(raw: unknown[]): void {
+    for (const data of raw) {
+      const config = CraftingRecipeConfigSchema.parse(data);
+      this.#craftingRecipes.set(config.id, config);
+    }
+  }
+
   getBiome(id: string): BiomeConfig {
     const config = this.#biomes.get(id);
     if (!config) throw new Error(`Unknown biome: ${id}`);
@@ -132,8 +167,34 @@ export class ContentRegistry {
     return config;
   }
 
+  getBuilding(id: string): HubBuildingConfig {
+    const config = this.#buildings.get(id);
+    if (!config) throw new Error(`Unknown building: ${id}`);
+    return config;
+  }
+
+  getNPC(id: string): NPCConfig {
+    const config = this.#npcs.get(id);
+    if (!config) throw new Error(`Unknown NPC: ${id}`);
+    return config;
+  }
+
+  getLootTables(): LootTableConfig {
+    if (!this.#lootTables) throw new Error('Loot tables not loaded');
+    return this.#lootTables;
+  }
+
+  getCraftingRecipe(id: string): CraftingRecipeConfig {
+    const config = this.#craftingRecipes.get(id);
+    if (!config) throw new Error(`Unknown crafting recipe: ${id}`);
+    return config;
+  }
+
   getAllBiomes(): BiomeConfig[] { return [...this.#biomes.values()]; }
   getAllEnemies(): EnemyConfig[] { return [...this.#enemies.values()]; }
   getAllWeapons(): WeaponConfig[] { return [...this.#weapons.values()]; }
   getAllBosses(): BossConfig[] { return [...this.#bosses.values()]; }
+  getAllBuildings(): HubBuildingConfig[] { return [...this.#buildings.values()]; }
+  getAllNPCs(): NPCConfig[] { return [...this.#npcs.values()]; }
+  getAllCraftingRecipes(): CraftingRecipeConfig[] { return [...this.#craftingRecipes.values()]; }
 }
