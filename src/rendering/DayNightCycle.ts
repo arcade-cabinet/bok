@@ -54,7 +54,7 @@ export class DayNightCycle {
     this.#directionalLight.castShadow = false;
 
     // Ambient fill light — dimmer at night
-    this.#ambientLight = new THREE.AmbientLight(0x404060, 0.3);
+    this.#ambientLight = new THREE.AmbientLight(0x8090a0, 0.6);
 
     // Starfield — visible only at night
     const starPositions = new Float32Array(STARFIELD_COUNT * 3);
@@ -180,7 +180,7 @@ export class DayNightCycle {
     }
 
     // Ambient light — brighter during day, dim at night
-    this.#ambientLight.intensity = 0.15 + sunHeight * 0.35;
+    this.#ambientLight.intensity = 0.4 + sunHeight * 0.4;
     if (tod === 'night') {
       this.#ambientLight.color.setHex(0x223344);
     } else {

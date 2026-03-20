@@ -109,12 +109,16 @@ const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
 scene.background = new THREE.Color('#87ceeb');
 scene.fog = new THREE.FogExp2('#87ceeb', 0.015);
 
-// Lighting
-const ambientLight = new THREE.AmbientLight('#ffffff', 0.6);
-const dirLight = new THREE.DirectionalLight('#ffffff', 1.2);
-dirLight.position.set(32, 48, 32);
-dirLight.castShadow = true;
-scene.add(ambientLight, dirLight);
+// --- Day/Night Cycle (replaces static lighting) ---
+import { DayNightCycle } from './rendering/index.ts';
+
+const dayNight = new DayNightCycle();
+for (const obj of dayNight.sceneObjects) {
+  scene.add(obj);
+}
+// Extra hemisphere light for even illumination (sky blue top, ground brown bottom)
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x8b6914, 0.5);
+scene.add(hemiLight);
 
 // --- VoxelRenderer (terrain — uses JollyPixel's Actor + VoxelRenderer component) ---
 // This is the CORRECT integration: VoxelRenderer as ActorComponent with Rapier config.
@@ -386,6 +390,13 @@ canvas.addEventListener('mousedown', (e) => {
 
     camera.position.x += worldX * speed * dt;
     camera.position.z += worldZ * speed * dt;
+  }
+
+  // --- Day/Night Cycle update ---
+  dayNight.update(dt);
+  (scene.background as THREE.Color)?.copy(dayNight.skyColor);
+  if (scene.fog instanceof THREE.FogExp2) {
+    scene.fog.color.copy(dayNight.skyColor);
   }
 
   // --- Combat ---
