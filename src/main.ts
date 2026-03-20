@@ -755,6 +755,29 @@ function createMainMenu(): void {
   subtitle.textContent = 'The Builder\'s Tome';
   subtitle.style.cssText = 'font-family:Georgia,serif;font-size:18px;color:#8b5a2b;margin:0 0 32px 0;font-style:italic;';
 
+  // Biome selector
+  const biomeLabel = document.createElement('label');
+  biomeLabel.textContent = 'Choose Your Island';
+  biomeLabel.style.cssText = 'display:block;font-family:Georgia,serif;font-size:13px;color:#2c1e16;margin-bottom:6px;';
+  const biomeSelect = document.createElement('select');
+  biomeSelect.style.cssText = 'width:100%;padding:8px 12px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;font-family:Georgia,serif;font-size:14px;color:#2c1e16;margin-bottom:16px;outline:none;cursor:pointer;';
+  const biomes = [
+    { id: 'forest', name: 'Whispering Woods', sky: '#87CEEB' },
+    { id: 'desert', name: 'Sunscorched Dunes', sky: '#F4D03F' },
+    { id: 'tundra', name: 'Frostbite Expanse', sky: '#B3CDE0' },
+    { id: 'volcanic', name: 'Cinderpeak Caldera', sky: '#CC4125' },
+    { id: 'swamp', name: 'Rothollow Marsh', sky: '#6B8E5E' },
+    { id: 'crystal', name: 'Prismatic Depths', sky: '#9B59B6' },
+    { id: 'sky', name: 'Stormspire Remnants', sky: '#AED6F1' },
+    { id: 'ocean', name: 'Abyssal Trench', sky: '#1A5276' },
+  ];
+  for (const b of biomes) {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.name;
+    biomeSelect.appendChild(opt);
+  }
+
   const seedLabel = document.createElement('label');
   seedLabel.textContent = 'World Seed';
   seedLabel.style.cssText = 'display:block;font-family:Georgia,serif;font-size:13px;color:#2c1e16;margin-bottom:6px;';
@@ -778,7 +801,16 @@ function createMainMenu(): void {
     gameWorld.set(GamePhase, { phase: 'playing' });
     if (mobileControls) mobileControls.show();
     startAmbient();
-    console.log('[Bok] Game started with seed:', seedInput.value);
+    // Apply biome sky color
+    const selectedBiome = biomes.find(b => b.id === biomeSelect.value);
+    if (selectedBiome) {
+      (scene.background as THREE.Color).set(selectedBiome.sky);
+      if (scene.fog instanceof THREE.FogExp2) scene.fog.color.set(selectedBiome.sky);
+      // Update biome display in HUD
+      const bioLine = document.querySelector('#hud-info div:last-child') as HTMLDivElement | null;
+      if (bioLine) bioLine.textContent = `Biome: ${selectedBiome.name}`;
+    }
+    console.log('[Bok] Game started — biome:', biomeSelect.value, 'seed:', seedInput.value);
   });
 
   const hint = document.createElement('div');
@@ -787,7 +819,7 @@ function createMainMenu(): void {
     : 'WASD to move · Hold left-click to look · Arrow keys also work';
   hint.style.cssText = 'font-family:Georgia,serif;font-size:11px;color:#8b5a2b;margin-top:16px;';
 
-  panel.append(title, subtitle, seedLabel, seedInput, startBtn, hint);
+  panel.append(title, subtitle, biomeLabel, biomeSelect, seedLabel, seedInput, startBtn, hint);
   menu.appendChild(panel);
   document.body.appendChild(menu);
 }
