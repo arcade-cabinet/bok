@@ -210,17 +210,26 @@ for (let x = 0; x < ISLAND_SIZE; x++) {
   }
 }
 
-// --- First-Person Camera (JollyPixel CameraComponent) ---
-// Camera3DControls creates a CameraComponent which registers itself
-// with ThreeRenderer as a RenderComponent. This is what makes the
-// renderer actually render from this camera's viewpoint.
+// --- First-Person Camera (JollyPixel Camera3DControls) ---
+// Camera3DControls is JollyPixel's built-in FPS camera with WASD + mouse look.
+// It extends Behavior → registers as RenderComponent → ThreeRenderer renders from it.
+// lookAround: 'left' means hold left mouse to look (we'll switch to pointer lock behavior).
 import { Camera3DControls } from '@jolly-pixel/engine';
 
 const cameraActor = jpWorld.createActor('camera');
-const cameraControls = cameraActor.addComponentAndGet(Camera3DControls);
-cameraControls.camera.position.set(ISLAND_SIZE / 2, BASE_HEIGHT + 8, ISLAND_SIZE / 2 + 15);
-cameraControls.camera.lookAt(ISLAND_SIZE / 2, BASE_HEIGHT, ISLAND_SIZE / 2);
-const camera = cameraControls.camera;
+const cameraCtrl = cameraActor.addComponentAndGet(Camera3DControls, {
+  speed: 6,
+  rotationSpeed: 0.003,
+  bindings: {
+    forward: 'ArrowUp',
+    backward: 'ArrowDown',
+    left: 'ArrowLeft',
+    right: 'ArrowRight',
+    lookAround: 'left',
+  },
+});
+const camera = cameraCtrl.camera;
+camera.position.set(ISLAND_SIZE / 2, BASE_HEIGHT + 3, ISLAND_SIZE / 2);
 
 // --- Input System ---
 const inputSystem = new InputSystem(canvas);
