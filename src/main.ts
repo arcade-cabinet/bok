@@ -433,12 +433,66 @@ function createHUD(): void {
 }
 createHUD();
 
+// --- Main Menu (safe DOM construction) ---
+function createMainMenu(): void {
+  const menu = document.createElement('div');
+  menu.id = 'main-menu';
+  menu.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(10,10,10,0.85);';
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#fdf6e3;border:3px solid #8b5a2b;border-radius:12px;padding:48px 64px;text-align:center;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+
+  const title = document.createElement('h1');
+  title.textContent = 'BOK';
+  title.style.cssText = 'font-family:Georgia,serif;font-size:64px;color:#2c1e16;margin:0 0 4px 0;letter-spacing:8px;';
+
+  const subtitle = document.createElement('div');
+  subtitle.textContent = 'The Builder\'s Tome';
+  subtitle.style.cssText = 'font-family:Georgia,serif;font-size:18px;color:#8b5a2b;margin:0 0 32px 0;font-style:italic;';
+
+  const seedLabel = document.createElement('label');
+  seedLabel.textContent = 'World Seed';
+  seedLabel.style.cssText = 'display:block;font-family:Georgia,serif;font-size:13px;color:#2c1e16;margin-bottom:6px;';
+
+  const seedInput = document.createElement('input');
+  seedInput.type = 'text';
+  seedInput.value = 'Brave Dark Fox';
+  seedInput.placeholder = 'Enter a seed...';
+  seedInput.style.cssText = 'width:100%;padding:10px 14px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;font-family:Georgia,serif;font-size:15px;color:#2c1e16;box-sizing:border-box;text-align:center;margin-bottom:24px;outline:none;';
+
+  const startBtn = document.createElement('button');
+  startBtn.textContent = 'OPEN THE BOOK';
+  startBtn.style.cssText = 'width:100%;padding:14px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:18px;cursor:pointer;letter-spacing:2px;transition:background 0.2s;pointer-events:auto;';
+  startBtn.addEventListener('mouseenter', () => { startBtn.style.background = '#4a3728'; });
+  startBtn.addEventListener('mouseleave', () => { startBtn.style.background = '#2c1e16'; });
+  startBtn.addEventListener('click', () => {
+    menu.remove();
+    // Show HUD
+    const hud = document.getElementById('hud');
+    if (hud) hud.style.display = '';
+    gameWorld.set(GamePhase, { phase: 'playing' });
+    console.log('[Bok] Game started with seed:', seedInput.value);
+  });
+
+  const hint = document.createElement('div');
+  hint.textContent = 'WASD to move · Hold left-click to look · Arrow keys also work';
+  hint.style.cssText = 'font-family:Georgia,serif;font-size:11px;color:#8b5a2b;margin-top:16px;';
+
+  panel.append(title, subtitle, seedLabel, seedInput, startBtn, hint);
+  menu.appendChild(panel);
+  document.body.appendChild(menu);
+}
+
+// Hide HUD until game starts
+const hudEl = document.getElementById('hud');
+if (hudEl) hudEl.style.display = 'none';
+createMainMenu();
+
 // --- Boot ---
 console.log('[Bok] Loading runtime...');
 loadRuntime(runtime)
   .then(() => {
     console.log('[Bok] Runtime loaded — voxel terrain rendered');
-    gameWorld.set(GamePhase, { phase: 'playing' });
   })
   .catch((error) => {
     console.error('[Bok] Failed to load runtime:', error);
