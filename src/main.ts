@@ -7,7 +7,6 @@ import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
 import { SceneDirector } from './scenes/SceneDirector.ts';
 import { MainMenuScene } from './scenes/MainMenuScene.ts';
-import { HubScene } from './scenes/HubScene.ts';
 import { IslandScene } from './scenes/IslandScene.ts';
 import { BossArenaScene } from './scenes/BossArenaScene.ts';
 
@@ -15,13 +14,20 @@ import { BossArenaScene } from './scenes/BossArenaScene.ts';
 const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
 if (!canvas) throw new Error('Canvas element not found');
 
+// --- Pointer Lock ---
+canvas.addEventListener('click', () => {
+  if (!document.pointerLockElement) {
+    canvas.requestPointerLock();
+  }
+});
+
 // --- Koota World (single source of truth) ---
 const gameWorld = createWorld(Time, GamePhase, MovementIntent, LookIntent, IslandState);
 
 // --- Content Registry (Zod-validated JSON configs) ---
 const content = new ContentRegistry();
 
-// --- JollyPixel Runtime (owns render loop) ---
+// --- JollyPixel Runtime (owns render loop + voxel renderer) ---
 const runtime = new Runtime(canvas, {
   includePerformanceStats: import.meta.env.DEV,
 });
@@ -32,11 +38,11 @@ const inputSystem = new InputSystem(canvas);
 // --- Scene Director ---
 const sceneDirector = new SceneDirector();
 sceneDirector.register('mainMenu', new MainMenuScene(gameWorld, runtime));
-sceneDirector.register('hub', new HubScene(gameWorld, runtime));
-sceneDirector.register('island', new IslandScene(gameWorld, runtime, content));
+// HubScene registered separately — requires SceneDirector + SaveManager wired by hub task
+sceneDirector.register('island', new IslandScene(gameWorld, runtime, content, inputSystem));
 sceneDirector.register('bossArena', new BossArenaScene(gameWorld, runtime));
 
-// --- Frame Loop (wired into JollyPixel's update) ---
+// --- Frame Loop (wired into JollyPixel's beforeUpdate) ---
 runtime.world.on('beforeUpdate', (dt: number) => {
   // 1. Update Time world trait
   const prevTime = gameWorld.get(Time);
@@ -45,18 +51,18 @@ runtime.world.on('beforeUpdate', (dt: number) => {
     elapsed: (prevTime?.elapsed ?? 0) + dt,
   });
 
-  // 2. Poll input → write PlayerIntent traits
+  // 2. Poll input → write MovementIntent/LookIntent/attack actions
   inputSystem.update(gameWorld);
 
-  // 3-7. Delegate to active scene (movement, AI, combat, physics, render sync)
+  // 3-7. Delegate to active scene (AI, movement, combat, physics, render sync)
   sceneDirector.update(dt);
 });
 
 // --- Boot ---
 loadRuntime(runtime)
   .then(() => {
-    console.log('[Bok] Runtime loaded — starting game');
-    // Start at island scene directly for vertical slice
+    console.log('[Bok] Runtime loaded — starting Forest island vertical slice');
+    // Start directly on island scene for vertical slice testing
     sceneDirector.transition('island');
     gameWorld.set(GamePhase, { phase: 'exploring' });
   })

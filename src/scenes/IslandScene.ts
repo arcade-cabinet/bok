@@ -1,25 +1,28 @@
 import type { World, Entity } from 'koota';
 import { Vehicle, EntityManager } from 'yuka';
+import * as THREE from 'three';
 import { Scene } from './Scene.ts';
 import {
   Position, Velocity, Health, Stamina, IsPlayer, MovementIntent,
   LookIntent, AttackIntent, DodgeState, ParryState, WeaponStats,
-  Hittable, EnemyType, BossType, YukaRef, AIState, IslandState,
+  Hittable, EnemyType, BossType, YukaRef, AIState, IslandState, Time,
 } from '../traits/index.ts';
-import { ContentRegistry, type EnemyConfig, type WeaponConfig } from '../content/index.ts';
+import { ContentRegistry, type EnemyConfig } from '../content/index.ts';
 import { IslandGenerator, type IslandBlueprint } from '../generation/index.ts';
-import { EnemySpawner, type SpawnedEnemy } from '../systems/spawning/index.ts';
+import { EnemySpawner } from '../systems/spawning/index.ts';
 import { createEnemyVehicle, AIBridge, type AIVehicle } from '../ai/index.ts';
 import { MovementSystem } from '../systems/movement/index.ts';
 import { combatSystem } from '../systems/combat/index.ts';
 import { PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER } from '../shared/index.ts';
+import type { InputSystem } from '../input/index.ts';
 
 /**
- * Playable island scene: generates terrain, spawns player + enemies,
- * runs movement/combat/AI each frame.
+ * Playable island scene: generates terrain, spawns player + enemies + boss,
+ * runs movement/combat/AI each frame. First-person camera with pointer lock.
  */
 export class IslandScene extends Scene {
   readonly #content: ContentRegistry;
+  readonly #inputSystem: InputSystem;
   readonly #movementSystem = new MovementSystem();
   readonly #aiBridge = new AIBridge();
   readonly #yukaManager = new EntityManager();
@@ -28,9 +31,15 @@ export class IslandScene extends Scene {
   #playerVehicle: Vehicle | null = null;
   #blueprint: IslandBlueprint | null = null;
 
-  constructor(world: World, runtime: unknown, content: ContentRegistry) {
+  // First-person camera
+  #camera: THREE.PerspectiveCamera | null = null;
+  readonly #cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+  readonly #cameraSensitivity = 0.002;
+
+  constructor(world: World, runtime: unknown, content: ContentRegistry, inputSystem: InputSystem) {
     super('island', world, runtime);
     this.#content = content;
+    this.#inputSystem = inputSystem;
   }
 
   enter(): void {
@@ -49,6 +58,9 @@ export class IslandScene extends Scene {
       bossDefeated: false,
       enemiesRemaining: this.#blueprint.enemySpawns.length,
     });
+
+    // Setup first-person camera
+    this.#setupCamera();
 
     // Spawn player
     this.#spawnPlayer();
@@ -69,33 +81,41 @@ export class IslandScene extends Scene {
     // Step 1: Apply player movement from input
     this.#applyPlayerMovement(dt);
 
-    // Step 2: Yuka AI update — drives enemy steering + FSM
+    // Step 2: Apply camera look from input
+    this.#applyCameraLook();
+
+    // Step 3: Check attack input
+    this.#checkAttackInput();
+
+    // Step 4: Yuka AI update — drives enemy steering + FSM
     this.#yukaManager.update(dt);
 
-    // Step 3: Sync Yuka AI decisions → Koota traits
+    // Step 5: Sync Yuka AI decisions → Koota traits
     for (const { entity, vehicle } of this.#enemyEntities) {
       this.#aiBridge.syncToKoota(vehicle, entity);
     }
 
-    // Step 4: Movement system — apply velocity to position
+    // Step 6: Movement system — apply velocity to position
     this.#movementSystem.update(this.world, dt);
 
-    // Step 5: Combat system — resolve attacks
+    // Step 7: Combat system — resolve attacks
     combatSystem(this.world);
 
-    // Step 6: Sync Koota → Yuka (corrected positions, death triggers)
+    // Step 8: Sync Koota → Yuka (corrected positions, death triggers)
     for (const { entity, vehicle } of this.#enemyEntities) {
       this.#aiBridge.syncFromKoota(vehicle, entity);
     }
 
-    // Step 7: Clean up dead enemies
+    // Step 9: Sync player camera to position
+    this.#syncCameraToPlayer();
+
+    // Step 10: Clean up dead enemies
     this.#cleanupDead();
   }
 
   exit(): void {
     console.log('[IslandScene] Cleaning up...');
 
-    // Remove all entities
     if (this.#playerEntity?.isAlive()) {
       this.#playerEntity.destroy();
     }
@@ -107,6 +127,14 @@ export class IslandScene extends Scene {
     this.#playerEntity = null;
     this.#playerVehicle = null;
     this.#blueprint = null;
+    this.#camera = null;
+  }
+
+  #setupCamera(): void {
+    // Create a perspective camera for first-person view
+    // JollyPixel runtime exposes the Three.js scene — we add our camera to it
+    this.#camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.#cameraEuler.set(0, 0, 0);
   }
 
   #spawnPlayer(): void {
@@ -137,12 +165,16 @@ export class IslandScene extends Scene {
     // Create a player vehicle for AI targeting
     this.#playerVehicle = new Vehicle();
     this.#playerVehicle.position.set(spawn.x, spawn.y, spawn.z);
+
+    // Position camera at player spawn
+    if (this.#camera) {
+      this.#camera.position.set(spawn.x, spawn.y + 1.6, spawn.z); // Eye height
+    }
   }
 
   #spawnEnemies(): void {
     if (!this.#blueprint || !this.#playerVehicle) return;
 
-    // Build enemy config map from blueprint
     const configMap = new Map<string, EnemyConfig>();
     for (const sp of this.#blueprint.enemySpawns) {
       if (!configMap.has(sp.enemyId)) {
@@ -159,7 +191,6 @@ export class IslandScene extends Scene {
     for (const spawned of spawnedEnemies) {
       const config = configMap.get(spawned.configId)!;
 
-      // Create Koota entity
       const entity = this.world.spawn(
         Position({ x: spawned.position.x, y: spawned.position.y, z: spawned.position.z }),
         Velocity(),
@@ -176,11 +207,8 @@ export class IslandScene extends Scene {
         }),
       );
 
-      // Create Yuka vehicle
       const vehicle = createEnemyVehicle(config, this.#playerVehicle);
       vehicle.position.set(spawned.position.x, spawned.position.y, spawned.position.z);
-
-      // Store YukaRef on entity
       entity.add(YukaRef({ vehicle }));
 
       this.#yukaManager.add(vehicle);
@@ -218,7 +246,6 @@ export class IslandScene extends Scene {
       }),
     );
 
-    // Create Yuka vehicle for boss (uses enemy config shape)
     const bossAsEnemy = {
       id: bossConfig.id,
       name: bossConfig.name,
@@ -231,14 +258,13 @@ export class IslandScene extends Scene {
     };
     const vehicle = createEnemyVehicle(bossAsEnemy, this.#playerVehicle);
     vehicle.position.set(arena.x, arena.y, arena.z);
-
     entity.add(YukaRef({ vehicle }));
 
     this.#yukaManager.add(vehicle);
     this.#enemyEntities.push({ entity, vehicle });
   }
 
-  #applyPlayerMovement(dt: number): void {
+  #applyPlayerMovement(_dt: number): void {
     if (!this.#playerEntity || !this.#playerVehicle) return;
 
     const intent = this.world.get(MovementIntent);
@@ -248,16 +274,97 @@ export class IslandScene extends Scene {
       ? PLAYER_MOVE_SPEED * PLAYER_SPRINT_MULTIPLIER
       : PLAYER_MOVE_SPEED;
 
+    // Transform movement direction by camera yaw so WASD is camera-relative
+    const yaw = this.#cameraEuler.y;
+    const cosYaw = Math.cos(yaw);
+    const sinYaw = Math.sin(yaw);
+    const worldX = intent.dirX * cosYaw - intent.dirZ * sinYaw;
+    const worldZ = intent.dirX * sinYaw + intent.dirZ * cosYaw;
+
     this.#playerEntity.set(Velocity, {
-      x: intent.dirX * speed,
-      y: 0, // Gravity deferred to Rapier integration
-      z: intent.dirZ * speed,
+      x: worldX * speed,
+      y: 0,
+      z: worldZ * speed,
     });
 
     // Sync player position to Yuka vehicle for AI targeting
     const pos = this.#playerEntity.get(Position);
     if (pos) {
       this.#playerVehicle.position.set(pos.x, pos.y, pos.z);
+    }
+  }
+
+  #applyCameraLook(): void {
+    if (!this.#camera) return;
+
+    const look = this.world.get(LookIntent);
+    if (!look) return;
+
+    // Apply mouse/gamepad look to camera euler angles
+    this.#cameraEuler.y -= look.deltaX * this.#cameraSensitivity;
+    this.#cameraEuler.x -= look.deltaY * this.#cameraSensitivity;
+
+    // Clamp pitch
+    const maxPitch = Math.PI / 2 - 0.01;
+    this.#cameraEuler.x = Math.max(-maxPitch, Math.min(maxPitch, this.#cameraEuler.x));
+
+    this.#camera.quaternion.setFromEuler(this.#cameraEuler);
+  }
+
+  #checkAttackInput(): void {
+    if (!this.#playerEntity) return;
+
+    const time = this.world.get(Time);
+    if (!time) return;
+
+    // Left mouse → attack, right mouse → parry
+    if (this.#inputSystem.keyboard.attackDown) {
+      const current = this.#playerEntity.get(AttackIntent);
+      if (!current?.active) {
+        this.#playerEntity.set(AttackIntent, {
+          active: true,
+          comboStep: current?.comboStep ?? 0,
+          timestamp: time.elapsed,
+        });
+      }
+    }
+
+    if (this.#inputSystem.keyboard.parryDown) {
+      this.#playerEntity.set(ParryState, {
+        blocking: true,
+        parryWindow: true,
+        parryTimestamp: time.elapsed,
+      });
+    } else {
+      const parry = this.#playerEntity.get(ParryState);
+      if (parry?.blocking) {
+        this.#playerEntity.set(ParryState, {
+          blocking: false,
+          parryWindow: false,
+          parryTimestamp: parry.parryTimestamp,
+        });
+      }
+    }
+
+    // Dodge on space (mapped to 'dodge' action)
+    if (this.#inputSystem.actionMap.isActive('dodge')) {
+      const dodge = this.#playerEntity.get(DodgeState);
+      if (!dodge?.active) {
+        this.#playerEntity.set(DodgeState, {
+          active: true,
+          iFrames: true,
+          cooldownRemaining: 0.4,
+        });
+      }
+    }
+  }
+
+  #syncCameraToPlayer(): void {
+    if (!this.#camera || !this.#playerEntity) return;
+
+    const pos = this.#playerEntity.get(Position);
+    if (pos) {
+      this.#camera.position.set(pos.x, pos.y + 1.6, pos.z); // Eye height offset
     }
   }
 
