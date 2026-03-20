@@ -83,11 +83,11 @@ export class SimplexNoise {
     return 70 * (n0 + n1 + n2);
   }
 
-  /** Multi-octave fractal noise. */
-  fbm(x: number, y: number, octaves: number, frequency: number, amplitude: number): number {
+  /** Multi-octave fractal noise. Returns values in approximately [-1, 1]. */
+  fbm(x: number, y: number, octaves: number, frequency: number): number {
     let value = 0;
     let freq = frequency;
-    let amp = amplitude;
+    let amp = 1;
     let maxAmp = 0;
     for (let i = 0; i < octaves; i++) {
       value += this.noise2D(x * freq, y * freq) * amp;

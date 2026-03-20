@@ -38,8 +38,8 @@ export class TerrainBuilder {
         const dist = Math.sqrt(dx * dx + dz * dz);
         const falloff = Math.max(0, 1 - (dist / maxRadius) ** 2);
 
-        // Noise-based height
-        const noiseVal = noise.fbm(x, z, noiseOctaves, noiseFrequency, noiseAmplitude);
+        // Noise-based height — fbm returns [-1, 1], scale by amplitude here
+        const noiseVal = noise.fbm(x, z, noiseOctaves, noiseFrequency);
         const rawHeight = baseHeight + noiseVal * noiseAmplitude * falloff;
         const height = Math.max(0, Math.round(rawHeight));
         heightmap[x][z] = height;

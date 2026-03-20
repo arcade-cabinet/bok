@@ -1,21 +1,19 @@
 import type { Entity } from 'koota';
-import type { Vehicle, StateMachine } from 'yuka';
+import type { Vehicle } from 'yuka';
 import { Position, Velocity, Health, AIState } from '../traits/index';
-
-/** Extended Vehicle with our attached StateMachine. */
-interface AIVehicle extends Vehicle {
-  stateMachine: StateMachine;
-}
+import type { AIVehicle } from './types';
 
 /**
  * Bidirectional sync between Yuka AI vehicles and Koota ECS entities.
  */
 export class AIBridge {
   /**
-   * Sync Yuka → Koota: write AI decisions into ECS traits.
-   * - Vehicle velocity → Velocity trait
-   * - FSM current state name → AIState trait
+   * Store frame dt on the Yuka vehicle so FSM states can read it.
    */
+  setDt(vehicle: Vehicle, dt: number): void {
+    (vehicle as unknown as { _dt: number })._dt = dt;
+  }
+
   syncToKoota(vehicle: Vehicle, entity: Entity): void {
     // Write velocity from Yuka vehicle to Koota
     entity.set(Velocity, {

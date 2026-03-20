@@ -1,14 +1,10 @@
 import { Vehicle, StateMachine } from 'yuka';
 import type { EnemyConfig } from '../content/index';
+import type { AIVehicle } from './types';
 import { PatrolState } from './states/PatrolState';
 import { ChaseState } from './states/ChaseState';
 import { AttackState } from './states/AttackState';
 import { DeadState } from './states/DeadState';
-
-/** Extended Vehicle with attached StateMachine. */
-export interface AIVehicle extends Vehicle {
-  stateMachine: StateMachine;
-}
 
 /**
  * Creates a Yuka Vehicle configured from EnemyConfig.

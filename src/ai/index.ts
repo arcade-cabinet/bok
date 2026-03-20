@@ -7,5 +7,6 @@
  * @tested bridge.test.ts
  */
 export { AIBridge } from './bridge';
-export { createEnemyVehicle, type AIVehicle } from './EnemyVehicleFactory';
+export { createEnemyVehicle } from './EnemyVehicleFactory';
+export type { AIVehicle } from './types';
 export { PatrolState, ChaseState, AttackState, DeadState } from './states/index';
