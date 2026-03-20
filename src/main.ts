@@ -303,12 +303,20 @@ camera.position.set(ISLAND_SIZE / 2, BASE_HEIGHT + 3, ISLAND_SIZE / 2);
 // --- Input System ---
 const inputSystem = new InputSystem(canvas);
 
-// Pointer lock for FPS camera
-canvas.addEventListener('click', () => {
-  if (!document.pointerLockElement) {
-    canvas.requestPointerLock();
-  }
-});
+// --- Mobile Detection + Controls ---
+import { MobileControls, isMobileDevice } from './input/MobileControls.ts';
+
+const isMobile = isMobileDevice();
+const mobileControls = isMobile ? new MobileControls() : null;
+
+// Pointer lock for FPS camera (desktop only)
+if (!isMobile) {
+  canvas.addEventListener('click', () => {
+    if (!document.pointerLockElement) {
+      canvas.requestPointerLock();
+    }
+  });
+}
 
 // Camera rotation state
 const cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -404,28 +412,54 @@ canvas.addEventListener('mousedown', (e) => {
     }
   }
 
-  // Camera look (mouse delta)
-  const look = gameWorld.get(LookIntent);
-  if (look && document.pointerLockElement) {
-    cameraEuler.y -= look.deltaX * CAMERA_SENSITIVITY;
-    cameraEuler.x -= look.deltaY * CAMERA_SENSITIVITY;
-    const maxPitch = Math.PI / 2 - 0.01;
-    cameraEuler.x = Math.max(-maxPitch, Math.min(maxPitch, cameraEuler.x));
-    camera.quaternion.setFromEuler(cameraEuler);
+  // Camera look — desktop: mouse delta; mobile: touch swipe
+  if (mobileControls) {
+    const touchLook = mobileControls.consumeLookDelta();
+    if (touchLook.x !== 0 || touchLook.y !== 0) {
+      cameraEuler.y -= touchLook.x * CAMERA_SENSITIVITY * 0.5;
+      cameraEuler.x -= touchLook.y * CAMERA_SENSITIVITY * 0.5;
+      const maxPitch = Math.PI / 2 - 0.01;
+      cameraEuler.x = Math.max(-maxPitch, Math.min(maxPitch, cameraEuler.x));
+      camera.quaternion.setFromEuler(cameraEuler);
+    }
+  } else {
+    const look = gameWorld.get(LookIntent);
+    if (look && document.pointerLockElement) {
+      cameraEuler.y -= look.deltaX * CAMERA_SENSITIVITY;
+      cameraEuler.x -= look.deltaY * CAMERA_SENSITIVITY;
+      const maxPitch = Math.PI / 2 - 0.01;
+      cameraEuler.x = Math.max(-maxPitch, Math.min(maxPitch, cameraEuler.x));
+      camera.quaternion.setFromEuler(cameraEuler);
+    }
   }
 
-  // Player movement (camera-relative WASD)
-  const move = gameWorld.get(MovementIntent);
-  if (move) {
-    const speed = move.sprint ? PLAYER_SPEED * 1.6 : PLAYER_SPEED;
+  // Player movement — desktop: WASD; mobile: virtual joystick
+  let dirX = 0, dirZ = 0, sprinting = false;
+  if (mobileControls) {
+    dirX = mobileControls.state.moveX;
+    dirZ = mobileControls.state.moveZ;
+  } else {
+    const move = gameWorld.get(MovementIntent);
+    if (move) {
+      dirX = move.dirX;
+      dirZ = move.dirZ;
+      sprinting = move.sprint;
+    }
+  }
+  if (dirX !== 0 || dirZ !== 0) {
+    const speed = sprinting ? PLAYER_SPEED * 1.6 : PLAYER_SPEED;
     const yaw = cameraEuler.y;
     const cosYaw = Math.cos(yaw);
     const sinYaw = Math.sin(yaw);
-    const worldX = move.dirX * cosYaw - move.dirZ * sinYaw;
-    const worldZ = move.dirX * sinYaw + move.dirZ * cosYaw;
-
+    const worldX = dirX * cosYaw - dirZ * sinYaw;
+    const worldZ = dirX * sinYaw + dirZ * cosYaw;
     camera.position.x += worldX * speed * dt;
     camera.position.z += worldZ * speed * dt;
+  }
+
+  // Mobile attack/dodge
+  if (mobileControls) {
+    if (mobileControls.consumeAttack()) playerAttacking = true;
   }
 
   // --- Day/Night Cycle update ---
@@ -617,11 +651,14 @@ function createMainMenu(): void {
     const hud = document.getElementById('hud');
     if (hud) hud.style.display = '';
     gameWorld.set(GamePhase, { phase: 'playing' });
+    if (mobileControls) mobileControls.show();
     console.log('[Bok] Game started with seed:', seedInput.value);
   });
 
   const hint = document.createElement('div');
-  hint.textContent = 'WASD to move · Hold left-click to look · Arrow keys also work';
+  hint.textContent = isMobile
+    ? 'Left joystick to move · Swipe right side to look · Tap Attack to fight'
+    : 'WASD to move · Hold left-click to look · Arrow keys also work';
   hint.style.cssText = 'font-family:Georgia,serif;font-size:11px;color:#8b5a2b;margin-top:16px;';
 
   panel.append(title, subtitle, seedLabel, seedInput, startBtn, hint);
