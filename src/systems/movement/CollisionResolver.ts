@@ -29,10 +29,14 @@ export class CollisionResolver {
       // Push kinematic bodies out of collision along the contact normal
       rapier.contactPair(collider1, collider2, (manifold, _flipped) => {
         const normal = manifold.normal();
-        const depth = manifold.contactDist();
-        if (depth >= 0 || !normal) return;
+        const numContacts = manifold.numSolverContacts();
+        if (numContacts === 0 || !normal) return;
 
-        const penetration = -depth;
+        // Use the first solver contact's distance as penetration depth
+        const dist = manifold.solverContactDist(0);
+        if (dist >= 0) return;
+
+        const penetration = -dist;
 
         if (body1.isKinematic() && !body2.isKinematic()) {
           const pos = body1.translation();
