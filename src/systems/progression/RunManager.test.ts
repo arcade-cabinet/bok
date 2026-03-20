@@ -8,8 +8,8 @@ describe('RunManager', () => {
   let save: SaveManager;
   let mgr: RunManager;
 
-  beforeEach(() => {
-    save = SaveManager.createInMemory();
+  beforeEach(async () => {
+    save = await SaveManager.createInMemory();
     mgr = new RunManager(save);
   });
 
@@ -75,8 +75,8 @@ describe('UnlockTracker', () => {
   let save: SaveManager;
   let tracker: UnlockTracker;
 
-  beforeEach(() => {
-    save = SaveManager.createInMemory();
+  beforeEach(async () => {
+    save = await SaveManager.createInMemory();
     tracker = new UnlockTracker(save);
   });
 
@@ -99,8 +99,8 @@ describe('TomeProgression', () => {
   let save: SaveManager;
   let tome: TomeProgression;
 
-  beforeEach(() => {
-    save = SaveManager.createInMemory();
+  beforeEach(async () => {
+    save = await SaveManager.createInMemory();
     tome = new TomeProgression(save);
   });
 

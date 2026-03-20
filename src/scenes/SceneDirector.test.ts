@@ -20,13 +20,13 @@ describe('SceneDirector', () => {
     expect(director.getCurrentScene()).toBeNull();
   });
 
-  it('transitions to initial scene and calls enter', () => {
+  it('transitions to initial scene and calls enter', async () => {
     const world = createWorld();
     const director = new SceneDirector();
     const menu = new TestScene('mainMenu', world);
 
     director.register('mainMenu', menu);
-    director.transition('mainMenu');
+    await director.transition('mainMenu');
 
     expect(director.getCurrentScene()).toBe('mainMenu');
     expect(menu.enter).toHaveBeenCalledOnce();
@@ -35,7 +35,7 @@ describe('SceneDirector', () => {
     world.destroy();
   });
 
-  it('calls exit on old scene then enter on new scene during transition', () => {
+  it('calls exit on old scene then enter on new scene during transition', async () => {
     const world = createWorld();
     const director = new SceneDirector();
     const menu = new TestScene('mainMenu', world);
@@ -47,8 +47,8 @@ describe('SceneDirector', () => {
 
     director.register('mainMenu', menu);
     director.register('hub', hub);
-    director.transition('mainMenu');
-    director.transition('hub');
+    await director.transition('mainMenu');
+    await director.transition('hub');
 
     expect(director.getCurrentScene()).toBe('hub');
     expect(menu.exit).toHaveBeenCalledOnce();
@@ -58,13 +58,13 @@ describe('SceneDirector', () => {
     world.destroy();
   });
 
-  it('delegates update to current scene', () => {
+  it('delegates update to current scene', async () => {
     const world = createWorld();
     const director = new SceneDirector();
     const menu = new TestScene('mainMenu', world);
 
     director.register('mainMenu', menu);
-    director.transition('mainMenu');
+    await director.transition('mainMenu');
     director.update(0.016);
 
     expect(menu.update).toHaveBeenCalledWith(0.016);
@@ -78,8 +78,8 @@ describe('SceneDirector', () => {
     director.update(0.016);
   });
 
-  it('throws when transitioning to unregistered scene', () => {
+  it('throws when transitioning to unregistered scene', async () => {
     const director = new SceneDirector();
-    expect(() => director.transition('hub')).toThrow('Scene "hub" not registered');
+    await expect(director.transition('hub')).rejects.toThrow('Scene "hub" not registered');
   });
 });

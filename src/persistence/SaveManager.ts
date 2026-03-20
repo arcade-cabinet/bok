@@ -35,10 +35,10 @@ export class SaveManager {
     this.#ready = true;
   }
 
-  static createInMemory(): SaveManager {
+  static async createInMemory(): Promise<SaveManager> {
     const mgr = new SaveManager(new InMemoryDatabase());
-    // Sync init for in-memory (migrations are no-ops effectively)
-    runMigrations(mgr.#db);
+    await runMigrations(mgr.#db);
+    mgr.#ready = true;
     return mgr;
   }
 

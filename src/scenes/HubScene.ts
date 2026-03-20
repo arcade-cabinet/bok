@@ -7,6 +7,7 @@ import type { SceneDirector } from './SceneDirector.ts';
 import type { ActionMap } from '../input/ActionMap.ts';
 import type { BiomeConfig } from '../content/types.ts';
 import type { Vec3 } from '../shared/types.ts';
+import { PLAYER_MOVE_SPEED } from '../shared/constants.ts';
 import * as THREE from 'three';
 
 import buildingsData from '../content/hub/buildings.json';
@@ -71,7 +72,6 @@ const HUB_BIOME_CONFIG: BiomeConfig = {
 const HUB_SEED = 'bok-hub-island';
 const HUB_SIZE = 32;
 const INTERACTION_RANGE = 3;
-const PLAYER_MOVE_SPEED = 5;
 
 // Block type IDs for hub structures
 const BLOCK = {
@@ -243,6 +243,7 @@ export class HubScene extends Scene {
   #nearbyBuilding: HubBuilding | null = null;
   #interactPressed = false;
   #showingOverlay = false;
+  #stateLoaded = false;
 
   // Camera
   #camera: THREE.PerspectiveCamera | null = null;
@@ -262,14 +263,14 @@ export class HubScene extends Scene {
     this.#saveManager = saveManager;
   }
 
-  enter(): void {
+  async enter(): Promise<void> {
     console.log('[HubScene] enter — loading hub island');
 
     // Generate fixed hub terrain (always the same)
     this.#terrain = TerrainBuilder.generate(HUB_BIOME_CONFIG, HUB_SEED, HUB_SIZE);
 
     // Load persisted hub state
-    this.#loadHubState();
+    await this.#loadHubState();
 
     // Generate building structures
     this.#generateStructures();
@@ -357,8 +358,8 @@ export class HubScene extends Scene {
   #spawnNPCs(): void {
     for (const npc of this.#npcs) {
       // Check if required building exists (always does for hub)
-      const nx = Math.round(npc.position.x + HUB_SIZE / 2);
-      const nz = Math.round(npc.position.z + HUB_SIZE / 2);
+      const nx = Math.max(0, Math.min(HUB_SIZE - 1, Math.round(npc.position.x + HUB_SIZE / 2)));
+      const nz = Math.max(0, Math.min(HUB_SIZE - 1, Math.round(npc.position.z + HUB_SIZE / 2)));
       const ny = this.#terrain ? this.#terrain.heightmap[nx]?.[nz] ?? 6 : 6;
 
       const entity = this.world.spawn(
@@ -463,6 +464,8 @@ export class HubScene extends Scene {
   }
 
   #handleInteraction(): void {
+    if (!this.#stateLoaded) return;
+
     const interactActive = this.#actionMap.isActive('interact');
 
     // Detect press (rising edge)
@@ -538,20 +541,20 @@ export class HubScene extends Scene {
 
   // --- Persistence ---
 
-  #loadHubState(): void {
-    this.#saveManager.loadState()
-      .then((state) => {
-        if (state?.koota && typeof state.koota === 'object') {
-          const saved = state.koota as { hubState?: HubState };
-          if (saved.hubState) {
-            this.#hubState = saved.hubState;
-            console.log('[HubScene] Loaded hub state:', this.#hubState.buildingLevels);
-          }
+  async #loadHubState(): Promise<void> {
+    try {
+      const state = await this.#saveManager.loadState();
+      if (state?.koota && typeof state.koota === 'object') {
+        const saved = state.koota as { hubState?: HubState };
+        if (saved.hubState) {
+          this.#hubState = saved.hubState;
+          console.log('[HubScene] Loaded hub state:', this.#hubState.buildingLevels);
         }
-      })
-      .catch((err) => {
-        console.warn('[HubScene] Failed to load hub state:', err);
-      });
+      }
+    } catch (err) {
+      console.warn('[HubScene] Failed to load hub state:', err);
+    }
+    this.#stateLoaded = true;
   }
 
   #saveHubState(): void {

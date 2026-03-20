@@ -8,7 +8,11 @@ export interface DatabaseAdapter {
   query<T>(sql: string, params?: unknown[]): Promise<T[]>;
 }
 
-/** In-memory adapter for testing and initial development. */
+/**
+ * In-memory adapter for testing and initial development.
+ * NOTE: query() ignores params — this is a test-only adapter with
+ * simplified SQL parsing. Do not use in production.
+ */
 export class InMemoryDatabase implements DatabaseAdapter {
   readonly #tables = new Map<string, unknown[]>();
   readonly #autoInc = new Map<string, number>();

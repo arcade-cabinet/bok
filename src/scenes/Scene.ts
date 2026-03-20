@@ -16,7 +16,7 @@ export abstract class Scene {
   }
 
   /** Called when this scene becomes active. */
-  abstract enter(): void;
+  abstract enter(): void | Promise<void>;
 
   /** Called every frame while this scene is active. */
   abstract update(dt: number): void;

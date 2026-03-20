@@ -28,14 +28,14 @@ describe('HubScene', () => {
   let saveManager: SaveManager;
   let hubScene: HubScene;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     world = createWorld(MovementIntent, LookIntent);
     world.set(MovementIntent, { dirX: 0, dirZ: 0, sprint: false, jump: false });
     world.set(LookIntent, { deltaX: 0, deltaY: 0 });
 
     director = new SceneDirector();
     actionMap = ActionMap.desktopDefaults();
-    saveManager = SaveManager.createInMemory();
+    saveManager = await SaveManager.createInMemory();
     hubScene = new HubScene(world, null, director, actionMap, saveManager);
     director.register('hub', hubScene);
   });
@@ -47,45 +47,45 @@ describe('HubScene', () => {
     world.destroy();
   });
 
-  it('generates fixed terrain on enter', () => {
-    hubScene.enter();
+  it('generates fixed terrain on enter', async () => {
+    await hubScene.enter();
     expect(hubScene.terrain).not.toBeNull();
     expect(hubScene.terrain!.width).toBe(32);
     expect(hubScene.terrain!.depth).toBe(32);
   });
 
-  it('terrain is deterministic (same seed)', () => {
-    hubScene.enter();
+  it('terrain is deterministic (same seed)', async () => {
+    await hubScene.enter();
     const heights1 = hubScene.terrain!.heightmap.map(col => [...col]);
     hubScene.exit();
 
-    hubScene.enter();
+    await hubScene.enter();
     const heights2 = hubScene.terrain!.heightmap.map(col => [...col]);
     hubScene.exit();
 
     expect(heights1).toEqual(heights2);
   });
 
-  it('spawns player entity on enter', () => {
-    hubScene.enter();
+  it('spawns player entity on enter', async () => {
+    await hubScene.enter();
     const players = world.query(IsPlayer, Position);
     expect(players.length).toBe(1);
   });
 
-  it('generates structure blocks for all buildings', () => {
-    hubScene.enter();
+  it('generates structure blocks for all buildings', async () => {
+    await hubScene.enter();
     expect(hubScene.structureBlocks.length).toBeGreaterThan(0);
   });
 
-  it('cleans up entities on exit', () => {
-    hubScene.enter();
+  it('cleans up entities on exit', async () => {
+    await hubScene.enter();
     expect(world.query(Position).length).toBeGreaterThan(0);
     hubScene.exit();
     expect(world.query(IsPlayer).length).toBe(0);
   });
 
-  it('detects nearby building when player is close', () => {
-    hubScene.enter();
+  it('detects nearby building when player is close', async () => {
+    await hubScene.enter();
 
     // Move player to armory position (building positions are offset by HUB_SIZE/2)
     const players = world.query(IsPlayer, Position);
@@ -98,8 +98,8 @@ describe('HubScene', () => {
     expect(hubScene.nearbyBuilding).not.toBeNull();
   });
 
-  it('no nearby building when player is far from all buildings', () => {
-    hubScene.enter();
+  it('no nearby building when player is far from all buildings', async () => {
+    await hubScene.enter();
 
     // Move player to corner far from all buildings
     const players = world.query(IsPlayer, Position);
@@ -109,12 +109,12 @@ describe('HubScene', () => {
     expect(hubScene.nearbyBuilding).toBeNull();
   });
 
-  it('dock interaction triggers scene transition', () => {
+  it('dock interaction triggers scene transition', async () => {
     // Register a placeholder islandSelect scene
     const mockScene = { enter: vi.fn(), update: vi.fn(), exit: vi.fn(), name: 'islandSelect' };
     director.register('islandSelect', mockScene as never);
     director.register('hub', hubScene);
-    director.transition('hub');
+    await director.transition('hub');
 
     // Move player to docks position: content x:-15, z:10 → world x:1, z:26
     const players = world.query(IsPlayer, Position);
@@ -129,14 +129,14 @@ describe('HubScene', () => {
     expect(director.getCurrentScene()).toBe('islandSelect');
   });
 
-  it('upgradeBuilding fails without resources', () => {
-    hubScene.enter();
+  it('upgradeBuilding fails without resources', async () => {
+    await hubScene.enter();
     const result = hubScene.upgradeBuilding('armory');
     expect(result).toBe(false);
   });
 
-  it('upgradeBuilding succeeds with enough resources', () => {
-    hubScene.enter();
+  it('upgradeBuilding succeeds with enough resources', async () => {
+    await hubScene.enter();
 
     // Give player resources
     hubScene.hubState.resources['wood'] = 1000;
@@ -147,8 +147,8 @@ describe('HubScene', () => {
     expect(hubScene.hubState.buildingLevels['armory']).toBe(2);
   });
 
-  it('update delegates player movement', () => {
-    hubScene.enter();
+  it('update delegates player movement', async () => {
+    await hubScene.enter();
 
     const players = world.query(IsPlayer, Position);
     const initialPos = { ...players[0].get(Position)! };
@@ -156,7 +156,7 @@ describe('HubScene', () => {
     // Set movement intent
     world.set(MovementIntent, { dirX: 1, dirZ: 0, sprint: false, jump: false });
 
-    hubScene.update(1.0); // 1 second at 5 units/s
+    hubScene.update(1.0); // 1 second at 6 units/s
 
     const newPos = players[0].get(Position)!;
     // Player should have moved (exact amount depends on camera euler)

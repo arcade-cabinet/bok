@@ -48,9 +48,9 @@ export class AttackState extends State {
       return;
     }
 
-    // Attack on cooldown
-    // Note: delta is not passed to execute() in Yuka's FSM, so we use a fixed timestep
-    this.#cooldownRemaining -= 1 / 60;
+    // Attack on cooldown — read dt from custom property set by AIBridge
+    const dt = (owner as unknown as { _dt?: number })._dt ?? 1 / 60;
+    this.#cooldownRemaining -= dt;
     if (this.#cooldownRemaining <= 0) {
       this.#cooldownRemaining = ATTACK_COOLDOWN;
       this.onAttack?.(owner);

@@ -12,8 +12,11 @@ import { IslandGenerator, type IslandBlueprint } from '../generation/index.ts';
 import { EnemySpawner } from '../systems/spawning/index.ts';
 import { createEnemyVehicle, AIBridge, type AIVehicle } from '../ai/index.ts';
 import { MovementSystem } from '../systems/movement/index.ts';
-import { combatSystem } from '../systems/combat/index.ts';
-import { PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER } from '../shared/index.ts';
+import {
+  combatSystem, dodgeTickSystem, staminaSystem, dotSystem,
+  knockbackSystem, bossPhaseSystem,
+} from '../systems/combat/index.ts';
+import { PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER, PARRY_WINDOW } from '../shared/index.ts';
 import type { InputSystem } from '../input/index.ts';
 
 /**
@@ -84,10 +87,14 @@ export class IslandScene extends Scene {
     // Step 2: Apply camera look from input
     this.#applyCameraLook();
 
-    // Step 3: Check attack input
+    // Step 3: Check attack input + close parry window after PARRY_WINDOW
     this.#checkAttackInput();
+    this.#tickParryWindow();
 
-    // Step 4: Yuka AI update — drives enemy steering + FSM
+    // Step 4: Set dt on vehicles for FSM states, then Yuka AI update
+    for (const { vehicle } of this.#enemyEntities) {
+      this.#aiBridge.setDt(vehicle, dt);
+    }
     this.#yukaManager.update(dt);
 
     // Step 5: Sync Yuka AI decisions → Koota traits
@@ -95,21 +102,36 @@ export class IslandScene extends Scene {
       this.#aiBridge.syncToKoota(vehicle, entity);
     }
 
-    // Step 6: Movement system — apply velocity to position
+    // Step 6: Dodge tick — decrement timers, expire i-frames
+    dodgeTickSystem(this.world, dt);
+
+    // Step 7: Stamina — drain/regen
+    staminaSystem(this.world, dt);
+
+    // Step 8: Movement system — apply velocity to position
     this.#movementSystem.update(this.world, dt);
 
-    // Step 7: Combat system — resolve attacks
+    // Step 9: Knockback — apply knockback to velocity
+    knockbackSystem(this.world);
+
+    // Step 10: Combat system — resolve attacks (checks dodge/parry/blocking)
     combatSystem(this.world);
 
-    // Step 8: Sync Koota → Yuka (corrected positions, death triggers)
+    // Step 11: DoT — tick damage-over-time effects
+    dotSystem(this.world, dt);
+
+    // Step 12: Boss phases — check health thresholds
+    bossPhaseSystem(this.world, this.#content);
+
+    // Step 13: Sync Koota → Yuka (corrected positions, death triggers)
     for (const { entity, vehicle } of this.#enemyEntities) {
       this.#aiBridge.syncFromKoota(vehicle, entity);
     }
 
-    // Step 9: Sync player camera to position
+    // Step 14: Sync player camera to position
     this.#syncCameraToPlayer();
 
-    // Step 10: Clean up dead enemies
+    // Step 15: Clean up dead enemies
     this.#cleanupDead();
   }
 
@@ -353,9 +375,29 @@ export class IslandScene extends Scene {
         this.#playerEntity.set(DodgeState, {
           active: true,
           iFrames: true,
-          cooldownRemaining: 0.4,
+          cooldownRemaining: 0, // DodgeTickSystem will set the real cooldown
         });
       }
+    }
+  }
+
+  /** H2: Close parry window after PARRY_WINDOW duration, keep blocking. */
+  #tickParryWindow(): void {
+    if (!this.#playerEntity) return;
+
+    const parry = this.#playerEntity.get(ParryState);
+    if (!parry || !parry.parryWindow) return;
+
+    const time = this.world.get(Time);
+    if (!time) return;
+
+    const elapsed = time.elapsed - parry.parryTimestamp;
+    if (elapsed >= PARRY_WINDOW) {
+      this.#playerEntity.set(ParryState, {
+        blocking: parry.blocking, // stay blocking if button still held
+        parryWindow: false,
+        parryTimestamp: parry.parryTimestamp,
+      });
     }
   }
 

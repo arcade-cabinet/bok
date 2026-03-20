@@ -3,6 +3,7 @@ import { createWorld } from 'koota';
 import {
   Time, GamePhase, MovementIntent, LookIntent, IslandState,
 } from './traits/index.ts';
+import { MAX_DELTA } from './shared/constants.ts';
 import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
 import { SceneDirector } from './scenes/SceneDirector.ts';
@@ -43,7 +44,10 @@ sceneDirector.register('island', new IslandScene(gameWorld, runtime, content, in
 sceneDirector.register('bossArena', new BossArenaScene(gameWorld, runtime));
 
 // --- Frame Loop (wired into JollyPixel's beforeUpdate) ---
-runtime.world.on('beforeUpdate', (dt: number) => {
+runtime.world.on('beforeUpdate', (rawDt: number) => {
+  // Clamp dt to prevent teleporting after tab switch
+  const dt = Math.min(rawDt, MAX_DELTA);
+
   // 1. Update Time world trait
   const prevTime = gameWorld.get(Time);
   gameWorld.set(Time, {

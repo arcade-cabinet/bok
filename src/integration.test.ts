@@ -27,7 +27,7 @@ class MockScene extends Scene {
 // --- Integration Tests ---
 
 describe('Integration: Scene Lifecycle', () => {
-  it('transitions through full game flow: menu → hub → island → results → hub', () => {
+  it('transitions through full game flow: menu → hub → island → results → hub', async () => {
     const world = createWorld();
     const director = new SceneDirector();
 
@@ -42,18 +42,18 @@ describe('Integration: Scene Lifecycle', () => {
     director.register('results', results);
 
     // Start at menu
-    director.transition('mainMenu');
+    await director.transition('mainMenu');
     expect(director.getCurrentScene()).toBe('mainMenu');
     expect(menu.enterCount).toBe(1);
 
     // Menu → hub
-    director.transition('hub');
+    await director.transition('hub');
     expect(director.getCurrentScene()).toBe('hub');
     expect(menu.exitCount).toBe(1);
     expect(hub.enterCount).toBe(1);
 
     // Hub → island
-    director.transition('island');
+    await director.transition('island');
     expect(director.getCurrentScene()).toBe('island');
     expect(hub.exitCount).toBe(1);
     expect(island.enterCount).toBe(1);
@@ -64,12 +64,12 @@ describe('Integration: Scene Lifecycle', () => {
     expect(island.updateCount).toBe(2);
 
     // Island → results
-    director.transition('results');
+    await director.transition('results');
     expect(island.exitCount).toBe(1);
     expect(results.enterCount).toBe(1);
 
     // Results → hub (return)
-    director.transition('hub');
+    await director.transition('hub');
     expect(results.exitCount).toBe(1);
     expect(hub.enterCount).toBe(2);
 
@@ -79,7 +79,7 @@ describe('Integration: Scene Lifecycle', () => {
 
 describe('Integration: Save/Load Round-Trip', () => {
   it('persists and restores full game state', async () => {
-    const save = SaveManager.createInMemory();
+    const save = await SaveManager.createInMemory();
 
     // Save game state
     const state = {
@@ -103,7 +103,7 @@ describe('Integration: Save/Load Round-Trip', () => {
   });
 
   it('persists unlocks across sessions', async () => {
-    const save = SaveManager.createInMemory();
+    const save = await SaveManager.createInMemory();
 
     await save.addUnlock({ id: 'dash', type: 'tome_page', data: { ability: 'dash' } });
     await save.addUnlock({ id: 'fireball', type: 'tome_page', data: { ability: 'fireball' } });
@@ -115,7 +115,7 @@ describe('Integration: Save/Load Round-Trip', () => {
   });
 
   it('persists run history across sessions', async () => {
-    const save = SaveManager.createInMemory();
+    const save = await SaveManager.createInMemory();
     const mgr = new RunManager(save);
 
     mgr.startRun('seed-1', 'forest');
@@ -204,7 +204,7 @@ describe('Integration: Full Run Simulation', () => {
     expect(enemyEntities[0].get(Health)!.current).toBeLessThan(enemyHealth.max);
 
     // 7. Simulate boss defeat + run progression
-    const save = SaveManager.createInMemory();
+    const save = await SaveManager.createInMemory();
     const runMgr = new RunManager(save);
     runMgr.startRun('test-seed-42', 'forest');
     runMgr.visitIsland('forest-main');
@@ -230,7 +230,7 @@ describe('Integration: Full Run Simulation', () => {
   });
 
   it('handles player death during run', async () => {
-    const save = SaveManager.createInMemory();
+    const save = await SaveManager.createInMemory();
     const runMgr = new RunManager(save);
 
     runMgr.startRun('death-seed', 'desert');

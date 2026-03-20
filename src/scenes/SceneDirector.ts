@@ -28,7 +28,7 @@ export class SceneDirector {
   }
 
   /** Transition to a new scene. Calls exit() on old, enter() on new. */
-  transition(sceneName: SceneName): void {
+  async transition(sceneName: SceneName): Promise<void> {
     const next = this.scenes.get(sceneName);
     if (!next) {
       throw new Error(`[SceneDirector] Scene "${sceneName}" not registered`);
@@ -42,7 +42,7 @@ export class SceneDirector {
 
     this.currentSceneName = sceneName;
     this.currentScene = next;
-    next.enter();
+    await next.enter();
 
     this.loading = false;
   }
