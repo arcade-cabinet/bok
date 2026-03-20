@@ -1,0 +1,31 @@
+{
+  "id": "ice-golem",
+  "name": "Ice Golem",
+  "health": 80,
+  "speed": 1.5,
+  "damage": 20,
+  "attackPattern": "slow-chase-pound",
+  "attacks": [
+    {
+      "name": "ice-fist",
+      "type": "melee",
+      "damage": 20,
+      "cooldown": 2.5,
+      "range": 2.0,
+      "telegraph": 0.8
+    },
+    {
+      "name": "ground-pound",
+      "type": "aoe",
+      "damage": 15,
+      "cooldown": 6.0,
+      "range": 4.0,
+      "telegraph": 1.2
+    }
+  ],
+  "drops": [
+    { "itemId": "ice-crystal", "chance": 0.6, "minAmount": 1, "maxAmount": 3 },
+    { "itemId": "frozen-core", "chance": 0.1, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "freezes-on-hit"
+}

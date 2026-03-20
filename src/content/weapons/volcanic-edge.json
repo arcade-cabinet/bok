@@ -1,0 +1,14 @@
+{
+  "id": "volcanic-edge",
+  "name": "Volcanic Edge",
+  "type": "melee",
+  "baseDamage": 30,
+  "attackSpeed": 0.8,
+  "range": 1.6,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 500, "animation": "heavy-slash" },
+    { "damageMultiplier": 1.2, "windowMs": 450, "animation": "rising-slash" },
+    { "damageMultiplier": 1.8, "windowMs": 400, "animation": "fire-slam" }
+  ],
+  "special": "fire-trail"
+}

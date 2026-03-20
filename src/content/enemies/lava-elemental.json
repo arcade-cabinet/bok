@@ -1,0 +1,31 @@
+{
+  "id": "lava-elemental",
+  "name": "Lava Elemental",
+  "health": 70,
+  "speed": 2.0,
+  "damage": 18,
+  "attackPattern": "seek-engulf",
+  "attacks": [
+    {
+      "name": "lava-slam",
+      "type": "melee",
+      "damage": 18,
+      "cooldown": 2.0,
+      "range": 2.5,
+      "telegraph": 0.7
+    },
+    {
+      "name": "magma-burst",
+      "type": "aoe",
+      "damage": 12,
+      "cooldown": 5.0,
+      "range": 5.0,
+      "telegraph": 1.0
+    }
+  ],
+  "drops": [
+    { "itemId": "magma-core", "chance": 0.4, "minAmount": 1, "maxAmount": 1 },
+    { "itemId": "obsidian-shard", "chance": 0.5, "minAmount": 1, "maxAmount": 3 }
+  ],
+  "special": "leaves-fire-trail"
+}

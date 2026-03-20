@@ -1,0 +1,13 @@
+{
+  "id": "iron-sword",
+  "name": "Iron Sword",
+  "type": "melee",
+  "baseDamage": 15,
+  "attackSpeed": 1.0,
+  "range": 1.5,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 400, "animation": "slash-right" },
+    { "damageMultiplier": 1.2, "windowMs": 350, "animation": "slash-left" },
+    { "damageMultiplier": 1.5, "windowMs": 300, "animation": "thrust" }
+  ]
+}

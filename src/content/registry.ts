@@ -13,8 +13,44 @@ import crystalCavesBiome from './biomes/crystal-caves.json';
 import skyRuinsBiome from './biomes/sky-ruins.json';
 import deepOceanBiome from './biomes/deep-ocean.json';
 import slimeEnemy from './enemies/slime.json';
+import skeletonArcher from './enemies/skeleton-archer.json';
+import sandWraith from './enemies/sand-wraith.json';
+import scorpion from './enemies/scorpion.json';
+import frostWolf from './enemies/frost-wolf.json';
+import iceGolem from './enemies/ice-golem.json';
+import fireImp from './enemies/fire-imp.json';
+import lavaElemental from './enemies/lava-elemental.json';
+import swampLurker from './enemies/swamp-lurker.json';
+import bogWitch from './enemies/bog-witch.json';
+import crystalSentinel from './enemies/crystal-sentinel.json';
+import gemSpider from './enemies/gem-spider.json';
+import skyHawk from './enemies/sky-hawk.json';
+import windElemental from './enemies/wind-elemental.json';
+import depthCrawler from './enemies/depth-crawler.json';
+import anglerFish from './enemies/angler-fish.json';
 import woodenSword from './weapons/wooden-sword.json';
+import ironSword from './weapons/iron-sword.json';
+import crystalBlade from './weapons/crystal-blade.json';
+import volcanicEdge from './weapons/volcanic-edge.json';
+import frostCleaver from './weapons/frost-cleaver.json';
+import warHammer from './weapons/war-hammer.json';
+import battleAxe from './weapons/battle-axe.json';
+import twinDaggers from './weapons/twin-daggers.json';
+import trident from './weapons/trident.json';
+import shortBow from './weapons/short-bow.json';
+import crossbow from './weapons/crossbow.json';
+import fireStaff from './weapons/fire-staff.json';
+import iceWand from './weapons/ice-wand.json';
+import lightningRod from './weapons/lightning-rod.json';
+import crystalSling from './weapons/crystal-sling.json';
 import ancientTreant from './bosses/ancient-treant.json';
+import pharaohConstruct from './bosses/pharaoh-construct.json';
+import frostWyrm from './bosses/frost-wyrm.json';
+import magmaKing from './bosses/magma-king.json';
+import mireHag from './bosses/mire-hag.json';
+import crystalHydra from './bosses/crystal-hydra.json';
+import stormTitan from './bosses/storm-titan.json';
+import abyssalLeviathan from './bosses/abyssal-leviathan.json';
 
 export class ContentRegistry {
   readonly #biomes = new Map<string, BiomeConfig>();
@@ -27,8 +63,17 @@ export class ContentRegistry {
       forestBiome, desertBiome, tundraBiome, volcanicBiome,
       swampBiome, crystalCavesBiome, skyRuinsBiome, deepOceanBiome,
     ]);
-    this.#registerEnemies([slimeEnemy]);
-    this.#registerWeapons([woodenSword]);
+    this.#registerEnemies([
+      slimeEnemy, skeletonArcher, sandWraith, scorpion,
+      frostWolf, iceGolem, fireImp, lavaElemental,
+      swampLurker, bogWitch, crystalSentinel, gemSpider,
+      skyHawk, windElemental, depthCrawler, anglerFish,
+    ]);
+    this.#registerWeapons([
+      woodenSword, ironSword, crystalBlade, volcanicEdge, frostCleaver,
+      warHammer, battleAxe, twinDaggers, trident,
+      shortBow, crossbow, fireStaff, iceWand, lightningRod, crystalSling,
+    ]);
     this.#registerBosses([ancientTreant]);
   }
 

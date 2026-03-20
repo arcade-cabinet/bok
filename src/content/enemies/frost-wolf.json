@@ -1,0 +1,31 @@
+{
+  "id": "frost-wolf",
+  "name": "Frost Wolf",
+  "health": 30,
+  "speed": 4.5,
+  "damage": 10,
+  "attackPattern": "pack-chase",
+  "attacks": [
+    {
+      "name": "bite",
+      "type": "melee",
+      "damage": 10,
+      "cooldown": 1.2,
+      "range": 1.5,
+      "telegraph": 0.2
+    },
+    {
+      "name": "howl",
+      "type": "aoe",
+      "damage": 0,
+      "cooldown": 8.0,
+      "range": 10.0,
+      "telegraph": 1.0
+    }
+  ],
+  "drops": [
+    { "itemId": "wolf-pelt", "chance": 0.5, "minAmount": 1, "maxAmount": 1 },
+    { "itemId": "frost-fang", "chance": 0.2, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "howl-buffs-nearby"
+}

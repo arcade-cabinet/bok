@@ -1,0 +1,31 @@
+{
+  "id": "sky-hawk",
+  "name": "Sky Hawk",
+  "health": 30,
+  "speed": 5.0,
+  "damage": 14,
+  "attackPattern": "dive-bomb-retreat",
+  "attacks": [
+    {
+      "name": "dive-bomb",
+      "type": "melee",
+      "damage": 14,
+      "cooldown": 3.0,
+      "range": 2.0,
+      "telegraph": 0.8
+    },
+    {
+      "name": "talon-swipe",
+      "type": "melee",
+      "damage": 8,
+      "cooldown": 1.5,
+      "range": 1.5,
+      "telegraph": 0.3
+    }
+  ],
+  "drops": [
+    { "itemId": "sky-feather", "chance": 0.5, "minAmount": 1, "maxAmount": 2 },
+    { "itemId": "hawk-talon", "chance": 0.2, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "aerial"
+}

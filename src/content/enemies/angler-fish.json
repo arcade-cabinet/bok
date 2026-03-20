@@ -1,0 +1,31 @@
+{
+  "id": "angler-fish",
+  "name": "Abyssal Angler",
+  "health": 55,
+  "speed": 2.0,
+  "damage": 16,
+  "attackPattern": "lure-charge",
+  "attacks": [
+    {
+      "name": "jaw-snap",
+      "type": "melee",
+      "damage": 16,
+      "cooldown": 2.0,
+      "range": 2.0,
+      "telegraph": 0.5
+    },
+    {
+      "name": "lure-flash",
+      "type": "aoe",
+      "damage": 5,
+      "cooldown": 6.0,
+      "range": 8.0,
+      "telegraph": 0.8
+    }
+  ],
+  "drops": [
+    { "itemId": "angler-light", "chance": 0.4, "minAmount": 1, "maxAmount": 1 },
+    { "itemId": "deep-scale", "chance": 0.5, "minAmount": 1, "maxAmount": 2 }
+  ],
+  "special": "light-lure-in-dark"
+}

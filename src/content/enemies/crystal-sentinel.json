@@ -1,0 +1,31 @@
+{
+  "id": "crystal-sentinel",
+  "name": "Crystal Sentinel",
+  "health": 60,
+  "speed": 1.8,
+  "damage": 16,
+  "attackPattern": "guard-laser",
+  "attacks": [
+    {
+      "name": "crystal-slash",
+      "type": "melee",
+      "damage": 16,
+      "cooldown": 2.0,
+      "range": 2.0,
+      "telegraph": 0.6
+    },
+    {
+      "name": "laser-beam",
+      "type": "ranged",
+      "damage": 22,
+      "cooldown": 6.0,
+      "range": 18.0,
+      "telegraph": 1.5
+    }
+  ],
+  "drops": [
+    { "itemId": "crystal-shard", "chance": 0.6, "minAmount": 1, "maxAmount": 3 },
+    { "itemId": "prism-core", "chance": 0.1, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "reflects-projectiles"
+}
