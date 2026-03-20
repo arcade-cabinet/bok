@@ -7,3 +7,8 @@
  */
 export { HealthBar, Hotbar, Minimap, type MinimapMarker, DamageIndicator } from './hud/index.ts';
 export { TomeOverlay, type TomeWeaponDisplay, PageBrowser, type TomePage } from './tome/index.ts';
+export {
+  MainMenu, PauseMenu,
+  DeathScreen, type DeathStats,
+  VictoryScreen, type VictoryStats,
+} from './screens/index.ts';
