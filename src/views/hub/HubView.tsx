@@ -7,7 +7,8 @@ import { createHub, type BuildingDef } from '../../engine/hub';
 import { createCamera } from '../../engine/camera';
 import { DayNightCycle } from '../../rendering/index';
 import { InputSystem } from '../../input/index';
-import { isMobileDevice, MobileControls } from '../../input/MobileControls';
+import { isMobileDevice } from '../../input/MobileControls';
+import { MedievalJoysticks, type MedievalJoystickOutput } from '../../components/ui/MedievalJoysticks';
 import { createWorld } from 'koota';
 import { Time, MovementIntent, LookIntent } from '../../traits/index';
 import { MAX_DELTA } from '../../shared/index';
@@ -32,6 +33,8 @@ export function HubView({ onNavigate }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runtimeRef = useRef<Runtime | null>(null);
   const gameWorldRef = useRef<ReturnType<typeof createWorld> | null>(null);
+  const mobileInputRef = useRef<{ moveX: number; moveZ: number; lookDX: number; lookDY: number; action: string | null } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [labels, setLabels] = useState<BuildingLabel[]>([]);
   const [nearDocks, setNearDocks] = useState(false);
 
@@ -39,7 +42,8 @@ export function HubView({ onNavigate }: Props) {
     if (!canvasRef.current || runtimeRef.current) return;
 
     let destroyed = false;
-    let mobileControls: MobileControls | null = null;
+    const mobileInput = { moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, action: null as string | null };
+    mobileInputRef.current = mobileInput;
 
     (async () => {
       await initPlatform();
@@ -57,10 +61,10 @@ export function HubView({ onNavigate }: Props) {
       runtimeRef.current = runtime;
       const jpWorld = (runtime as any).world;
 
-      const isMobile = isMobileDevice();
-      mobileControls = isMobile ? new MobileControls() : null;
+      const mobile = isMobileDevice();
+      setIsMobile(mobile);
 
-      const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
+      const pixelRatio = Math.min(window.devicePixelRatio, mobile ? 1.5 : 2);
       const webGLRenderer = (jpWorld.renderer as any)?.webGLRenderer as THREE.WebGLRenderer | undefined;
       if (webGLRenderer) webGLRenderer.setPixelRatio(pixelRatio);
 
@@ -80,7 +84,7 @@ export function HubView({ onNavigate }: Props) {
 
       // Input
       const inputSystem = new InputSystem(canvasRef.current!);
-      if (!isMobile) {
+      if (!mobile) {
         canvasRef.current!.addEventListener('click', () => {
           if (!document.pointerLockElement) canvasRef.current!.requestPointerLock();
         });
@@ -119,12 +123,12 @@ export function HubView({ onNavigate }: Props) {
 
         inputSystem.update(gameWorld);
 
-        // Camera look
-        if (mobileControls) {
-          const touchLook = mobileControls.consumeLookDelta();
-          if (touchLook.x !== 0 || touchLook.y !== 0) {
-            cam.applyLook(touchLook.x, touchLook.y, 0.5);
-          }
+        // Camera look — mobile: from React joystick, desktop: pointer lock
+        const mi = mobileInputRef.current;
+        if (mobile && mi && (mi.lookDX !== 0 || mi.lookDY !== 0)) {
+          cam.applyLook(mi.lookDX, mi.lookDY, 0.5);
+          mi.lookDX = 0;
+          mi.lookDY = 0;
         } else {
           const look = gameWorld.get(LookIntent);
           if (look && document.pointerLockElement) {
@@ -132,11 +136,11 @@ export function HubView({ onNavigate }: Props) {
           }
         }
 
-        // Player movement
+        // Player movement — mobile: from React joystick, desktop: WASD
         let dirX = 0, dirZ = 0, sprinting = false;
-        if (mobileControls) {
-          dirX = mobileControls.state.moveX;
-          dirZ = mobileControls.state.moveZ;
+        if (mobile && mi) {
+          dirX = mi.moveX;
+          dirZ = mi.moveZ;
         } else {
           const move = gameWorld.get(MovementIntent);
           if (move) { dirX = move.dirX; dirZ = move.dirZ; sprinting = move.sprint; }
@@ -178,12 +182,12 @@ export function HubView({ onNavigate }: Props) {
       await loadRuntime(runtime);
       console.log('[Bok] Hub initialized');
 
-      if (mobileControls) mobileControls.show();
+      // Mobile UI handled by React
     })();
 
     return () => {
       destroyed = true;
-      mobileControls?.destroy();
+      // Mobile cleanup handled by React unmount
       runtimeRef.current?.stop();
       runtimeRef.current = null;
       gameWorldRef.current?.destroy();
@@ -194,6 +198,16 @@ export function HubView({ onNavigate }: Props) {
   const handleSetSail = useCallback(() => {
     onNavigate('game');
   }, [onNavigate]);
+
+  const handleJoystickOutput = useCallback((output: MedievalJoystickOutput) => {
+    const mi = mobileInputRef.current;
+    if (!mi) return;
+    mi.moveX = output.moveX;
+    mi.moveZ = output.moveZ;
+    mi.lookDX += output.lookDX;
+    mi.lookDY += output.lookDY;
+    if (output.action) mi.action = output.action;
+  }, []);
 
   return (
     <div className="fixed inset-0">
@@ -270,6 +284,9 @@ export function HubView({ onNavigate }: Props) {
 
       {/* Crosshair */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)] z-10 pointer-events-none" />
+
+      {/* Medieval joysticks — mobile only */}
+      {isMobile && <MedievalJoysticks onOutput={handleJoystickOutput} visible={true} />}
     </div>
   );
 }
