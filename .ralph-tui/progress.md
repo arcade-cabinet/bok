@@ -234,3 +234,25 @@ after each iteration and it's included in prompts for context.
   - The `onComplete` callback pattern (vs. the dead scene's `director.transition('island')`) decouples the transition component from knowing what view comes next — App.tsx controls the state machine
 ---
 
+### Frame-Loop → React State Bridge Pattern
+- When a game loop (60fps) needs to feed data into React state, use a **ref for mutable accumulation** and only trigger `setState` when the _identity_ of the data changes (e.g., which building is nearby), not on every frame
+- `updateBuildingProximityRef.current = hook.callback` pattern: store the hook's callback in a ref that's updated each render, then call from the frame loop closure — avoids stale closure issues without adding the callback to the effect dependency array
+
+---
+
+## 2026-03-21 - US-010
+- **What was implemented**: Ported building upgrade system from dead HubScene.ts to React hook (`useHubBuildings`) + daisyUI overlay component (`BuildingInteraction`), integrated into HubView with frame-loop proximity detection
+- **Files changed**:
+  - `src/hooks/useHubBuildings.ts` — NEW: hook managing building levels, resources, proximity detection (INTERACTION_RANGE=3), upgrade logic with resource deduction, optional SaveManager persistence
+  - `src/components/hud/BuildingInteraction.tsx` — NEW: daisyUI card overlay showing building name/level badge, description, current/next effect, resource cost badges (green=enough, red=insufficient), upgrade button
+  - `src/views/hub/HubView.tsx` — imported hook + component; added `updateBuildingProximityRef` pattern for frame-loop → hook bridge; feeds `cam.getPosition()` into proximity each frame; renders `<BuildingInteraction>` when nearby; added resource display to hub indicator
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - The dead HubScene.ts used content JSON building positions offset by `HUB_SIZE/2` (16) to convert from relative to world coordinates — the hook replicates this: `bx = position.x + 16`
+  - `useCallback` with `[]` deps is correct for `updatePlayerPosition` because it only reads `stateRef.current` (mutable ref, not state) — no stale closure risk
+  - `const [, setBuildingLevels]` (destructured without the value) is the Biome-clean pattern for "I need the setter but the value is only read from `stateRef.current`"
+  - The hook takes `saveManager?: SaveManager | null` as optional — when omitted (default in HubView), it uses in-memory defaults with starter resources (wood: 500, stone: 500) so the upgrade system is immediately interactive
+  - daisyUI `badge-success`/`badge-error` on resource costs gives instant visual feedback — green means affordable, red means short — replacing what would have been manual hex color logic
+  - The `prevNearbyIdRef` pattern prevents 60 React re-renders per second: only triggers `setNearbyBuilding()` when the _identity_ of the closest building changes, not when the distance changes
+---
+

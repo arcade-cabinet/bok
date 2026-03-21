@@ -3,9 +3,11 @@ import { loadRuntime, Runtime } from '@jolly-pixel/runtime';
 import { createWorld } from 'koota';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { BuildingInteraction } from '../../components/hud/BuildingInteraction';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { createCamera } from '../../engine/camera';
 import { type BuildingDef, createHub } from '../../engine/hub';
+import { useHubBuildings } from '../../hooks/useHubBuildings';
 // Hub uses fixed daytime lighting — no DayNightCycle
 import { InputSystem } from '../../input/index';
 import { isMobileDevice } from '../../input/MobileControls';
@@ -43,6 +45,11 @@ export function HubView({ onNavigate }: Props) {
   const [labels, setLabels] = useState<BuildingLabel[]>([]);
   const [nearDocks, setNearDocks] = useState(false);
   const [showPause, setShowPause] = useState(false);
+
+  // Building upgrade system
+  const hubBuildings = useHubBuildings();
+  const updateBuildingProximityRef = useRef(hubBuildings.updatePlayerPosition);
+  updateBuildingProximityRef.current = hubBuildings.updatePlayerPosition;
 
   useEffect(() => {
     if (!canvasRef.current || runtimeRef.current) return;
@@ -184,6 +191,9 @@ export function HubView({ onNavigate }: Props) {
         // Check proximity to docks
         const dockDist = Math.sqrt((playerPos.x - dockCenter.x) ** 2 + (playerPos.z - dockCenter.z) ** 2);
         setNearDocks(dockDist < DOCK_DISTANCE);
+
+        // Update building proximity for interaction system
+        updateBuildingProximityRef.current(playerPos.x, playerPos.z);
       });
 
       await loadRuntime(runtime);
@@ -269,7 +279,16 @@ export function HubView({ onNavigate }: Props) {
         </div>
       )}
 
-      {/* Hub indicator */}
+      {/* Building interaction overlay */}
+      {hubBuildings.nearbyBuilding && (
+        <BuildingInteraction
+          nearby={hubBuildings.nearbyBuilding}
+          resources={hubBuildings.resources}
+          onUpgrade={hubBuildings.upgradeBuilding}
+        />
+      )}
+
+      {/* Hub indicator + resources */}
       <div
         className="fixed top-4 left-4 z-10 bg-[#fdf6e3]/85 border-2 border-[#8b5a2b] rounded-md px-3 py-2"
         style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
@@ -277,6 +296,10 @@ export function HubView({ onNavigate }: Props) {
         <div className="text-sm font-bold">Hub Island</div>
         <div className="text-xs italic" style={{ color: '#8b5a2b' }}>
           Visit the Docks to set sail
+        </div>
+        <div className="flex gap-2 mt-1 text-xs">
+          <span>Wood: {hubBuildings.resources.wood ?? 0}</span>
+          <span>Stone: {hubBuildings.resources.stone ?? 0}</span>
         </div>
       </div>
 
