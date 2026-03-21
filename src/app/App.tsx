@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MainMenuView } from '../views/menu/MainMenuView';
 import { GameView } from '../views/game/GameView';
+import { HubView } from '../views/hub/HubView';
 
 export type AppView = 'menu' | 'game' | 'hub';
 
@@ -15,16 +16,21 @@ export function App() {
 
   const handleStartGame = (config: GameConfig) => {
     setGameConfig(config);
-    setView('game');
+    setView('hub');
+  };
+
+  const handleHubNavigate = (target: 'menu' | 'game') => {
+    setView(target);
   };
 
   return (
     <>
       {view === 'menu' && <MainMenuView onStartGame={handleStartGame} />}
+      {view === 'hub' && <HubView onNavigate={handleHubNavigate} />}
       {view === 'game' && (
         <GameView
           config={gameConfig}
-          onReturnToMenu={() => setView('menu')}
+          onReturnToMenu={() => setView('hub')}
         />
       )}
     </>
