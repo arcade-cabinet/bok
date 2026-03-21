@@ -158,7 +158,7 @@ export async function initGame(
 
     // Camera look
     if (isMobile && (mobileInput.lookDX !== 0 || mobileInput.lookDY !== 0)) {
-      cam.applyLook(mobileInput.lookDX, mobileInput.lookDY, 0.5);
+      cam.applyLook(mobileInput.lookDX, mobileInput.lookDY, 2.0); // Higher sensitivity for touch
       mobileInput.lookDX = 0;
       mobileInput.lookDY = 0;
     } else {
