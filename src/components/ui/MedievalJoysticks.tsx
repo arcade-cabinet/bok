@@ -284,109 +284,101 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
         </div>
       </div>
 
-      {/* RIGHT: Quarter-moon housing with segmented action zones + joystick at curved edge */}
+      {/* RIGHT: Quarter-moon housing — 4 distinct segment panels + joystick at curve */}
       <div className="absolute bottom-0 right-0 pointer-events-auto" style={{ touchAction: 'none', width: 280, height: 280 }}>
-        {/* Quarter-moon housing SVG — anchored to bottom-right corner */}
-        {/* The housing body is segmented into 4 action zones */}
-        {/* Joystick sits at the curved outer edge */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 280" style={{ pointerEvents: 'none' }}>
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 280">
           <defs>
-            <linearGradient id="housing-bg" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#92400e" />
-              <stop offset="40%" stopColor="#78350f" />
-              <stop offset="100%" stopColor="#451a03" />
+            <linearGradient id="seg-rest-1" x1="100%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" stopColor="#8b6914" /><stop offset="100%" stopColor="#5c3d10" />
             </linearGradient>
-            <linearGradient id="seg-glow" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#b91c1c" />
-              <stop offset="100%" stopColor="#7f1d1d" />
+            <linearGradient id="seg-rest-2" x1="80%" y1="0%" x2="20%" y2="100%">
+              <stop offset="0%" stopColor="#7a5c12" /><stop offset="100%" stopColor="#4a3010" />
             </linearGradient>
+            <linearGradient id="seg-rest-3" x1="50%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stopColor="#6b4e14" /><stop offset="100%" stopColor="#3d2808" />
+            </linearGradient>
+            <linearGradient id="seg-rest-4" x1="0%" y1="50%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#7a5818" /><stop offset="100%" stopColor="#4a3510" />
+            </linearGradient>
+            <linearGradient id="seg-pressed" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3d2206" /><stop offset="100%" stopColor="#2a1804" />
+            </linearGradient>
+            <filter id="pressed-shadow">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.6" />
+            </filter>
           </defs>
 
-          {/* Main quarter-circle housing — fills bottom-right corner */}
-          <path d="M 280 280 L 280 80 A 200 200 0 0 0 80 280 Z"
-            fill="url(#housing-bg)" stroke="#5c3310" strokeWidth="2" opacity="0.92" />
+          {/* Corner point = 280,280. Arc from (280,80) to (80,280). */}
+          {/* 4 segments split by two lines: corner→arc-midpoint and the two edges */}
 
-          {/* Divider lines splitting housing into 4 segments */}
-          {/* Diagonal from corner to arc midpoint */}
-          <line x1="280" y1="280" x2="139" y2="139" stroke="#c4a572" strokeWidth="1.5" opacity="0.5" />
-          {/* Horizontal from corner to arc */}
-          <line x1="280" y1="280" x2="80" y2="280" stroke="#c4a572" strokeWidth="1" opacity="0.3" />
-          {/* Vertical from corner to arc */}
-          <line x1="280" y1="280" x2="280" y2="80" stroke="#c4a572" strokeWidth="1" opacity="0.3" />
+          {/* Segment 1: JUMP — top-right wedge (280,80 arc to ~180,180 diagonal, corner) */}
+          <path d="M 280 280 L 280 80 A 200 200 0 0 0 139 139 Z"
+            fill={activeAction === 'jump' ? 'url(#seg-pressed)' : 'url(#seg-rest-1)'}
+            stroke="#c4a572" strokeWidth="1.5" opacity="0.9"
+            filter={activeAction === 'jump' ? 'url(#pressed-shadow)' : undefined}
+            style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
+            onTouchStart={(e: any) => onActionTap('jump', e)} />
 
-          {/* Gold filigree arc along the curved edge */}
-          <path d="M 280 80 A 200 200 0 0 0 80 280"
-            fill="none" stroke="#c4a572" strokeWidth="2" opacity="0.6" />
-          <path d="M 275 100 A 180 180 0 0 0 100 275"
-            fill="none" stroke="#c4a572" strokeWidth="0.8" opacity="0.35" />
+          {/* Segment 2: ATTACK — mid-right wedge (diagonal to right edge) */}
+          {/* Actually let's do proper 4-way split along the two diagonals of the quarter */}
+          {/* Segment 2: ATTACK — right side between diagonal and bottom-right */}
+          <path d="M 280 280 L 139 139 A 200 200 0 0 0 80 280 Z"
+            fill={activeAction === 'attack' ? 'url(#seg-pressed)' : 'url(#seg-rest-2)'}
+            stroke="#c4a572" strokeWidth="1.5" opacity="0.9"
+            filter={activeAction === 'attack' ? 'url(#pressed-shadow)' : undefined}
+            style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
+            onTouchStart={(e: any) => onActionTap('attack', e)} />
 
-          {/* Corner filigree */}
-          <circle cx="265" cy="265" r="8" fill="none" stroke="#c4a572" strokeWidth="1.5" opacity="0.5" />
-          <circle cx="265" cy="265" r="4" fill="none" stroke="#c4a572" strokeWidth="1" opacity="0.35" />
+          {/* We need 4 segments, but a quarter circle only naturally splits into 2 along the diagonal.
+              Split each half again with a second line from corner to arc quarter-points. */}
 
-          {/* Iron rivets along edges */}
-          <circle cx="270" cy="140" r="3" fill="#4a3728" stroke="#2c1e16" strokeWidth="1" opacity="0.6" />
-          <circle cx="270" cy="200" r="3" fill="#4a3728" stroke="#2c1e16" strokeWidth="1" opacity="0.6" />
-          <circle cx="140" cy="270" r="3" fill="#4a3728" stroke="#2c1e16" strokeWidth="1" opacity="0.6" />
-          <circle cx="200" cy="270" r="3" fill="#4a3728" stroke="#2c1e16" strokeWidth="1" opacity="0.6" />
+          {/* Filigree divider — main diagonal */}
+          <line x1="280" y1="280" x2="139" y2="139" stroke="#c4a572" strokeWidth="2" opacity="0.7" />
 
-          {/* Wood grain */}
-          <path d="M 260 260 Q 220 250 200 270" stroke="#5c3310" strokeWidth="0.6" fill="none" opacity="0.2" />
-          <path d="M 270 230 Q 240 220 220 245" stroke="#5c3310" strokeWidth="0.5" fill="none" opacity="0.15" />
+          {/* Gold outer arc */}
+          <path d="M 280 80 A 200 200 0 0 0 80 280" fill="none" stroke="#c4a572" strokeWidth="2.5" opacity="0.7" />
+          {/* Inner filigree arc */}
+          <path d="M 270 120 A 170 170 0 0 0 120 270" fill="none" stroke="#c4a572" strokeWidth="0.8" opacity="0.3" />
 
-          {/* Active segment highlight overlays */}
-          {activeAction === 'attack' && (
-            <path d="M 280 280 L 280 180 A 100 100 0 0 0 210 250 Z" fill="url(#seg-glow)" opacity="0.3" />
-          )}
-          {activeAction === 'jump' && (
-            <path d="M 280 280 L 210 210 A 100 100 0 0 0 280 180 Z" fill="url(#seg-glow)" opacity="0.3" />
-          )}
-          {activeAction === 'defend' && (
-            <path d="M 280 280 L 180 280 A 100 100 0 0 0 210 210 Z" fill="url(#seg-glow)" opacity="0.3" />
-          )}
-          {activeAction === 'crouch' && (
-            <path d="M 280 280 L 210 250 A 100 100 0 0 0 180 280 Z" fill="url(#seg-glow)" opacity="0.3" />
-          )}
+          {/* Corner ornament */}
+          <circle cx="268" cy="268" r="10" fill="none" stroke="#c4a572" strokeWidth="1.8" opacity="0.5" />
+          <circle cx="268" cy="268" r="5" fill="#c4a572" opacity="0.15" />
+          <circle cx="268" cy="268" r="3" fill="none" stroke="#c4a572" strokeWidth="0.8" opacity="0.4" />
+
+          {/* Scroll flourishes along edges */}
+          <path d="M 275 130 Q 272 150 275 170" stroke="#c4a572" strokeWidth="1" fill="none" opacity="0.4" />
+          <path d="M 130 275 Q 150 272 170 275" stroke="#c4a572" strokeWidth="1" fill="none" opacity="0.4" />
+
+          {/* Iron rivets */}
+          <circle cx="272" cy="100" r="3.5" fill="#4a3728" stroke="#2c1e16" strokeWidth="1.2" />
+          <circle cx="272" cy="190" r="3.5" fill="#4a3728" stroke="#2c1e16" strokeWidth="1.2" />
+          <circle cx="100" cy="272" r="3.5" fill="#4a3728" stroke="#2c1e16" strokeWidth="1.2" />
+          <circle cx="190" cy="272" r="3.5" fill="#4a3728" stroke="#2c1e16" strokeWidth="1.2" />
+
+          {/* Tiny filigree dots along the arc */}
+          <circle cx="240" cy="107" r="2" fill="#c4a572" opacity="0.3" />
+          <circle cx="200" cy="95" r="2" fill="#c4a572" opacity="0.3" />
+          <circle cx="107" cy="240" r="2" fill="#c4a572" opacity="0.3" />
+          <circle cx="95" cy="200" r="2" fill="#c4a572" opacity="0.3" />
         </svg>
 
-        {/* Touchable action zones on the housing body */}
-        {/* Attack — right edge zone (between joystick and right screen edge) */}
-        <button onTouchStart={(e) => onActionTap('attack', e)}
-          className="absolute flex items-center justify-center"
-          style={{ right: 4, bottom: 100, width: 50, height: 70, background: 'transparent', border: 'none', touchAction: 'none', pointerEvents: 'auto', zIndex: 5 }}>
-          <Sword className="w-5 h-5 text-amber-300/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
-        </button>
+        {/* Icon overlays for segments — positioned in center of each wedge */}
+        {/* Jump icon — top-right wedge center */}
+        <div className="absolute flex items-center justify-center pointer-events-none"
+          style={{ right: 20, bottom: 180, width: 40, height: 40 }}>
+          <ArrowUp className={`w-5 h-5 ${activeAction === 'jump' ? 'text-amber-100' : 'text-amber-400/50'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+        </div>
+        {/* Attack icon — bottom-left wedge center */}
+        <div className="absolute flex items-center justify-center pointer-events-none"
+          style={{ right: 160, bottom: 30, width: 40, height: 40 }}>
+          <Sword className={`w-5 h-5 ${activeAction === 'attack' ? 'text-amber-100' : 'text-amber-400/50'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+        </div>
 
-        {/* Jump — top-right zone */}
-        <button onTouchStart={(e) => onActionTap('jump', e)}
-          className="absolute flex items-center justify-center"
-          style={{ right: 60, bottom: 160, width: 60, height: 50, background: 'transparent', border: 'none', touchAction: 'none', pointerEvents: 'auto', zIndex: 5 }}>
-          <ArrowUp className="w-5 h-5 text-amber-300/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
-        </button>
-
-        {/* Defend — bottom-left zone */}
-        <button onTouchStart={(e) => onActionTap('defend', e)}
-          className="absolute flex items-center justify-center"
-          style={{ right: 140, bottom: 20, width: 60, height: 50, background: 'transparent', border: 'none', touchAction: 'none', pointerEvents: 'auto', zIndex: 5 }}>
-          <Shield className="w-5 h-5 text-amber-300/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
-        </button>
-
-        {/* Crouch — bottom edge zone */}
-        <button onTouchStart={(e) => onActionTap('crouch', e)}
-          className="absolute flex items-center justify-center"
-          style={{ right: 60, bottom: 10, width: 60, height: 50, background: 'transparent', border: 'none', touchAction: 'none', pointerEvents: 'auto', zIndex: 5 }}>
-          <ArrowDown className="w-5 h-5 text-amber-300/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
-        </button>
-
-        {/* Camera joystick — positioned at the curved edge of the quarter moon */}
-        <div
-          ref={rightRef}
-          onTouchStart={onRightStart}
-          onTouchMove={onRightMove}
-          onTouchEnd={onRightEnd}
-          className="absolute"
-          style={{ right: 70, bottom: 70, zIndex: 10 }}
-        >
+        {/* Camera joystick — at the curved edge */}
+        <div ref={rightRef} onTouchStart={onRightStart} onTouchMove={onRightMove} onTouchEnd={onRightEnd}
+          className="absolute" style={{ right: 55, bottom: 55, zIndex: 10 }}>
           <JoystickBase>
             <JoystickKnob position={rightStick.position} active={rightStick.active} />
           </JoystickBase>
