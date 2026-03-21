@@ -13,8 +13,10 @@ import { Time, GamePhase, MovementIntent, LookIntent, IslandState } from '../tra
 import { MAX_DELTA } from '../shared/index.ts';
 import { initPlatform } from '../platform/CapacitorBridge.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
+import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
+import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { InputSystem } from '../input/index.ts';
-import { isMobileDevice, MobileControls } from '../input/MobileControls.ts';
+import { isMobileDevice } from '../input/MobileControls.ts';
 import { DayNightCycle } from '../rendering/index.ts';
 
 import { ContentRegistry } from '../content/index.ts';
@@ -207,8 +209,10 @@ export async function initGame(
     lastGovernorOutput = governor.update(dt);
   });
 
-  // Start ambient audio
+  // Start audio — ambient wind + biome music + atmospheric SFX
   startAmbient();
+  playBiomeMusic(config.biome);
+  startAtmosphericSFX();
 
   // Boot
   await loadRuntime(runtime);
@@ -258,7 +262,8 @@ export async function initGame(
     destroy: () => {
       combat.cleanup();
       cleanupEnemies();
-      // Mobile controls cleaned up by React unmount
+      stopMusic();
+      stopAtmosphericSFX();
       runtime.stop();
       gameWorld.destroy();
     },
