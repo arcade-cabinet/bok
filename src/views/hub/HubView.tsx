@@ -33,7 +33,7 @@ export function HubView({ onNavigate }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runtimeRef = useRef<Runtime | null>(null);
   const gameWorldRef = useRef<ReturnType<typeof createWorld> | null>(null);
-  const mobileInputRef = useRef<{ moveX: number; moveZ: number; lookDX: number; lookDY: number; action: string | null } | null>(null);
+  const mobileInputRef = useRef<{ moveX: number; moveZ: number; lookX: number; lookY: number; action: string | null } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [labels, setLabels] = useState<BuildingLabel[]>([]);
   const [nearDocks, setNearDocks] = useState(false);
@@ -42,7 +42,7 @@ export function HubView({ onNavigate }: Props) {
     if (!canvasRef.current || runtimeRef.current) return;
 
     let destroyed = false;
-    const mobileInput = { moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, action: null as string | null };
+    const mobileInput = { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null as string | null };
     mobileInputRef.current = mobileInput;
 
     (async () => {
@@ -125,10 +125,9 @@ export function HubView({ onNavigate }: Props) {
 
         // Camera look — mobile: from React joystick, desktop: pointer lock
         const mi = mobileInputRef.current;
-        if (mobile && mi && (mi.lookDX !== 0 || mi.lookDY !== 0)) {
-          cam.applyLook(mi.lookDX, mi.lookDY, 0.5);
-          mi.lookDX = 0;
-          mi.lookDY = 0;
+        if (mobile && mi && (mi.lookX !== 0 || mi.lookY !== 0)) {
+          const rotSpeed = 150 * dt;
+          cam.applyLook(mi.lookX * rotSpeed, mi.lookY * rotSpeed, 1.0);
         } else {
           const look = gameWorld.get(LookIntent);
           if (look && document.pointerLockElement) {
@@ -204,8 +203,8 @@ export function HubView({ onNavigate }: Props) {
     if (!mi) return;
     mi.moveX = output.moveX;
     mi.moveZ = output.moveZ;
-    mi.lookDX += output.lookDX;
-    mi.lookDY += output.lookDY;
+    mi.lookX = output.lookX;
+    mi.lookY = output.lookY;
     if (output.action) mi.action = output.action;
   }, []);
 

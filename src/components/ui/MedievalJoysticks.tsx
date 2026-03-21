@@ -15,10 +15,10 @@ interface JoystickState {
 }
 
 export interface MedievalJoystickOutput {
-  moveX: number;       // -1 to 1
-  moveZ: number;       // -1 to 1
-  lookDX: number;      // delta this frame
-  lookDY: number;      // delta this frame
+  moveX: number;       // -1 to 1 (absolute stick position)
+  moveZ: number;       // -1 to 1 (absolute stick position)
+  lookX: number;       // -1 to 1 (absolute stick position — continuous rotation rate)
+  lookY: number;       // -1 to 1 (absolute stick position — continuous rotation rate)
   action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
 }
 
@@ -154,13 +154,13 @@ interface Props {
 export function MedievalJoysticks({ onOutput, visible }: Props) {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
-  const outputRef = useRef<MedievalJoystickOutput>({ moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, action: null });
+  const outputRef = useRef<MedievalJoystickOutput>({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null });
 
   const [leftStick, setLeftStick] = useState<JoystickState>({ active: false, position: { x: 0, y: 0 }, identifier: null });
   const [rightStick, setRightStick] = useState<JoystickState>({ active: false, position: { x: 0, y: 0 }, identifier: null });
   const [activeAction, setActiveAction] = useState<string | null>(null);
 
-  const rightLastPos = useRef<Position>({ x: 0, y: 0 });
+  // Right joystick outputs absolute position (not deltas) for continuous rotation
 
   const getCenter = (el: HTMLDivElement) => {
     const r = el.getBoundingClientRect();
@@ -207,7 +207,7 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
     }
   }, [leftStick.identifier, onOutput]);
 
-  // Right joystick handlers (camera look via delta)
+  // Right joystick handlers — POSITION-BASED (stick position = rotation rate)
   const onRightStart = useCallback((e: TouchEvent) => {
     e.preventDefault();
     const t = e.changedTouches[0];
@@ -215,8 +215,10 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
     const c = getCenter(rightRef.current);
     const pos = clampToRadius(t.clientX - c.x, t.clientY - c.y, MAX_DISTANCE);
     setRightStick({ active: true, position: pos, identifier: t.identifier });
-    rightLastPos.current = { x: t.clientX, y: t.clientY };
-  }, []);
+    outputRef.current.lookX = pos.x / MAX_DISTANCE;
+    outputRef.current.lookY = pos.y / MAX_DISTANCE;
+    onOutput({ ...outputRef.current });
+  }, [onOutput]);
 
   const onRightMove = useCallback((e: TouchEvent) => {
     e.preventDefault();
@@ -226,13 +228,10 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
         const c = getCenter(rightRef.current);
         const pos = clampToRadius(t.clientX - c.x, t.clientY - c.y, MAX_DISTANCE);
         setRightStick(prev => ({ ...prev, position: pos }));
-        outputRef.current.lookDX = t.clientX - rightLastPos.current.x;
-        outputRef.current.lookDY = t.clientY - rightLastPos.current.y;
-        rightLastPos.current = { x: t.clientX, y: t.clientY };
+        // Absolute position: -1 to 1. Engine multiplies by rotation speed each frame.
+        outputRef.current.lookX = pos.x / MAX_DISTANCE;
+        outputRef.current.lookY = pos.y / MAX_DISTANCE;
         onOutput({ ...outputRef.current });
-        // Reset delta after emit
-        outputRef.current.lookDX = 0;
-        outputRef.current.lookDY = 0;
       }
     }
   }, [rightStick.identifier, onOutput]);
@@ -242,9 +241,12 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
     for (const t of Array.from(e.changedTouches)) {
       if (t.identifier === rightStick.identifier) {
         setRightStick({ active: false, position: { x: 0, y: 0 }, identifier: null });
+        outputRef.current.lookX = 0;
+        outputRef.current.lookY = 0;
+        onOutput({ ...outputRef.current });
       }
     }
-  }, [rightStick.identifier]);
+  }, [rightStick.identifier, onOutput]);
 
   const onActionTap = useCallback((id: 'attack' | 'defend' | 'jump' | 'crouch', e: TouchEvent<HTMLButtonElement>) => {
     e.preventDefault();

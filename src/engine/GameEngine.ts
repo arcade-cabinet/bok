@@ -30,10 +30,10 @@ import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.
 import type { GameStartConfig, EngineState, EngineEventListener } from './types.ts';
 
 export interface MobileInput {
-  moveX: number;
-  moveZ: number;
-  lookDX: number;
-  lookDY: number;
+  moveX: number;   // -1 to 1 absolute
+  moveZ: number;   // -1 to 1 absolute
+  lookX: number;   // -1 to 1 absolute — continuous rotation rate
+  lookY: number;   // -1 to 1 absolute — continuous rotation rate
   action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
 }
 
@@ -78,7 +78,7 @@ export async function initGame(
   // Mobile detection — React now owns mobile UI via MedievalJoysticks component
   const isMobile = isMobileDevice();
   // Buffer for React mobile input (written by setMobileInput, read in frame loop)
-  const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, action: null };
+  const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null };
 
   // Performance scaling
   const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
@@ -157,10 +157,11 @@ export async function initGame(
     updateEnemyAI(enemies, cam.camera.position, dt, yukaManager);
 
     // Camera look
-    if (isMobile && (mobileInput.lookDX !== 0 || mobileInput.lookDY !== 0)) {
-      cam.applyLook(mobileInput.lookDX, mobileInput.lookDY, 2.0); // Higher sensitivity for touch
-      mobileInput.lookDX = 0;
-      mobileInput.lookDY = 0;
+    // Mobile: right joystick position = continuous rotation rate (not delta)
+    if (isMobile && (mobileInput.lookX !== 0 || mobileInput.lookY !== 0)) {
+      // Scale by dt so rotation is framerate-independent. 150 = degrees per second at full deflection
+      const rotSpeed = 150 * dt;
+      cam.applyLook(mobileInput.lookX * rotSpeed, mobileInput.lookY * rotSpeed, 1.0);
     } else {
       const look = gameWorld.get(LookIntent);
       if (look && document.pointerLockElement) {
@@ -251,8 +252,8 @@ export async function initGame(
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;
       mobileInput.moveZ = input.moveZ;
-      mobileInput.lookDX += input.lookDX;
-      mobileInput.lookDY += input.lookDY;
+      mobileInput.lookX = input.lookX;
+      mobileInput.lookY = input.lookY;
       if (input.action) mobileInput.action = input.action;
     },
     togglePause: () => {
