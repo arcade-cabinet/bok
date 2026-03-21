@@ -127,4 +127,53 @@ declare module 'yuka' {
     clear(): this;
     update(delta: number): this;
   }
+
+  export class Goal {
+    owner: GameEntity | null;
+    status: string;
+    constructor(owner?: GameEntity | null);
+    activate(): void;
+    execute(): void;
+    terminate(): void;
+    handleMessage(telegram: unknown): boolean;
+    active(): boolean;
+    inactive(): boolean;
+    completed(): boolean;
+    failed(): boolean;
+    replanIfFailed(): this;
+    activateIfInactive(): this;
+    static STATUS: {
+      ACTIVE: string;
+      INACTIVE: string;
+      COMPLETED: string;
+      FAILED: string;
+    };
+  }
+
+  export class CompositeGoal extends Goal {
+    subgoals: Goal[];
+    constructor(owner?: GameEntity | null);
+    addSubgoal(goal: Goal): this;
+    removeSubgoal(goal: Goal): this;
+    clearSubgoals(): this;
+    currentSubgoal(): Goal | null;
+    executeSubgoals(): string;
+    hasSubgoals(): boolean;
+  }
+
+  export class GoalEvaluator {
+    characterBias: number;
+    constructor(characterBias?: number);
+    calculateDesirability(owner: GameEntity): number;
+    setGoal(owner: GameEntity): void;
+  }
+
+  export class Think extends CompositeGoal {
+    evaluators: GoalEvaluator[];
+    constructor(owner?: GameEntity | null);
+    addEvaluator(evaluator: GoalEvaluator): this;
+    removeEvaluator(evaluator: GoalEvaluator): this;
+    arbitrate(): this;
+    registerType(type: string, constructor: new () => unknown): this;
+  }
 }
