@@ -1,63 +1,149 @@
 # CLAUDE.md — Bok: The Builder's Tome
 
 ## Project Overview
-Voxel roguelike island-hopper built on JollyPixel + Koota + Yuka.
+
+Voxel roguelike island-hopper. React 19 owns all UI. JollyPixel engine owns 3D canvas. Koota owns game state. Yuka owns enemy AI. Capacitor targets mobile.
+
+## CURRENT STATE (2026-03-21)
+
+The game is PLAYABLE but needs React refactoring. Currently:
+- **src/main.ts** (989 lines) — monolithic entry point with ALL game logic. MUST BE DECOMPOSED into engine modules.
+- **src/app/** — React scaffolding (App.tsx, index.tsx) — NOT YET WIRED as entry point
+- **src/views/menu/MainMenuView.tsx** — 21st.dev-designed animated menu — NOT YET WIRED
+- **src/views/game/GameView.tsx** — canvas wrapper — references engine/GameEngine.ts which DOES NOT EXIST YET
+- **src/engine/types.ts** — shared engine types — DONE
+- Everything else (traits, content, generation, rendering, etc.) — WORKING
+
+## Active Plan
+
+**SEE: `docs/superpowers/plans/2026-03-21-react-refactor-and-completion.md`**
+
+14 tasks across 4 phases. Task 57 (decompose main.ts) is in progress.
 
 ## Quick Start
+
 ```bash
-npm install
-npm run dev          # Vite dev server at localhost:5173
-npm test             # Vitest (unit + browser tests)
-npm run lint         # ESLint with barrel export enforcement
-npm run typecheck    # TypeScript strict mode check
+pnpm install
+pnpm dev                  # Vite 8 dev server at localhost:5173
+pnpm test                 # Vitest (unit tests, 128 passing)
+pnpm run lint             # Biome 2.4 check
+pnpm run typecheck        # TypeScript strict mode
 ```
 
-## Architecture Invariants
-1. **Barrel exports only.** Every domain (`src/<domain>/`) has an `index.ts`. Cross-domain imports MUST use the barrel. Never import from `src/systems/combat/DamageCalculator.ts` — import from `src/systems/combat/`.
-2. **Koota owns state.** All game entity data lives in Koota traits. Yuka reads/writes via the AIBridge. JollyPixel Actors read via RenderSyncBehavior.
-3. **Content is JSON.** Biomes, enemies, weapons, bosses, items are JSON files in `src/content/`. Validated by Zod schemas at build time and runtime.
-4. **Pure generation functions.** Everything in `src/generation/` is deterministic — same seed, same output. No side effects.
-5. **Tests required.** Every barrel-exported public API must have tests. Run `npm test` before committing.
+## Architecture
 
-## Domain Map
-| Domain | Role | Barrel |
-|--------|------|--------|
-| `src/traits/` | Koota trait definitions | `src/traits/index.ts` |
-| `src/relations/` | Koota relation definitions | `src/relations/index.ts` |
-| `src/input/` | Platform input → Koota traits | `src/input/index.ts` |
-| `src/systems/` | Game logic (Koota queries) | `src/systems/index.ts` |
-| `src/ai/` | Yuka integration + bridge | `src/ai/index.ts` |
-| `src/generation/` | Procedural island generation | `src/generation/index.ts` |
-| `src/content/` | JSON content + Zod schemas | `src/content/index.ts` |
-| `src/behaviors/` | JollyPixel ActorComponents | `src/behaviors/index.ts` |
-| `src/ui/` | HUD, menus, Tome overlay | `src/ui/index.ts` |
-| `src/scenes/` | Game state FSM | `src/scenes/index.ts` |
-| `src/rendering/` | Visual effects | `src/rendering/index.ts` |
-| `src/persistence/` | SQLite save/load | `src/persistence/index.ts` |
-| `src/shared/` | Types, constants, EventBus | `src/shared/index.ts` |
+### Layer Model
+1. **React 19** — all UI (menu, HUD, overlays, modals). Framer Motion for animations. Tailwind CSS 4.
+2. **JollyPixel** — 3D rendering (VoxelRenderer, Camera3DControls, Runtime). Owns the canvas via React ref.
+3. **Koota** — ECS state (traits, relations, queries). Single source of truth for all game entity data.
+4. **Yuka** — AI (Vehicle, SteeringBehavior, StateMachine). Drives enemy movement/combat decisions.
+5. **Rapier3D** — Physics. Passed to VoxelRenderer for auto-generated terrain colliders.
+6. **Capacitor** — Cross-platform (web, iOS, Android). SQLite for persistence.
 
-## Module Contract
-Every `index.ts` barrel must have this JSDoc header:
+### Package Structure (target — migration in progress)
+```
+src/
+├── app/              React app entry (App.tsx, index.tsx)
+├── views/            React view components (menu, game, hub)
+├── components/       React UI components (hud, modals, ui)
+├── hooks/            React hooks (useGameState, useGameEvents)
+├── engine/           Game engine modules (terrain, enemies, combat, camera)
+│   ├── types.ts      Shared engine types
+│   └── GameEngine.ts Orchestrator: initGame(canvas, config)
+├── traits/           Koota trait definitions
+├── relations/        Koota relation definitions
+├── systems/          Koota query-based systems
+├── ai/               Yuka AI bridge + FSM states
+├── generation/       Procedural generation (pure functions)
+├── content/          JSON game content + Zod schemas
+├── rendering/        Visual effects (particles, weather, day/night, tileset)
+├── input/            Input system (ActionMap, devices, mobile controls)
+├── audio/            Web Audio API procedural sounds
+├── persistence/      SQLite save/load
+├── platform/         Capacitor platform bridge
+├── shared/           Cross-cutting types, constants, EventBus
+└── main.ts           CURRENT monolith (will become React mount only)
+```
+
+### Key Integration Pattern
+
 ```typescript
-/**
- * @module <domain-name>
- * @role <singular responsibility>
- * @input <what it consumes>
- * @output <what it produces>
- * @depends <other domains imported>
- * @tested <test file>
- */
+// React mounts the canvas and passes it to the engine:
+// src/views/game/GameView.tsx
+const canvasRef = useRef<HTMLCanvasElement>(null);
+useEffect(() => {
+  import('../engine/GameEngine').then(({ initGame }) => {
+    initGame(canvasRef.current!, config);
+  });
+}, []);
+
+// Engine creates JollyPixel Runtime on the canvas:
+// src/engine/GameEngine.ts
+export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfig) {
+  const runtime = new Runtime(canvas);
+  const voxelMap = jpWorld.createActor('terrain').addComponentAndGet(VoxelRenderer, { ... });
+  // ... generate terrain, spawn enemies, wire combat, etc.
+}
 ```
+
+### JollyPixel Usage (CORRECT patterns)
+
+```typescript
+// Create actors via jpWorld.createActor()
+const terrainActor = jpWorld.createActor('terrain');
+
+// VoxelRenderer as ActorComponent with Rapier
+const voxelMap = terrainActor.addComponentAndGet(VoxelRenderer, {
+  chunkSize: 16, layers: ['Ground'], blocks: blockDefs,
+  rapier: { api: RAPIER as never, world: rapierWorld as never },
+  material: 'lambert',
+});
+
+// Load tileset via VoxelRenderer's TilesetManager
+voxelMap.tilesetManager.registerTexture(def, texture);
+
+// Place voxels
+voxelMap.setVoxel('Ground', { position: { x, y, z }, blockId: 1 });
+
+// Camera via Camera3DControls (built-in FPS camera)
+const cameraCtrl = jpWorld.createActor('camera').addComponentAndGet(Camera3DControls, { speed: 6 });
+
+// Get Three.js scene from JollyPixel
+const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
+
+// Physics step on fixed update
+(jpWorld as any).on('beforeFixedUpdate', () => rapierWorld.step());
+
+// Game loop on variable update
+(jpWorld as any).on('beforeUpdate', (dt: number) => { ... });
+```
+
+### Reference Codebases
+- **JollyPixel:** `/Users/jbogaty/src/reference-codebases/editor`
+  - VoxelRenderer examples: `packages/voxel-renderer/examples/scripts/`
+  - Engine API: `packages/engine/src/`
+  - Runtime: `packages/runtime/src/Runtime.ts`
+- **Koota:** `/Users/jbogaty/src/reference-codebases/koota`
+- **Yuka:** `/Users/jbogaty/src/reference-codebases/yuka`
+
+### Asset Library
+- **Location:** `/Volumes/home/assets` (SMB share, must be mounted)
+- **3DLowPoly:** Kenney/Quaternius — modern low-poly GLBs
+- **3DPSX:** PSX-style retro assets — tools, weapons, characters
+- **MCP tools:** `search_assets`, `copy_asset`, `get_asset_info`
 
 ## Testing
-```bash
-npm test                          # All tests
-npm run test:unit                 # Unit only (node)
-npm run test:browser              # Browser only (playwright)
-npx vitest src/generation/        # Single domain
-```
 
-## Key Libraries
-- **JollyPixel** — `/Users/jbogaty/src/reference-codebases/editor` (engine, runtime, voxel-renderer)
-- **Koota** — `/Users/jbogaty/src/reference-codebases/koota` (ECS state)
-- **Yuka** — `/Users/jbogaty/src/reference-codebases/yuka` (AI: steering, FSM, goals, perception)
+- **Unit tests:** `pnpm test` — Vitest in Node, 128 tests passing
+- **Browser tests:** `pnpm test:browser` — NOT YET CONFIGURED (Task 61)
+- **No node mocks for Three.js/DOM** — use browser tests instead
+- **Content validation:** Zod schemas validate all JSON at import time
+
+## DO NOT
+
+- Write mock-heavy unit tests for rendering/DOM code. Use browser tests.
+- Silently catch errors. Show visible error modals.
+- Import across domain barrels (e.g., `from '../systems/combat/DamageCalculator'`).
+- Use `innerHTML`. Use safe DOM methods or React components.
+- Bypass JollyPixel APIs with raw Three.js. Use VoxelRenderer, Camera3DControls, etc.
+- Create stubs, placeholders, or "follow-up" comments. Implement fully or don't start.

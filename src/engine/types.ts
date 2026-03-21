@@ -1,0 +1,58 @@
+/**
+ * @module engine/types
+ * @role Shared types for engine modules
+ */
+import type * as THREE from 'three';
+import type { Vehicle } from 'yuka';
+
+/** Surface height lookup function */
+export type SurfaceHeightFn = (x: number, z: number) => number;
+
+/** Enemy runtime state */
+export interface EnemyState {
+  mesh: THREE.Mesh;
+  vehicle: Vehicle;
+  health: number;
+  attackCooldown: number;
+}
+
+/** Boss runtime state */
+export interface BossState {
+  mesh: THREE.Mesh;
+  vehicle: Vehicle;
+  health: number;
+  maxHealth: number;
+  attackCooldown: number;
+  phase: number;
+  defeated: boolean;
+}
+
+/** Game configuration from menu */
+export interface GameStartConfig {
+  biome: string;
+  seed: string;
+}
+
+/** Engine state exposed to React via polling */
+export interface EngineState {
+  playerHealth: number;
+  maxHealth: number;
+  enemyCount: number;
+  biomeName: string;
+  bossNearby: boolean;
+  bossHealthPct: number;
+  bossPhase: number;
+  paused: boolean;
+  phase: 'playing' | 'dead' | 'victory' | 'paused';
+}
+
+/** Events the engine can emit to React */
+export type EngineEvent =
+  | { type: 'playerDamaged'; amount: number }
+  | { type: 'enemyKilled'; position: { x: number; y: number; z: number } }
+  | { type: 'bossPhaseChange'; phase: number }
+  | { type: 'bossDefeated' }
+  | { type: 'playerDied' }
+  | { type: 'lootPickup'; itemType: string };
+
+export type EngineEventListener = (event: EngineEvent) => void;
