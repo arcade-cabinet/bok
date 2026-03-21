@@ -311,29 +311,54 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
           {/* Corner point = 280,280. Arc from (280,80) to (80,280). */}
           {/* 4 segments split by two lines: corner→arc-midpoint and the two edges */}
 
-          {/* Segment 1: JUMP — top-right wedge (280,80 arc to ~180,180 diagonal, corner) */}
-          <path d="M 280 280 L 280 80 A 200 200 0 0 0 139 139 Z"
+          {/* 4 segments splitting the quarter-circle into equal wedges.
+              Corner = 280,280. Arc radius 200. Arc from 270° (top) to 180° (left).
+              Quarter-points on arc at 270°, 247.5°, 225°, 202.5°, 180°.
+              Segment edges radiate from corner (280,280) to these arc points. */}
+
+          {/* Arc quarter-points (angles measured from center at 280,280): */}
+          {/* 270° = (280, 80)  — top */}
+          {/* 247.5° = (280 + cos(247.5°)*200, 280 + sin(247.5°)*200) = (280-76.5, 280-184.8) = (203.5, 95.2) */}
+          {/* 225° = (280 + cos(225°)*200, 280 + sin(225°)*200) = (280-141.4, 280-141.4) = (138.6, 138.6) — diagonal */}
+          {/* 202.5° = (280 + cos(202.5°)*200, 280 + sin(202.5°)*200) = (280-184.8, 280-76.5) = (95.2, 203.5) */}
+          {/* 180° = (80, 280) — left */}
+
+          {/* Segment 1: JUMP — top wedge */}
+          <path d="M 280 280 L 280 80 A 200 200 0 0 0 203.5 95.2 Z"
             fill={activeAction === 'jump' ? 'url(#seg-pressed)' : 'url(#seg-rest-1)'}
-            stroke="#c4a572" strokeWidth="1.5" opacity="0.9"
+            stroke="#c4a572" strokeWidth="1.2" opacity="0.9"
             filter={activeAction === 'jump' ? 'url(#pressed-shadow)' : undefined}
             style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
             onTouchStart={(e: any) => onActionTap('jump', e)} />
 
-          {/* Segment 2: ATTACK — mid-right wedge (diagonal to right edge) */}
-          {/* Actually let's do proper 4-way split along the two diagonals of the quarter */}
-          {/* Segment 2: ATTACK — right side between diagonal and bottom-right */}
-          <path d="M 280 280 L 139 139 A 200 200 0 0 0 80 280 Z"
+          {/* Segment 2: ATTACK — upper-middle wedge */}
+          <path d="M 280 280 L 203.5 95.2 A 200 200 0 0 0 138.6 138.6 Z"
             fill={activeAction === 'attack' ? 'url(#seg-pressed)' : 'url(#seg-rest-2)'}
-            stroke="#c4a572" strokeWidth="1.5" opacity="0.9"
+            stroke="#c4a572" strokeWidth="1.2" opacity="0.9"
             filter={activeAction === 'attack' ? 'url(#pressed-shadow)' : undefined}
             style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
             onTouchStart={(e: any) => onActionTap('attack', e)} />
 
-          {/* We need 4 segments, but a quarter circle only naturally splits into 2 along the diagonal.
-              Split each half again with a second line from corner to arc quarter-points. */}
+          {/* Segment 3: DEFEND — lower-middle wedge */}
+          <path d="M 280 280 L 138.6 138.6 A 200 200 0 0 0 95.2 203.5 Z"
+            fill={activeAction === 'defend' ? 'url(#seg-pressed)' : 'url(#seg-rest-3)'}
+            stroke="#c4a572" strokeWidth="1.2" opacity="0.9"
+            filter={activeAction === 'defend' ? 'url(#pressed-shadow)' : undefined}
+            style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
+            onTouchStart={(e: any) => onActionTap('defend', e)} />
 
-          {/* Filigree divider — main diagonal */}
-          <line x1="280" y1="280" x2="139" y2="139" stroke="#c4a572" strokeWidth="2" opacity="0.7" />
+          {/* Segment 4: CROUCH — bottom wedge */}
+          <path d="M 280 280 L 95.2 203.5 A 200 200 0 0 0 80 280 Z"
+            fill={activeAction === 'crouch' ? 'url(#seg-pressed)' : 'url(#seg-rest-4)'}
+            stroke="#c4a572" strokeWidth="1.2" opacity="0.9"
+            filter={activeAction === 'crouch' ? 'url(#pressed-shadow)' : undefined}
+            style={{ pointerEvents: 'auto', cursor: 'pointer', touchAction: 'none' }}
+            onTouchStart={(e: any) => onActionTap('crouch', e)} />
+
+          {/* Gold filigree divider lines from corner to each arc quarter-point */}
+          <line x1="280" y1="280" x2="203.5" y2="95.2" stroke="#c4a572" strokeWidth="1.5" opacity="0.6" />
+          <line x1="280" y1="280" x2="138.6" y2="138.6" stroke="#c4a572" strokeWidth="2" opacity="0.7" />
+          <line x1="280" y1="280" x2="95.2" y2="203.5" stroke="#c4a572" strokeWidth="1.5" opacity="0.6" />
 
           {/* Gold outer arc */}
           <path d="M 280 80 A 200 200 0 0 0 80 280" fill="none" stroke="#c4a572" strokeWidth="2.5" opacity="0.7" />
@@ -362,18 +387,30 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
           <circle cx="95" cy="200" r="2" fill="#c4a572" opacity="0.3" />
         </svg>
 
-        {/* Icon overlays for segments — positioned in center of each wedge */}
-        {/* Jump icon — top-right wedge center */}
+        {/* Icon overlays — centered in each wedge, pointer-events-none */}
+        {/* Jump — top wedge */}
         <div className="absolute flex items-center justify-center pointer-events-none"
-          style={{ right: 20, bottom: 180, width: 40, height: 40 }}>
-          <ArrowUp className={`w-5 h-5 ${activeAction === 'jump' ? 'text-amber-100' : 'text-amber-400/50'}`}
-            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+          style={{ right: 10, bottom: 195, width: 30, height: 30 }}>
+          <ArrowUp className={`w-4 h-4 transition-colors duration-100 ${activeAction === 'jump' ? 'text-amber-100' : 'text-amber-400/40'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }} />
         </div>
-        {/* Attack icon — bottom-left wedge center */}
+        {/* Attack — upper-mid wedge */}
         <div className="absolute flex items-center justify-center pointer-events-none"
-          style={{ right: 160, bottom: 30, width: 40, height: 40 }}>
-          <Sword className={`w-5 h-5 ${activeAction === 'attack' ? 'text-amber-100' : 'text-amber-400/50'}`}
-            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
+          style={{ right: 65, bottom: 180, width: 30, height: 30 }}>
+          <Sword className={`w-4 h-4 transition-colors duration-100 ${activeAction === 'attack' ? 'text-amber-100' : 'text-amber-400/40'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }} />
+        </div>
+        {/* Defend — lower-mid wedge */}
+        <div className="absolute flex items-center justify-center pointer-events-none"
+          style={{ right: 150, bottom: 100, width: 30, height: 30 }}>
+          <Shield className={`w-4 h-4 transition-colors duration-100 ${activeAction === 'defend' ? 'text-amber-100' : 'text-amber-400/40'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }} />
+        </div>
+        {/* Crouch — bottom wedge */}
+        <div className="absolute flex items-center justify-center pointer-events-none"
+          style={{ right: 155, bottom: 15, width: 30, height: 30 }}>
+          <ArrowDown className={`w-4 h-4 transition-colors duration-100 ${activeAction === 'crouch' ? 'text-amber-100' : 'text-amber-400/40'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.9))' }} />
         </div>
 
         {/* Camera joystick — at the curved edge */}
