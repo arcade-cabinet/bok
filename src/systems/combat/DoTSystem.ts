@@ -20,7 +20,7 @@ export function dotSystem(world: World, dt: number): void {
 
     // Calculate how many ticks occurred in this frame
     // We track progress by checking if we've crossed a tick boundary
-    const prevElapsed = (dot.remainingDuration - newDuration);
+    const prevElapsed = dot.remainingDuration - newDuration;
     if (prevElapsed >= dot.tickInterval || newDuration <= 0) {
       // Apply one tick of damage
       const health = entity.get(Health)!;

@@ -6,6 +6,7 @@
  * @depends traits, @dimforge/rapier3d
  * @tested MovementSystem.test.ts
  */
+
+export { CollisionResolver } from './CollisionResolver.ts';
 export { MovementSystem } from './MovementSystem.ts';
 export { PhysicsWorld } from './PhysicsWorld.ts';
-export { CollisionResolver } from './CollisionResolver.ts';

@@ -15,30 +15,30 @@ const ROWS = 3;
 
 interface BlockColor {
   base: string;
-  noise?: number;   // 0-1 noise intensity
-  lines?: boolean;  // vertical grain lines (wood)
-  dots?: boolean;   // random dots (stone, dirt)
-  blend?: string;   // secondary color for variation
+  noise?: number; // 0-1 noise intensity
+  lines?: boolean; // vertical grain lines (wood)
+  dots?: boolean; // random dots (stone, dirt)
+  blend?: string; // secondary color for variation
 }
 
 const TILE_DEFS: BlockColor[][] = [
   // col 0
   [
-    { base: '#8B6914', noise: 0.15, lines: true },           // (0,0) wood side
-    { base: '#8B5E3C', noise: 0.2, dots: true },              // (0,1) dirt
-    { base: '#4CAF50', noise: 0.15, blend: '#66BB6A' },       // (0,2) grass top
+    { base: '#8B6914', noise: 0.15, lines: true }, // (0,0) wood side
+    { base: '#8B5E3C', noise: 0.2, dots: true }, // (0,1) dirt
+    { base: '#4CAF50', noise: 0.15, blend: '#66BB6A' }, // (0,2) grass top
   ],
   // col 1
   [
-    { base: '#A0782C', noise: 0.1 },                           // (1,0) wood top (ring pattern)
-    { base: '#2E7D32', noise: 0.2, blend: '#388E3C' },        // (1,1) leaves
-    { base: '#2196F3', noise: 0.1, blend: '#42A5F5' },        // (1,2) water
+    { base: '#A0782C', noise: 0.1 }, // (1,0) wood top (ring pattern)
+    { base: '#2E7D32', noise: 0.2, blend: '#388E3C' }, // (1,1) leaves
+    { base: '#2196F3', noise: 0.1, blend: '#42A5F5' }, // (1,2) water
   ],
   // col 2
   [
-    { base: '#757575', noise: 0.2, dots: true },               // (2,0) stone
-    { base: '#D4A44C', noise: 0.15 },                          // (2,1) sand (unused row mismatch — see below)
-    { base: '#9E9E9E', noise: 0.1, dots: true },               // (2,2) stone brick
+    { base: '#757575', noise: 0.2, dots: true }, // (2,0) stone
+    { base: '#D4A44C', noise: 0.15 }, // (2,1) sand (unused row mismatch — see below)
+    { base: '#9E9E9E', noise: 0.1, dots: true }, // (2,2) stone brick
   ],
 ];
 
@@ -129,13 +129,13 @@ export function generateTileset(): { canvas: HTMLCanvasElement; dataUrl: string 
  * Use these in BlockDefinition.faceTextures / defaultTexture.
  */
 export const TILES = {
-  WOOD_SIDE:    { tilesetId: 'game', col: 0, row: 0 },
-  DIRT:         { tilesetId: 'game', col: 0, row: 1 },
-  GRASS_TOP:    { tilesetId: 'game', col: 0, row: 2 },
-  WOOD_TOP:     { tilesetId: 'game', col: 1, row: 0 },
-  LEAVES:       { tilesetId: 'game', col: 1, row: 1 },
-  WATER:        { tilesetId: 'game', col: 1, row: 2 },
-  STONE:        { tilesetId: 'game', col: 2, row: 0 },
-  SAND:         { tilesetId: 'game', col: 2, row: 1 },
-  STONE_BRICK:  { tilesetId: 'game', col: 2, row: 2 },
+  WOOD_SIDE: { tilesetId: 'game', col: 0, row: 0 },
+  DIRT: { tilesetId: 'game', col: 0, row: 1 },
+  GRASS_TOP: { tilesetId: 'game', col: 0, row: 2 },
+  WOOD_TOP: { tilesetId: 'game', col: 1, row: 0 },
+  LEAVES: { tilesetId: 'game', col: 1, row: 1 },
+  WATER: { tilesetId: 'game', col: 1, row: 2 },
+  STONE: { tilesetId: 'game', col: 2, row: 0 },
+  SAND: { tilesetId: 'game', col: 2, row: 1 },
+  STONE_BRICK: { tilesetId: 'game', col: 2, row: 2 },
 } as const;

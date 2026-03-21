@@ -6,16 +6,50 @@ const BROWN = '#8b5a2b';
 const FONT = '"Cormorant Garamond", Georgia, serif';
 
 const ADJECTIVES = [
-  'Brave', 'Silent', 'Ancient', 'Crimson', 'Frozen', 'Golden', 'Hollow',
-  'Iron', 'Jade', 'Lost', 'Mystic', 'Noble', 'Obsidian', 'Pale',
-  'Raging', 'Shadow', 'Thorned', 'Veiled', 'Wicked', 'Zealous',
+  'Brave',
+  'Silent',
+  'Ancient',
+  'Crimson',
+  'Frozen',
+  'Golden',
+  'Hollow',
+  'Iron',
+  'Jade',
+  'Lost',
+  'Mystic',
+  'Noble',
+  'Obsidian',
+  'Pale',
+  'Raging',
+  'Shadow',
+  'Thorned',
+  'Veiled',
+  'Wicked',
+  'Zealous',
 ];
 
 const NOUNS = [
-  'Archipelago', 'Basin', 'Cove', 'Depths', 'Expanse', 'Fjord',
-  'Gulf', 'Harbor', 'Isles', 'Journey', 'Kingdom', 'Lagoon',
-  'Maelstrom', 'Narrows', 'Odyssey', 'Passage', 'Reef', 'Strait',
-  'Tideland', 'Voyage', 'Waters',
+  'Archipelago',
+  'Basin',
+  'Cove',
+  'Depths',
+  'Expanse',
+  'Fjord',
+  'Gulf',
+  'Harbor',
+  'Isles',
+  'Journey',
+  'Kingdom',
+  'Lagoon',
+  'Maelstrom',
+  'Narrows',
+  'Odyssey',
+  'Passage',
+  'Reef',
+  'Strait',
+  'Tideland',
+  'Voyage',
+  'Waters',
 ];
 
 function randomSeedPhrase(): string {
@@ -59,7 +93,7 @@ export class MainMenu {
 
     // Title
     const title = document.createElement('h1');
-    title.textContent = 'BOK: THE BUILDER\'S TOME';
+    title.textContent = "BOK: THE BUILDER'S TOME";
     Object.assign(title.style, {
       fontSize: '3rem',
       letterSpacing: '0.15em',
@@ -151,8 +185,12 @@ export class MainMenu {
       marginBottom: '1.5rem',
       transition: 'opacity 0.2s',
     });
-    startBtn.addEventListener('mouseenter', () => { startBtn.style.opacity = '0.85'; });
-    startBtn.addEventListener('mouseleave', () => { startBtn.style.opacity = '1'; });
+    startBtn.addEventListener('mouseenter', () => {
+      startBtn.style.opacity = '0.85';
+    });
+    startBtn.addEventListener('mouseleave', () => {
+      startBtn.style.opacity = '1';
+    });
     startBtn.addEventListener('click', () => {
       this.#onStart?.(this.#seedValue);
       this.hide();

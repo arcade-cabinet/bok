@@ -1,4 +1,4 @@
-import { State, type Vehicle, ArriveBehavior, Vector3 } from 'yuka';
+import { ArriveBehavior, State, Vector3, type Vehicle } from 'yuka';
 
 /** Range beyond which enemy stops attacking and chases again. */
 const CHASE_RANGE = 4;

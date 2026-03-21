@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createWorld, type World } from 'koota';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DamageOverTime, Health } from '../../traits/index';
 import { dotSystem } from './DoTSystem';
 

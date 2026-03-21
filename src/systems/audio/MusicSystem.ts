@@ -47,9 +47,16 @@ export class MusicSystem {
       this.#current.gain.gain.setValueAtTime(this.#current.gain.gain.value, now);
       this.#current.gain.gain.linearRampToValueAtTime(0, now + fadeDuration);
       const old = this.#current;
-      setTimeout(() => {
-        try { old.source.stop(); } catch { /* already stopped */ }
-      }, fadeDuration * 1000 + 100);
+      setTimeout(
+        () => {
+          try {
+            old.source.stop();
+          } catch {
+            /* already stopped */
+          }
+        },
+        fadeDuration * 1000 + 100,
+      );
     }
 
     // Fade in new
@@ -85,11 +92,22 @@ export class MusicSystem {
       const now = ctx.currentTime;
       old.gain.gain.setValueAtTime(old.gain.gain.value, now);
       old.gain.gain.linearRampToValueAtTime(0, now + fadeDuration);
-      setTimeout(() => {
-        try { old.source.stop(); } catch { /* already stopped */ }
-      }, fadeDuration * 1000 + 100);
+      setTimeout(
+        () => {
+          try {
+            old.source.stop();
+          } catch {
+            /* already stopped */
+          }
+        },
+        fadeDuration * 1000 + 100,
+      );
     } else {
-      try { old.source.stop(); } catch { /* already stopped */ }
+      try {
+        old.source.stop();
+      } catch {
+        /* already stopped */
+      }
     }
   }
 

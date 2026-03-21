@@ -133,8 +133,12 @@ export class IslandSelectScene extends Scene {
           this.#selectedBiome = card.biomeId;
           this.#director.transition('sailing');
         });
-        el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.03)'; });
-        el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
+        el.addEventListener('mouseenter', () => {
+          el.style.transform = 'scale(1.03)';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.transform = 'scale(1)';
+        });
       }
 
       grid.appendChild(el);

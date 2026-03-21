@@ -1,12 +1,7 @@
 import * as THREE from 'three';
 
 /** Supported particle effect types. */
-export type ParticleType =
-  | 'blockBreak'
-  | 'enemyDeath'
-  | 'sprintDust'
-  | 'ambient'
-  | 'hit';
+export type ParticleType = 'blockBreak' | 'enemyDeath' | 'sprintDust' | 'ambient' | 'hit';
 
 /** Internal state for a single particle. */
 interface Particle {
@@ -43,23 +38,11 @@ export class ParticleSystem {
     // Override material to use instance color
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <color_pars_vertex>',
-          'attribute vec3 instanceColor;\nvarying vec3 vInstanceColor;',
-        )
-        .replace(
-          '#include <color_vertex>',
-          'vInstanceColor = instanceColor;',
-        );
+        .replace('#include <color_pars_vertex>', 'attribute vec3 instanceColor;\nvarying vec3 vInstanceColor;')
+        .replace('#include <color_vertex>', 'vInstanceColor = instanceColor;');
       shader.fragmentShader = shader.fragmentShader
-        .replace(
-          '#include <color_pars_fragment>',
-          'varying vec3 vInstanceColor;',
-        )
-        .replace(
-          '#include <color_fragment>',
-          'diffuseColor.rgb *= vInstanceColor;',
-        );
+        .replace('#include <color_pars_fragment>', 'varying vec3 vInstanceColor;')
+        .replace('#include <color_fragment>', 'diffuseColor.rgb *= vInstanceColor;');
     };
 
     this.#mesh = new THREE.InstancedMesh(geometry, material, MAX_PARTICLES);

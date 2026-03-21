@@ -70,12 +70,14 @@ export const EnemyConfigSchema = z.object({
   damage: z.number().positive(),
   attackPattern: z.string(),
   attacks: z.array(AttackPatternSchema).min(1),
-  drops: z.array(z.object({
-    itemId: z.string(),
-    chance: z.number().min(0).max(1),
-    minAmount: z.number().int().min(1).default(1),
-    maxAmount: z.number().int().min(1).default(1),
-  })),
+  drops: z.array(
+    z.object({
+      itemId: z.string(),
+      chance: z.number().min(0).max(1),
+      minAmount: z.number().int().min(1).default(1),
+      maxAmount: z.number().int().min(1).default(1),
+    }),
+  ),
   special: z.string().optional(),
   model: z.string().optional(),
 });

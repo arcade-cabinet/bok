@@ -7,5 +7,5 @@
  * @tested EnemySpawner.test.ts
  */
 export { EnemySpawner, type SpawnedEnemy } from './EnemySpawner.ts';
-export { LootSpawner, type SpawnedChest } from './LootSpawner.ts';
 export { IslandPopulator, type PopulatedIsland } from './IslandPopulator.ts';
+export { LootSpawner, type SpawnedChest } from './LootSpawner.ts';

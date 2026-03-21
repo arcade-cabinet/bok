@@ -5,7 +5,8 @@
  * @output DOM overlays with parchment styling and Cormorant Garamond typography
  * @depends scenes (SceneDirector)
  */
+
+export { DeathScreen, type DeathStats } from './DeathScreen.ts';
 export { MainMenu } from './MainMenu.ts';
 export { PauseMenu } from './PauseMenu.ts';
-export { DeathScreen, type DeathStats } from './DeathScreen.ts';
 export { VictoryScreen, type VictoryStats } from './VictoryScreen.ts';

@@ -94,8 +94,12 @@ export class DeathScreen {
       cursor: 'pointer',
       transition: 'opacity 0.2s',
     });
-    continueBtn.addEventListener('mouseenter', () => { continueBtn.style.opacity = '0.85'; });
-    continueBtn.addEventListener('mouseleave', () => { continueBtn.style.opacity = '1'; });
+    continueBtn.addEventListener('mouseenter', () => {
+      continueBtn.style.opacity = '0.85';
+    });
+    continueBtn.addEventListener('mouseleave', () => {
+      continueBtn.style.opacity = '1';
+    });
     continueBtn.addEventListener('click', () => {
       this.hide();
       this.#director.transition('hub');

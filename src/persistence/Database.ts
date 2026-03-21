@@ -39,7 +39,7 @@ export class InMemoryDatabase implements DatabaseAdapter {
         let paramIdx = 0;
         row = valTokens.map((t) => {
           if (t === '?') return params[paramIdx++];
-          return isNaN(Number(t)) ? t : Number(t);
+          return Number.isNaN(Number(t)) ? t : Number(t);
         });
       } else {
         row = [...params];
@@ -76,10 +76,46 @@ export class InMemoryDatabase implements DatabaseAdapter {
   }
 
   async query<T>(sql: string, _params?: unknown[]): Promise<T[]> {
-    const selectMatch = sql.match(/SELECT .+ FROM (\w+)/);
-    if (selectMatch) {
-      return (this.#tables.get(selectMatch[1]) ?? []) as T[];
+    const selectMatch = sql.match(/SELECT .+ FROM (\w+)/i);
+    if (!selectMatch) return [];
+
+    const table = selectMatch[1];
+    const rows = [...((this.#tables.get(table) ?? []) as unknown[][])];
+    const orderMatch = sql.match(/ORDER BY\s+(\w+)\s+(ASC|DESC)/i);
+    if (orderMatch && table === 'runs') {
+      const col = orderMatch[1].toLowerCase();
+      const desc = orderMatch[2].toUpperCase() === 'DESC';
+      // Row shape: [id, seed, biomes, result, duration, timestamp]
+      const colIndex =
+        col === 'id'
+          ? 0
+          : col === 'seed'
+            ? 1
+            : col === 'biomes'
+              ? 2
+              : col === 'result'
+                ? 3
+                : col === 'duration'
+                  ? 4
+                  : col === 'timestamp'
+                    ? 5
+                    : -1;
+      if (colIndex >= 0) {
+        rows.sort((a, b) => {
+          const va = a[colIndex] as number | string;
+          const vb = b[colIndex] as number | string;
+          let cmp = 0;
+          if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+          else cmp = String(va).localeCompare(String(vb));
+          if (cmp !== 0) return desc ? -cmp : cmp;
+          // Stable order when timestamps collide (same millisecond)
+          const ida = a[0] as number;
+          const idb = b[0] as number;
+          return idb - ida;
+        });
+      }
     }
-    return [];
+
+    return rows as T[];
   }
 }

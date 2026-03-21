@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { SaveManager, type UnlockRecord, type RunRecord } from './index';
+import { describe, expect, it } from 'vitest';
+import { SaveManager } from './index';
 
 describe('SaveManager (mock)', () => {
   it('records an unlock', async () => {
@@ -16,6 +16,17 @@ describe('SaveManager (mock)', () => {
     const runs = await mgr.getRuns();
     expect(runs).toHaveLength(1);
     expect(runs[0].result).toBe('victory');
+  });
+
+  it('returns runs newest-first', async () => {
+    const mgr = await SaveManager.createInMemory();
+    await mgr.addRun({ seed: 'older', biomes: ['forest'], result: 'victory', duration: 1 });
+    await new Promise((r) => setTimeout(r, 2));
+    await mgr.addRun({ seed: 'newer', biomes: ['desert'], result: 'death', duration: 2 });
+    const runs = await mgr.getRuns();
+    expect(runs).toHaveLength(2);
+    expect(runs[0].seed).toBe('newer');
+    expect(runs[1].seed).toBe('older');
   });
 
   it('saves and loads game state', async () => {

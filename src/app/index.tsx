@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
 import { installGlobalErrorHandler } from '../platform/CapacitorBridge';
+import { App } from './App';
 import '../main.css';
 
 // Global error handling — no silent failures

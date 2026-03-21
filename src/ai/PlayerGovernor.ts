@@ -4,7 +4,7 @@
  * @input Player position, enemy list, stamina state
  * @output Suggested target index, threat level
  */
-import { GameEntity, Goal, CompositeGoal, GoalEvaluator, Think } from 'yuka';
+import { CompositeGoal, GameEntity, Goal, GoalEvaluator, Think } from 'yuka';
 import type { EnemyState } from '../engine/types';
 
 // --- Constants ---
@@ -82,12 +82,10 @@ class TargetNearestEnemyGoal extends Goal {
 // --- Goal: AssessThreat (composite) ---
 
 class AssessThreatGoal extends CompositeGoal {
-  private ctx: GovernorContext;
   targetGoal: TargetNearestEnemyGoal;
 
   constructor(owner: GameEntity, ctx: GovernorContext) {
     super(owner);
-    this.ctx = ctx;
     this.targetGoal = new TargetNearestEnemyGoal(owner, ctx);
   }
 
@@ -142,7 +140,7 @@ class CombatTargetEvaluator extends GoalEvaluator {
   setGoal(owner: GameEntity): void {
     const think = owner as unknown as Think;
     // Only add if not already present
-    if (!think.subgoals.some(g => g instanceof AssessThreatGoal)) {
+    if (!think.subgoals.some((g) => g instanceof AssessThreatGoal)) {
       think.clearSubgoals();
       think.addSubgoal(new AssessThreatGoal(owner, this.ctx));
     }
@@ -195,17 +193,23 @@ export interface PlayerGovernor {
   update(dt: number): GovernorOutput;
   /** Update the context with fresh game state. */
   setContext(
-    playerX: number, playerY: number, playerZ: number,
+    playerX: number,
+    playerY: number,
+    playerZ: number,
     enemies: EnemyState[],
-    stamina: number, staminaMax: number,
+    stamina: number,
+    staminaMax: number,
   ): void;
 }
 
 export function createPlayerGovernor(): PlayerGovernor {
   const ctx: GovernorContext = {
-    playerX: 0, playerY: 0, playerZ: 0,
+    playerX: 0,
+    playerY: 0,
+    playerZ: 0,
     enemies: [],
-    stamina: 100, staminaMax: 100,
+    stamina: 100,
+    staminaMax: 100,
   };
 
   const entity = new GovernorEntity();

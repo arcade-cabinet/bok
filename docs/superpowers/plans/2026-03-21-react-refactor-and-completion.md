@@ -1,5 +1,7 @@
 # Bok React Refactor & Game Completion Plan
 
+> **Production status:** For **what remains to ship a production game**, use the living checklist: [`docs/PRODUCTION_ROADMAP.md`](../../PRODUCTION_ROADMAP.md). This file is a **phase-oriented task list**; it may lag the repo.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Refactor Bok from a 989-line monolithic main.ts into a React-anchored architecture with proper packages, decomposed engine modules, browser component tests, and all remaining game features implemented.
@@ -10,7 +12,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-03-20-bok-game-design.md`
 
-**Current state:** Playable game in monolithic main.ts. React scaffolding started (App.tsx, MainMenuView.tsx, GameView.tsx). 128 unit tests passing. 21st.dev main menu design ready.
+**Current state (as of 2026-03):** React is the entry point; `GameEngine.ts` and hub/game views are implemented; unit + browser tests exist. See `docs/PRODUCTION_ROADMAP.md` for gaps to production.
 
 ---
 

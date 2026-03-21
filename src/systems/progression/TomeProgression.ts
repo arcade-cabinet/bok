@@ -22,9 +22,7 @@ export class TomeProgression {
 
   async getUnlockedPages(): Promise<string[]> {
     const unlocks = await this.#save.getUnlocks();
-    return unlocks
-      .filter((u) => u.type === 'tome_page')
-      .map((u) => u.data.ability as string);
+    return unlocks.filter((u) => u.type === 'tome_page').map((u) => u.data.ability as string);
   }
 
   async isPageUnlocked(ability: string): Promise<boolean> {

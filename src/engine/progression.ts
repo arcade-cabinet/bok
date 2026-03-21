@@ -4,20 +4,25 @@
  * @input SaveManager instance (async, SQLite-backed)
  * @output trackBossKill, getUnlockedPages, recordRun, getRunHistory
  */
-import { SaveManager, type RunRecord } from '../persistence/index.ts';
-import { TomeProgression } from '../systems/progression/TomeProgression.ts';
+import type { RunRecord, SaveManager } from '../persistence/index.ts';
 import { RunManager } from '../systems/progression/RunManager.ts';
+import { TomeProgression } from '../systems/progression/TomeProgression.ts';
 
 export interface ProgressionSystem {
   trackBossKill: (bossId: string, tomeAbility: string) => Promise<void>;
   getUnlockedPages: () => Promise<string[]>;
-  recordRun: (seed: string, biome: string, result: 'victory' | 'death' | 'abandoned', duration: number) => Promise<void>;
+  recordRun: (
+    seed: string,
+    biome: string,
+    result: 'victory' | 'death' | 'abandoned',
+    duration: number,
+  ) => Promise<void>;
   getRunHistory: () => Promise<RunRecord[]>;
 }
 
 export function createProgression(save: SaveManager): ProgressionSystem {
   const tome = new TomeProgression(save);
-  const runs = new RunManager(save);
+  const _runs = new RunManager(save);
 
   return {
     async trackBossKill(bossId: string, tomeAbility: string): Promise<void> {
@@ -33,7 +38,12 @@ export function createProgression(save: SaveManager): ProgressionSystem {
       return tome.getUnlockedPages();
     },
 
-    async recordRun(seed: string, biome: string, result: 'victory' | 'death' | 'abandoned', duration: number): Promise<void> {
+    async recordRun(
+      seed: string,
+      biome: string,
+      result: 'victory' | 'death' | 'abandoned',
+      duration: number,
+    ): Promise<void> {
       await save.addRun({ seed, biomes: [biome], result, duration });
     },
 

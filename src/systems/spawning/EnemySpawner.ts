@@ -1,6 +1,6 @@
-import type { Vec3 } from '../../shared/types.ts';
-import type { EnemySpawn } from '../../generation/EnemyPlacer.ts';
 import type { EnemyConfig } from '../../content/types.ts';
+import type { EnemySpawn } from '../../generation/EnemyPlacer.ts';
+import type { Vec3 } from '../../shared/types.ts';
 
 /** Data for a spawned enemy, ready for Koota entity creation. */
 export interface SpawnedEnemy {
@@ -16,10 +16,7 @@ export interface SpawnedEnemy {
  * Produces SpawnedEnemy descriptors for Koota entity creation.
  */
 export class EnemySpawner {
-  static spawn(
-    spawns: EnemySpawn[],
-    configs: Map<string, EnemyConfig>,
-  ): SpawnedEnemy[] {
+  static spawn(spawns: EnemySpawn[], configs: Map<string, EnemyConfig>): SpawnedEnemy[] {
     const result: SpawnedEnemy[] = [];
 
     for (const sp of spawns) {

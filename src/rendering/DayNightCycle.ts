@@ -8,14 +8,14 @@ const CYCLE_DURATION = 240;
 
 /** Sky color keyframes mapped to normalized time (0–1). */
 const SKY_KEYFRAMES: Array<{ t: number; color: THREE.Color }> = [
-  { t: 0.0, color: new THREE.Color(0x0a0a2e) },  // Midnight
-  { t: 0.2, color: new THREE.Color(0x0a0a2e) },  // Late night
-  { t: 0.25, color: new THREE.Color(0x87ceeb) },  // Morning
-  { t: 0.4, color: new THREE.Color(0x4a90d9) },   // Midday
-  { t: 0.6, color: new THREE.Color(0x4a90d9) },   // Afternoon
-  { t: 0.75, color: new THREE.Color(0xff6b35) },   // Dusk
-  { t: 0.85, color: new THREE.Color(0x0a0a2e) },  // Night
-  { t: 1.0, color: new THREE.Color(0x0a0a2e) },   // Midnight (wraps)
+  { t: 0.0, color: new THREE.Color(0x0a0a2e) }, // Midnight
+  { t: 0.2, color: new THREE.Color(0x0a0a2e) }, // Late night
+  { t: 0.25, color: new THREE.Color(0x87ceeb) }, // Morning
+  { t: 0.4, color: new THREE.Color(0x4a90d9) }, // Midday
+  { t: 0.6, color: new THREE.Color(0x4a90d9) }, // Afternoon
+  { t: 0.75, color: new THREE.Color(0xff6b35) }, // Dusk
+  { t: 0.85, color: new THREE.Color(0x0a0a2e) }, // Night
+  { t: 1.0, color: new THREE.Color(0x0a0a2e) }, // Midnight (wraps)
 ];
 
 const STARFIELD_COUNT = 500;
@@ -125,18 +125,10 @@ export class DayNightCycle {
   #updateOrbits(): void {
     // Sun orbits: angle 0 = horizon (dawn), PI/2 = zenith (noon), PI = horizon (dusk)
     const sunAngle = this.#time * Math.PI * 2;
-    this.#sun.position.set(
-      Math.cos(sunAngle) * ORBIT_RADIUS,
-      Math.sin(sunAngle) * ORBIT_RADIUS,
-      0,
-    );
+    this.#sun.position.set(Math.cos(sunAngle) * ORBIT_RADIUS, Math.sin(sunAngle) * ORBIT_RADIUS, 0);
 
     // Moon is opposite the sun
-    this.#moon.position.set(
-      -Math.cos(sunAngle) * ORBIT_RADIUS,
-      -Math.sin(sunAngle) * ORBIT_RADIUS,
-      0,
-    );
+    this.#moon.position.set(-Math.cos(sunAngle) * ORBIT_RADIUS, -Math.sin(sunAngle) * ORBIT_RADIUS, 0);
 
     // Hide sun/moon when below horizon
     this.#sun.visible = this.#sun.position.y > -5;

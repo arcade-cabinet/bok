@@ -43,10 +43,12 @@ export class SaveManager {
   }
 
   async addUnlock(record: UnlockRecord): Promise<void> {
-    await this.#db.execute(
-      'INSERT OR REPLACE INTO unlocks (id, type, data, unlocked_at) VALUES (?, ?, ?, ?)',
-      [record.id, record.type, JSON.stringify(record.data), Date.now()]
-    );
+    await this.#db.execute('INSERT OR REPLACE INTO unlocks (id, type, data, unlocked_at) VALUES (?, ?, ?, ?)', [
+      record.id,
+      record.type,
+      JSON.stringify(record.data),
+      Date.now(),
+    ]);
   }
 
   async getUnlocks(): Promise<UnlockRecord[]> {
@@ -59,14 +61,17 @@ export class SaveManager {
   }
 
   async addRun(record: RunRecord): Promise<void> {
-    await this.#db.execute(
-      'INSERT INTO runs (seed, biomes, result, duration, timestamp) VALUES (?, ?, ?, ?, ?)',
-      [record.seed, JSON.stringify(record.biomes), record.result, record.duration, Date.now()]
-    );
+    await this.#db.execute('INSERT INTO runs (seed, biomes, result, duration, timestamp) VALUES (?, ?, ?, ?, ?)', [
+      record.seed,
+      JSON.stringify(record.biomes),
+      record.result,
+      record.duration,
+      Date.now(),
+    ]);
   }
 
   async getRuns(): Promise<RunRecord[]> {
-    const rows = await this.#db.query<unknown[]>('SELECT * FROM runs');
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM runs ORDER BY timestamp DESC');
     return rows.map((r) => ({
       seed: r[1] as string,
       biomes: JSON.parse(r[2] as string),
@@ -78,7 +83,7 @@ export class SaveManager {
   async saveState(state: GameState): Promise<void> {
     await this.#db.execute(
       'INSERT OR REPLACE INTO save_state (id, koota_snapshot, yuka_snapshot, scene, timestamp) VALUES (1, ?, ?, ?, ?)',
-      [JSON.stringify(state.koota), JSON.stringify(state.yuka), state.scene, Date.now()]
+      [JSON.stringify(state.koota), JSON.stringify(state.yuka), state.scene, Date.now()],
     );
   }
 

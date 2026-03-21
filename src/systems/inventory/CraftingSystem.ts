@@ -12,9 +12,7 @@ export interface Recipe {
  */
 export class CraftingSystem {
   static canCraft(recipe: Recipe, inventory: Inventory, holder: string): boolean {
-    return recipe.ingredients.every((ing) =>
-      inventory.hasItem(holder, ing.itemId, ing.amount),
-    );
+    return recipe.ingredients.every((ing) => inventory.hasItem(holder, ing.itemId, ing.amount));
   }
 
   static craft(recipe: Recipe, inventory: Inventory, holder: string): boolean {

@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { IslandGenerator } from './IslandGenerator';
+import { describe, expect, it } from 'vitest';
 import type { BiomeConfig } from '../content/index';
+import { IslandGenerator } from './IslandGenerator';
 
 const FOREST_BIOME: BiomeConfig = {
   id: 'forest',

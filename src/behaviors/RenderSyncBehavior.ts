@@ -1,6 +1,6 @@
 import { ActorComponent } from '@jolly-pixel/engine';
-import * as THREE from 'three';
 import type { Entity } from 'koota';
+import * as THREE from 'three';
 import { Position, Rotation } from '../traits/index.ts';
 
 /**

@@ -4,9 +4,7 @@
     "name": "Wooden Planks",
     "category": "basic",
     "tier": 1,
-    "ingredients": [
-      { "itemId": "wood", "amount": 5 }
-    ],
+    "ingredients": [{ "itemId": "wood", "amount": 5 }],
     "output": { "itemId": "wooden-planks", "amount": 4 }
   },
   {
@@ -14,9 +12,7 @@
     "name": "Stone Bricks",
     "category": "basic",
     "tier": 1,
-    "ingredients": [
-      { "itemId": "stone", "amount": 5 }
-    ],
+    "ingredients": [{ "itemId": "stone", "amount": 5 }],
     "output": { "itemId": "stone-bricks", "amount": 4 }
   },
   {
@@ -24,10 +20,7 @@
     "name": "Torches",
     "category": "basic",
     "tier": 1,
-    "ingredients": [
-      { "itemId": "wood", "amount": 1 },
-      { "itemId": "coal", "amount": 1 }
-    ],
+    "ingredients": [{ "itemId": "wood", "amount": 1 }, { "itemId": "coal", "amount": 1 }],
     "output": { "itemId": "torch", "amount": 4 }
   },
   {
@@ -35,10 +28,7 @@
     "name": "Iron Sword",
     "category": "weapon",
     "tier": 2,
-    "ingredients": [
-      { "itemId": "iron-ore", "amount": 10 },
-      { "itemId": "wood", "amount": 5 }
-    ],
+    "ingredients": [{ "itemId": "iron-ore", "amount": 10 }, { "itemId": "wood", "amount": 5 }],
     "output": { "itemId": "iron-sword", "amount": 1 }
   },
   {
@@ -46,10 +36,7 @@
     "name": "Fire Staff",
     "category": "weapon",
     "tier": 2,
-    "ingredients": [
-      { "itemId": "magma-crystal", "amount": 5 },
-      { "itemId": "wood", "amount": 3 }
-    ],
+    "ingredients": [{ "itemId": "magma-crystal", "amount": 5 }, { "itemId": "wood", "amount": 3 }],
     "output": { "itemId": "fire-staff", "amount": 1 }
   },
   {
@@ -57,10 +44,7 @@
     "name": "Health Potion",
     "category": "consumable",
     "tier": 1,
-    "ingredients": [
-      { "itemId": "herbs", "amount": 3 },
-      { "itemId": "water", "amount": 1 }
-    ],
+    "ingredients": [{ "itemId": "herbs", "amount": 3 }, { "itemId": "water", "amount": 1 }],
     "output": { "itemId": "health-potion", "amount": 1 }
   },
   {
@@ -68,10 +52,7 @@
     "name": "Stamina Elixir",
     "category": "consumable",
     "tier": 1,
-    "ingredients": [
-      { "itemId": "mushroom", "amount": 2 },
-      { "itemId": "honey", "amount": 1 }
-    ],
+    "ingredients": [{ "itemId": "mushroom", "amount": 2 }, { "itemId": "honey", "amount": 1 }],
     "output": { "itemId": "stamina-elixir", "amount": 1 }
   }
 ]

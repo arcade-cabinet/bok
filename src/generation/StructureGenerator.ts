@@ -1,6 +1,6 @@
 import type { Vec3 } from '../shared/index';
-import type { TerrainData } from './TerrainBuilder';
 import { PRNG } from './noise';
+import type { TerrainData } from './TerrainBuilder';
 
 export interface Structure {
   position: Vec3;
@@ -36,7 +36,7 @@ export class StructureGenerator {
         if (dist < 0.2) continue;
 
         // Avoid overlap with existing structures
-        const tooClose = structures.some(s => {
+        const tooClose = structures.some((s) => {
           const sdx = s.position.x - x;
           const sdz = s.position.z - z;
           return Math.sqrt(sdx * sdx + sdz * sdz) < 12;

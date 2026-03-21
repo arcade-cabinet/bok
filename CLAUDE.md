@@ -6,29 +6,37 @@ Voxel roguelike island-hopper. React 19 owns all UI. JollyPixel engine owns 3D c
 
 ## CURRENT STATE (2026-03-21)
 
-The game is PLAYABLE but needs React refactoring. Currently:
-- **src/main.ts** (989 lines) — monolithic entry point with ALL game logic. MUST BE DECOMPOSED into engine modules.
-- **src/app/** — React scaffolding (App.tsx, index.tsx) — NOT YET WIRED as entry point
-- **src/views/menu/MainMenuView.tsx** — 21st.dev-designed animated menu — NOT YET WIRED
-- **src/views/game/GameView.tsx** — canvas wrapper — references engine/GameEngine.ts which DOES NOT EXIST YET
-- **src/engine/types.ts** — shared engine types — DONE
-- Everything else (traits, content, generation, rendering, etc.) — WORKING
+The game is PLAYABLE with React as the entry point (`index.html` → `src/app/index.tsx`). The old monolithic `src/main.ts` is gone; gameplay is split between `src/engine/` (`GameEngine.ts` orchestrates terrain, combat, enemies, camera, audio) and remaining `src/scenes/` code where still used.
 
-## Active Plan
+- **src/app/** — Menu → hub → `GameView`; `useProgression` for meta hooks
+- **src/engine/GameEngine.ts** — `initGame(canvas, config)` — primary island loop
+- **src/views/hub/HubView.tsx** — Hub island (`createHub`)
+- **Planning docs** — `docs/superpowers/plans/*.md` checkboxes are not automatically synced with the repo; verify in code
+
+## Production checklist
+
+**SEE: `docs/PRODUCTION_ROADMAP.md`** — remaining work for a full production game (persistence, platform, content, QA, dual-stack convergence).
+
+## Active Plan (incremental)
 
 **SEE: `docs/superpowers/plans/2026-03-21-react-refactor-and-completion.md`**
 
-14 tasks across 4 phases. Task 57 (decompose main.ts) is in progress.
+Historical task breakdown — many items overlap with or are superseded by the production roadmap; validate against the codebase.
 
 ## Quick Start
 
 ```bash
 pnpm install
 pnpm dev                  # Vite 8 dev server at localhost:5173
-pnpm test                 # Vitest (unit tests, 128 passing)
+pnpm test                 # Vitest unit project (`src/**/*.test.ts`)
+pnpm test:browser         # Vitest browser project (`*.browser.test.tsx`)
 pnpm run lint             # Biome 2.4 check
 pnpm run typecheck        # TypeScript strict mode
 ```
+
+### Typography (offline)
+
+UI typefaces are **self-hosted** via `@fontsource/*` and imported in `src/fonts.css` using each family’s **full `index.css`** (all bundled weights/styles and Unicode subsets — not a Latin-only slice), plus **JetBrains Mono** for monospace. Vite emits hashed `.woff2`/`.woff` into `dist/assets/`; **no Google Fonts CDN** at runtime. System **Georgia** remains the fallback where inline styles request it.
 
 ## Architecture
 
@@ -62,7 +70,7 @@ src/
 ├── persistence/      SQLite save/load
 ├── platform/         Capacitor platform bridge
 ├── shared/           Cross-cutting types, constants, EventBus
-└── main.ts           CURRENT monolith (will become React mount only)
+└── scenes/           Legacy SceneDirector / IslandScene (parallel to React engine path)
 ```
 
 ### Key Integration Pattern

@@ -1,5 +1,9 @@
 # Architecture — Bok: The Builder's Tome
 
+## Shipping path (current)
+
+The **player-facing** build uses **React** (`src/app/index.tsx`) and **`GameEngine.initGame()`** for the island loop (`src/views/game/GameView.tsx`). A **second** integration path still exists under **`src/scenes/`** (`SceneDirector`, `IslandScene`, etc.) for legacy/tests — **long-term, these should converge** to one orchestration layer (see [docs/PRODUCTION_ROADMAP.md](docs/PRODUCTION_ROADMAP.md)).
+
 ## Three-Layer Integration
 
 ### Layer 1: Koota (State)

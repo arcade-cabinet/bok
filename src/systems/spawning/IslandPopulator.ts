@@ -1,5 +1,5 @@
-import type { IslandBlueprint } from '../../generation/IslandGenerator.ts';
 import type { EnemyConfig } from '../../content/types.ts';
+import type { IslandBlueprint } from '../../generation/IslandGenerator.ts';
 import { EnemySpawner, type SpawnedEnemy } from './EnemySpawner.ts';
 import { LootSpawner, type SpawnedChest } from './LootSpawner.ts';
 
@@ -14,10 +14,7 @@ export interface PopulatedIsland {
  * and LootSpawner for each chest position.
  */
 export class IslandPopulator {
-  static populate(
-    blueprint: IslandBlueprint,
-    enemyConfigs: Map<string, EnemyConfig>,
-  ): PopulatedIsland {
+  static populate(blueprint: IslandBlueprint, enemyConfigs: Map<string, EnemyConfig>): PopulatedIsland {
     const enemies = EnemySpawner.spawn(blueprint.enemySpawns, enemyConfigs);
     const chests = LootSpawner.spawn(blueprint.chestPositions);
 

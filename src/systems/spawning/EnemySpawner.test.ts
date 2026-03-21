@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { EnemySpawner, type SpawnedEnemy } from './EnemySpawner.ts';
-import type { EnemySpawn } from '../../generation/EnemyPlacer.ts';
+import { describe, expect, it } from 'vitest';
 import type { EnemyConfig } from '../../content/types.ts';
+import type { EnemySpawn } from '../../generation/EnemyPlacer.ts';
+import { EnemySpawner } from './EnemySpawner.ts';
 
 const SLIME_CONFIG: EnemyConfig = {
   id: 'slime',
@@ -27,9 +27,7 @@ describe('EnemySpawner', () => {
   });
 
   it('spawned enemy has correct position', () => {
-    const spawns: EnemySpawn[] = [
-      { position: { x: 10, y: 5, z: 20 }, enemyId: 'slime' },
-    ];
+    const spawns: EnemySpawn[] = [{ position: { x: 10, y: 5, z: 20 }, enemyId: 'slime' }];
     const configs = new Map<string, EnemyConfig>([['slime', SLIME_CONFIG]]);
 
     const [enemy] = EnemySpawner.spawn(spawns, configs);
@@ -37,9 +35,7 @@ describe('EnemySpawner', () => {
   });
 
   it('spawned enemy carries trait data from config', () => {
-    const spawns: EnemySpawn[] = [
-      { position: { x: 10, y: 5, z: 20 }, enemyId: 'slime' },
-    ];
+    const spawns: EnemySpawn[] = [{ position: { x: 10, y: 5, z: 20 }, enemyId: 'slime' }];
     const configs = new Map<string, EnemyConfig>([['slime', SLIME_CONFIG]]);
 
     const [enemy] = EnemySpawner.spawn(spawns, configs);
@@ -49,9 +45,7 @@ describe('EnemySpawner', () => {
   });
 
   it('skips enemies with unknown config', () => {
-    const spawns: EnemySpawn[] = [
-      { position: { x: 10, y: 5, z: 20 }, enemyId: 'unknown-monster' },
-    ];
+    const spawns: EnemySpawn[] = [{ position: { x: 10, y: 5, z: 20 }, enemyId: 'unknown-monster' }];
     const configs = new Map<string, EnemyConfig>();
 
     const result = EnemySpawner.spawn(spawns, configs);

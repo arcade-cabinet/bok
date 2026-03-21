@@ -6,20 +6,26 @@
  * @depends koota
  * @tested core.test.ts
  */
+
+export { ActorRef, AIMemory, AIState, BossType, EnemyType, Intent, YukaRef } from './ai.ts';
 export {
-  Position, Velocity, AngularVelocity, Rotation, Scale, Transform,
-  Health, Stamina,
-} from './core.ts';
-export {
-  AttackIntent, DodgeState, ParryState, Hittable, WeaponStats, ArmorStats,
-  DamageOverTime, Invincible, Knockback,
+  ArmorStats,
+  AttackIntent,
+  DamageOverTime,
+  DodgeState,
+  Hittable,
+  Invincible,
+  Knockback,
+  ParryState,
+  WeaponStats,
 } from './combat.ts';
+export { AngularVelocity, Health, Position, Rotation, Scale, Stamina, Transform, Velocity } from './core.ts';
 export {
-  AIState, YukaRef, ActorRef, AIMemory, Intent, EnemyType, BossType,
-} from './ai.ts';
-export {
-  IsPlayer, TomePages, RunGear, RunResources, MovementIntent, LookIntent,
+  IsPlayer,
+  LookIntent,
+  MovementIntent,
+  RunGear,
+  RunResources,
+  TomePages,
 } from './player.ts';
-export {
-  Time, GamePhase, IslandState,
-} from './world.ts';
+export { GamePhase, IslandState, Time } from './world.ts';

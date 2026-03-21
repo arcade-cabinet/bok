@@ -6,5 +6,6 @@
  * @depends traits, @jolly-pixel/engine
  * @tested (browser tests)
  */
-export { RenderSyncBehavior } from './RenderSyncBehavior.ts';
+
 export { PlayerCameraBehavior } from './PlayerCameraBehavior.ts';
+export { RenderSyncBehavior } from './RenderSyncBehavior.ts';

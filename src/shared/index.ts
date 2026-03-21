@@ -6,11 +6,19 @@
  * @depends None
  * @tested N/A (types + constants)
  */
-export type { Vec3, EntityId, GamePhaseName, BiomeId, ConfigId } from './types.ts';
+
 export {
-  PHYSICS_TICK_RATE, FIXED_TIMESTEP, MAX_DELTA,
-  CHUNK_SIZE, MAX_ISLAND_CHUNKS,
-  PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER, GRAVITY,
-  DODGE_DURATION, DODGE_IFRAMES, PARRY_WINDOW,
+  CHUNK_SIZE,
+  DODGE_DURATION,
+  DODGE_IFRAMES,
+  FIXED_TIMESTEP,
+  GRAVITY,
+  MAX_DELTA,
+  MAX_ISLAND_CHUNKS,
+  PARRY_WINDOW,
+  PHYSICS_TICK_RATE,
+  PLAYER_MOVE_SPEED,
+  PLAYER_SPRINT_MULTIPLIER,
 } from './constants.ts';
 export { EventBus } from './EventBus.ts';
+export type { BiomeId, ConfigId, EntityId, GamePhaseName, Vec3 } from './types.ts';

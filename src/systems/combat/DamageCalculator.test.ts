@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { calculateDamage, type DamageInput } from './DamageCalculator';
 
 describe('DamageCalculator', () => {
@@ -73,7 +73,7 @@ describe('DamageCalculator', () => {
   });
 
   it('floors fractional damage', () => {
-    const input: DamageInput = {
+    const _input: DamageInput = {
       weaponBaseDamage: 10,
       comboMultiplier: 1.3,
       critMultiplier: 1.0,

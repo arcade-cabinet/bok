@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { createWorld } from 'koota';
-import { ChildOf, Targeting, Contains } from './index';
-import { Position, Health, IsPlayer } from '../traits/index';
+import { describe, expect, it } from 'vitest';
+import { Position } from '../traits/index';
+import { ChildOf, Contains, Targeting } from './index';
 
 describe('Relations', () => {
   it('creates parent-child relationship', () => {
@@ -29,7 +29,7 @@ describe('Relations', () => {
     const item = world.spawn();
     inventory.add(Contains(item));
     inventory.set(Contains(item), { amount: 5 });
-    expect(inventory.get(Contains(item))!.amount).toBe(5);
+    expect(inventory.get(Contains(item))?.amount).toBe(5);
     world.destroy();
   });
 });

@@ -6,9 +6,16 @@
  */
 import * as THREE from 'three';
 
-import { playSwordSwing, playHitImpact, playPlayerHurt, playEnemyDeath, playBossPhase, playVictory } from '../audio/GameAudio.ts';
+import {
+  playBossPhase,
+  playEnemyDeath,
+  playHitImpact,
+  playPlayerHurt,
+  playSwordSwing,
+  playVictory,
+} from '../audio/GameAudio.ts';
 import { hapticImpact } from '../platform/CapacitorBridge.ts';
-import type { EnemyState, BossState, EngineEvent, EngineEventListener } from './types.ts';
+import type { BossState, EnemyState, EngineEventListener } from './types.ts';
 
 const ATTACK_RANGE = 2.5;
 const CONTACT_RANGE = 1.8;
@@ -103,7 +110,10 @@ export function createCombat(
         const dx = cameraPos.x - enemies[i].mesh.position.x;
         const dz = cameraPos.z - enemies[i].mesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestIdx = i;
+        }
       }
 
       if (closestIdx >= 0) {
@@ -142,7 +152,7 @@ export function createCombat(
 
     // Boss phase transitions
     if (!boss.defeated) {
-      const bossEntry = enemies.find(e => e.mesh === bossMesh);
+      const bossEntry = enemies.find((e) => e.mesh === bossMesh);
       if (bossEntry) {
         const pct = bossEntry.health / boss.maxHealth;
         if (pct <= 0.66 && boss.phase === 1) {
@@ -204,7 +214,9 @@ export function createCombat(
 
   return {
     state,
-    triggerAttack: () => { pendingAttack = true; },
+    triggerAttack: () => {
+      pendingAttack = true;
+    },
     update,
     cleanup: () => {
       for (const drop of state.lootDrops) scene.remove(drop.mesh);

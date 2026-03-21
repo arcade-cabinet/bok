@@ -8,4 +8,4 @@
  */
 export { AudioManager } from './AudioManager.ts';
 export { MusicSystem } from './MusicSystem.ts';
-export { SFXPlayer, type SFXOptions } from './SFXPlayer.ts';
+export { type SFXOptions, SFXPlayer } from './SFXPlayer.ts';

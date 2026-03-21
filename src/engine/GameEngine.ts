@@ -5,36 +5,34 @@
  * @output Running game with cleanup function
  */
 import RAPIER from '@dimforge/rapier3d';
-import { Runtime, loadRuntime } from '@jolly-pixel/runtime';
+import { loadRuntime, Runtime } from '@jolly-pixel/runtime';
 import { createWorld } from 'koota';
 import * as THREE from 'three';
-
-import { Time, GamePhase, MovementIntent, LookIntent, IslandState } from '../traits/index.ts';
-import { MAX_DELTA } from '../shared/index.ts';
-import { initPlatform } from '../platform/CapacitorBridge.ts';
+import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
+import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
-import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
+import { ContentRegistry } from '../content/index.ts';
 import { InputSystem } from '../input/index.ts';
 import { isMobileDevice } from '../input/MobileControls.ts';
+import { initPlatform } from '../platform/CapacitorBridge.ts';
 import { DayNightCycle } from '../rendering/index.ts';
-
-import { ContentRegistry } from '../content/index.ts';
-import { createTerrain } from './terrain.ts';
-import { loadModel } from './models.ts';
-import { spawnEnemies, updateEnemyAI } from './enemies.ts';
-import { createCombat } from './combat.ts';
+import { MAX_DELTA } from '../shared/index.ts';
+import { GamePhase, IslandState, LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import { createCamera } from './camera.ts';
-import { detectContext, getHeadBob } from './diegetic.ts';
+import { createCombat } from './combat.ts';
 import type { DiegeticContext } from './diegetic.ts';
-import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
-import type { GameStartConfig, EngineState, EngineEventListener } from './types.ts';
+import { detectContext, getHeadBob } from './diegetic.ts';
+import { spawnEnemies, updateEnemyAI } from './enemies.ts';
+import { loadModel } from './models.ts';
+import { createTerrain } from './terrain.ts';
+import type { EngineEventListener, EngineState, GameStartConfig } from './types.ts';
 
 export interface MobileInput {
-  moveX: number;   // -1 to 1 absolute
-  moveZ: number;   // -1 to 1 absolute
-  lookX: number;   // -1 to 1 absolute — continuous rotation rate
-  lookY: number;   // -1 to 1 absolute — continuous rotation rate
+  moveX: number; // -1 to 1 absolute
+  moveZ: number; // -1 to 1 absolute
+  lookX: number; // -1 to 1 absolute — continuous rotation rate
+  lookY: number; // -1 to 1 absolute — continuous rotation rate
   action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
 }
 
@@ -57,10 +55,7 @@ export interface GameInstance {
  * Initialize the full game on a canvas element.
  * Returns a GameInstance that React can interact with.
  */
-export async function initGame(
-  canvas: HTMLCanvasElement,
-  config: GameStartConfig,
-): Promise<GameInstance> {
+export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfig): Promise<GameInstance> {
   // Platform init (Capacitor status bar, orientation, etc.)
   await initPlatform();
 
@@ -100,9 +95,13 @@ export async function initGame(
   const terrain = createTerrain(jpWorld, rapierWorld, config.seed);
 
   // --- Enemies + Boss ---
-  const { enemies, boss, bossMesh, yukaManager, cleanup: cleanupEnemies } = await spawnEnemies(
-    scene, terrain.getSurfaceY, terrain.islandSize, config.seed,
-  );
+  const {
+    enemies,
+    boss,
+    bossMesh,
+    yukaManager,
+    cleanup: cleanupEnemies,
+  } = await spawnEnemies(scene, terrain.getSurfaceY, terrain.islandSize, config.seed);
 
   // --- Camera ---
   const cam = createCamera(jpWorld, terrain.getSurfaceY, terrain.islandSize);
@@ -133,9 +132,17 @@ export async function initGame(
 
   // --- Combat ---
   const eventListeners: EngineEventListener[] = [];
-  const combat = createCombat(scene, enemies, boss, bossMesh, (event) => {
-    for (const listener of eventListeners) listener(event);
-  }, bossConfig.id, bossConfig.tomePageDrop);
+  const combat = createCombat(
+    scene,
+    enemies,
+    boss,
+    bossMesh,
+    (event) => {
+      for (const listener of eventListeners) listener(event);
+    },
+    bossConfig.id,
+    bossConfig.tomePageDrop,
+  );
 
   // --- Player Governor (GOAP advisor) ---
   const governor = createPlayerGovernor();
@@ -182,13 +189,19 @@ export async function initGame(
     }
 
     // Player movement
-    let dirX = 0, dirZ = 0, sprinting = false;
+    let dirX = 0,
+      dirZ = 0,
+      sprinting = false;
     if (isMobile) {
       dirX = mobileInput.moveX;
       dirZ = mobileInput.moveZ;
     } else {
       const move = gameWorld.get(MovementIntent);
-      if (move) { dirX = move.dirX; dirZ = move.dirZ; sprinting = move.sprint; }
+      if (move) {
+        dirX = move.dirX;
+        dirZ = move.dirZ;
+        sprinting = move.sprint;
+      }
     }
 
     // Diegetic context + head bob
@@ -216,8 +229,12 @@ export async function initGame(
 
     // Player governor — update context and run GOAP evaluation
     governor.setContext(
-      cam.camera.position.x, cam.camera.position.y, cam.camera.position.z,
-      enemies, combat.state.playerHealth, combat.state.maxHealth,
+      cam.camera.position.x,
+      cam.camera.position.y,
+      cam.camera.position.z,
+      enemies,
+      combat.state.playerHealth,
+      combat.state.maxHealth,
     );
     lastGovernorOutput = governor.update(dt);
   });
@@ -239,27 +256,32 @@ export async function initGame(
       maxHealth: combat.state.maxHealth,
       enemyCount: enemies.length,
       biomeName: config.biome,
-      bossNearby: !boss.defeated && (() => {
-        const dx = cam.camera.position.x - bossMesh.position.x;
-        const dz = cam.camera.position.z - bossMesh.position.z;
-        return Math.sqrt(dx * dx + dz * dz) < 20;
-      })(),
-      bossHealthPct: boss.defeated ? 0 : (enemies.find(e => e.mesh === bossMesh)?.health ?? 0) / boss.maxHealth,
+      bossNearby:
+        !boss.defeated &&
+        (() => {
+          const dx = cam.camera.position.x - bossMesh.position.x;
+          const dz = cam.camera.position.z - bossMesh.position.z;
+          return Math.sqrt(dx * dx + dz * dz) < 20;
+        })(),
+      bossHealthPct: boss.defeated ? 0 : (enemies.find((e) => e.mesh === bossMesh)?.health ?? 0) / boss.maxHealth,
       bossPhase: boss.phase,
       paused,
       phase: paused ? 'paused' : combat.state.phase,
       context: currentContext,
-      suggestedTargetPos: lastGovernorOutput.suggestedTarget >= 0 && lastGovernorOutput.suggestedTarget < enemies.length
-        ? {
-            x: enemies[lastGovernorOutput.suggestedTarget].mesh.position.x,
-            y: enemies[lastGovernorOutput.suggestedTarget].mesh.position.y,
-            z: enemies[lastGovernorOutput.suggestedTarget].mesh.position.z,
-          }
-        : null,
+      suggestedTargetPos:
+        lastGovernorOutput.suggestedTarget >= 0 && lastGovernorOutput.suggestedTarget < enemies.length
+          ? {
+              x: enemies[lastGovernorOutput.suggestedTarget].mesh.position.x,
+              y: enemies[lastGovernorOutput.suggestedTarget].mesh.position.y,
+              z: enemies[lastGovernorOutput.suggestedTarget].mesh.position.z,
+            }
+          : null,
       threatLevel: lastGovernorOutput.threatLevel,
       canDodge: lastGovernorOutput.canDodge,
     }),
-    onEvent: (listener) => { eventListeners.push(listener); },
+    onEvent: (listener) => {
+      eventListeners.push(listener);
+    },
     triggerAttack: () => combat.triggerAttack(),
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;

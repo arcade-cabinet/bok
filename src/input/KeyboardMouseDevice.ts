@@ -1,4 +1,4 @@
-import { ActionMap } from './ActionMap.ts';
+import type { ActionMap } from './ActionMap.ts';
 
 export class KeyboardMouseDevice {
   readonly #actionMap: ActionMap;
@@ -37,10 +37,18 @@ export class KeyboardMouseDevice {
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  get attackDown(): boolean { return this.#mouseLeftDown; }
-  get parryDown(): boolean { return this.#mouseRightDown; }
-  get mouseDeltaX(): number { return this.#mouseDeltaX; }
-  get mouseDeltaY(): number { return this.#mouseDeltaY; }
+  get attackDown(): boolean {
+    return this.#mouseLeftDown;
+  }
+  get parryDown(): boolean {
+    return this.#mouseRightDown;
+  }
+  get mouseDeltaX(): number {
+    return this.#mouseDeltaX;
+  }
+  get mouseDeltaY(): number {
+    return this.#mouseDeltaY;
+  }
 
   consumeMouseDelta(): { x: number; y: number } {
     const result = { x: this.#mouseDeltaX, y: this.#mouseDeltaY };

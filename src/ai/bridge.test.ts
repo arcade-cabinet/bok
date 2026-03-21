@@ -1,22 +1,32 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createWorld, type World } from 'koota';
-import { Vehicle, StateMachine, State, Vector3 } from 'yuka';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { State, StateMachine, Vehicle } from 'yuka';
+import { AIState, Health, Position, Velocity, YukaRef } from '../traits/index';
 import { AIBridge } from './bridge';
-import {
-  Position, Velocity, Health, AIState, YukaRef,
-} from '../traits/index';
 
 /** Minimal FSM state for testing. */
 class IdleState extends State {
-  override enter() { /* noop */ }
-  override execute() { /* noop */ }
-  override exit() { /* noop */ }
+  override enter() {
+    /* noop */
+  }
+  override execute() {
+    /* noop */
+  }
+  override exit() {
+    /* noop */
+  }
 }
 
 class ChaseState extends State {
-  override enter() { /* noop */ }
-  override execute() { /* noop */ }
-  override exit() { /* noop */ }
+  override enter() {
+    /* noop */
+  }
+  override execute() {
+    /* noop */
+  }
+  override exit() {
+    /* noop */
+  }
 }
 
 function createVehicleWithFSM(stateName: string): Vehicle {
@@ -43,10 +53,7 @@ describe('AIBridge', () => {
       const vehicle = createVehicleWithFSM('idle');
       vehicle.velocity.set(3, 0, -2);
 
-      const entity = world.spawn(
-        Position(), Velocity(), Health(), AIState(),
-        YukaRef({ vehicle }),
-      );
+      const entity = world.spawn(Position(), Velocity(), Health(), AIState(), YukaRef({ vehicle }));
 
       bridge.syncToKoota(vehicle, entity);
 
@@ -59,10 +66,7 @@ describe('AIBridge', () => {
     it('writes FSM current state name to AIState trait', () => {
       const vehicle = createVehicleWithFSM('chase');
 
-      const entity = world.spawn(
-        Position(), Velocity(), Health(), AIState(),
-        YukaRef({ vehicle }),
-      );
+      const entity = world.spawn(Position(), Velocity(), Health(), AIState(), YukaRef({ vehicle }));
 
       bridge.syncToKoota(vehicle, entity);
 
@@ -75,10 +79,7 @@ describe('AIBridge', () => {
       const fsm = new StateMachine(vehicle);
       (vehicle as unknown as { stateMachine: StateMachine }).stateMachine = fsm;
 
-      const entity = world.spawn(
-        Position(), Velocity(), Health(), AIState(),
-        YukaRef({ vehicle }),
-      );
+      const entity = world.spawn(Position(), Velocity(), Health(), AIState(), YukaRef({ vehicle }));
 
       bridge.syncToKoota(vehicle, entity);
 
@@ -94,7 +95,9 @@ describe('AIBridge', () => {
 
       const entity = world.spawn(
         Position({ x: 10, y: 5, z: -3 }),
-        Velocity(), Health({ current: 100, max: 100 }), AIState(),
+        Velocity(),
+        Health({ current: 100, max: 100 }),
+        AIState(),
         YukaRef({ vehicle }),
       );
 
@@ -112,7 +115,10 @@ describe('AIBridge', () => {
       fsm.add('dead', deadState);
 
       const entity = world.spawn(
-        Position(), Velocity(), Health({ current: 0, max: 100 }), AIState(),
+        Position(),
+        Velocity(),
+        Health({ current: 0, max: 100 }),
+        AIState(),
         YukaRef({ vehicle }),
       );
 
@@ -127,7 +133,10 @@ describe('AIBridge', () => {
       fsm.add('dead', new IdleState());
 
       const entity = world.spawn(
-        Position(), Velocity(), Health({ current: 50, max: 100 }), AIState(),
+        Position(),
+        Velocity(),
+        Health({ current: 50, max: 100 }),
+        AIState(),
         YukaRef({ vehicle }),
       );
 

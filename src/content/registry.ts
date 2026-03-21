@@ -1,62 +1,73 @@
-import {
-  BiomeConfigSchema, EnemyConfigSchema, WeaponConfigSchema, BossConfigSchema,
-  HubBuildingConfigSchema, NPCConfigSchema, LootTableConfigSchema, CraftingRecipeConfigSchema,
-  type BiomeConfig, type EnemyConfig, type WeaponConfig, type BossConfig,
-  type HubBuildingConfig, type NPCConfig, type LootTableConfig, type CraftingRecipeConfig,
-} from './types.ts';
-
+import crystalCavesBiome from './biomes/crystal-caves.json';
+import deepOceanBiome from './biomes/deep-ocean.json';
+import desertBiome from './biomes/desert.json';
 // Static imports for all content (Vite resolves JSON imports)
 import forestBiome from './biomes/forest.json';
-import desertBiome from './biomes/desert.json';
+import skyRuinsBiome from './biomes/sky-ruins.json';
+import swampBiome from './biomes/swamp.json';
 import tundraBiome from './biomes/tundra.json';
 import volcanicBiome from './biomes/volcanic.json';
-import swampBiome from './biomes/swamp.json';
-import crystalCavesBiome from './biomes/crystal-caves.json';
-import skyRuinsBiome from './biomes/sky-ruins.json';
-import deepOceanBiome from './biomes/deep-ocean.json';
-import slimeEnemy from './enemies/slime.json';
-import skeletonArcher from './enemies/skeleton-archer.json';
-import sandWraith from './enemies/sand-wraith.json';
-import scorpion from './enemies/scorpion.json';
-import frostWolf from './enemies/frost-wolf.json';
-import iceGolem from './enemies/ice-golem.json';
-import fireImp from './enemies/fire-imp.json';
-import lavaElemental from './enemies/lava-elemental.json';
-import swampLurker from './enemies/swamp-lurker.json';
-import bogWitch from './enemies/bog-witch.json';
-import crystalSentinel from './enemies/crystal-sentinel.json';
-import gemSpider from './enemies/gem-spider.json';
-import skyHawk from './enemies/sky-hawk.json';
-import windElemental from './enemies/wind-elemental.json';
-import depthCrawler from './enemies/depth-crawler.json';
-import anglerFish from './enemies/angler-fish.json';
-import woodenSword from './weapons/wooden-sword.json';
-import ironSword from './weapons/iron-sword.json';
-import crystalBlade from './weapons/crystal-blade.json';
-import volcanicEdge from './weapons/volcanic-edge.json';
-import frostCleaver from './weapons/frost-cleaver.json';
-import warHammer from './weapons/war-hammer.json';
-import battleAxe from './weapons/battle-axe.json';
-import twinDaggers from './weapons/twin-daggers.json';
-import trident from './weapons/trident.json';
-import shortBow from './weapons/short-bow.json';
-import crossbow from './weapons/crossbow.json';
-import fireStaff from './weapons/fire-staff.json';
-import iceWand from './weapons/ice-wand.json';
-import lightningRod from './weapons/lightning-rod.json';
-import crystalSling from './weapons/crystal-sling.json';
+import abyssalLeviathan from './bosses/abyssal-leviathan.json';
 import ancientTreant from './bosses/ancient-treant.json';
-import pharaohConstruct from './bosses/pharaoh-construct.json';
+import crystalHydra from './bosses/crystal-hydra.json';
 import frostWyrm from './bosses/frost-wyrm.json';
 import magmaKing from './bosses/magma-king.json';
 import mireHag from './bosses/mire-hag.json';
-import crystalHydra from './bosses/crystal-hydra.json';
+import pharaohConstruct from './bosses/pharaoh-construct.json';
 import stormTitan from './bosses/storm-titan.json';
-import abyssalLeviathan from './bosses/abyssal-leviathan.json';
+import anglerFish from './enemies/angler-fish.json';
+import bogWitch from './enemies/bog-witch.json';
+import crystalSentinel from './enemies/crystal-sentinel.json';
+import depthCrawler from './enemies/depth-crawler.json';
+import fireImp from './enemies/fire-imp.json';
+import frostWolf from './enemies/frost-wolf.json';
+import gemSpider from './enemies/gem-spider.json';
+import iceGolem from './enemies/ice-golem.json';
+import lavaElemental from './enemies/lava-elemental.json';
+import sandWraith from './enemies/sand-wraith.json';
+import scorpion from './enemies/scorpion.json';
+import skeletonArcher from './enemies/skeleton-archer.json';
+import skyHawk from './enemies/sky-hawk.json';
+import slimeEnemy from './enemies/slime.json';
+import swampLurker from './enemies/swamp-lurker.json';
+import windElemental from './enemies/wind-elemental.json';
 import hubBuildings from './hub/buildings.json';
 import hubNpcs from './hub/npcs.json';
-import lootTables from './items/loot-tables.json';
 import craftingRecipes from './items/crafting-recipes.json';
+import lootTables from './items/loot-tables.json';
+import {
+  type BiomeConfig,
+  BiomeConfigSchema,
+  type BossConfig,
+  BossConfigSchema,
+  type CraftingRecipeConfig,
+  CraftingRecipeConfigSchema,
+  type EnemyConfig,
+  EnemyConfigSchema,
+  type HubBuildingConfig,
+  HubBuildingConfigSchema,
+  type LootTableConfig,
+  LootTableConfigSchema,
+  type NPCConfig,
+  NPCConfigSchema,
+  type WeaponConfig,
+  WeaponConfigSchema,
+} from './types.ts';
+import battleAxe from './weapons/battle-axe.json';
+import crossbow from './weapons/crossbow.json';
+import crystalBlade from './weapons/crystal-blade.json';
+import crystalSling from './weapons/crystal-sling.json';
+import fireStaff from './weapons/fire-staff.json';
+import frostCleaver from './weapons/frost-cleaver.json';
+import iceWand from './weapons/ice-wand.json';
+import ironSword from './weapons/iron-sword.json';
+import lightningRod from './weapons/lightning-rod.json';
+import shortBow from './weapons/short-bow.json';
+import trident from './weapons/trident.json';
+import twinDaggers from './weapons/twin-daggers.json';
+import volcanicEdge from './weapons/volcanic-edge.json';
+import warHammer from './weapons/war-hammer.json';
+import woodenSword from './weapons/wooden-sword.json';
 
 export class ContentRegistry {
   readonly #biomes = new Map<string, BiomeConfig>();
@@ -70,23 +81,59 @@ export class ContentRegistry {
 
   constructor() {
     this.#registerBiomes([
-      forestBiome, desertBiome, tundraBiome, volcanicBiome,
-      swampBiome, crystalCavesBiome, skyRuinsBiome, deepOceanBiome,
+      forestBiome,
+      desertBiome,
+      tundraBiome,
+      volcanicBiome,
+      swampBiome,
+      crystalCavesBiome,
+      skyRuinsBiome,
+      deepOceanBiome,
     ]);
     this.#registerEnemies([
-      slimeEnemy, skeletonArcher, sandWraith, scorpion,
-      frostWolf, iceGolem, fireImp, lavaElemental,
-      swampLurker, bogWitch, crystalSentinel, gemSpider,
-      skyHawk, windElemental, depthCrawler, anglerFish,
+      slimeEnemy,
+      skeletonArcher,
+      sandWraith,
+      scorpion,
+      frostWolf,
+      iceGolem,
+      fireImp,
+      lavaElemental,
+      swampLurker,
+      bogWitch,
+      crystalSentinel,
+      gemSpider,
+      skyHawk,
+      windElemental,
+      depthCrawler,
+      anglerFish,
     ]);
     this.#registerWeapons([
-      woodenSword, ironSword, crystalBlade, volcanicEdge, frostCleaver,
-      warHammer, battleAxe, twinDaggers, trident,
-      shortBow, crossbow, fireStaff, iceWand, lightningRod, crystalSling,
+      woodenSword,
+      ironSword,
+      crystalBlade,
+      volcanicEdge,
+      frostCleaver,
+      warHammer,
+      battleAxe,
+      twinDaggers,
+      trident,
+      shortBow,
+      crossbow,
+      fireStaff,
+      iceWand,
+      lightningRod,
+      crystalSling,
     ]);
     this.#registerBosses([
-      ancientTreant, pharaohConstruct, frostWyrm, magmaKing,
-      mireHag, crystalHydra, stormTitan, abyssalLeviathan,
+      ancientTreant,
+      pharaohConstruct,
+      frostWyrm,
+      magmaKing,
+      mireHag,
+      crystalHydra,
+      stormTitan,
+      abyssalLeviathan,
     ]);
     this.#registerBuildings(hubBuildings);
     this.#registerNPCs(hubNpcs);
@@ -190,11 +237,25 @@ export class ContentRegistry {
     return config;
   }
 
-  getAllBiomes(): BiomeConfig[] { return [...this.#biomes.values()]; }
-  getAllEnemies(): EnemyConfig[] { return [...this.#enemies.values()]; }
-  getAllWeapons(): WeaponConfig[] { return [...this.#weapons.values()]; }
-  getAllBosses(): BossConfig[] { return [...this.#bosses.values()]; }
-  getAllBuildings(): HubBuildingConfig[] { return [...this.#buildings.values()]; }
-  getAllNPCs(): NPCConfig[] { return [...this.#npcs.values()]; }
-  getAllCraftingRecipes(): CraftingRecipeConfig[] { return [...this.#craftingRecipes.values()]; }
+  getAllBiomes(): BiomeConfig[] {
+    return [...this.#biomes.values()];
+  }
+  getAllEnemies(): EnemyConfig[] {
+    return [...this.#enemies.values()];
+  }
+  getAllWeapons(): WeaponConfig[] {
+    return [...this.#weapons.values()];
+  }
+  getAllBosses(): BossConfig[] {
+    return [...this.#bosses.values()];
+  }
+  getAllBuildings(): HubBuildingConfig[] {
+    return [...this.#buildings.values()];
+  }
+  getAllNPCs(): NPCConfig[] {
+    return [...this.#npcs.values()];
+  }
+  getAllCraftingRecipes(): CraftingRecipeConfig[] {
+    return [...this.#craftingRecipes.values()];
+  }
 }

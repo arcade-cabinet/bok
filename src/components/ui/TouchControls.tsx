@@ -7,13 +7,13 @@
  * No visible joystick widgets. Clean, invisible, responsive.
  * Action buttons are a SEPARATE component (ActionPanel).
  */
-import { useRef, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export interface TouchControlOutput {
-  moveX: number;   // -1 to 1
-  moveZ: number;   // -1 to 1 (negative = forward, matches desktop WASD)
-  lookX: number;   // -1 to 1 (continuous rotation rate)
-  lookY: number;   // -1 to 1 (continuous rotation rate)
+  moveX: number; // -1 to 1
+  moveZ: number; // -1 to 1 (negative = forward, matches desktop WASD)
+  lookX: number; // -1 to 1 (continuous rotation rate)
+  lookY: number; // -1 to 1 (continuous rotation rate)
 }
 
 interface TouchState {
@@ -86,7 +86,8 @@ export function TouchControls({ onOutput, enabled }: Props) {
   useEffect(() => {
     if (!enabled) return;
 
-    const canvas = document.getElementById('game-canvas');
+    // Find whichever canvas is active (game-canvas or hub-canvas)
+    const canvas = document.getElementById('game-canvas') || document.getElementById('hub-canvas');
     if (!canvas) return;
 
     const onStart = (e: globalThis.TouchEvent) => {
@@ -95,9 +96,21 @@ export function TouchControls({ onOutput, enabled }: Props) {
 
       for (const t of Array.from(e.changedTouches)) {
         if (t.clientX < halfW && moveRef.current.id === null) {
-          moveRef.current = { id: t.identifier, originX: t.clientX, originY: t.clientY, currentX: t.clientX, currentY: t.clientY };
+          moveRef.current = {
+            id: t.identifier,
+            originX: t.clientX,
+            originY: t.clientY,
+            currentX: t.clientX,
+            currentY: t.clientY,
+          };
         } else if (t.clientX >= halfW && lookRef.current.id === null) {
-          lookRef.current = { id: t.identifier, originX: t.clientX, originY: t.clientY, currentX: t.clientX, currentY: t.clientY };
+          lookRef.current = {
+            id: t.identifier,
+            originX: t.clientX,
+            originY: t.clientY,
+            currentX: t.clientX,
+            currentY: t.clientY,
+          };
         }
       }
     };

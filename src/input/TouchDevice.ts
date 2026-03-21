@@ -8,12 +8,10 @@ export class TouchDevice {
   #attached = false;
   #moveTouchId: number | null = null;
   #cameraTouchId: number | null = null;
-  #canvas: HTMLCanvasElement | null = null;
 
   attach(canvas: HTMLCanvasElement): void {
     if (this.#attached) return;
     this.#attached = true;
-    this.#canvas = canvas;
 
     canvas.addEventListener('touchstart', (e) => {
       const halfWidth = canvas.clientWidth / 2;
@@ -28,25 +26,29 @@ export class TouchDevice {
       }
     });
 
-    canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const halfWidth = canvas.clientWidth / 2;
-      for (const touch of e.changedTouches) {
-        if (touch.identifier === this.#moveTouchId) {
-          // Left side = movement joystick
-          const centerX = halfWidth / 2;
-          const centerY = canvas.clientHeight / 2;
-          this.#moveX = (touch.clientX - centerX) / (halfWidth / 2);
-          this.#moveY = (touch.clientY - centerY) / (canvas.clientHeight / 2);
-        } else if (touch.identifier === this.#cameraTouchId) {
-          // Right side = camera look
-          this.#lookDeltaX += touch.clientX - this.#lastTouchX;
-          this.#lookDeltaY += touch.clientY - this.#lastTouchY;
-          this.#lastTouchX = touch.clientX;
-          this.#lastTouchY = touch.clientY;
+    canvas.addEventListener(
+      'touchmove',
+      (e) => {
+        e.preventDefault();
+        const halfWidth = canvas.clientWidth / 2;
+        for (const touch of e.changedTouches) {
+          if (touch.identifier === this.#moveTouchId) {
+            // Left side = movement joystick
+            const centerX = halfWidth / 2;
+            const centerY = canvas.clientHeight / 2;
+            this.#moveX = (touch.clientX - centerX) / (halfWidth / 2);
+            this.#moveY = (touch.clientY - centerY) / (canvas.clientHeight / 2);
+          } else if (touch.identifier === this.#cameraTouchId) {
+            // Right side = camera look
+            this.#lookDeltaX += touch.clientX - this.#lastTouchX;
+            this.#lookDeltaY += touch.clientY - this.#lastTouchY;
+            this.#lastTouchX = touch.clientX;
+            this.#lastTouchY = touch.clientY;
+          }
         }
-      }
-    }, { passive: false });
+      },
+      { passive: false },
+    );
 
     canvas.addEventListener('touchend', (e) => {
       for (const touch of e.changedTouches) {

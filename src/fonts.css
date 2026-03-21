@@ -1,0 +1,8 @@
+/**
+ * Full @fontsource family bundles — every weight/style and Unicode subset included in each package
+ * (Latin, Latin Extended, Cyrillic, Vietnamese, etc.). Not a subset slice; use for localization and complete typography.
+ */
+@import "@fontsource/cormorant-garamond/index.css";
+@import "@fontsource/cinzel/index.css";
+@import "@fontsource/crimson-text/index.css";
+@import "@fontsource/jetbrains-mono/index.css";

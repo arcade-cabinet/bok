@@ -26,11 +26,7 @@ export interface CameraResult {
  * Spawns at highest terrain point near center.
  * Movement includes auto-platforming (step up/down terrain).
  */
-export function createCamera(
-  jpWorld: any,
-  getSurfaceY: SurfaceHeightFn,
-  islandSize: number,
-): CameraResult {
+export function createCamera(jpWorld: any, getSurfaceY: SurfaceHeightFn, islandSize: number): CameraResult {
   const cameraActor = jpWorld.createActor('camera');
   const cameraCtrl = cameraActor.addComponentAndGet(Camera3DControls, {
     speed: PLAYER_SPEED,
@@ -52,7 +48,11 @@ export function createCamera(
   for (let sx = -4; sx <= 4; sx++) {
     for (let sz = -4; sz <= 4; sz++) {
       const h = getSurfaceY(Math.round(islandSize / 2 + sx), Math.round(islandSize / 2 + sz));
-      if (h > bestH) { bestH = h; bestX = Math.round(islandSize / 2 + sx); bestZ = Math.round(islandSize / 2 + sz); }
+      if (h > bestH) {
+        bestH = h;
+        bestX = Math.round(islandSize / 2 + sx);
+        bestZ = Math.round(islandSize / 2 + sz);
+      }
     }
   }
   camera.position.set(bestX, bestH + 1.6, bestZ);

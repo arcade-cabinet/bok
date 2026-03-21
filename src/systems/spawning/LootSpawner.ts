@@ -1,5 +1,5 @@
-import type { Vec3 } from '../../shared/types.ts';
 import type { ChestPlacement } from '../../generation/LootPlacer.ts';
+import type { Vec3 } from '../../shared/types.ts';
 
 /** Data for a spawned loot chest, ready for Koota entity creation. */
 export interface SpawnedChest {

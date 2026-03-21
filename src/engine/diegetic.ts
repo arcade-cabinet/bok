@@ -40,7 +40,10 @@ export function detectContext(
 
   // Check all 4 cardinal neighbors for climb/drop
   const offsets = [
-    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
   ] as const;
 
   let hasClimb = false;
@@ -66,12 +69,7 @@ export function detectContext(
  * Compute a Y offset for natural head movement.
  * Returns a small vertical offset to add to camera Y.
  */
-export function getHeadBob(
-  dt: number,
-  isMoving: boolean,
-  context: DiegeticContext,
-  elapsed: number,
-): number {
+export function getHeadBob(_dt: number, isMoving: boolean, context: DiegeticContext, elapsed: number): number {
   if (isMoving) {
     switch (context) {
       case 'combat':

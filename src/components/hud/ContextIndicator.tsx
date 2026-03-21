@@ -38,6 +38,7 @@ export function ContextIndicator({ context }: Props) {
             className="absolute bottom-[40%] left-1/2 -translate-x-1/2"
           >
             <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
+              <title>Climb hint</title>
               <path d="M16 4L6 18h20L16 4z" fill="white" fillOpacity="0.3" />
             </svg>
           </motion.div>
@@ -53,6 +54,7 @@ export function ContextIndicator({ context }: Props) {
             className="absolute top-[55%] left-1/2 -translate-x-1/2"
           >
             <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
+              <title>Drop hint</title>
               <path d="M16 20L6 6h20L16 20z" fill="white" fillOpacity="0.3" />
             </svg>
           </motion.div>

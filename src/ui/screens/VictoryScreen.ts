@@ -156,22 +156,30 @@ export class VictoryScreen {
         cursor: 'pointer',
         transition: 'opacity 0.2s',
       });
-      btn.addEventListener('mouseenter', () => { btn.style.opacity = '0.85'; });
-      btn.addEventListener('mouseleave', () => { btn.style.opacity = '1'; });
+      btn.addEventListener('mouseenter', () => {
+        btn.style.opacity = '0.85';
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.opacity = '1';
+      });
       btn.addEventListener('click', onClick);
       return btn;
     };
 
-    btnRow.appendChild(makeBtn('CONTINUE VOYAGE', true, () => {
-      this.#onContinueVoyage?.();
-      this.hide();
-      this.#director.transition('islandSelect');
-    }));
+    btnRow.appendChild(
+      makeBtn('CONTINUE VOYAGE', true, () => {
+        this.#onContinueVoyage?.();
+        this.hide();
+        this.#director.transition('islandSelect');
+      }),
+    );
 
-    btnRow.appendChild(makeBtn('RETURN TO HUB', false, () => {
-      this.hide();
-      this.#director.transition('hub');
-    }));
+    btnRow.appendChild(
+      makeBtn('RETURN TO HUB', false, () => {
+        this.hide();
+        this.#director.transition('hub');
+      }),
+    );
 
     this.#overlay.appendChild(btnRow);
 

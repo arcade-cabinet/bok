@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createWorld, type World } from 'koota';
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { BossConfig, ContentRegistry } from '../../content/index';
 import { BossType, Health } from '../../traits/index';
 import { bossPhaseSystem } from './BossPhaseSystem';
-import type { ContentRegistry } from '../../content/index';
-import type { BossConfig } from '../../content/index';
 
 function mockContent(bossConfig: BossConfig): ContentRegistry {
   return {
@@ -48,14 +47,11 @@ describe('BossPhaseSystem', () => {
   });
 
   it('stays in phase 1 at full health', () => {
-    const entity = world.spawn(
-      BossType({ configId: 'ancient-treant', phase: 1 }),
-      Health({ current: 300, max: 300 }),
-    );
+    const entity = world.spawn(BossType({ configId: 'ancient-treant', phase: 1 }), Health({ current: 300, max: 300 }));
 
     bossPhaseSystem(world, content);
 
-    expect(entity.get(BossType)!.phase).toBe(1);
+    expect(entity.get(BossType)?.phase).toBe(1);
   });
 
   it('advances to phase 2 when health drops below 66%', () => {
@@ -66,7 +62,7 @@ describe('BossPhaseSystem', () => {
 
     bossPhaseSystem(world, content);
 
-    expect(entity.get(BossType)!.phase).toBe(2);
+    expect(entity.get(BossType)?.phase).toBe(2);
   });
 
   it('advances to phase 3 when health drops below 33%', () => {
@@ -77,7 +73,7 @@ describe('BossPhaseSystem', () => {
 
     bossPhaseSystem(world, content);
 
-    expect(entity.get(BossType)!.phase).toBe(3);
+    expect(entity.get(BossType)?.phase).toBe(3);
   });
 
   it('does not regress phases', () => {
@@ -88,14 +84,11 @@ describe('BossPhaseSystem', () => {
 
     bossPhaseSystem(world, content);
 
-    expect(entity.get(BossType)!.phase).toBe(3);
+    expect(entity.get(BossType)?.phase).toBe(3);
   });
 
   it('skips unknown boss configs gracefully', () => {
-    world.spawn(
-      BossType({ configId: 'unknown-boss', phase: 1 }),
-      Health({ current: 50, max: 100 }),
-    );
+    world.spawn(BossType({ configId: 'unknown-boss', phase: 1 }), Health({ current: 50, max: 100 }));
 
     // Should not throw
     expect(() => bossPhaseSystem(world, content)).not.toThrow();

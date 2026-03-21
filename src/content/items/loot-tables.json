@@ -61,12 +61,27 @@
   ],
   "biomePools": [
     { "biomeId": "forest", "bonusItems": [{ "itemId": "wood", "weight": 0.3, "minAmount": 2, "maxAmount": 5 }] },
-    { "biomeId": "desert", "bonusItems": [{ "itemId": "ancient-bone", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
+    {
+      "biomeId": "desert",
+      "bonusItems": [{ "itemId": "ancient-bone", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }]
+    },
     { "biomeId": "tundra", "bonusItems": [{ "itemId": "frost-shard", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
-    { "biomeId": "volcanic", "bonusItems": [{ "itemId": "magma-crystal", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }] },
+    {
+      "biomeId": "volcanic",
+      "bonusItems": [{ "itemId": "magma-crystal", "weight": 0.2, "minAmount": 1, "maxAmount": 2 }]
+    },
     { "biomeId": "swamp", "bonusItems": [{ "itemId": "mushroom", "weight": 0.3, "minAmount": 1, "maxAmount": 3 }] },
-    { "biomeId": "crystal-caves", "bonusItems": [{ "itemId": "emerald", "weight": 0.25, "minAmount": 1, "maxAmount": 2 }] },
-    { "biomeId": "sky-ruins", "bonusItems": [{ "itemId": "star-fragment", "weight": 0.1, "minAmount": 1, "maxAmount": 1 }] },
-    { "biomeId": "deep-ocean", "bonusItems": [{ "itemId": "void-essence", "weight": 0.15, "minAmount": 1, "maxAmount": 1 }] }
+    {
+      "biomeId": "crystal-caves",
+      "bonusItems": [{ "itemId": "emerald", "weight": 0.25, "minAmount": 1, "maxAmount": 2 }]
+    },
+    {
+      "biomeId": "sky-ruins",
+      "bonusItems": [{ "itemId": "star-fragment", "weight": 0.1, "minAmount": 1, "maxAmount": 1 }]
+    },
+    {
+      "biomeId": "deep-ocean",
+      "bonusItems": [{ "itemId": "void-essence", "weight": 0.15, "minAmount": 1, "maxAmount": 1 }]
+    }
   ]
 }

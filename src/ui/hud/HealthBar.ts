@@ -67,10 +67,10 @@ export class HealthBar {
     this.#label.textContent = `${Math.ceil(health.current)} / ${health.max}`;
 
     if (ratio < LOW_HEALTH_THRESHOLD && !this.#pulseAnimation) {
-      this.#pulseAnimation = this.#container.animate(
-        [{ opacity: 1 }, { opacity: 0.5 }, { opacity: 1 }],
-        { duration: 600, iterations: Infinity },
-      );
+      this.#pulseAnimation = this.#container.animate([{ opacity: 1 }, { opacity: 0.5 }, { opacity: 1 }], {
+        duration: 600,
+        iterations: Infinity,
+      });
     } else if (ratio >= LOW_HEALTH_THRESHOLD && this.#pulseAnimation) {
       this.#pulseAnimation.cancel();
       this.#pulseAnimation = null;

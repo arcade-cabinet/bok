@@ -7,7 +7,7 @@
  * @tested ActionMap.test.ts
  */
 export { ActionMap, type GameAction } from './ActionMap.ts';
-export { KeyboardMouseDevice } from './KeyboardMouseDevice.ts';
 export { GamepadDevice } from './GamepadDevice.ts';
-export { TouchDevice } from './TouchDevice.ts';
 export { InputSystem } from './InputSystem.ts';
+export { KeyboardMouseDevice } from './KeyboardMouseDevice.ts';
+export { TouchDevice } from './TouchDevice.ts';

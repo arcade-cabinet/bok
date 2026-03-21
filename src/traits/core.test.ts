@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { createWorld } from 'koota';
-import { Position, Velocity, Health, Transform } from './index';
+import { describe, expect, it } from 'vitest';
+import { Health, Position, Velocity } from './index';
 
 describe('Core traits', () => {
   it('spawns entity with Position and Velocity', () => {
@@ -16,7 +16,7 @@ describe('Core traits', () => {
     const entity = world.spawn(Health({ current: 100, max: 100 }));
     expect(entity.get(Health)).toEqual({ current: 100, max: 100 });
     entity.set(Health, { current: 50, max: 100 });
-    expect(entity.get(Health)!.current).toBe(50);
+    expect(entity.get(Health)?.current).toBe(50);
     world.destroy();
   });
 

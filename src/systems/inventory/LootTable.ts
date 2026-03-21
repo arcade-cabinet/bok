@@ -21,10 +21,7 @@ export class LootTable {
    * @param drops - Array of drop configurations.
    * @param prng - Random number generator returning [0, 1). Defaults to Math.random.
    */
-  static rollDrops(
-    drops: DropConfig[],
-    prng: () => number = Math.random,
-  ): DropResult[] {
+  static rollDrops(drops: DropConfig[], prng: () => number = Math.random): DropResult[] {
     const results: DropResult[] = [];
 
     for (const drop of drops) {

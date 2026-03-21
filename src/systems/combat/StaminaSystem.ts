@@ -1,5 +1,5 @@
 import type { World } from 'koota';
-import { Stamina, MovementIntent } from '../../traits/index';
+import { MovementIntent, Stamina } from '../../traits/index';
 
 /** Stamina drain rate while sprinting (units/sec). */
 const SPRINT_DRAIN_RATE = 10;

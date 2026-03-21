@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { createWorld } from 'koota';
-import { SceneDirector } from './SceneDirector.ts';
-import { Scene } from './Scene.ts';
 import type { World } from 'koota';
+import { createWorld } from 'koota';
+import { describe, expect, it, vi } from 'vitest';
+import { Scene } from './Scene.ts';
+import { SceneDirector } from './SceneDirector.ts';
 
 class TestScene extends Scene {
   enter = vi.fn();

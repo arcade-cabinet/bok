@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { createWorld } from 'koota';
+import { describe, expect, it } from 'vitest';
 import { Position, Velocity } from '../../traits/index.ts';
 import { MovementSystem } from './MovementSystem.ts';
 

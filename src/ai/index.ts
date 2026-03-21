@@ -8,7 +8,7 @@
  */
 export { AIBridge } from './bridge';
 export { createEnemyVehicle } from './EnemyVehicleFactory';
-export type { AIVehicle } from './types';
-export { PatrolState, ChaseState, AttackState, DeadState } from './states/index';
+export type { GovernorOutput, PlayerGovernor, ThreatLevel } from './PlayerGovernor';
 export { createPlayerGovernor } from './PlayerGovernor';
-export type { PlayerGovernor, GovernorOutput, ThreatLevel } from './PlayerGovernor';
+export { AttackState, ChaseState, DeadState, PatrolState } from './states/index';
+export type { AIVehicle } from './types';

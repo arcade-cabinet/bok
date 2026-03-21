@@ -1,8 +1,10 @@
 import { playwright } from '@vitest/browser-playwright';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+import wasm from 'vite-plugin-wasm';
 
 export default defineConfig({
+  plugins: [wasm()],
   resolve: {
     alias: {
       '@bok': resolve(__dirname, 'src'),

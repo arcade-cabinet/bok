@@ -4,12 +4,13 @@
  * @input Three.js scene, Yuka EntityManager, surface height lookup, seed
  * @output Enemy state array, boss state, Yuka manager
  */
-import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
+
 import * as THREE from 'three';
+import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 
 import { PRNG } from '../generation/index.ts';
-import { loadModel, ENEMY_MODELS } from './models.ts';
-import type { SurfaceHeightFn, EnemyState, BossState } from './types.ts';
+import { ENEMY_MODELS, loadModel } from './models.ts';
+import type { BossState, EnemyState, SurfaceHeightFn } from './types.ts';
 
 const ENEMY_COUNT = 8;
 
@@ -41,7 +42,7 @@ export async function spawnEnemies(
   const fallbackGeom = new THREE.BoxGeometry(0.7, 1.4, 0.7);
   const fallbackMat = new THREE.MeshLambertMaterial({ color: 0xcc2222 });
 
-  const enemyPrng = new PRNG(seed + '-enemies');
+  const enemyPrng = new PRNG(`${seed}-enemies`);
 
   for (let i = 0; i < ENEMY_COUNT; i++) {
     let ex: number, ez: number, ey: number;
@@ -167,11 +168,9 @@ export function updateEnemyAI(
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     if (dist < 15 && dist > 1.5) {
-      enemy.vehicle.velocity.set(dx / dist * 2, 0, dz / dist * 2);
+      enemy.vehicle.velocity.set((dx / dist) * 2, 0, (dz / dist) * 2);
     } else if (dist >= 15) {
-      enemy.vehicle.velocity.set(
-        (Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5,
-      );
+      enemy.vehicle.velocity.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5);
     } else {
       enemy.vehicle.velocity.set(0, 0, 0);
     }

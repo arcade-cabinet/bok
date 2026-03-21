@@ -41,9 +41,12 @@ export class PostProcessing {
     this.#overlay.style.boxShadow = `inset 0 0 ${spread}px rgba(180, 0, 0, ${alpha})`;
 
     // Auto-fade after a short delay
-    setTimeout(() => {
-      this.#overlay.style.boxShadow = 'none';
-    }, 200 + clamped * 300);
+    setTimeout(
+      () => {
+        this.#overlay.style.boxShadow = 'none';
+      },
+      200 + clamped * 300,
+    );
   }
 
   /**

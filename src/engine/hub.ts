@@ -5,48 +5,77 @@
  * @output VoxelRenderer instance, surface height lookup, building positions, NPC positions
  */
 import RAPIER from '@dimforge/rapier3d';
-import { VoxelRenderer, Face, type BlockDefinition, type TileRef } from '@jolly-pixel/voxel.renderer';
+import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
-
-import { generateTileset, TILES } from '../rendering/TilesetGenerator.ts';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
+import { generateTileset, TILES } from '../rendering/TilesetGenerator.ts';
 import type { SurfaceHeightFn } from './types.ts';
 
 // --- Block Definitions ---
 const BLOCK_DEFS: BlockDefinition[] = [
   {
-    id: 1, name: 'Grass', shapeId: 'cube', collidable: true,
+    id: 1,
+    name: 'Grass',
+    shapeId: 'cube',
+    collidable: true,
     faceTextures: { [Face.PosY]: TILES.GRASS_TOP as TileRef, [Face.NegY]: TILES.DIRT as TileRef },
     defaultTexture: TILES.DIRT as TileRef,
   },
   {
-    id: 2, name: 'Dirt', shapeId: 'cube', collidable: true,
-    faceTextures: {}, defaultTexture: TILES.DIRT as TileRef,
+    id: 2,
+    name: 'Dirt',
+    shapeId: 'cube',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.DIRT as TileRef,
   },
   {
-    id: 3, name: 'Stone', shapeId: 'cube', collidable: true,
-    faceTextures: {}, defaultTexture: TILES.STONE as TileRef,
+    id: 3,
+    name: 'Stone',
+    shapeId: 'cube',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
   },
   {
-    id: 4, name: 'Water', shapeId: 'cube', collidable: false,
-    faceTextures: {}, defaultTexture: TILES.WATER as TileRef,
+    id: 4,
+    name: 'Water',
+    shapeId: 'cube',
+    collidable: false,
+    faceTextures: {},
+    defaultTexture: TILES.WATER as TileRef,
   },
   {
-    id: 5, name: 'Sand', shapeId: 'cube', collidable: true,
-    faceTextures: {}, defaultTexture: TILES.SAND as TileRef,
+    id: 5,
+    name: 'Sand',
+    shapeId: 'cube',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.SAND as TileRef,
   },
   {
-    id: 6, name: 'Wood', shapeId: 'cube', collidable: true,
+    id: 6,
+    name: 'Wood',
+    shapeId: 'cube',
+    collidable: true,
     faceTextures: { [Face.PosY]: TILES.WOOD_TOP as TileRef, [Face.NegY]: TILES.WOOD_TOP as TileRef },
     defaultTexture: TILES.WOOD_SIDE as TileRef,
   },
   {
-    id: 7, name: 'Leaves', shapeId: 'cube', collidable: false,
-    faceTextures: {}, defaultTexture: TILES.LEAVES as TileRef,
+    id: 7,
+    name: 'Leaves',
+    shapeId: 'cube',
+    collidable: false,
+    faceTextures: {},
+    defaultTexture: TILES.LEAVES as TileRef,
   },
   {
-    id: 8, name: 'StoneBrick', shapeId: 'cube', collidable: true,
-    faceTextures: {}, defaultTexture: TILES.STONE_BRICK as TileRef,
+    id: 8,
+    name: 'StoneBrick',
+    shapeId: 'cube',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE_BRICK as TileRef,
   },
 ];
 
@@ -99,22 +128,18 @@ export interface HubResult {
  * Create the hub island with buildings and NPC position markers.
  * Uses a fixed seed for deterministic layout.
  */
-export function createHub(
-  jpWorld: any,
-  rapierWorld: RAPIER.World,
-): HubResult {
-  const voxelMap = (jpWorld.createActor('hub-terrain') as any)
-    .addComponentAndGet(VoxelRenderer, {
-      chunkSize: 16,
-      layers: ['Ground'],
-      blocks: BLOCK_DEFS,
-      alphaTest: 0.5,
-      material: 'lambert',
-      rapier: {
-        api: RAPIER as never,
-        world: rapierWorld as never,
-      },
-    });
+export function createHub(jpWorld: any, rapierWorld: RAPIER.World): HubResult {
+  const voxelMap = (jpWorld.createActor('hub-terrain') as any).addComponentAndGet(VoxelRenderer, {
+    chunkSize: 16,
+    layers: ['Ground'],
+    blocks: BLOCK_DEFS,
+    alphaTest: 0.5,
+    material: 'lambert',
+    rapier: {
+      api: RAPIER as never,
+      world: rapierWorld as never,
+    },
+  });
 
   // Generate and register programmatic tileset
   const tileset = generateTileset();

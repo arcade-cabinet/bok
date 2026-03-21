@@ -5,7 +5,8 @@
  * @output DOM overlay elements positioned over game canvas
  * @depends traits
  */
+
+export { DamageIndicator } from './DamageIndicator.ts';
 export { HealthBar } from './HealthBar.ts';
 export { Hotbar } from './Hotbar.ts';
 export { Minimap, type MinimapMarker } from './Minimap.ts';
-export { DamageIndicator } from './DamageIndicator.ts';

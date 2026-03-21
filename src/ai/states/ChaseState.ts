@@ -1,4 +1,4 @@
-import { State, type Vehicle, PursuitBehavior } from 'yuka';
+import { PursuitBehavior, State, type Vehicle } from 'yuka';
 
 /** Range at which enemy transitions to attack. */
 const ATTACK_RANGE = 2.5;

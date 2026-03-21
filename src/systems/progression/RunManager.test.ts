@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { RunManager } from './RunManager.ts';
-import { UnlockTracker } from './UnlockTracker.ts';
-import { TomeProgression } from './TomeProgression.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { SaveManager } from '../../persistence/index.ts';
+import { RunManager } from './RunManager.ts';
+import { TomeProgression } from './TomeProgression.ts';
+import { UnlockTracker } from './UnlockTracker.ts';
 
 describe('RunManager', () => {
   let save: SaveManager;
@@ -17,10 +17,10 @@ describe('RunManager', () => {
     mgr.startRun('test-seed', 'forest');
     const state = mgr.getRunState();
     expect(state).not.toBeNull();
-    expect(state!.seed).toBe('test-seed');
-    expect(state!.biome).toBe('forest');
-    expect(state!.visitedIslands).toEqual([]);
-    expect(state!.bossDefeated).toBe(false);
+    expect(state?.seed).toBe('test-seed');
+    expect(state?.biome).toBe('forest');
+    expect(state?.visitedIslands).toEqual([]);
+    expect(state?.bossDefeated).toBe(false);
   });
 
   it('visitIsland tracks visited islands', () => {
@@ -28,14 +28,14 @@ describe('RunManager', () => {
     mgr.visitIsland('island-a');
     mgr.visitIsland('island-b');
     const state = mgr.getRunState();
-    expect(state!.visitedIslands).toEqual(['island-a', 'island-b']);
+    expect(state?.visitedIslands).toEqual(['island-a', 'island-b']);
   });
 
   it('defeatBoss records boss defeated', () => {
     mgr.startRun('seed-2', 'forest');
     mgr.defeatBoss();
     const state = mgr.getRunState();
-    expect(state!.bossDefeated).toBe(true);
+    expect(state?.bossDefeated).toBe(true);
   });
 
   it('endRun with victory persists result', async () => {

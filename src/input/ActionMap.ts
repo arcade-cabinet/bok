@@ -1,8 +1,22 @@
 export type GameAction =
-  | 'moveForward' | 'moveBack' | 'moveLeft' | 'moveRight'
-  | 'attack' | 'dodge' | 'parry' | 'interact' | 'tome' | 'pause'
-  | 'hotbar1' | 'hotbar2' | 'hotbar3' | 'hotbar4' | 'hotbar5'
-  | 'jump' | 'sprint' | 'look';
+  | 'moveForward'
+  | 'moveBack'
+  | 'moveLeft'
+  | 'moveRight'
+  | 'attack'
+  | 'dodge'
+  | 'parry'
+  | 'interact'
+  | 'tome'
+  | 'pause'
+  | 'hotbar1'
+  | 'hotbar2'
+  | 'hotbar3'
+  | 'hotbar4'
+  | 'hotbar5'
+  | 'jump'
+  | 'sprint'
+  | 'look';
 
 export class ActionMap {
   readonly #keyToAction = new Map<string, GameAction>();

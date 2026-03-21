@@ -6,6 +6,7 @@
  * @depends None (standalone data structures)
  * @tested Inventory.test.ts
  */
-export { Inventory, type ItemStack } from './Inventory.ts';
-export { LootTable, type DropConfig, type DropResult } from './LootTable.ts';
+
 export { CraftingSystem, type Recipe } from './CraftingSystem.ts';
+export { Inventory, type ItemStack } from './Inventory.ts';
+export { type DropConfig, type DropResult, LootTable } from './LootTable.ts';

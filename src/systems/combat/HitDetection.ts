@@ -24,10 +24,7 @@ export function isInRange(input: HitCheckInput): boolean {
 }
 
 /** Calculate squared distance between two 3D points. */
-export function distanceSquared(
-  ax: number, ay: number, az: number,
-  bx: number, by: number, bz: number,
-): number {
+export function distanceSquared(ax: number, ay: number, az: number, bx: number, by: number, bz: number): number {
   const dx = bx - ax;
   const dy = by - ay;
   const dz = bz - az;

@@ -1,6 +1,6 @@
 import type { Vec3 } from '../shared/index';
-import type { TerrainData } from './TerrainBuilder';
 import { PRNG } from './noise';
+import type { TerrainData } from './TerrainBuilder';
 
 export interface EnemySpawn {
   position: Vec3;

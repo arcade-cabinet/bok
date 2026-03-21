@@ -8,8 +8,8 @@
  */
 
 export interface MobileControlState {
-  moveX: number;  // -1 to 1
-  moveZ: number;  // -1 to 1
+  moveX: number; // -1 to 1
+  moveZ: number; // -1 to 1
   lookDX: number; // pixels this frame
   lookDY: number;
   attacking: boolean;
@@ -17,7 +17,11 @@ export interface MobileControlState {
 
 export class MobileControls {
   readonly #state: MobileControlState = {
-    moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, attacking: false,
+    moveX: 0,
+    moveZ: 0,
+    lookDX: 0,
+    lookDY: 0,
+    attacking: false,
   };
 
   // Left half: movement
@@ -42,25 +46,36 @@ export class MobileControls {
     // Minimal overlay — just shows split indicator
     this.#overlay = document.createElement('div');
     this.#overlay.id = 'mobile-controls';
-    this.#overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;pointer-events:none;display:none;';
+    this.#overlay.style.cssText =
+      'position:fixed;top:0;left:0;width:100%;height:100%;z-index:90;pointer-events:none;display:none;';
 
     // Split line indicator
     const splitLine = document.createElement('div');
-    splitLine.style.cssText = 'position:absolute;top:10%;left:50%;width:1px;height:80%;background:rgba(255,255,255,0.1);';
+    splitLine.style.cssText =
+      'position:absolute;top:10%;left:50%;width:1px;height:80%;background:rgba(255,255,255,0.1);';
 
     // Labels
     const moveLabel = document.createElement('div');
     moveLabel.textContent = 'MOVE';
-    moveLabel.style.cssText = 'position:absolute;bottom:20px;left:25%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
+    moveLabel.style.cssText =
+      'position:absolute;bottom:20px;left:25%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
     const lookLabel = document.createElement('div');
     lookLabel.textContent = 'LOOK';
-    lookLabel.style.cssText = 'position:absolute;bottom:20px;left:75%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
+    lookLabel.style.cssText =
+      'position:absolute;bottom:20px;left:75%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
 
     // Attack button (bottom right) — scaled to screen
     this.#attackBtn = document.createElement('div');
     this.#attackBtn.textContent = 'ATK';
     this.#updateAttackBtnSize();
-    this.#attackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.#state.attacking = true; }, { passive: false });
+    this.#attackBtn.addEventListener(
+      'touchstart',
+      (e) => {
+        e.preventDefault();
+        this.#state.attacking = true;
+      },
+      { passive: false },
+    );
 
     this.#overlay.append(splitLine, moveLabel, lookLabel, this.#attackBtn);
     document.body.appendChild(this.#overlay);
@@ -88,10 +103,16 @@ export class MobileControls {
     this.#attackBtn.style.cssText = `position:absolute;bottom:30px;right:30px;width:${size}px;height:${size}px;border-radius:50%;background:rgba(192,57,43,0.6);border:2px solid rgba(192,57,43,0.8);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:${fontSize}px;color:#fdf6e3;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;`;
   }
 
-  show(): void { this.#overlay.style.display = ''; }
-  hide(): void { this.#overlay.style.display = 'none'; }
+  show(): void {
+    this.#overlay.style.display = '';
+  }
+  hide(): void {
+    this.#overlay.style.display = 'none';
+  }
 
-  get state(): MobileControlState { return this.#state; }
+  get state(): MobileControlState {
+    return this.#state;
+  }
 
   consumeLookDelta(): { x: number; y: number } {
     const result = { x: this.#state.lookDX, y: this.#state.lookDY };
@@ -110,10 +131,13 @@ export class MobileControls {
     const circle = document.createElement('div');
     circle.style.cssText = `position:fixed;left:${x - 20}px;top:${y - 20}px;width:40px;height:40px;border-radius:50%;border:2px solid rgba(253,246,227,0.5);pointer-events:none;z-index:91;`;
     document.body.appendChild(circle);
-    circle.animate([
-      { opacity: 0.6, transform: 'scale(0.5)' },
-      { opacity: 0, transform: 'scale(1.2)' },
-    ], { duration: 300, easing: 'ease-out' });
+    circle.animate(
+      [
+        { opacity: 0.6, transform: 'scale(0.5)' },
+        { opacity: 0, transform: 'scale(1.2)' },
+      ],
+      { duration: 300, easing: 'ease-out' },
+    );
     setTimeout(() => circle.remove(), 300);
   }
 

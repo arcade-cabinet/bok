@@ -1,10 +1,17 @@
-import type { World, Entity } from 'koota';
+import type { Entity, World } from 'koota';
 import {
-  Position, Health, AttackIntent, WeaponStats, ArmorStats,
-  Hittable, Invincible, DodgeState, ParryState,
+  ArmorStats,
+  AttackIntent,
+  DodgeState,
+  Health,
+  Hittable,
+  Invincible,
+  ParryState,
+  Position,
+  WeaponStats,
 } from '../../traits/index';
-import { isInRange } from './HitDetection';
 import { calculateDamage } from './DamageCalculator';
+import { isInRange } from './HitDetection';
 import { WeaponComboTracker } from './WeaponComboSystem';
 
 /** Per-entity combo trackers, keyed by entity reference. */
@@ -68,15 +75,17 @@ export function combatSystem(world: World): void {
       const targetPos = target.get(Position)!;
 
       // Range check
-      if (!isInRange({
-        attackerX: attackerPos.x,
-        attackerY: attackerPos.y,
-        attackerZ: attackerPos.z,
-        targetX: targetPos.x,
-        targetY: targetPos.y,
-        targetZ: targetPos.z,
-        weaponRange: weapon.range,
-      })) {
+      if (
+        !isInRange({
+          attackerX: attackerPos.x,
+          attackerY: attackerPos.y,
+          attackerZ: attackerPos.z,
+          targetX: targetPos.x,
+          targetY: targetPos.y,
+          targetZ: targetPos.z,
+          weaponRange: weapon.range,
+        })
+      ) {
         continue;
       }
 
@@ -90,9 +99,7 @@ export function combatSystem(world: World): void {
         }
         if (parry.blocking) {
           // Blocking — deal 50% damage
-          const armorReduction = target.has(ArmorStats)
-            ? target.get(ArmorStats)!.reduction
-            : 0;
+          const armorReduction = target.has(ArmorStats) ? (target.get(ArmorStats)?.reduction ?? 0) : 0;
 
           const damage = calculateDamage({
             weaponBaseDamage: weapon.baseDamage,
@@ -112,9 +119,7 @@ export function combatSystem(world: World): void {
       }
 
       // Calculate full damage
-      const armorReduction = target.has(ArmorStats)
-        ? target.get(ArmorStats)!.reduction
-        : 0;
+      const armorReduction = target.has(ArmorStats) ? (target.get(ArmorStats)?.reduction ?? 0) : 0;
 
       const damage = calculateDamage({
         weaponBaseDamage: weapon.baseDamage,

@@ -39,16 +39,5 @@
     "formatter": {
       "indentWidth": 2
     }
-  },
-  "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".capacitor",
-      "android",
-      "ios",
-      "coverage",
-      ".superpowers"
-    ]
   }
 }

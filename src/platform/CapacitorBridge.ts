@@ -5,9 +5,9 @@
  * NO SILENT FALLBACKS. Errors display a visible modal and fail properly.
  */
 import { Capacitor } from '@capacitor/core';
-import { StatusBar } from '@capacitor/status-bar';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { StatusBar } from '@capacitor/status-bar';
 
 export interface PlatformInfo {
   platform: 'web' | 'ios' | 'android';
@@ -22,17 +22,20 @@ const platformErrors: string[] = [];
 function showErrorModal(errors: string[]): void {
   const overlay = document.createElement('div');
   overlay.id = 'platform-error-modal';
-  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);';
+  overlay.style.cssText =
+    'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);';
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'background:#fdf6e3;border:3px solid #c0392b;border-radius:12px;padding:32px;max-width:500px;max-height:80vh;overflow-y:auto;';
+  panel.style.cssText =
+    'background:#fdf6e3;border:3px solid #c0392b;border-radius:12px;padding:32px;max-width:500px;max-height:80vh;overflow-y:auto;';
 
   const title = document.createElement('h2');
   title.textContent = 'Platform Errors';
   title.style.cssText = 'font-family:Georgia,serif;font-size:24px;color:#c0392b;margin:0 0 16px 0;';
 
   const list = document.createElement('ul');
-  list.style.cssText = 'font-family:monospace;font-size:13px;color:#2c1e16;padding-left:20px;margin:0 0 20px 0;line-height:1.8;';
+  list.style.cssText =
+    'font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;color:#2c1e16;padding-left:20px;margin:0 0 20px 0;line-height:1.8;';
   for (const err of errors) {
     const li = document.createElement('li');
     li.textContent = err;
@@ -41,12 +44,14 @@ function showErrorModal(errors: string[]): void {
 
   const dismissBtn = document.createElement('button');
   dismissBtn.textContent = 'Continue Anyway';
-  dismissBtn.style.cssText = 'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;margin-right:8px;';
+  dismissBtn.style.cssText =
+    'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;margin-right:8px;';
   dismissBtn.addEventListener('click', () => overlay.remove());
 
   const copyBtn = document.createElement('button');
   copyBtn.textContent = 'Copy Errors';
-  copyBtn.style.cssText = 'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;color:#2c1e16;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;';
+  copyBtn.style.cssText =
+    'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;color:#2c1e16;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;';
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(errors.join('\n')).then(() => {
       copyBtn.textContent = 'Copied!';

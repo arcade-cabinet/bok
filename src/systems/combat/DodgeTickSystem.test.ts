@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { createWorld, type World } from 'koota';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DodgeState, Stamina } from '../../traits/index';
 import { dodgeTickSystem } from './DodgeTickSystem';
 
@@ -11,9 +11,7 @@ describe('DodgeTickSystem', () => {
   });
 
   it('expires i-frames after 0.3s', () => {
-    const entity = world.spawn(
-      DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }),
-    );
+    const entity = world.spawn(DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }));
 
     // Tick past i-frame duration
     dodgeTickSystem(world, 0.31);
@@ -24,9 +22,7 @@ describe('DodgeTickSystem', () => {
   });
 
   it('resets dodge entirely after 0.8s cooldown', () => {
-    const entity = world.spawn(
-      DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }),
-    );
+    const entity = world.spawn(DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }));
 
     dodgeTickSystem(world, 0.81);
 
@@ -37,9 +33,7 @@ describe('DodgeTickSystem', () => {
   });
 
   it('does not touch inactive dodge', () => {
-    const entity = world.spawn(
-      DodgeState({ active: false, iFrames: false, cooldownRemaining: 0 }),
-    );
+    const entity = world.spawn(DodgeState({ active: false, iFrames: false, cooldownRemaining: 0 }));
 
     dodgeTickSystem(world, 0.1);
 
@@ -77,9 +71,7 @@ describe('DodgeTickSystem', () => {
   });
 
   it('keeps i-frames during initial 0.3s window', () => {
-    const entity = world.spawn(
-      DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }),
-    );
+    const entity = world.spawn(DodgeState({ active: true, iFrames: true, cooldownRemaining: 0.8 }));
 
     dodgeTickSystem(world, 0.1);
 

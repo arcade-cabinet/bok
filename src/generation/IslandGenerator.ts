@@ -1,9 +1,9 @@
 import type { BiomeConfig } from '../content/index';
 import type { Vec3 } from '../shared/index';
-import { TerrainBuilder, type TerrainData } from './TerrainBuilder';
 import { EnemyPlacer, type EnemySpawn } from './EnemyPlacer';
-import { LootPlacer, type ChestPlacement } from './LootPlacer';
-import { StructureGenerator, type Structure } from './StructureGenerator';
+import { type ChestPlacement, LootPlacer } from './LootPlacer';
+import { type Structure, StructureGenerator } from './StructureGenerator';
+import { TerrainBuilder, type TerrainData } from './TerrainBuilder';
 
 /** Complete island blueprint — everything needed to instantiate an island. */
 export interface IslandBlueprint {
@@ -35,7 +35,7 @@ export class IslandGenerator {
     const structures = StructureGenerator.generate(terrain, difficulty, seed);
     const enemySpawns = EnemyPlacer.place(
       terrain,
-      biome.enemies.map(e => ({ enemyId: e.enemyId, weight: e.weight })),
+      biome.enemies.map((e) => ({ enemyId: e.enemyId, weight: e.weight })),
       difficulty,
       seed,
     );

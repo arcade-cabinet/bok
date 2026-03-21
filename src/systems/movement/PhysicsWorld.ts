@@ -1,5 +1,5 @@
 import RAPIER from '@dimforge/rapier3d';
-import type { World as KootaWorld, Entity } from 'koota';
+import type { Entity, World as KootaWorld } from 'koota';
 import { Position } from '../../traits/index.ts';
 
 export class PhysicsWorld {
@@ -39,7 +39,7 @@ export class PhysicsWorld {
   syncToKoota(_world: KootaWorld): void {
     for (const [entityId, body] of this.#bodies) {
       const entity = this.#entityMap.get(entityId);
-      if (entity && entity.has(Position)) {
+      if (entity?.has(Position)) {
         const translation = body.translation();
         entity.set(Position, { x: translation.x, y: translation.y, z: translation.z });
       }

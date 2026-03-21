@@ -252,11 +252,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
   outline: none;
   touch-action: none;
 }
-@font-face {
-  font-family: 'Cormorant Garamond';
-  src: url('/src/assets/fonts/CormorantGaramond-Regular.ttf') format('truetype');
-  font-weight: 400;
-}
+/* Typography: see src/fonts.css — @fontsource packages (Cormorant Garamond, Cinzel, Crimson Text), bundled by Vite */
 ```
 
 - [ ] **Step 7: Create src/main.ts (minimal bootstrap)**

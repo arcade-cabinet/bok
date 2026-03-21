@@ -1,9 +1,9 @@
 import type { World } from 'koota';
+import { LookIntent, MovementIntent } from '../traits/index.ts';
 import { ActionMap } from './ActionMap.ts';
-import { KeyboardMouseDevice } from './KeyboardMouseDevice.ts';
 import { GamepadDevice } from './GamepadDevice.ts';
+import { KeyboardMouseDevice } from './KeyboardMouseDevice.ts';
 import { TouchDevice } from './TouchDevice.ts';
-import { MovementIntent, LookIntent, AttackIntent, DodgeState, ParryState } from '../traits/index.ts';
 
 export class InputSystem {
   readonly actionMap: ActionMap;
@@ -39,7 +39,10 @@ export class InputSystem {
 
     // Clamp magnitude
     const mag = Math.sqrt(dirX * dirX + dirZ * dirZ);
-    if (mag > 1) { dirX /= mag; dirZ /= mag; }
+    if (mag > 1) {
+      dirX /= mag;
+      dirZ /= mag;
+    }
 
     world.set(MovementIntent, {
       dirX,

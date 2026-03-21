@@ -8,12 +8,13 @@
  * @tested DamageCalculator.test.ts, WeaponComboSystem.test.ts, DodgeTickSystem.test.ts,
  *         StaminaSystem.test.ts, DoTSystem.test.ts, BossPhaseSystem.test.ts
  */
-export { calculateDamage, type DamageInput } from './DamageCalculator';
-export { isInRange, distanceSquared, type HitCheckInput } from './HitDetection';
-export { WeaponComboTracker } from './WeaponComboSystem';
-export { combatSystem } from './CombatSystem';
-export { dodgeTickSystem } from './DodgeTickSystem';
-export { staminaSystem } from './StaminaSystem';
-export { dotSystem } from './DoTSystem';
-export { knockbackSystem } from './KnockbackSystem';
+
 export { bossPhaseSystem } from './BossPhaseSystem';
+export { combatSystem } from './CombatSystem';
+export { calculateDamage, type DamageInput } from './DamageCalculator';
+export { dodgeTickSystem } from './DodgeTickSystem';
+export { dotSystem } from './DoTSystem';
+export { distanceSquared, type HitCheckInput, isInRange } from './HitDetection';
+export { knockbackSystem } from './KnockbackSystem';
+export { staminaSystem } from './StaminaSystem';
+export { WeaponComboTracker } from './WeaponComboSystem';

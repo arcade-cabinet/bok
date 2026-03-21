@@ -1,6 +1,6 @@
 import type { Vec3 } from '../shared/index';
-import type { TerrainData } from './TerrainBuilder';
 import { PRNG } from './noise';
+import type { TerrainData } from './TerrainBuilder';
 
 export interface ChestPlacement {
   position: Vec3;
@@ -34,7 +34,7 @@ export class LootPlacer {
         if (dist < 0.15 || dist > 0.75) continue;
 
         // Avoid duplicates in same area
-        const tooClose = chests.some(c => {
+        const tooClose = chests.some((c) => {
           const cdx = c.position.x - x;
           const cdz = c.position.z - z;
           return Math.sqrt(cdx * cdx + cdz * cdz) < 8;

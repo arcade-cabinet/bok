@@ -1,7 +1,7 @@
 import type { World } from 'koota';
+import { IslandState } from '../traits/index.ts';
 import { Scene } from './Scene.ts';
 import type { SceneDirector } from './SceneDirector.ts';
-import { IslandState } from '../traits/index.ts';
 
 const PARCHMENT = '#fdf6e3';
 const INK = '#2c1e16';

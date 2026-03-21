@@ -1,4 +1,4 @@
-import { PRNG } from './PRNG';
+import type { PRNG } from './PRNG';
 
 /**
  * 2D Simplex noise with deterministic permutation table seeded from PRNG.
@@ -6,8 +6,14 @@ import { PRNG } from './PRNG';
 export class SimplexNoise {
   readonly #perm: Uint8Array;
   readonly #grad: ReadonlyArray<[number, number]> = [
-    [1, 1], [-1, 1], [1, -1], [-1, -1],
-    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [1, 1],
+    [-1, 1],
+    [1, -1],
+    [-1, -1],
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
   ];
 
   constructor(rng: PRNG) {
@@ -43,9 +49,11 @@ export class SimplexNoise {
 
     let i1: number, j1: number;
     if (x0 > y0) {
-      i1 = 1; j1 = 0;
+      i1 = 1;
+      j1 = 0;
     } else {
-      i1 = 0; j1 = 1;
+      i1 = 0;
+      j1 = 1;
     }
 
     const x1 = x0 - i1 + G2;
@@ -56,7 +64,9 @@ export class SimplexNoise {
     const ii = i & 255;
     const jj = j & 255;
 
-    let n0 = 0, n1 = 0, n2 = 0;
+    let n0 = 0,
+      n1 = 0,
+      n2 = 0;
 
     let t0 = 0.5 - x0 * x0 - y0 * y0;
     if (t0 >= 0) {

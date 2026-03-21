@@ -83,24 +83,36 @@ export class PauseMenu {
         cursor: 'pointer',
         transition: 'opacity 0.2s',
       });
-      btn.addEventListener('mouseenter', () => { btn.style.opacity = '0.8'; });
-      btn.addEventListener('mouseleave', () => { btn.style.opacity = '1'; });
+      btn.addEventListener('mouseenter', () => {
+        btn.style.opacity = '0.8';
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.opacity = '1';
+      });
       btn.addEventListener('click', onClick);
       return btn;
     };
 
     panel.appendChild(makeBtn('RESUME', () => this.hide(), true));
-    panel.appendChild(makeBtn('SETTINGS', () => { /* placeholder */ }));
-    panel.appendChild(makeBtn('ABANDON RUN', () => {
-      this.#onAbandon?.();
-      this.hide();
-      this.#director.transition('hub');
-    }));
-    panel.appendChild(makeBtn('QUIT', () => {
-      this.#onQuit?.();
-      this.hide();
-      this.#director.transition('mainMenu');
-    }));
+    panel.appendChild(
+      makeBtn('SETTINGS', () => {
+        /* placeholder */
+      }),
+    );
+    panel.appendChild(
+      makeBtn('ABANDON RUN', () => {
+        this.#onAbandon?.();
+        this.hide();
+        this.#director.transition('hub');
+      }),
+    );
+    panel.appendChild(
+      makeBtn('QUIT', () => {
+        this.#onQuit?.();
+        this.hide();
+        this.#director.transition('mainMenu');
+      }),
+    );
 
     this.#overlay.appendChild(panel);
     document.body.appendChild(this.#overlay);

@@ -1,13 +1,6 @@
 import type { Scene } from './Scene.ts';
 
-export type SceneName =
-  | 'mainMenu'
-  | 'hub'
-  | 'islandSelect'
-  | 'sailing'
-  | 'island'
-  | 'bossArena'
-  | 'results';
+export type SceneName = 'mainMenu' | 'hub' | 'islandSelect' | 'sailing' | 'island' | 'bossArena' | 'results';
 
 /**
  * Custom FSM that manages game state transitions.

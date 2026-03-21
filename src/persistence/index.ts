@@ -7,5 +7,5 @@
  * @tested Database.test.ts
  */
 export { type DatabaseAdapter, InMemoryDatabase } from './Database.ts';
-export { SaveManager, type UnlockRecord, type RunRecord, type GameState } from './SaveManager.ts';
 export { runMigrations } from './migrations.ts';
+export { type GameState, type RunRecord, SaveManager, type UnlockRecord } from './SaveManager.ts';

@@ -1,6 +1,6 @@
 import type { Entity } from 'koota';
 import type { Vehicle } from 'yuka';
-import { Position, Velocity, Health, AIState } from '../traits/index';
+import { AIState, Health, Position, Velocity } from '../traits/index';
 import type { AIVehicle } from './types';
 
 /**

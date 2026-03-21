@@ -91,7 +91,7 @@ export async function stopMusic(fadeDuration = 1): Promise<void> {
   currentBiome = null;
 
   gain.gain.rampTo(0, fadeDuration);
-  await new Promise(resolve => setTimeout(resolve, fadeDuration * 1000 + 100));
+  await new Promise((resolve) => setTimeout(resolve, fadeDuration * 1000 + 100));
   player.stop();
   player.dispose();
   gain.dispose();

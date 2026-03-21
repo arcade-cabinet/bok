@@ -1,20 +1,17 @@
-import { Vehicle, StateMachine } from 'yuka';
+import { StateMachine, Vehicle } from 'yuka';
 import type { EnemyConfig } from '../content/index';
-import type { AIVehicle } from './types';
-import { PatrolState } from './states/PatrolState';
-import { ChaseState } from './states/ChaseState';
 import { AttackState } from './states/AttackState';
+import { ChaseState } from './states/ChaseState';
 import { DeadState } from './states/DeadState';
+import { PatrolState } from './states/PatrolState';
+import type { AIVehicle } from './types';
 
 /**
  * Creates a Yuka Vehicle configured from EnemyConfig.
  * Sets mass, maxSpeed, attaches SteeringManager (built-in),
  * creates StateMachine with patrol/chase/attack/dead states.
  */
-export function createEnemyVehicle(
-  config: EnemyConfig,
-  playerVehicle?: Vehicle,
-): AIVehicle {
+export function createEnemyVehicle(config: EnemyConfig, playerVehicle?: Vehicle): AIVehicle {
   const vehicle = new Vehicle() as AIVehicle;
   vehicle.mass = 1;
   vehicle.maxSpeed = config.speed;

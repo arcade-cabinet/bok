@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { Inventory } from './Inventory.ts';
-import { LootTable, type DropConfig } from './LootTable.ts';
+import { describe, expect, it } from 'vitest';
 import { CraftingSystem, type Recipe } from './CraftingSystem.ts';
+import { Inventory } from './Inventory.ts';
+import { type DropConfig, LootTable } from './LootTable.ts';
 
 describe('Inventory', () => {
   it('addItem and getItems', () => {
@@ -72,9 +72,7 @@ describe('Inventory', () => {
 
 describe('LootTable', () => {
   it('rollDrops returns items within configured amounts', () => {
-    const drops: DropConfig[] = [
-      { itemId: 'gold', chance: 1.0, minAmount: 1, maxAmount: 3 },
-    ];
+    const drops: DropConfig[] = [{ itemId: 'gold', chance: 1.0, minAmount: 1, maxAmount: 3 }];
     const result = LootTable.rollDrops(drops, () => 0.5);
     expect(result).toHaveLength(1);
     expect(result[0].itemId).toBe('gold');
@@ -83,9 +81,7 @@ describe('LootTable', () => {
   });
 
   it('rollDrops respects chance — zero chance yields no drops', () => {
-    const drops: DropConfig[] = [
-      { itemId: 'gold', chance: 0, minAmount: 1, maxAmount: 1 },
-    ];
+    const drops: DropConfig[] = [{ itemId: 'gold', chance: 0, minAmount: 1, maxAmount: 1 }];
     const result = LootTable.rollDrops(drops, () => 0.5);
     expect(result).toHaveLength(0);
   });

@@ -1,26 +1,44 @@
-import type { World, Entity } from 'koota';
-import { Vehicle, EntityManager } from 'yuka';
+import type { Entity, World } from 'koota';
 import * as THREE from 'three';
-import { Scene } from './Scene.ts';
-import {
-  Position, Velocity, Health, Stamina, IsPlayer, MovementIntent,
-  LookIntent, AttackIntent, DodgeState, ParryState, WeaponStats,
-  Hittable, EnemyType, BossType, YukaRef, AIState, IslandState, Time,
-} from '../traits/index.ts';
-import { ContentRegistry, type EnemyConfig } from '../content/index.ts';
-import { IslandGenerator, type IslandBlueprint } from '../generation/index.ts';
-import { EnemySpawner } from '../systems/spawning/index.ts';
-import { createEnemyVehicle, AIBridge, type AIVehicle } from '../ai/index.ts';
-import { MovementSystem, PhysicsWorld } from '../systems/movement/index.ts';
-import {
-  combatSystem, dodgeTickSystem, staminaSystem, dotSystem,
-  knockbackSystem, bossPhaseSystem,
-} from '../systems/combat/index.ts';
-import { PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER, PARRY_WINDOW } from '../shared/index.ts';
-import { EventBus } from '../shared/index.ts';
+import { EntityManager, Vehicle } from 'yuka';
+import { AIBridge, type AIVehicle, createEnemyVehicle } from '../ai/index.ts';
+import type { BossConfig, ContentRegistry, EnemyConfig } from '../content/index.ts';
+import { type IslandBlueprint, IslandGenerator } from '../generation/index.ts';
 import type { InputSystem } from '../input/index.ts';
-import { ParticleSystem, WeatherSystem, DayNightCycle, WaterRenderer, PostProcessing } from '../rendering/index.ts';
-import { HealthBar, Hotbar, DamageIndicator } from '../ui/index.ts';
+import { DayNightCycle, ParticleSystem, PostProcessing, WaterRenderer, WeatherSystem } from '../rendering/index.ts';
+import { EventBus, PARRY_WINDOW, PLAYER_MOVE_SPEED, PLAYER_SPRINT_MULTIPLIER } from '../shared/index.ts';
+import {
+  bossPhaseSystem,
+  combatSystem,
+  dodgeTickSystem,
+  dotSystem,
+  knockbackSystem,
+  staminaSystem,
+} from '../systems/combat/index.ts';
+import { MovementSystem, PhysicsWorld } from '../systems/movement/index.ts';
+import { EnemySpawner } from '../systems/spawning/index.ts';
+import {
+  AIState,
+  AttackIntent,
+  BossType,
+  DodgeState,
+  EnemyType,
+  Health,
+  Hittable,
+  IslandState,
+  IsPlayer,
+  LookIntent,
+  MovementIntent,
+  ParryState,
+  Position,
+  Stamina,
+  Time,
+  Velocity,
+  WeaponStats,
+  YukaRef,
+} from '../traits/index.ts';
+import { DamageIndicator, HealthBar, Hotbar } from '../ui/index.ts';
+import { Scene } from './Scene.ts';
 import type { SceneDirector } from './SceneDirector.ts';
 
 /**
@@ -147,7 +165,7 @@ export class IslandScene extends Scene {
 
     console.log(
       `[IslandScene] ${biomeId} island ready — player at (${this.#blueprint.playerSpawn.x}, ${this.#blueprint.playerSpawn.y}, ${this.#blueprint.playerSpawn.z}), ` +
-      `${this.#enemyEntities.length} enemies, boss arena at (${this.#blueprint.bossArena.x}, ${this.#blueprint.bossArena.y}, ${this.#blueprint.bossArena.z})`,
+        `${this.#enemyEntities.length} enemies, boss arena at (${this.#blueprint.bossArena.x}, ${this.#blueprint.bossArena.y}, ${this.#blueprint.bossArena.z})`,
     );
   }
 
@@ -277,7 +295,12 @@ export class IslandScene extends Scene {
 
   // --- Rendering initialization (M6) ---
 
-  #initRendering(biome: { skyColor?: string; fogColor?: string; fogDensity?: number; terrain?: { waterLevel?: number } }): void {
+  #initRendering(biome: {
+    skyColor?: string;
+    fogColor?: string;
+    fogDensity?: number;
+    terrain?: { waterLevel?: number };
+  }): void {
     // Particle system
     this.#particleSystem = new ParticleSystem();
     this.#threeScene?.add(this.#particleSystem.mesh);
@@ -370,9 +393,7 @@ export class IslandScene extends Scene {
     if (health && health.current < this.#lastPlayerHealth) {
       this.#damageIndicator?.flash();
       this.#eventBus.emit('playerDamaged', { amount: this.#lastPlayerHealth - health.current });
-      this.#postProcessing?.damageVignette(
-        Math.min(1, (this.#lastPlayerHealth - health.current) / 30),
-      );
+      this.#postProcessing?.damageVignette(Math.min(1, (this.#lastPlayerHealth - health.current) / 30));
     }
     if (health) {
       this.#lastPlayerHealth = health.current;
@@ -449,7 +470,7 @@ export class IslandScene extends Scene {
         baseDamage: woodenSword.baseDamage,
         attackSpeed: woodenSword.attackSpeed,
         range: woodenSword.range,
-        comboMultipliers: woodenSword.combo.map(c => c.damageMultiplier).join(','),
+        comboMultipliers: woodenSword.combo.map((c) => c.damageMultiplier).join(','),
         weaponId: woodenSword.id,
       }),
       Hittable(),
@@ -463,11 +484,7 @@ export class IslandScene extends Scene {
 
     // M9: Create kinematic body for player
     if (this.#physicsWorld && this.#playerEntity) {
-      this.#physicsWorld.createKinematicBody(
-        this.#playerEntity.id(),
-        this.#playerEntity,
-        { x: 0.4, y: 0.9, z: 0.4 },
-      );
+      this.#physicsWorld.createKinematicBody(this.#playerEntity.id(), this.#playerEntity, { x: 0.4, y: 0.9, z: 0.4 });
     }
 
     // Position camera at player spawn
@@ -525,11 +542,7 @@ export class IslandScene extends Scene {
 
       // M9: Create kinematic body for enemy
       if (this.#physicsWorld) {
-        this.#physicsWorld.createKinematicBody(
-          entity.id(),
-          entity,
-          { x: 0.4, y: 0.9, z: 0.4 },
-        );
+        this.#physicsWorld.createKinematicBody(entity.id(), entity, { x: 0.4, y: 0.9, z: 0.4 });
       }
 
       this.#enemyEntities.push({ entity, vehicle, mesh });
@@ -540,7 +553,7 @@ export class IslandScene extends Scene {
     if (!this.#blueprint || !this.#playerVehicle) return;
 
     const biome = this.#content.getBiome(this.#biomeId);
-    let bossConfig;
+    let bossConfig: BossConfig;
     try {
       bossConfig = this.#content.getBoss(biome.bossId);
     } catch {
@@ -592,11 +605,7 @@ export class IslandScene extends Scene {
 
     // M9: Physics body for boss
     if (this.#physicsWorld) {
-      this.#physicsWorld.createKinematicBody(
-        entity.id(),
-        entity,
-        { x: 0.6, y: 1.2, z: 0.6 },
-      );
+      this.#physicsWorld.createKinematicBody(entity.id(), entity, { x: 0.6, y: 1.2, z: 0.6 });
     }
 
     this.#enemyEntities.push({ entity, vehicle, mesh: bossMesh });
@@ -610,9 +619,7 @@ export class IslandScene extends Scene {
     const intent = this.world.get(MovementIntent);
     if (!intent) return;
 
-    const speed = intent.sprint
-      ? PLAYER_MOVE_SPEED * PLAYER_SPRINT_MULTIPLIER
-      : PLAYER_MOVE_SPEED;
+    const speed = intent.sprint ? PLAYER_MOVE_SPEED * PLAYER_SPRINT_MULTIPLIER : PLAYER_MOVE_SPEED;
 
     // Transform movement direction by camera yaw so WASD is camera-relative
     const yaw = this.#cameraEuler.y;

@@ -1,16 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
 import { createWorld, type World } from 'koota';
-import { Position, Velocity, Health, Stamina } from './traits/index.ts';
-import { SceneDirector } from './scenes/SceneDirector.ts';
-import { Scene } from './scenes/Scene.ts';
-import { SaveManager } from './persistence/index.ts';
-import { RunManager } from './systems/progression/RunManager.ts';
+import { describe, expect, it } from 'vitest';
 import { ContentRegistry } from './content/registry.ts';
 import { IslandGenerator } from './generation/index.ts';
-import { EnemySpawner } from './systems/spawning/EnemySpawner.ts';
-import { MovementSystem } from './systems/movement/MovementSystem.ts';
-import { calculateDamage, type DamageInput } from './systems/combat/DamageCalculator.ts';
 import { ActionMap } from './input/index.ts';
+import { SaveManager } from './persistence/index.ts';
+import { Scene } from './scenes/Scene.ts';
+import { SceneDirector } from './scenes/SceneDirector.ts';
+import { calculateDamage, type DamageInput } from './systems/combat/DamageCalculator.ts';
+import { MovementSystem } from './systems/movement/MovementSystem.ts';
+import { RunManager } from './systems/progression/RunManager.ts';
+import { EnemySpawner } from './systems/spawning/EnemySpawner.ts';
+import { Health, Position, Stamina, Velocity } from './traits/index.ts';
 
 // --- Helpers ---
 
@@ -18,10 +18,18 @@ class MockScene extends Scene {
   enterCount = 0;
   updateCount = 0;
   exitCount = 0;
-  enter(): void { this.enterCount++; }
-  update(_dt: number): void { this.updateCount++; }
-  exit(): void { this.exitCount++; }
-  constructor(name: string, world: World) { super(name, world, null); }
+  enter(): void {
+    this.enterCount++;
+  }
+  update(_dt: number): void {
+    this.updateCount++;
+  }
+  exit(): void {
+    this.exitCount++;
+  }
+  constructor(name: string, world: World) {
+    super(name, world, null);
+  }
 }
 
 // --- Integration Tests ---
@@ -97,9 +105,9 @@ describe('Integration: Save/Load Round-Trip', () => {
     // Restore
     const loaded = await save.loadState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.scene).toBe('island');
-    expect((loaded!.koota as { entities: unknown[] }).entities).toHaveLength(2);
-    expect((loaded!.yuka as { vehicles: string[] }).vehicles).toContain('enemy-1');
+    expect(loaded?.scene).toBe('island');
+    expect((loaded?.koota as { entities: unknown[] }).entities).toHaveLength(2);
+    expect((loaded?.yuka as { vehicles: string[] }).vehicles).toContain('enemy-1');
   });
 
   it('persists unlocks across sessions', async () => {
@@ -111,7 +119,7 @@ describe('Integration: Save/Load Round-Trip', () => {
 
     const unlocks = await save.getUnlocks();
     expect(unlocks).toHaveLength(3);
-    expect(unlocks.map(u => u.id).sort()).toEqual(['dash', 'desert', 'fireball']);
+    expect(unlocks.map((u) => u.id).sort()).toEqual(['dash', 'desert', 'fireball']);
   });
 
   it('persists run history across sessions', async () => {
@@ -128,10 +136,11 @@ describe('Integration: Save/Load Round-Trip', () => {
 
     const runs = await save.getRuns();
     expect(runs).toHaveLength(2);
-    expect(runs[0].result).toBe('victory');
-    expect(runs[0].seed).toBe('seed-1');
-    expect(runs[1].result).toBe('death');
-    expect(runs[1].seed).toBe('seed-2');
+    // Newest run first (ORDER BY timestamp DESC)
+    expect(runs[0].result).toBe('death');
+    expect(runs[0].seed).toBe('seed-2');
+    expect(runs[1].result).toBe('victory');
+    expect(runs[1].seed).toBe('seed-1');
   });
 });
 
@@ -152,28 +161,17 @@ describe('Integration: Full Run Simulation', () => {
     expect(blueprint.bossArena).toBeDefined();
 
     // 3. Spawn enemies from blueprint
-    const enemyConfigs = new Map(
-      registry.getAllEnemies().map(e => [e.id, e]),
-    );
+    const enemyConfigs = new Map(registry.getAllEnemies().map((e) => [e.id, e]));
     const spawnedEnemies = EnemySpawner.spawn(blueprint.enemySpawns, enemyConfigs);
     expect(spawnedEnemies.length).toBeGreaterThan(0);
     expect(spawnedEnemies[0].health).toBeGreaterThan(0);
 
     // 4. Create Koota world with player + enemies
     const world = createWorld();
-    const player = world.spawn(
-      Position(blueprint.playerSpawn),
-      Velocity,
-      Health({ current: 100, max: 100 }),
-      Stamina,
-    );
+    const player = world.spawn(Position(blueprint.playerSpawn), Velocity, Health({ current: 100, max: 100 }), Stamina);
 
-    const enemyEntities = spawnedEnemies.map(e =>
-      world.spawn(
-        Position(e.position),
-        Velocity,
-        Health({ current: e.health, max: e.health }),
-      ),
+    const enemyEntities = spawnedEnemies.map((e) =>
+      world.spawn(Position(e.position), Velocity, Health({ current: e.health, max: e.health })),
     );
 
     // Player + enemies (world entity may also be counted by Koota)
@@ -201,7 +199,7 @@ describe('Integration: Full Run Simulation', () => {
     const enemyHealth = enemyEntities[0].get(Health)!;
     const newHealth = enemyHealth.current - damage;
     enemyEntities[0].set(Health, { current: Math.max(0, newHealth), max: enemyHealth.max });
-    expect(enemyEntities[0].get(Health)!.current).toBeLessThan(enemyHealth.max);
+    expect(enemyEntities[0].get(Health)?.current).toBeLessThan(enemyHealth.max);
 
     // 7. Simulate boss defeat + run progression
     const save = await SaveManager.createInMemory();
@@ -242,7 +240,7 @@ describe('Integration: Full Run Simulation', () => {
 
     // Take lethal damage
     player.set(Health, { current: 0, max: 100 });
-    expect(player.get(Health)!.current).toBe(0);
+    expect(player.get(Health)?.current).toBe(0);
 
     // End run as death
     await runMgr.endRun('death');

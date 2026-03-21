@@ -7,5 +7,5 @@
  * @tested RunManager.test.ts
  */
 export { RunManager, type RunState } from './RunManager.ts';
-export { UnlockTracker } from './UnlockTracker.ts';
 export { TomeProgression } from './TomeProgression.ts';
+export { UnlockTracker } from './UnlockTracker.ts';

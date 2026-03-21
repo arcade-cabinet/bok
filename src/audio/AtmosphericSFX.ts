@@ -51,9 +51,12 @@ export function startAtmosphericSFX(): void {
   setTimeout(playRandom, 10000 + Math.random() * 10000);
 
   // Then every 15-40 seconds
-  intervalId = setInterval(() => {
-    playRandom();
-  }, 15000 + Math.random() * 25000);
+  intervalId = setInterval(
+    () => {
+      playRandom();
+    },
+    15000 + Math.random() * 25000,
+  );
 }
 
 /**

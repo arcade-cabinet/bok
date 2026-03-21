@@ -1,6 +1,6 @@
 import type { World } from 'koota';
+import type { BossConfig, ContentRegistry } from '../../content/index';
 import { BossType, Health } from '../../traits/index';
-import type { ContentRegistry } from '../../content/index';
 
 /**
  * Monitors boss health and advances phase when thresholds are crossed.
@@ -13,7 +13,7 @@ export function bossPhaseSystem(world: World, content: ContentRegistry): void {
     const boss = entity.get(BossType)!;
     const health = entity.get(Health)!;
 
-    let bossConfig;
+    let bossConfig: BossConfig;
     try {
       bossConfig = content.getBoss(boss.configId);
     } catch {

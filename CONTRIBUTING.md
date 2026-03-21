@@ -3,9 +3,11 @@
 ## Setup
 ```bash
 git clone <repo> && cd bok
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+
+Use **pnpm** (see `package.json`). Before opening a PR, run **typecheck, lint, unit tests, browser tests, and production build** — see [README.md](README.md) and [docs/PRODUCTION_ROADMAP.md](docs/PRODUCTION_ROADMAP.md) §10.
 
 ## Adding Content
 All game content is data-driven JSON. See `src/content/` for examples and `src/content/types.ts` for schemas.

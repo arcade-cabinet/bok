@@ -5,10 +5,13 @@
  * @output DOM elements positioned over the game canvas
  * @depends traits, content
  */
-export { HealthBar, Hotbar, Minimap, type MinimapMarker, DamageIndicator } from './hud/index.ts';
-export { TomeOverlay, type TomeWeaponDisplay, PageBrowser, type TomePage } from './tome/index.ts';
+export { DamageIndicator, HealthBar, Hotbar, Minimap, type MinimapMarker } from './hud/index.ts';
 export {
-  MainMenu, PauseMenu,
-  DeathScreen, type DeathStats,
-  VictoryScreen, type VictoryStats,
+  DeathScreen,
+  type DeathStats,
+  MainMenu,
+  PauseMenu,
+  VictoryScreen,
+  type VictoryStats,
 } from './screens/index.ts';
+export { PageBrowser, TomeOverlay, type TomePage, type TomeWeaponDisplay } from './tome/index.ts';

@@ -174,6 +174,6 @@ declare module 'yuka' {
     addEvaluator(evaluator: GoalEvaluator): this;
     removeEvaluator(evaluator: GoalEvaluator): this;
     arbitrate(): this;
-    registerType(type: string, constructor: new () => unknown): this;
+    registerType(type: string, ctor: new () => unknown): this;
   }
 }

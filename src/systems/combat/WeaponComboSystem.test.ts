@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { WeaponComboTracker } from './WeaponComboSystem';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { ComboHit } from '../../content/index';
+import { WeaponComboTracker } from './WeaponComboSystem';
 
 const testCombo: ComboHit[] = [
   { damageMultiplier: 1.0, windowMs: 500, animation: 'slash1' },

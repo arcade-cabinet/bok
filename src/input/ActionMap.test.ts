@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { ActionMap, type GameAction } from './index';
+import { describe, expect, it } from 'vitest';
+import { ActionMap } from './index';
 
 describe('ActionMap', () => {
   it('maps keyboard key to action', () => {

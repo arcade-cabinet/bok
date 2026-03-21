@@ -6,8 +6,9 @@
  * @depends three
  * @tested ParticleSystem.test.ts, DayNightCycle.test.ts
  */
-export { ParticleSystem, type ParticleType } from './ParticleSystem.ts';
-export { WeatherSystem } from './WeatherSystem.ts';
+
 export { DayNightCycle, type TimeOfDay } from './DayNightCycle.ts';
-export { WaterRenderer } from './WaterRenderer.ts';
+export { ParticleSystem, type ParticleType } from './ParticleSystem.ts';
 export { PostProcessing } from './PostProcessing.ts';
+export { WaterRenderer } from './WaterRenderer.ts';
+export { WeatherSystem } from './WeatherSystem.ts';

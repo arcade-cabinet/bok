@@ -15,8 +15,9 @@ const cache = new Map<string, THREE.Group>();
  * Returns a clone of the loaded scene group.
  */
 export async function loadModel(path: string): Promise<THREE.Group> {
-  if (cache.has(path)) {
-    return cache.get(path)!.clone();
+  const cached = cache.get(path);
+  if (cached) {
+    return cached.clone();
   }
 
   return new Promise((resolve, reject) => {
@@ -53,7 +54,7 @@ export const WEAPON_MODELS: Record<string, string> = {
   'crystal-blade': '/models/weapons/Sword_Diamond.glb',
   'volcanic-edge': '/models/weapons/Sword_Gold.glb',
   'battle-axe': '/models/weapons/Axe_Wood.glb',
-  'war-hammer': '/models/weapons/Pickaxe_Stone.glb',
+  'war-hammer': '/models/weapons/Pickaxe_Diamond.glb',
   'psx-sword': '/models/weapons/psx-sword.glb',
   'psx-axe': '/models/weapons/psx-axe.glb',
   'psx-katana': '/models/weapons/psx-katana.glb',

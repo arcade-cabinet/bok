@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { createPlayerGovernor, type PlayerGovernor, type ThreatLevel, type GovernorOutput } from '../ai/PlayerGovernor';
+import { useEffect, useRef, useState } from 'react';
+import { createPlayerGovernor, type GovernorOutput, type PlayerGovernor, type ThreatLevel } from '../ai/PlayerGovernor';
 
 export interface PlayerGovernorState {
   suggestedTarget: number;
@@ -22,7 +22,9 @@ export function usePlayerGovernor() {
 
   useEffect(() => {
     governorRef.current = createPlayerGovernor();
-    return () => { governorRef.current = null; };
+    return () => {
+      governorRef.current = null;
+    };
   }, []);
 
   return {
@@ -32,12 +34,13 @@ export function usePlayerGovernor() {
     canDodge: state.canDodge,
     /** Call from the engine polling interval to push latest output to React */
     pushOutput(output: GovernorOutput) {
-      setState(prev => {
+      setState((prev) => {
         if (
           prev.suggestedTarget === output.suggestedTarget &&
           prev.threatLevel === output.threatLevel &&
           prev.canDodge === output.canDodge
-        ) return prev;
+        )
+          return prev;
         return output;
       });
     },

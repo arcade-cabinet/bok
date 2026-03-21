@@ -1,6 +1,6 @@
-import { render } from 'vitest-browser-react';
 import { expect, test, vi } from 'vitest';
 import { page } from 'vitest/browser';
+import { render } from 'vitest-browser-react';
 import type { EngineState } from '../../engine/types';
 
 const playingState: EngineState = {
@@ -34,12 +34,7 @@ vi.mock('../../engine/GameEngine', () => ({
 test('renders canvas and HUD elements', async () => {
   const { GameView } = await import('./GameView');
 
-  const { container } = await render(
-    <GameView
-      config={{ biome: 'forest', seed: 'test' }}
-      onReturnToMenu={() => {}}
-    />,
-  );
+  const { container } = await render(<GameView config={{ biome: 'forest', seed: 'test' }} onReturnToMenu={() => {}} />);
 
   // Canvas should mount with id="game-canvas"
   const canvas = container.querySelector('#game-canvas');

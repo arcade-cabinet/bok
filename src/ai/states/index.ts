@@ -5,7 +5,8 @@
  * @output State transitions, steering behavior changes
  * @depends yuka
  */
-export { PatrolState } from './PatrolState';
-export { ChaseState } from './ChaseState';
+
 export { AttackState } from './AttackState';
+export { ChaseState } from './ChaseState';
 export { DeadState } from './DeadState';
+export { PatrolState } from './PatrolState';

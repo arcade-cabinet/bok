@@ -1,18 +1,17 @@
-import type { World, Entity } from 'koota';
-import { Scene } from './Scene.ts';
-import { Position, Velocity, Health, IsPlayer, MovementIntent, LookIntent } from '../traits/index.ts';
-import { TerrainBuilder, type TerrainData } from '../generation/index.ts';
-import { SaveManager } from '../persistence/index.ts';
-import type { SceneDirector } from './SceneDirector.ts';
-import type { ActionMap } from '../input/index.ts';
-import type { BiomeConfig } from '../content/index.ts';
-import type { Vec3 } from '../shared/index.ts';
-import { PLAYER_MOVE_SPEED } from '../shared/index.ts';
-import { Minimap, type MinimapMarker } from '../ui/index.ts';
+import type { Entity, World } from 'koota';
 import * as THREE from 'three';
-
 import buildingsData from '../content/hub/buildings.json';
 import npcsData from '../content/hub/npcs.json';
+import type { BiomeConfig } from '../content/index.ts';
+import { TerrainBuilder, type TerrainData } from '../generation/index.ts';
+import type { ActionMap } from '../input/index.ts';
+import type { SaveManager } from '../persistence/index.ts';
+import type { Vec3 } from '../shared/index.ts';
+import { PLAYER_MOVE_SPEED } from '../shared/index.ts';
+import { Health, IsPlayer, LookIntent, MovementIntent, Position, Velocity } from '../traits/index.ts';
+import { Minimap, type MinimapMarker } from '../ui/index.ts';
+import { Scene } from './Scene.ts';
+import type { SceneDirector } from './SceneDirector.ts';
 
 // --- Hub building data types ---
 
@@ -54,11 +53,11 @@ const HUB_BIOME_CONFIG: BiomeConfig = {
     waterLevel: 2,
     baseHeight: 6,
     blocks: {
-      surface: 1,   // grass
+      surface: 1, // grass
       subsurface: 2, // dirt
-      stone: 3,      // stone
-      water: 4,      // water
-      accent: 5,     // stone path
+      stone: 3, // stone
+      water: 4, // water
+      accent: 5, // stone path
     },
   },
   enemies: [{ enemyId: 'none', weight: 1, minDifficulty: 99 }],
@@ -308,7 +307,7 @@ export class HubScene extends Scene {
 
     console.log(
       `[HubScene] Hub ready — ${this.#buildings.length} buildings, ${this.#npcs.length} NPCs, ` +
-      `${this.#structureBlocks.length} structure blocks`,
+        `${this.#structureBlocks.length} structure blocks`,
     );
   }
 
@@ -380,7 +379,7 @@ export class HubScene extends Scene {
       // Use building positions from content config, Y from terrain heightmap
       const bx = Math.min(Math.max(Math.round(building.position.x + HUB_SIZE / 2), 0), HUB_SIZE - 1);
       const bz = Math.min(Math.max(Math.round(building.position.z + HUB_SIZE / 2), 0), HUB_SIZE - 1);
-      const by = this.#terrain ? this.#terrain.heightmap[bx]?.[bz] ?? 6 : 6;
+      const by = this.#terrain ? (this.#terrain.heightmap[bx]?.[bz] ?? 6) : 6;
 
       const blocks = generator({ x: bx, y: by, z: bz });
       this.#structureBlocks.push(...blocks);
@@ -394,11 +393,9 @@ export class HubScene extends Scene {
       // Check if required building exists (always does for hub)
       const nx = Math.max(0, Math.min(HUB_SIZE - 1, Math.round(npc.position.x + HUB_SIZE / 2)));
       const nz = Math.max(0, Math.min(HUB_SIZE - 1, Math.round(npc.position.z + HUB_SIZE / 2)));
-      const ny = this.#terrain ? this.#terrain.heightmap[nx]?.[nz] ?? 6 : 6;
+      const ny = this.#terrain ? (this.#terrain.heightmap[nx]?.[nz] ?? 6) : 6;
 
-      const entity = this.world.spawn(
-        Position({ x: nx, y: ny + 1, z: nz }),
-      );
+      const entity = this.world.spawn(Position({ x: nx, y: ny + 1, z: nz }));
       this.#npcEntities.push(entity);
     }
   }
@@ -429,9 +426,7 @@ export class HubScene extends Scene {
     const clampedZ = Math.max(0, Math.min(HUB_SIZE - 1, newZ));
 
     // Snap Y to terrain height
-    const terrainY = this.#terrain
-      ? this.#terrain.heightmap[Math.floor(clampedX)]?.[Math.floor(clampedZ)] ?? 6
-      : 6;
+    const terrainY = this.#terrain ? (this.#terrain.heightmap[Math.floor(clampedX)]?.[Math.floor(clampedZ)] ?? 6) : 6;
 
     this.#playerEntity.set(Position, {
       x: clampedX,
@@ -530,11 +525,11 @@ export class HubScene extends Scene {
 
   #showBuildingOverlay(building: HubBuilding): void {
     const currentLevel = this.#hubState.buildingLevels[building.id] ?? 1;
-    const nextLevel = building.levels.find(l => l.level === currentLevel + 1);
+    const nextLevel = building.levels.find((l) => l.level === currentLevel + 1);
 
     console.log(
       `[HubScene] Building: ${building.name} (Level ${currentLevel}/${building.maxLevel})` +
-      (nextLevel ? ` — Upgrade cost: ${JSON.stringify(nextLevel.cost)}` : ' — MAX LEVEL'),
+        (nextLevel ? ` — Upgrade cost: ${JSON.stringify(nextLevel.cost)}` : ' — MAX LEVEL'),
     );
   }
 
@@ -544,11 +539,11 @@ export class HubScene extends Scene {
 
   /** Upgrade a building if the player has enough resources. */
   upgradeBuilding(buildingId: string): boolean {
-    const building = this.#buildings.find(b => b.id === buildingId);
+    const building = this.#buildings.find((b) => b.id === buildingId);
     if (!building) return false;
 
     const currentLevel = this.#hubState.buildingLevels[buildingId] ?? 1;
-    const nextLevel = building.levels.find(l => l.level === currentLevel + 1);
+    const nextLevel = building.levels.find((l) => l.level === currentLevel + 1);
     if (!nextLevel) return false; // Already max level
 
     // Check resources
@@ -592,13 +587,15 @@ export class HubScene extends Scene {
   }
 
   #saveHubState(): void {
-    this.#saveManager.saveState({
-      koota: { hubState: this.#hubState },
-      yuka: null,
-      scene: 'hub',
-    }).catch((err) => {
-      console.warn('[HubScene] Failed to save hub state:', err);
-    });
+    this.#saveManager
+      .saveState({
+        koota: { hubState: this.#hubState },
+        yuka: null,
+        scene: 'hub',
+      })
+      .catch((err) => {
+        console.warn('[HubScene] Failed to save hub state:', err);
+      });
   }
 
   // --- Accessors for testing and UI ---

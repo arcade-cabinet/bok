@@ -1,18 +1,17 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
 import RAPIER from '@dimforge/rapier3d';
-import { Runtime, loadRuntime } from '@jolly-pixel/runtime';
+import { loadRuntime, Runtime } from '@jolly-pixel/runtime';
+import { createWorld } from 'koota';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-
-import { createHub, type BuildingDef } from '../../engine/hub';
+import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { createCamera } from '../../engine/camera';
+import { type BuildingDef, createHub } from '../../engine/hub';
 // Hub uses fixed daytime lighting — no DayNightCycle
 import { InputSystem } from '../../input/index';
 import { isMobileDevice } from '../../input/MobileControls';
-import { TouchControls, type TouchControlOutput } from '../../components/ui/TouchControls';
-import { createWorld } from 'koota';
-import { Time, MovementIntent, LookIntent } from '../../traits/index';
-import { MAX_DELTA } from '../../shared/index';
 import { initPlatform } from '../../platform/CapacitorBridge';
+import { MAX_DELTA } from '../../shared/index';
+import { LookIntent, MovementIntent, Time } from '../../traits/index';
 
 interface Props {
   onNavigate: (view: 'menu' | 'game') => void;
@@ -33,10 +32,17 @@ export function HubView({ onNavigate }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runtimeRef = useRef<Runtime | null>(null);
   const gameWorldRef = useRef<ReturnType<typeof createWorld> | null>(null);
-  const mobileInputRef = useRef<{ moveX: number; moveZ: number; lookX: number; lookY: number; action: string | null } | null>(null);
+  const mobileInputRef = useRef<{
+    moveX: number;
+    moveZ: number;
+    lookX: number;
+    lookY: number;
+    action: string | null;
+  } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [labels, setLabels] = useState<BuildingLabel[]>([]);
   const [nearDocks, setNearDocks] = useState(false);
+  const [showPause, setShowPause] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current || runtimeRef.current) return;
@@ -87,8 +93,8 @@ export function HubView({ onNavigate }: Props) {
       // Input
       const inputSystem = new InputSystem(canvasRef.current!);
       if (!mobile) {
-        canvasRef.current!.addEventListener('click', () => {
-          if (!document.pointerLockElement) canvasRef.current!.requestPointerLock();
+        canvasRef.current?.addEventListener('click', () => {
+          if (!document.pointerLockElement) canvasRef.current?.requestPointerLock();
         });
       }
 
@@ -100,16 +106,12 @@ export function HubView({ onNavigate }: Props) {
       // Precompute building centers for label projection
       const buildingCenters = hub.buildings.map((b: BuildingDef) => ({
         name: b.name,
-        pos: new THREE.Vector3(
-          b.x + b.width / 2,
-          (hub.getSurfaceY(b.x, b.z)) + b.height + 1,
-          b.z + b.depth / 2,
-        ),
+        pos: new THREE.Vector3(b.x + b.width / 2, hub.getSurfaceY(b.x, b.z) + b.height + 1, b.z + b.depth / 2),
       }));
 
       const LABEL_DISTANCE = 15;
       const DOCK_DISTANCE = 8;
-      const dockBuilding = hub.buildings.find(b => b.name === 'Docks')!;
+      const dockBuilding = hub.buildings.find((b) => b.name === 'Docks')!;
       const dockCenter = new THREE.Vector3(
         dockBuilding.x + dockBuilding.width / 2,
         0,
@@ -138,13 +140,19 @@ export function HubView({ onNavigate }: Props) {
         }
 
         // Player movement — mobile: from React joystick, desktop: WASD
-        let dirX = 0, dirZ = 0, sprinting = false;
+        let dirX = 0,
+          dirZ = 0,
+          sprinting = false;
         if (mobile && mi) {
           dirX = mi.moveX;
           dirZ = mi.moveZ;
         } else {
           const move = gameWorld.get(MovementIntent);
-          if (move) { dirX = move.dirX; dirZ = move.dirZ; sprinting = move.sprint; }
+          if (move) {
+            dirX = move.dirX;
+            dirZ = move.dirZ;
+            sprinting = move.sprint;
+          }
         }
         cam.applyMovement(dirX, dirZ, sprinting, dt);
 
@@ -155,13 +163,15 @@ export function HubView({ onNavigate }: Props) {
         const camera = cam.camera;
         const playerPos = cam.getPosition();
 
-        const newLabels: BuildingLabel[] = buildingCenters.map(bc => {
+        const newLabels: BuildingLabel[] = buildingCenters.map((bc) => {
           const dist = playerPos.distanceTo(bc.pos);
           if (dist > LABEL_DISTANCE) return { name: bc.name, screenX: 0, screenY: 0, visible: false };
 
           const projected = bc.pos.clone().project(camera);
-          const hw = canvasRef.current!.clientWidth / 2;
-          const hh = canvasRef.current!.clientHeight / 2;
+          const cw = canvasRef.current?.clientWidth ?? 0;
+          const ch = canvasRef.current?.clientHeight ?? 0;
+          const hw = cw / 2;
+          const hh = ch / 2;
           return {
             name: bc.name,
             screenX: projected.x * hw + hw,
@@ -172,9 +182,7 @@ export function HubView({ onNavigate }: Props) {
         setLabels(newLabels);
 
         // Check proximity to docks
-        const dockDist = Math.sqrt(
-          (playerPos.x - dockCenter.x) ** 2 + (playerPos.z - dockCenter.z) ** 2,
-        );
+        const dockDist = Math.sqrt((playerPos.x - dockCenter.x) ** 2 + (playerPos.z - dockCenter.z) ** 2);
         setNearDocks(dockDist < DOCK_DISTANCE);
       });
 
@@ -219,29 +227,32 @@ export function HubView({ onNavigate }: Props) {
 
       {/* Floating building labels */}
       <div className="fixed inset-0 pointer-events-none z-10">
-        {labels.filter(l => l.visible).map(l => (
-          <div
-            key={l.name}
-            className="absolute text-center -translate-x-1/2"
-            style={{
-              left: l.screenX,
-              top: l.screenY,
-              fontFamily: 'Cinzel, Georgia, serif',
-              color: '#fdf6e3',
-              textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)',
-              fontSize: '14px',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {l.name}
-          </div>
-        ))}
+        {labels
+          .filter((l) => l.visible)
+          .map((l) => (
+            <div
+              key={l.name}
+              className="absolute text-center -translate-x-1/2"
+              style={{
+                left: l.screenX,
+                top: l.screenY,
+                fontFamily: 'Cinzel, Georgia, serif',
+                color: '#fdf6e3',
+                textShadow: '0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)',
+                fontSize: '14px',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {l.name}
+            </div>
+          ))}
       </div>
 
       {/* Set Sail prompt near docks */}
       {nearDocks && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-20">
           <button
+            type="button"
             onClick={handleSetSail}
             className="px-8 py-3 rounded-lg border-2 cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.5)]"
             style={{
@@ -269,16 +280,44 @@ export function HubView({ onNavigate }: Props) {
         </div>
       </div>
 
-      {/* Return to menu */}
+      {/* Menu button — shows pause overlay */}
       <div className="fixed top-4 right-4 z-10">
         <button
-          onClick={() => onNavigate('menu')}
+          type="button"
+          onClick={() => setShowPause(true)}
           className="bg-[#fdf6e3]/85 border-2 border-[#8b5a2b] rounded-md px-3 py-2 cursor-pointer text-xs"
           style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
         >
           Menu
         </button>
       </div>
+
+      {/* Pause overlay */}
+      {showPause && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl p-9 text-center">
+            <h2 className="text-3xl mb-6" style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>
+              PAUSED
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowPause(false)}
+              className="block w-full mb-2 py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer text-base"
+              style={{ fontFamily: 'Georgia, serif' }}
+            >
+              Resume
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('menu')}
+              className="block w-full py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#fef9ef] text-[#2c1e16] cursor-pointer text-base"
+              style={{ fontFamily: 'Georgia, serif' }}
+            >
+              Quit to Menu
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Crosshair */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)] z-10 pointer-events-none" />
