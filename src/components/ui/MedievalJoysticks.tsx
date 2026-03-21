@@ -284,65 +284,106 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
         </div>
       </div>
 
-      {/* RIGHT: Camera joystick + action segment ring + quarter-moon housing */}
-      <div className="absolute bottom-4 right-4 pointer-events-auto" style={{ touchAction: 'none' }}>
+      {/* RIGHT: Camera joystick with segmented outer ring housing */}
+      <div className="absolute bottom-0 right-0 pointer-events-auto" style={{ touchAction: 'none' }}>
         <CornerHousing side="right" />
-        <div className="relative z-10">
-          <div className="text-center mb-1">
-            <span className="text-[9px] font-bold text-amber-200/60 tracking-wider uppercase" style={{ fontFamily: 'serif' }}>
-              Look
-            </span>
-          </div>
-          <div className="relative" style={{ width: JOYSTICK_SIZE + 64, height: JOYSTICK_SIZE + 64 }}>
-            {/* Action segment buttons around the joystick */}
-            {ACTIONS.map(action => {
-              const rad = (action.angle - 90) * (Math.PI / 180);
-              const ringRadius = (JOYSTICK_SIZE + 64) / 2 - 20;
-              const cx = (JOYSTICK_SIZE + 64) / 2 + Math.cos(rad) * ringRadius;
-              const cy = (JOYSTICK_SIZE + 64) / 2 + Math.sin(rad) * ringRadius;
+        <div className="relative z-10" style={{ width: 220, height: 220, marginRight: 8, marginBottom: 8 }}>
+          {/* Segmented outer ring — 4 quarter-arc touch zones */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 220 220" style={{ pointerEvents: 'none' }}>
+            <defs>
+              <linearGradient id="seg-idle" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#78350f" />
+                <stop offset="100%" stopColor="#451a03" />
+              </linearGradient>
+              <linearGradient id="seg-active" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#991b1b" />
+                <stop offset="100%" stopColor="#7f1d1d" />
+              </linearGradient>
+            </defs>
+            {/* Outer ring arcs — each is a quarter of the donut */}
+            {ACTIONS.map((action) => {
+              const startAngle = (action.angle - 45) * (Math.PI / 180);
+              const endAngle = (action.angle + 45) * (Math.PI / 180);
+              const outerR = 105;
+              const innerR = 78;
+              const cx = 110, cy = 110;
+              const x1o = cx + Math.cos(startAngle) * outerR;
+              const y1o = cy + Math.sin(startAngle) * outerR;
+              const x2o = cx + Math.cos(endAngle) * outerR;
+              const y2o = cy + Math.sin(endAngle) * outerR;
+              const x2i = cx + Math.cos(endAngle) * innerR;
+              const y2i = cy + Math.sin(endAngle) * innerR;
+              const x1i = cx + Math.cos(startAngle) * innerR;
+              const y1i = cy + Math.sin(startAngle) * innerR;
               const isActive = activeAction === action.id;
-
               return (
-                <button
+                <path
                   key={action.id}
-                  onTouchStart={(e) => onActionTap(action.id, e)}
-                  className="absolute rounded-full flex items-center justify-center pointer-events-auto"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    left: cx - 20,
-                    top: cy - 20,
-                    touchAction: 'none',
-                    background: isActive
-                      ? 'radial-gradient(circle, #dc2626, #991b1b)'
-                      : 'radial-gradient(circle at 38% 38%, #78350f, #451a03)',
-                    boxShadow: isActive
-                      ? '0 0 12px rgba(220,38,38,0.6), inset 0 2px 4px rgba(0,0,0,0.5)'
-                      : 'inset 0 -1px 3px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.4)',
-                    border: `1.5px solid ${isActive ? '#7f1d1d' : '#5c3310'}`,
-                    transition: 'background 0.1s, box-shadow 0.1s',
-                  }}
-                >
-                  <div className="text-amber-100/80" style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))' }}>
-                    {action.icon}
-                  </div>
-                </button>
+                  d={`M${x1o},${y1o} A${outerR},${outerR} 0 0,1 ${x2o},${y2o} L${x2i},${y2i} A${innerR},${innerR} 0 0,0 ${x1i},${y1i} Z`}
+                  fill={isActive ? 'url(#seg-active)' : 'url(#seg-idle)'}
+                  stroke="#c4a572"
+                  strokeWidth="1"
+                  opacity="0.85"
+                />
               );
             })}
+            {/* Gold filigree divider lines between segments */}
+            {[0, 90, 180, 270].map(angle => {
+              const rad = angle * (Math.PI / 180);
+              return (
+                <line key={angle}
+                  x1={110 + Math.cos(rad) * 78} y1={110 + Math.sin(rad) * 78}
+                  x2={110 + Math.cos(rad) * 105} y2={110 + Math.sin(rad) * 105}
+                  stroke="#c4a572" strokeWidth="1.5" opacity="0.6"
+                />
+              );
+            })}
+          </svg>
 
-            {/* Center camera joystick */}
-            <div
-              ref={rightRef}
-              onTouchStart={onRightStart}
-              onTouchMove={onRightMove}
-              onTouchEnd={onRightEnd}
-              className="absolute"
-              style={{ left: 32, top: 32 }}
-            >
-              <JoystickBase>
-                <JoystickKnob position={rightStick.position} active={rightStick.active} />
-              </JoystickBase>
-            </div>
+          {/* Touch zones for each segment (invisible, on top of SVG) */}
+          {ACTIONS.map((action) => {
+            const midAngle = action.angle * (Math.PI / 180);
+            const iconR = 91;
+            const iconX = 110 + Math.cos(midAngle) * iconR;
+            const iconY = 110 + Math.sin(midAngle) * iconR;
+            const touchR = 92;
+            const touchX = 110 + Math.cos(midAngle) * touchR;
+            const touchY = 110 + Math.sin(midAngle) * touchR;
+            return (
+              <button
+                key={action.id}
+                onTouchStart={(e) => onActionTap(action.id, e)}
+                className="absolute flex items-center justify-center"
+                style={{
+                  width: 44, height: 44,
+                  left: touchX - 22, top: touchY - 22,
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  border: 'none',
+                  touchAction: 'none',
+                  pointerEvents: 'auto',
+                  zIndex: 5,
+                }}
+              >
+                <div className="text-amber-200/70" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))', position: 'absolute', left: iconX - touchX + 22 - 8, top: iconY - touchY + 22 - 8 }}>
+                  {action.icon}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Center camera joystick (inside the ring) */}
+          <div
+            ref={rightRef}
+            onTouchStart={onRightStart}
+            onTouchMove={onRightMove}
+            onTouchEnd={onRightEnd}
+            className="absolute"
+            style={{ left: 110 - JOYSTICK_SIZE / 2, top: 110 - JOYSTICK_SIZE / 2 }}
+          >
+            <JoystickBase>
+              <JoystickKnob position={rightStick.position} active={rightStick.active} />
+            </JoystickBase>
           </div>
         </div>
       </div>
