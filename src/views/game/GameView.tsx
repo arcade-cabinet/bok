@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
+import { DamageIndicator, type DamageIndicatorHandle } from '../../components/hud/DamageIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
-import { type SlotData, Hotbar } from '../../components/hud/Hotbar';
+import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -27,19 +28,14 @@ interface Props {
 export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameInstance | null>(null);
+  const damageRef = useRef<DamageIndicatorHandle>(null);
   const startTimeRef = useRef(Date.now());
   const [engineState, setEngineState] = useState<EngineState | null>(null);
   const [activeSlot, setActiveSlot] = useState(0);
   const { isMobile, screenWidth, screenHeight } = useDeviceType();
 
   // Hotbar slot definitions — weapon selection
-  const hotbarSlots: SlotData[] = [
-    { label: 'Sword' },
-    { label: '' },
-    { label: '' },
-    { label: '' },
-    { label: '' },
-  ];
+  const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' }, { label: '' }, { label: '' }];
 
   // Poll engine state at 10fps for React HUD updates
   useEffect(() => {
@@ -60,6 +56,9 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
 
       // Listen for engine events
       game.onEvent((event: EngineEvent) => {
+        if (event.type === 'playerDamaged') {
+          damageRef.current?.flash();
+        }
         if (event.type === 'playerDied' || event.type === 'bossDefeated') {
           setEngineState(game.getState());
         }
@@ -115,6 +114,9 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
         className="w-full h-full block outline-none"
         style={{ touchAction: 'none' }}
       />
+
+      {/* Damage feedback overlay — vignette + screen shake */}
+      <DamageIndicator ref={damageRef} canvasRef={canvasRef} />
 
       {/* Invisible split-half touch controls — mobile only */}
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />

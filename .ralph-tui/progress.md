@@ -140,3 +140,17 @@ after each iteration and it's included in prompts for context.
   - `EngineState` has no weapon/slot data yet — the hotbar currently manages its own `activeSlot` state in GameView; wiring to actual weapon selection is a future engine task
 ---
 
+## 2026-03-21 - US-004
+- **What was implemented**: Extracted DamageIndicator React component from dead `src/ui/hud/DamageIndicator.ts` with red radial vignette overlay + canvas screen shake, integrated into GameView on `playerDamaged` engine events
+- **Files changed**:
+  - `src/components/hud/DamageIndicator.tsx` — NEW: `forwardRef` component exposing `flash()` via `useImperativeHandle`; red radial-gradient vignette (fades over 300ms), canvas screen shake (random dx/dy with linear decay over 150ms)
+  - `src/views/game/GameView.tsx` — imports DamageIndicator, adds `damageRef`, renders `<DamageIndicator>` after canvas, calls `damageRef.current?.flash()` on `playerDamaged` engine events; also fixed Biome import ordering and formatting
+- **Results**: typecheck clean, lint clean on changed files (pre-existing warnings unchanged)
+- **Learnings:**
+  - `forwardRef` + `useImperativeHandle` is the correct React pattern for parent-triggered imperative animations — a `trigger` counter prop would cause unnecessary re-renders and timing issues
+  - The CSS `transition: visible ? 'none' : ...` trick replicates the dead code's "snap on, fade off" behavior: when state flips to `true`, `transition: none` makes opacity change instant; when it flips to `false` 50ms later, the CSS transition animates the fade-out
+  - Screen shake must stay imperative (`requestAnimationFrame` + `canvas.style.transform`) — React state batching adds ~16ms latency per frame, making shake feel laggy
+  - Biome enforces value-before-type import ordering (`{ DamageIndicator, type DamageIndicatorHandle }` not `{ type DamageIndicatorHandle, DamageIndicator }`)
+  - The `playerDamaged` event type already existed in `EngineEvent` union — no engine changes needed
+---
+
