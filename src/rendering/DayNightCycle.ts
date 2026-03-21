@@ -29,7 +29,7 @@ const ORBIT_RADIUS = 80;
  */
 export class DayNightCycle {
   /** Normalized time in the cycle (0 = midnight, 0.5 = noon). */
-  #time = 0.25; // Start at morning
+  #time = 0.4; // Start near midday (0.5 = noon) for bright lighting
 
   readonly #sun: THREE.Mesh;
   readonly #moon: THREE.Mesh;
@@ -179,12 +179,12 @@ export class DayNightCycle {
       this.#directionalLight.color.setHex(0xffffff);
     }
 
-    // Ambient light — brighter during day, dim at night
-    this.#ambientLight.intensity = 0.4 + sunHeight * 0.4;
+    // Ambient light — bright white during day, dim blue at night
+    this.#ambientLight.intensity = 0.5 + sunHeight * 0.5;
     if (tod === 'night') {
-      this.#ambientLight.color.setHex(0x223344);
+      this.#ambientLight.color.setHex(0x334466);
     } else {
-      this.#ambientLight.color.setHex(0x404060);
+      this.#ambientLight.color.setHex(0xc0c0d0);
     }
   }
 

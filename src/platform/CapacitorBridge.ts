@@ -5,6 +5,9 @@
  * NO SILENT FALLBACKS. Errors display a visible modal and fail properly.
  */
 import { Capacitor } from '@capacitor/core';
+import { StatusBar } from '@capacitor/status-bar';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
 
 export interface PlatformInfo {
   platform: 'web' | 'ios' | 'android';
@@ -55,7 +58,7 @@ function showErrorModal(errors: string[]): void {
   document.body.appendChild(overlay);
 }
 
-/** Record an error — does NOT swallow it */
+/** Record an error — logs and stores for modal display */
 function recordError(context: string, error: unknown): void {
   const msg = `[${context}] ${error instanceof Error ? error.message : String(error)}`;
   platformErrors.push(msg);
@@ -75,9 +78,12 @@ export function getPlatform(): PlatformInfo {
 /** Hide the native status bar on mobile (iOS/Android) */
 export async function hideStatusBar(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!Capacitor.isPluginAvailable('StatusBar')) {
+    recordError('StatusBar', 'Plugin not available on this platform');
+    return;
+  }
   try {
-    const mod = await import('@capacitor/status-bar' as string);
-    await mod.StatusBar.hide();
+    await StatusBar.hide();
   } catch (e) {
     recordError('StatusBar.hide', e);
   }
@@ -86,9 +92,12 @@ export async function hideStatusBar(): Promise<void> {
 /** Lock screen to landscape on native */
 export async function lockLandscape(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!Capacitor.isPluginAvailable('ScreenOrientation')) {
+    recordError('ScreenOrientation', 'Plugin not available on this platform');
+    return;
+  }
   try {
-    const mod = await import('@capacitor/screen-orientation' as string);
-    await mod.ScreenOrientation.lock({ orientation: 'landscape' });
+    await ScreenOrientation.lock({ orientation: 'landscape' });
   } catch (e) {
     recordError('ScreenOrientation.lock', e);
   }
@@ -97,33 +106,21 @@ export async function lockLandscape(): Promise<void> {
 /** Trigger haptic feedback on native */
 export async function hapticImpact(style: 'light' | 'medium' | 'heavy' = 'light'): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!Capacitor.isPluginAvailable('Haptics')) return; // Silent on web — haptics don't exist
   try {
-    const mod = await import('@capacitor/haptics' as string);
-    const styleMap = { light: mod.ImpactStyle.Light, medium: mod.ImpactStyle.Medium, heavy: mod.ImpactStyle.Heavy };
-    await mod.Haptics.impact({ style: styleMap[style] });
+    const styleMap = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
+    await Haptics.impact({ style: styleMap[style] });
   } catch (e) {
     recordError('Haptics.impact', e);
   }
 }
 
-/** Keep screen awake during gameplay on native */
-export async function keepScreenAwake(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
-  try {
-    const mod = await import('@capacitor-community/keep-awake' as string);
-    await mod.KeepAwake.keepAwake();
-  } catch (e) {
-    recordError('KeepAwake', e);
-  }
-}
-
-/** Web wake lock — separate from native */
+/** Web wake lock — prevents screen sleep during gameplay */
 export async function requestWebWakeLock(): Promise<void> {
   if (Capacitor.isNativePlatform()) return;
+  if (!('wakeLock' in navigator)) return; // API not available in this browser
   try {
-    if ('wakeLock' in navigator) {
-      await (navigator as any).wakeLock.request('screen');
-    }
+    await (navigator as any).wakeLock.request('screen');
   } catch (e) {
     recordError('WebWakeLock', e);
   }
@@ -140,7 +137,6 @@ export async function initPlatform(): Promise<PlatformInfo> {
   if (info.isNative) {
     await hideStatusBar();
     await lockLandscape();
-    await keepScreenAwake();
   } else {
     await requestWebWakeLock();
   }

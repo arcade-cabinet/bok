@@ -18,6 +18,9 @@
   "dependencies": {
     "@capacitor-community/sqlite": "^8.0.1",
     "@capacitor/core": "^8.2.0",
+    "@capacitor/haptics": "^8.0.1",
+    "@capacitor/screen-orientation": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1",
     "@dimforge/rapier3d": "^0.19.3",
     "@jolly-pixel/engine": "^2.5.0",
     "@jolly-pixel/runtime": "^3.3.0",

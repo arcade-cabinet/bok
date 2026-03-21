@@ -109,6 +109,10 @@ const blockDefs: BlockDefinition[] = [
   },
 ];
 
+// --- Mobile Detection (early — needed by performance scaling) ---
+import { MobileControls, isMobileDevice } from './input/MobileControls.ts';
+const isMobile = isMobileDevice();
+
 // --- Performance Scaling ---
 // Adjust quality based on device capability
 const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
@@ -130,7 +134,7 @@ for (const obj of dayNight.sceneObjects) {
   scene.add(obj);
 }
 // Extra hemisphere light for even illumination (sky blue top, ground brown bottom)
-const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x8b6914, 0.5);
+const hemiLight = new THREE.HemisphereLight(0xaaccee, 0x886622, 0.7);
 scene.add(hemiLight);
 
 // --- VoxelRenderer (terrain — uses JollyPixel's Actor + VoxelRenderer component) ---
@@ -360,15 +364,22 @@ const cameraCtrl = cameraActor.addComponentAndGet(Camera3DControls, {
   },
 });
 const camera = cameraCtrl.camera;
-camera.position.set(ISLAND_SIZE / 2, BASE_HEIGHT + 3, ISLAND_SIZE / 2);
+// Find highest ground near center for good spawn view
+let bestSpawnX = ISLAND_SIZE / 2;
+let bestSpawnZ = ISLAND_SIZE / 2;
+let bestH = 0;
+for (let sx = -4; sx <= 4; sx++) {
+  for (let sz = -4; sz <= 4; sz++) {
+    const h = getSurfaceY(Math.round(ISLAND_SIZE / 2 + sx), Math.round(ISLAND_SIZE / 2 + sz));
+    if (h > bestH) { bestH = h; bestSpawnX = Math.round(ISLAND_SIZE / 2 + sx); bestSpawnZ = Math.round(ISLAND_SIZE / 2 + sz); }
+  }
+}
+camera.position.set(bestSpawnX, bestH + 1.6, bestSpawnZ);
 
 // --- Input System ---
 const inputSystem = new InputSystem(canvas);
 
-// --- Mobile Detection + Controls ---
-import { MobileControls, isMobileDevice } from './input/MobileControls.ts';
-
-const isMobile = isMobileDevice();
+// --- Mobile Controls (isMobile already detected above) ---
 const mobileControls = isMobile ? new MobileControls() : null;
 
 // Pointer lock for FPS camera (desktop only)
@@ -381,7 +392,8 @@ if (!isMobile) {
 }
 
 // Camera rotation state
-const cameraEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const cameraEuler = new THREE.Euler(-0.15, 0, 0, 'YXZ'); // Start looking slightly down
+camera.quaternion.setFromEuler(cameraEuler);
 const CAMERA_SENSITIVITY = 0.002;
 const PLAYER_SPEED = 6;
 
