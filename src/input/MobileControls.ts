@@ -186,7 +186,9 @@ export class MobileControls {
   }
 }
 
-/** Detect if device has touch and no fine pointer (likely mobile). */
+/** Detect if device has touch and no fine pointer (likely mobile).
+ *  Also supports ?mobile=1 URL param for desktop testing. */
 export function isMobileDevice(): boolean {
+  if (new URLSearchParams(window.location.search).get('mobile') === '1') return true;
   return 'ontouchstart' in document.documentElement && !matchMedia('(pointer: fine)').matches;
 }
