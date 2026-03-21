@@ -15,7 +15,10 @@ import {
   Time, GamePhase, MovementIntent, LookIntent, IslandState,
 } from './traits/index.ts';
 import { MAX_DELTA } from './shared/index.ts';
-import { initPlatform, hapticImpact } from './platform/CapacitorBridge.ts';
+import { initPlatform, hapticImpact, installGlobalErrorHandler } from './platform/CapacitorBridge.ts';
+
+// Install global error handler FIRST — catches everything
+installGlobalErrorHandler();
 import { playSwordSwing, playHitImpact, playPlayerHurt, playEnemyDeath, playBossPhase, playVictory, startAmbient } from './audio/GameAudio.ts';
 import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
@@ -953,14 +956,15 @@ createMainMenu();
 console.log('[Bok] Loading runtime...');
 
 // Init Capacitor platform (status bar, orientation, wake lock)
-initPlatform().catch(() => {});
+initPlatform();
 
 loadRuntime(runtime)
   .then(() => {
     console.log('[Bok] Runtime loaded — voxel terrain rendered');
   })
   .catch((error) => {
-    console.error('[Bok] Failed to load runtime:', error);
+    // Don't swallow — global error handler will show the modal
+    throw error;
   });
 
 // Expose to window for debug panel

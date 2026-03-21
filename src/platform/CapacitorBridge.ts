@@ -1,6 +1,8 @@
 /**
  * Capacitor platform bridge — native device detection, status bar,
  * screen orientation, haptics, and platform-specific behaviors.
+ *
+ * NO SILENT FALLBACKS. Errors display a visible modal and fail properly.
  */
 import { Capacitor } from '@capacitor/core';
 
@@ -8,6 +10,56 @@ export interface PlatformInfo {
   platform: 'web' | 'ios' | 'android';
   isNative: boolean;
   isWeb: boolean;
+}
+
+/** Collected errors during platform init */
+const platformErrors: string[] = [];
+
+/** Show a visible error modal overlaying the game */
+function showErrorModal(errors: string[]): void {
+  const overlay = document.createElement('div');
+  overlay.id = 'platform-error-modal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);';
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#fdf6e3;border:3px solid #c0392b;border-radius:12px;padding:32px;max-width:500px;max-height:80vh;overflow-y:auto;';
+
+  const title = document.createElement('h2');
+  title.textContent = 'Platform Errors';
+  title.style.cssText = 'font-family:Georgia,serif;font-size:24px;color:#c0392b;margin:0 0 16px 0;';
+
+  const list = document.createElement('ul');
+  list.style.cssText = 'font-family:monospace;font-size:13px;color:#2c1e16;padding-left:20px;margin:0 0 20px 0;line-height:1.8;';
+  for (const err of errors) {
+    const li = document.createElement('li');
+    li.textContent = err;
+    list.appendChild(li);
+  }
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.textContent = 'Continue Anyway';
+  dismissBtn.style.cssText = 'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#2c1e16;color:#fdf6e3;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;margin-right:8px;';
+  dismissBtn.addEventListener('click', () => overlay.remove());
+
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Copy Errors';
+  copyBtn.style.cssText = 'padding:10px 24px;border:2px solid #8b5a2b;border-radius:6px;background:#fef9ef;color:#2c1e16;font-family:Georgia,serif;font-size:14px;cursor:pointer;pointer-events:auto;';
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(errors.join('\n')).then(() => {
+      copyBtn.textContent = 'Copied!';
+    });
+  });
+
+  panel.append(title, list, dismissBtn, copyBtn);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+}
+
+/** Record an error — does NOT swallow it */
+function recordError(context: string, error: unknown): void {
+  const msg = `[${context}] ${error instanceof Error ? error.message : String(error)}`;
+  platformErrors.push(msg);
+  console.error(msg, error);
 }
 
 /** Get current platform info from Capacitor */
@@ -24,10 +76,10 @@ export function getPlatform(): PlatformInfo {
 export async function hideStatusBar(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
-    const { StatusBar } = await import('@capacitor/status-bar' as string);
-    await StatusBar.hide();
-  } catch {
-    // StatusBar plugin not installed — skip
+    const mod = await import('@capacitor/status-bar' as string);
+    await mod.StatusBar.hide();
+  } catch (e) {
+    recordError('StatusBar.hide', e);
   }
 }
 
@@ -35,25 +87,22 @@ export async function hideStatusBar(): Promise<void> {
 export async function lockLandscape(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
-    const { ScreenOrientation } = await import('@capacitor/screen-orientation' as string);
-    await ScreenOrientation.lock({ orientation: 'landscape' });
-  } catch {
-    // ScreenOrientation plugin not installed — try web API
-    try {
-      await (screen.orientation as any).lock?.('landscape');
-    } catch { /* not supported */ }
+    const mod = await import('@capacitor/screen-orientation' as string);
+    await mod.ScreenOrientation.lock({ orientation: 'landscape' });
+  } catch (e) {
+    recordError('ScreenOrientation.lock', e);
   }
 }
 
-/** Trigger haptic feedback on native (light impact for combat hits) */
+/** Trigger haptic feedback on native */
 export async function hapticImpact(style: 'light' | 'medium' | 'heavy' = 'light'): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
-    const { Haptics, ImpactStyle } = await import('@capacitor/haptics' as string);
-    const styleMap = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
-    await Haptics.impact({ style: styleMap[style] });
-  } catch {
-    // Haptics plugin not installed — skip
+    const mod = await import('@capacitor/haptics' as string);
+    const styleMap = { light: mod.ImpactStyle.Light, medium: mod.ImpactStyle.Medium, heavy: mod.ImpactStyle.Heavy };
+    await mod.Haptics.impact({ style: styleMap[style] });
+  } catch (e) {
+    recordError('Haptics.impact', e);
   }
 }
 
@@ -61,17 +110,29 @@ export async function hapticImpact(style: 'light' | 'medium' | 'heavy' = 'light'
 export async function keepScreenAwake(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
-    const { KeepAwake } = await import('@capacitor-community/keep-awake' as string);
-    await KeepAwake.keepAwake();
-  } catch {
-    // Plugin not installed — try web API
-    try {
-      await (navigator as any).wakeLock?.request('screen');
-    } catch { /* not supported */ }
+    const mod = await import('@capacitor-community/keep-awake' as string);
+    await mod.KeepAwake.keepAwake();
+  } catch (e) {
+    recordError('KeepAwake', e);
   }
 }
 
-/** Initialize all platform-specific behaviors */
+/** Web wake lock — separate from native */
+export async function requestWebWakeLock(): Promise<void> {
+  if (Capacitor.isNativePlatform()) return;
+  try {
+    if ('wakeLock' in navigator) {
+      await (navigator as any).wakeLock.request('screen');
+    }
+  } catch (e) {
+    recordError('WebWakeLock', e);
+  }
+}
+
+/**
+ * Initialize all platform-specific behaviors.
+ * Collects ALL errors and shows them in a modal — nothing is silenced.
+ */
 export async function initPlatform(): Promise<PlatformInfo> {
   const info = getPlatform();
   console.log(`[Bok] Platform: ${info.platform} (native: ${info.isNative})`);
@@ -81,11 +142,23 @@ export async function initPlatform(): Promise<PlatformInfo> {
     await lockLandscape();
     await keepScreenAwake();
   } else {
-    // Web-specific: request wake lock to prevent screen sleep
-    try {
-      await (navigator as any).wakeLock?.request('screen');
-    } catch { /* not available */ }
+    await requestWebWakeLock();
+  }
+
+  // Show errors if any occurred
+  if (platformErrors.length > 0) {
+    showErrorModal(platformErrors);
   }
 
   return info;
+}
+
+/** Global error handler — catches uncaught errors and shows modal */
+export function installGlobalErrorHandler(): void {
+  window.addEventListener('error', (event) => {
+    showErrorModal([`Uncaught: ${event.message} at ${event.filename}:${event.lineno}`]);
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    showErrorModal([`Unhandled Promise: ${event.reason}`]);
+  });
 }
