@@ -57,8 +57,12 @@ export function createCamera(
   }
   camera.position.set(bestX, bestH + 1.6, bestZ);
 
-  // Start looking slightly down to see terrain
-  const euler = new THREE.Euler(-0.15, 0, 0, 'YXZ');
+  // Start looking slightly down toward center of island
+  // Rotate to face the center from spawn position
+  const spawnDirX = islandSize / 2 - bestX;
+  const spawnDirZ = islandSize / 2 - bestZ;
+  const initialYaw = spawnDirX === 0 && spawnDirZ === 0 ? 0 : Math.atan2(-spawnDirX, -spawnDirZ);
+  const euler = new THREE.Euler(-0.1, initialYaw, 0, 'YXZ');
   camera.quaternion.setFromEuler(euler);
 
   function applyLook(deltaX: number, deltaY: number, sensitivityScale = 1): void {
