@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T16:28:23.495Z",
-  "currentIteration": 3,
+  "updatedAt": "2026-03-21T16:31:57.176Z",
+  "currentIteration": 4,
   "maxIterations": 0,
-  "tasksCompleted": 3,
+  "tasksCompleted": 4,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -107,8 +107,8 @@
       {
         "id": "US-016",
         "title": "Evaluate dead audio system for missing features",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-017",
@@ -154,6 +154,16 @@
       "durationMs": 228044,
       "startedAt": "2026-03-21T16:20:37.791Z",
       "endedAt": "2026-03-21T16:24:25.835Z"
+    },
+    {
+      "iteration": 4,
+      "status": "completed",
+      "taskId": "US-016",
+      "taskTitle": "Evaluate dead audio system for missing features",
+      "taskCompleted": true,
+      "durationMs": 236597,
+      "startedAt": "2026-03-21T16:24:26.896Z",
+      "endedAt": "2026-03-21T16:28:23.493Z"
     }
   ],
   "skippedTaskIds": [],

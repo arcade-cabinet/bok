@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
+import { HealthBar } from '../../components/hud/HealthBar';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -120,21 +121,7 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
           }}
         >
           {/* Health bar */}
-          <div
-            className={`absolute top-4 left-4 bg-[#fdf6e3]/85 border-2 border-[#8b5a2b] rounded-md ${isMobile ? 'px-2 py-1' : 'px-3 py-2'}`}
-            style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-          >
-            <div className={`${isMobile ? 'text-[9px]' : 'text-xs'} mb-1`}>Health</div>
-            <div className={`${isMobile ? 'w-24 h-2' : 'w-36 h-3'} bg-[#3a2a1a] rounded-sm overflow-hidden`}>
-              <div
-                className="h-full bg-[#c0392b] transition-all duration-300"
-                style={{ width: `${(engineState.playerHealth / engineState.maxHealth) * 100}%` }}
-              />
-            </div>
-            <div className={`${isMobile ? 'text-[8px]' : 'text-[10px]'} mt-0.5`}>
-              {engineState.playerHealth} / {engineState.maxHealth}
-            </div>
-          </div>
+          <HealthBar current={engineState.playerHealth} max={engineState.maxHealth} />
 
           {/* Enemy counter */}
           <div

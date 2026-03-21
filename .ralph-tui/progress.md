@@ -111,3 +111,18 @@ after each iteration and it's included in prompts for context.
   - Pattern: when evaluating dead vs live code, check not just "does the feature exist" but "is the implementation approach compatible" — the dead system's file-based SFX approach is fundamentally different from the live system's procedural synthesis
 ---
 
+## 2026-03-21 - US-002
+- **What was implemented**: Extracted HealthBar React component from GameView inline JSX with daisyUI `progress` component and low-health pulse animation
+- **Files changed**:
+  - `src/components/hud/HealthBar.tsx` — NEW: standalone component with `current`/`max` props, daisyUI `progress-error` bar, CSS keyframe pulse at <20% health
+  - `src/main.css` — added `@keyframes health-pulse` (opacity 1→0.5→1, 600ms) matching dead `src/ui/hud/HealthBar.ts` behavior
+  - `src/views/game/GameView.tsx` — replaced 11-line inline health bar with `<HealthBar current={...} max={...} />`
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files
+- **Learnings:**
+  - daisyUI's `<progress>` component uses native HTML `<progress value={n} max={m}>` with class `progress progress-error` — the fill color comes from the theme's `--color-error` token, no manual width calculation needed
+  - Tailwind's arbitrary animation syntax `animate-[name_duration_timing_iteration]` works for custom keyframes defined in CSS — avoids needing a tailwind.config.js extension
+  - Used `sm:` responsive prefix instead of ternary `isMobile ? ... : ...` — the component no longer needs the `isMobile` prop since Tailwind handles breakpoints declaratively
+  - The dead `src/ui/hud/HealthBar.ts` used the Web Animations API (`element.animate()`) for pulse; the React version uses CSS `@keyframes` which is more appropriate since React owns the DOM lifecycle
+  - daisyUI theme tokens (`bg-base-100/85`, `border-secondary`, `text-base-content`) replace hardcoded hex colors, making the component respect theme changes automatically
+---
+
