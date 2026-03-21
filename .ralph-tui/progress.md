@@ -256,6 +256,12 @@ after each iteration and it's included in prompts for context.
   - The `prevNearbyIdRef` pattern prevents 60 React re-renders per second: only triggers `setNearbyBuilding()` when the _identity_ of the closest building changes, not when the distance changes
 ---
 
+### Hook Decomposition Pattern for View Components
+- When decomposing a large view component, split into hooks by *lifecycle concern* (init/cleanup, events, polling) rather than by *data shape*
+- Hooks that share a `gameRef` (or similar instance ref) use the "returned context object" pattern: the lifecycle hook creates and returns the ref, other hooks accept it as a parameter
+- Use a `onEventRef.current = callback` pattern to break circular dependencies between hooks — the lifecycle hook stores event callbacks in a ref that's updated each render, so hooks declared later in the component body are never stale
+- `useGameHUD` returns `[state, setState]` tuple (like `useState`) so both polling and event-driven immediate updates can set the same state
+
 ### daisyUI Modal Backdrop as Button
 - Biome's a11y linter flags `onClick` on a `<div>` — use `<button type="button">` for clickable `modal-backdrop` overlays instead of `<div role="button">`; the latter triggers `useSemanticElements` lint error
 
@@ -273,5 +279,22 @@ after each iteration and it's included in prompts for context.
   - Tab key needs `e.preventDefault()` to stop browser focus cycling (especially important when pointer lock is active and the HUD has focusable elements like hotbar buttons)
   - The `showTome` state is separate from `engineState.phase` — the tome browser overlays on top of any phase (playing, paused) but the Escape key handler checks `showTome` first to close the tome before toggling pause
   - `unlockedAbilitiesRef` (not state) accumulates boss kills during a run without triggering re-renders — the tome browser reads it on open via the `pages` prop derivation
+---
+
+## 2026-03-21 - US-013
+- **What was implemented**: Decomposed GameView.tsx (308 → 149 LOC) into three hooks and extracted TOME_PAGE_CATALOG to content module
+- **Files changed**:
+  - `src/hooks/useGameLifecycle.ts` — NEW: canvas ref management, engine init/cleanup via `initGame()`, keyboard shortcuts (Escape/Tab), canvas resize, touch control handler, pause toggle (96 LOC)
+  - `src/hooks/useGameEvents.ts` — NEW: engine event side-effects — damage flash (`damageRef`), kill count accumulation (`killCountRef`), death/victory stats snapshots, boss ability unlocks, progression callbacks (97 LOC)
+  - `src/hooks/useGameHUD.ts` — NEW: 10fps polling bridge from imperative game loop to React state, returns `[engineState, setEngineState]` tuple (28 LOC)
+  - `src/content/tomePages.ts` — NEW: `TOME_PAGE_CATALOG` extracted from GameView — ability ID → display metadata (45 LOC)
+  - `src/views/game/GameView.tsx` — rewritten to compose three hooks + render JSX (149 LOC, down from 308)
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - The `onEngineEventRef` pattern breaks the circular dependency between hooks: `useGameLifecycle` needs the event handler at init time, but `useGameEvents` needs the `gameRef` from `useGameLifecycle`. Storing the callback in a ref that's updated each render lets you declare hooks in any order without stale closures.
+  - `useGameHUD` returns a `[state, setter]` tuple (like `useState`) rather than just `state` because `useGameEvents` needs the setter for immediate state updates on death/victory events — the polling interval alone would have up to 100ms latency for phase transitions.
+  - `TOME_PAGE_CATALOG` (37 lines of static data) belonged in `src/content/` not `GameView.tsx` — moving it to `content/tomePages.ts` saved enough lines to hit the <150 LOC target and puts the data where game content schemas live.
+  - Biome enforces import ordering by path depth/alphabetical — `../components/` must come before `../engine/` imports. Also caught unused type import (`GameEventCallbacks` was inlined at the call site).
+  - The `useState` import became unnecessary to remove from `useGameLifecycle` when polling moved to `useGameHUD`, but `useState` was still needed for `showTome` — watch for accidental removal of still-needed imports during decomposition.
 ---
 

@@ -307,7 +307,7 @@
         "pnpm run lint passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on all HUD/modal component extractions being complete so GameView can import them.",
       "dependsOn": [
         "US-002",
@@ -317,7 +317,8 @@
         "US-006",
         "US-007",
         "US-008"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-014",
@@ -462,6 +463,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-21T17:03:14.086Z"
+    "updatedAt": "2026-03-21T17:08:51.506Z"
   }
 }
