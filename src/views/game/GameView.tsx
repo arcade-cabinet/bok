@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
+import { type SlotData, Hotbar } from '../../components/hud/Hotbar';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -28,7 +29,17 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
   const gameRef = useRef<GameInstance | null>(null);
   const startTimeRef = useRef(Date.now());
   const [engineState, setEngineState] = useState<EngineState | null>(null);
+  const [activeSlot, setActiveSlot] = useState(0);
   const { isMobile, screenWidth, screenHeight } = useDeviceType();
+
+  // Hotbar slot definitions — weapon selection
+  const hotbarSlots: SlotData[] = [
+    { label: 'Sword' },
+    { label: '' },
+    { label: '' },
+    { label: '' },
+    { label: '' },
+  ];
 
   // Poll engine state at 10fps for React HUD updates
   useEffect(() => {
@@ -184,17 +195,7 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
           )}
 
           {/* Hotbar */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className={`${isMobile ? 'w-9 h-9 text-[9px]' : 'w-12 h-12 text-xs'} rounded border-2 flex items-center justify-center ${i === 1 ? 'border-[#fdf6e3] bg-[#fdf6e3]/90' : 'border-[#8b5a2b] bg-[#fdf6e3]/60'}`}
-                style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-              >
-                {i === 1 ? 'Sword' : ''}
-              </div>
-            ))}
-          </div>
+          <Hotbar slots={hotbarSlots} activeIndex={activeSlot} onSelect={setActiveSlot} />
         </div>
       )}
 

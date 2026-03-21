@@ -126,3 +126,17 @@ after each iteration and it's included in prompts for context.
   - daisyUI theme tokens (`bg-base-100/85`, `border-secondary`, `text-base-content`) replace hardcoded hex colors, making the component respect theme changes automatically
 ---
 
+## 2026-03-21 - US-003
+- **What was implemented**: Extracted Hotbar React component from dead `src/ui/hud/Hotbar.ts`, replacing inline GameView JSX with a controlled component using daisyUI `btn` and `kbd` components
+- **Files changed**:
+  - `src/components/hud/Hotbar.tsx` — NEW: 5-slot weapon hotbar with keyboard (1-5), mouse wheel cycling, click-to-select, daisyUI styling, responsive sizing
+  - `src/views/game/GameView.tsx` — replaced 11-line inline hotbar with `<Hotbar>` component, added `activeSlot` state and `hotbarSlots` data, imported `SlotData` type
+- **Results**: typecheck clean, lint clean
+- **Learnings:**
+  - The dead `Hotbar.ts` owned its state internally (`#activeIndex`) — React port inverts this to controlled component pattern (`activeIndex` prop + `onSelect` callback), letting GameView own weapon selection state for future engine integration
+  - `pointer-events-auto` on the hotbar container is required because GameView's HUD overlay uses `pointer-events-none` to let clicks pass through to the canvas — without it, button clicks are swallowed
+  - daisyUI's `btn-primary` vs `btn-ghost` provides clear active/inactive slot distinction using theme tokens instead of hardcoded hex colors (`#e8d5b7` → `btn-primary`, `#fdf6e3/60` → `btn-ghost bg-base-100/60`)
+  - `kbd` component works well for key hints even at tiny sizes (`kbd-xs`) — the daisyUI styling gives it a subtle keyboard-cap appearance that communicates "press this key" better than plain text
+  - `EngineState` has no weapon/slot data yet — the hotbar currently manages its own `activeSlot` state in GameView; wiring to actual weapon selection is a future engine task
+---
+
