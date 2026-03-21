@@ -45,7 +45,7 @@ export function createCombat(
   scene: THREE.Scene,
   enemies: EnemyState[],
   boss: BossState,
-  bossMesh: THREE.Mesh,
+  bossMesh: THREE.Object3D,
   onEvent: EngineEventListener,
   bossContentId = 'ancient-treant',
   bossTomeAbility = 'dash',
@@ -112,14 +112,11 @@ export function createCombat(
         playHitImpact();
         hapticImpact('medium');
 
-        // Hit flash
-        (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(0xffffff);
+        // Hit flash — scale bounce (works with both box meshes and GLB models)
+        const origScale = target.mesh.scale.clone();
+        target.mesh.scale.multiplyScalar(1.3);
         setTimeout(() => {
-          if (target.mesh.parent) {
-            (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(
-              target.mesh === bossMesh ? 0x660033 : 0xcc2222,
-            );
-          }
+          if (target.mesh.parent) target.mesh.scale.copy(origScale);
         }, 100);
 
         if (target.health <= 0) {
@@ -151,14 +148,14 @@ export function createCombat(
         if (pct <= 0.66 && boss.phase === 1) {
           boss.phase = 2;
           playBossPhase();
-          (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0x990044);
+          // Phase 2: scale up boss slightly
           boss.vehicle.maxSpeed = 2.5;
           onEvent({ type: 'bossPhaseChange', phase: 2 });
         }
         if (pct <= 0.33 && boss.phase === 2) {
           boss.phase = 3;
           playBossPhase();
-          (bossMesh.material as THREE.MeshLambertMaterial).color.setHex(0xcc0033);
+          bossMesh.scale.multiplyScalar(1.2); // Phase 3: even bigger
           boss.vehicle.maxSpeed = 3.5;
           onEvent({ type: 'bossPhaseChange', phase: 3 });
         }

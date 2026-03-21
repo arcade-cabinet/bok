@@ -21,6 +21,7 @@ import { DayNightCycle } from '../rendering/index.ts';
 
 import { ContentRegistry } from '../content/index.ts';
 import { createTerrain } from './terrain.ts';
+import { loadModel } from './models.ts';
 import { spawnEnemies, updateEnemyAI } from './enemies.ts';
 import { createCombat } from './combat.ts';
 import { createCamera } from './camera.ts';
@@ -99,12 +100,23 @@ export async function initGame(
   const terrain = createTerrain(jpWorld, rapierWorld, config.seed);
 
   // --- Enemies + Boss ---
-  const { enemies, boss, bossMesh, yukaManager, cleanup: cleanupEnemies } = spawnEnemies(
+  const { enemies, boss, bossMesh, yukaManager, cleanup: cleanupEnemies } = await spawnEnemies(
     scene, terrain.getSurfaceY, terrain.islandSize, config.seed,
   );
 
   // --- Camera ---
   const cam = createCamera(jpWorld, terrain.getSurfaceY, terrain.islandSize);
+
+  // --- Center-mounted weapon model (visible in viewport) ---
+  try {
+    const weaponModel = await loadModel('/models/weapons/Sword_Wood.glb');
+    weaponModel.scale.setScalar(0.4);
+    weaponModel.position.set(0.3, -0.25, -0.5);
+    weaponModel.rotation.set(0, 0, -Math.PI / 6);
+    cam.camera.add(weaponModel); // Attach to camera so it moves with player
+  } catch {
+    // Weapon model failed to load — continue without it
+  }
 
   // --- Input ---
   const inputSystem = new InputSystem(canvas);

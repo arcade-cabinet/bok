@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 import { createHub, type BuildingDef } from '../../engine/hub';
 import { createCamera } from '../../engine/camera';
-import { DayNightCycle } from '../../rendering/index';
+// Hub uses fixed daytime lighting — no DayNightCycle
 import { InputSystem } from '../../input/index';
 import { isMobileDevice } from '../../input/MobileControls';
 import { MedievalJoysticks, type MedievalJoystickOutput } from '../../components/ui/MedievalJoysticks';
@@ -72,9 +72,11 @@ export function HubView({ onNavigate }: Props) {
       scene.background = new THREE.Color('#87ceeb');
       scene.fog = new THREE.FogExp2('#87ceeb', 0.02);
 
-      const dayNight = new DayNightCycle();
-      for (const obj of dayNight.sceneObjects) scene.add(obj);
-      scene.add(new THREE.HemisphereLight(0xaaccee, 0x886622, 0.7));
+      // Hub is ALWAYS daytime — no day/night cycle
+      const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      sunLight.position.set(20, 40, 20);
+      const ambientLight = new THREE.AmbientLight(0xc0c0d0, 0.7);
+      scene.add(sunLight, ambientLight, new THREE.HemisphereLight(0xaaccee, 0x886622, 0.7));
 
       // Hub terrain + buildings
       const hub = createHub(jpWorld, rapierWorld);
@@ -147,9 +149,7 @@ export function HubView({ onNavigate }: Props) {
         cam.applyMovement(dirX, dirZ, sprinting, dt);
 
         // Day/night
-        dayNight.update(dt);
-        (scene.background as THREE.Color)?.copy(dayNight.skyColor);
-        if (scene.fog instanceof THREE.FogExp2) scene.fog.color.copy(dayNight.skyColor);
+        // Hub is always daytime — no cycle update needed
 
         // Project building labels to screen
         const camera = cam.camera;

@@ -10,7 +10,7 @@ export type SurfaceHeightFn = (x: number, z: number) => number;
 
 /** Enemy runtime state */
 export interface EnemyState {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   vehicle: Vehicle;
   health: number;
   attackCooldown: number;
@@ -18,7 +18,7 @@ export interface EnemyState {
 
 /** Boss runtime state */
 export interface BossState {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   vehicle: Vehicle;
   health: number;
   maxHealth: number;
