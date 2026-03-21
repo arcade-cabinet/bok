@@ -118,7 +118,7 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
     const p = clamp(t.clientX - c.x, t.clientY - c.y);
     setLeft({ active: true, pos: p, id: t.identifier });
     out.current.moveX = p.x / RADIUS;
-    out.current.moveZ = -p.y / RADIUS;
+    out.current.moveZ = p.y / RADIUS; // No inversion: negative Y (push up) = negative dirZ = forward in Three.js
     emit();
   }, [emit]);
 
@@ -131,7 +131,7 @@ export function MedievalJoysticks({ onOutput, visible }: Props) {
         const p = clamp(t.clientX - c.x, t.clientY - c.y);
         setLeft(s => ({ ...s, pos: p }));
         out.current.moveX = p.x / RADIUS;
-        out.current.moveZ = -p.y / RADIUS;
+        out.current.moveZ = p.y / RADIUS; // No inversion: negative Y (push up) = negative dirZ = forward in Three.js
         emit();
       }
     }
