@@ -69,7 +69,7 @@ This document is the **single checklist for shipping a production-quality game**
 | Area | Status | Remaining work |
 |------|--------|----------------|
 | **GLB models** | `public/models/` + `engine/models.ts` | Asset audit: every content ID maps to a file; LOD/perf on low-end |
-| **Audio** | Tone.js + managers | Spatial mix, compression, mobile autoplay policies |
+| **Audio** | Tone.js + managers + **SpatialAudio** (Panner3D) + AudioFacade | ~~Spatial mix~~ **DONE**; compression, mobile autoplay policies |
 | **Effects** | Particles, day/night, etc. | Performance budget, quality settings |
 
 ---
@@ -79,7 +79,7 @@ This document is the **single checklist for shipping a production-quality game**
 | Area | Status | Remaining work |
 |------|--------|----------------|
 | **Enemy AI** | Yuka FSM + steering | Playtest edge cases, boss phases vs content |
-| **Player governor** | GOAP assist | Tune; expose toggles in settings if needed |
+| **Player governor** | GOAP assist, **11 tests**, 2 bug fixes | Tune; expose toggles in settings if needed |
 | **Combat feel** | Contact + systems | Netcode N/A for v1; local polish and difficulty |
 
 ---
@@ -88,10 +88,10 @@ This document is the **single checklist for shipping a production-quality game**
 
 | Area | Status | Remaining work |
 |------|--------|----------------|
-| **Unit tests** | 147 passing (`pnpm test`) | Keep coverage on public APIs |
-| **Browser tests** | Vitest browser project configured; `ContextIndicator.browser.test.tsx` exists | **Full journey**: menu → hub → game → end state; more component browser tests needed |
+| **Unit tests** | 186 passing (`pnpm test`) | Keep coverage on public APIs |
+| **Browser tests** | ContextIndicator, **HealthBar**, **PauseMenu** browser tests | **Full journey**: menu → hub → game → end state |
 | **Device QA** | Manual | Phones/tablets: touch, safe areas, thermal throttling |
-| **CI** | Not fully specified | GitHub Actions: `pnpm install`, `typecheck`, `lint`, `test`, `build`, optional `test:browser` |
+| **CI** | **`.github/workflows/ci.yml`** — typecheck, lint, test, build, browser-tests | Verify on first PR run; tune browser-test stability |
 
 ---
 

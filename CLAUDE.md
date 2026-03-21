@@ -156,7 +156,7 @@ const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
 
 ## Testing
 
-- **Unit tests:** `pnpm test` — Vitest in Node, 147 tests passing
+- **Unit tests:** `pnpm test` — Vitest in Node, 186 tests passing
 - **Browser tests:** `pnpm test:browser` — Vitest browser project configured (MainMenuView, GameView, ContextIndicator tests exist)
 - **No node mocks for Three.js/DOM** — use browser tests instead
 - **Content validation:** Zod schemas validate all JSON at import time
