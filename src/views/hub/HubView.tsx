@@ -8,7 +8,7 @@ import { createCamera } from '../../engine/camera';
 // Hub uses fixed daytime lighting — no DayNightCycle
 import { InputSystem } from '../../input/index';
 import { isMobileDevice } from '../../input/MobileControls';
-import { MedievalJoysticks, type MedievalJoystickOutput } from '../../components/ui/MedievalJoysticks';
+import { TouchControls, type TouchControlOutput } from '../../components/ui/TouchControls';
 import { createWorld } from 'koota';
 import { Time, MovementIntent, LookIntent } from '../../traits/index';
 import { MAX_DELTA } from '../../shared/index';
@@ -198,14 +198,13 @@ export function HubView({ onNavigate }: Props) {
     onNavigate('game');
   }, [onNavigate]);
 
-  const handleJoystickOutput = useCallback((output: MedievalJoystickOutput) => {
+  const handleTouchOutput = useCallback((output: TouchControlOutput) => {
     const mi = mobileInputRef.current;
     if (!mi) return;
     mi.moveX = output.moveX;
     mi.moveZ = output.moveZ;
     mi.lookX = output.lookX;
     mi.lookY = output.lookY;
-    if (output.action) mi.action = output.action;
   }, []);
 
   return (
@@ -284,8 +283,8 @@ export function HubView({ onNavigate }: Props) {
       {/* Crosshair */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)] z-10 pointer-events-none" />
 
-      {/* Medieval joysticks — mobile only */}
-      {isMobile && <MedievalJoysticks onOutput={handleJoystickOutput} visible={true} />}
+      {/* Invisible split-half touch controls — mobile only */}
+      <TouchControls onOutput={handleTouchOutput} enabled={isMobile} />
     </div>
   );
 }

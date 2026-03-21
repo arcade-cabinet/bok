@@ -4,7 +4,7 @@ import type { GameConfig } from '../../app/App';
 import type { EngineState, EngineEvent } from '../../engine/types';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { useDeviceType } from '../../hooks/useDeviceType';
-import { MedievalJoysticks, type MedievalJoystickOutput } from '../../components/ui/MedievalJoysticks';
+import { TouchControls, type TouchControlOutput } from '../../components/ui/TouchControls';
 
 interface Props {
   config: GameConfig;
@@ -86,8 +86,8 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
     gameRef.current?.togglePause();
   }, []);
 
-  const handleJoystickOutput = useCallback((output: MedievalJoystickOutput) => {
-    gameRef.current?.setMobileInput(output);
+  const handleTouchOutput = useCallback((output: TouchControlOutput) => {
+    gameRef.current?.setMobileInput({ ...output, action: null });
   }, []);
 
   return (
@@ -100,10 +100,8 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
         style={{ touchAction: 'none' }}
       />
 
-      {/* Medieval joysticks — mobile only */}
-      {isMobile && engineState?.phase === 'playing' && (
-        <MedievalJoysticks onOutput={handleJoystickOutput} visible={true} />
-      )}
+      {/* Invisible split-half touch controls — mobile only */}
+      <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
 
       {/* Diegetic context indicator */}
       {engineState?.phase === 'playing' && (
