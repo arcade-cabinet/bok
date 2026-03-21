@@ -167,13 +167,13 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
 
       {/* Pause overlay */}
       {engineState?.phase === 'paused' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl p-9 text-center">
-            <h2 className="text-3xl mb-6" style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>PAUSED</h2>
-            <button onClick={handleResume} className="block w-full mb-2 py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer text-base" style={{ fontFamily: 'Georgia, serif' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 overlay-safe-area">
+          <div className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-6' : 'p-9'} text-center`}>
+            <h2 className={`${isMobile ? 'text-2xl mb-4' : 'text-3xl mb-6'}`} style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>PAUSED</h2>
+            <button onClick={handleResume} className={`block w-full mb-2 py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer ${isMobile ? 'text-sm' : 'text-base'}`} style={{ fontFamily: 'Georgia, serif' }}>
               Resume
             </button>
-            <button onClick={onReturnToMenu} className="block w-full py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#fef9ef] text-[#2c1e16] cursor-pointer text-base" style={{ fontFamily: 'Georgia, serif' }}>
+            <button onClick={onReturnToMenu} className={`block w-full py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#fef9ef] text-[#2c1e16] cursor-pointer ${isMobile ? 'text-sm' : 'text-base'}`} style={{ fontFamily: 'Georgia, serif' }}>
               Quit to Menu
             </button>
           </div>
@@ -182,13 +182,13 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
 
       {/* Death screen */}
       {engineState?.phase === 'dead' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-          <div className="bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl p-12 text-center">
-            <h1 className="text-4xl mb-2" style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>THE CHAPTER ENDS</h1>
-            <p className="text-sm italic mb-6" style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 overlay-safe-area">
+          <div className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-7 mx-4' : 'p-12'} text-center`}>
+            <h1 className={`${isMobile ? 'text-2xl' : 'text-4xl'} mb-2`} style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>THE CHAPTER ENDS</h1>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic mb-6`} style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}>
               The ink fades, but the story can be rewritten.
             </p>
-            <button onClick={onReturnToMenu} className="py-3 px-8 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer text-lg" style={{ fontFamily: 'Georgia, serif' }}>
+            <button onClick={onReturnToMenu} className={`${isMobile ? 'py-2.5 px-6 text-base' : 'py-3 px-8 text-lg'} rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer`} style={{ fontFamily: 'Georgia, serif' }}>
               TURN THE PAGE
             </button>
           </div>
@@ -197,14 +197,14 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
 
       {/* Victory screen */}
       {engineState?.phase === 'victory' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85">
-          <div className="bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl p-12 text-center">
-            <h1 className="text-3xl mb-2" style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>A NEW PAGE IS WRITTEN</h1>
-            <p className="text-lg italic mb-1" style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}>You have unlocked: Dash</p>
-            <p className="text-sm mb-6" style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 overlay-safe-area">
+          <div className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-7 mx-4' : 'p-12'} text-center`}>
+            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} mb-2`} style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>A NEW PAGE IS WRITTEN</h1>
+            <p className={`${isMobile ? 'text-base' : 'text-lg'} italic mb-1`} style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}>You have unlocked: Dash</p>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} mb-6`} style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}>
               The Ancient Treant falls. A new ability inscribes itself into your Tome.
             </p>
-            <button onClick={onReturnToMenu} className="py-3 px-8 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer text-lg" style={{ fontFamily: 'Georgia, serif' }}>
+            <button onClick={onReturnToMenu} className={`${isMobile ? 'py-2.5 px-6 text-base' : 'py-3 px-8 text-lg'} rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer`} style={{ fontFamily: 'Georgia, serif' }}>
               CONTINUE
             </button>
           </div>

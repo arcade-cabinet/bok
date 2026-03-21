@@ -14,13 +14,32 @@ html, body {
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
+
 /* Safe area insets for notched devices */
 #hud { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-/* Responsive HUD scaling */
+.overlay-safe-area {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Mobile breakpoints */
 @media (max-width: 768px) {
   #hud-health, #hud-info { font-size: 10px !important; padding: 6px 10px !important; }
   .hotbar-slot { width: 40px !important; height: 40px !important; font-size: 9px !important; }
+
+  /* Scale base font for readability on small screens */
+  html { font-size: 14px; }
 }
+
+@media (max-width: 480px) {
+  html { font-size: 13px; }
+}
+
+/* Landscape mobile: tighter vertical spacing */
+@media (max-height: 480px) and (orientation: landscape) {
+  #hud-health, #hud-info { padding: 4px 8px !important; }
+  .hotbar-slot { width: 36px !important; height: 36px !important; }
+}
+
 @font-face {
   font-family: 'Cormorant Garamond';
   src: url('/src/assets/fonts/CormorantGaramond-Regular.ttf') format('truetype');

@@ -35,6 +35,8 @@ export class MobileControls {
   #lastTapTime = 0;
 
   #overlay: HTMLDivElement;
+  #attackBtn: HTMLDivElement;
+  #onOrientationChange: () => void;
 
   constructor() {
     // Minimal overlay — just shows split indicator
@@ -54,13 +56,13 @@ export class MobileControls {
     lookLabel.textContent = 'LOOK';
     lookLabel.style.cssText = 'position:absolute;bottom:20px;left:75%;transform:translateX(-50%);color:rgba(255,255,255,0.2);font-family:Georgia,serif;font-size:12px;';
 
-    // Attack button (bottom right)
-    const attackBtn = document.createElement('div');
-    attackBtn.textContent = 'ATK';
-    attackBtn.style.cssText = 'position:absolute;bottom:30px;right:30px;width:56px;height:56px;border-radius:50%;background:rgba(192,57,43,0.6);border:2px solid rgba(192,57,43,0.8);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:13px;color:#fdf6e3;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;';
-    attackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.#state.attacking = true; }, { passive: false });
+    // Attack button (bottom right) — scaled to screen
+    this.#attackBtn = document.createElement('div');
+    this.#attackBtn.textContent = 'ATK';
+    this.#updateAttackBtnSize();
+    this.#attackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); this.#state.attacking = true; }, { passive: false });
 
-    this.#overlay.append(splitLine, moveLabel, lookLabel, attackBtn);
+    this.#overlay.append(splitLine, moveLabel, lookLabel, this.#attackBtn);
     document.body.appendChild(this.#overlay);
 
     // Touch handlers on canvas
@@ -70,6 +72,20 @@ export class MobileControls {
       canvas.addEventListener('touchmove', this.#onTouchMove, { passive: false });
       canvas.addEventListener('touchend', this.#onTouchEnd, { passive: false });
     }
+
+    // Recalculate on orientation change
+    this.#onOrientationChange = () => {
+      this.#updateAttackBtnSize();
+    };
+    window.addEventListener('resize', this.#onOrientationChange);
+    window.addEventListener('orientationchange', this.#onOrientationChange);
+  }
+
+  #updateAttackBtnSize(): void {
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+    const size = Math.max(48, Math.min(72, Math.round(minDim * 0.12)));
+    const fontSize = Math.max(11, Math.round(size * 0.23));
+    this.#attackBtn.style.cssText = `position:absolute;bottom:30px;right:30px;width:${size}px;height:${size}px;border-radius:50%;background:rgba(192,57,43,0.6);border:2px solid rgba(192,57,43,0.8);display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:${fontSize}px;color:#fdf6e3;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;`;
   }
 
   show(): void { this.#overlay.style.display = ''; }
@@ -90,11 +106,24 @@ export class MobileControls {
     return v;
   }
 
+  #spawnTouchFeedback(x: number, y: number): void {
+    const circle = document.createElement('div');
+    circle.style.cssText = `position:fixed;left:${x - 20}px;top:${y - 20}px;width:40px;height:40px;border-radius:50%;border:2px solid rgba(253,246,227,0.5);pointer-events:none;z-index:91;`;
+    document.body.appendChild(circle);
+    circle.animate([
+      { opacity: 0.6, transform: 'scale(0.5)' },
+      { opacity: 0, transform: 'scale(1.2)' },
+    ], { duration: 300, easing: 'ease-out' });
+    setTimeout(() => circle.remove(), 300);
+  }
+
   #onTouchStart = (e: TouchEvent): void => {
     e.preventDefault();
     const halfW = window.innerWidth / 2;
 
     for (const touch of Array.from(e.changedTouches)) {
+      this.#spawnTouchFeedback(touch.clientX, touch.clientY);
+
       if (touch.clientX < halfW && this.#moveTouchId === null) {
         // Left half — movement origin
         this.#moveTouchId = touch.identifier;
@@ -151,6 +180,8 @@ export class MobileControls {
   };
 
   destroy(): void {
+    window.removeEventListener('resize', this.#onOrientationChange);
+    window.removeEventListener('orientationchange', this.#onOrientationChange);
     this.#overlay.remove();
   }
 }
