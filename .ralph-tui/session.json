@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T16:20:36.738Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-03-21T16:24:25.837Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -83,8 +83,8 @@
       {
         "id": "US-012",
         "title": "Decompose GameEngine.ts into focused modules",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-013",
@@ -134,6 +134,16 @@
       "durationMs": 391621,
       "startedAt": "2026-03-21T15:58:45.385Z",
       "endedAt": "2026-03-21T16:05:17.006Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "US-012",
+      "taskTitle": "Decompose GameEngine.ts into focused modules",
+      "taskCompleted": true,
+      "durationMs": 918665,
+      "startedAt": "2026-03-21T16:05:18.071Z",
+      "endedAt": "2026-03-21T16:20:36.736Z"
     }
   ],
   "skippedTaskIds": [],

@@ -66,3 +66,21 @@ after each iteration and it's included in prompts for context.
   - `initGame()` public API is completely unchanged — `GameView.tsx` import works without modification
 ---
 
+## 2026-03-21 - US-015
+- **What was implemented**: Evaluated dead `src/behaviors/` ActorComponent files against current engine approach. Decision: delete dead files, keep current functional approach.
+- **Decision rationale**: The dead `PlayerCameraBehavior` was a thin `applyLook()` wrapper — a strict subset of `src/engine/camera.ts` which handles movement, auto-platforming, terrain-following, head bob, sprint, and mobile input. The dead `RenderSyncBehavior` syncs Koota Position/Rotation traits → Actor transforms, but no current game entity uses this path (enemies use Yuka vehicles + direct Three.js mesh sync). The ActorComponent approach would fragment frame-loop logic across scattered `update()` methods, making the game loop harder to reason about vs. the explicit `GameLoopContext` dependency injection pattern.
+- **Files changed**:
+  - `src/behaviors/PlayerCameraBehavior.ts` — DELETED (dead code, never imported)
+  - `src/behaviors/RenderSyncBehavior.ts` — DELETED (dead code, never imported)
+  - `src/behaviors/index.ts` — DELETED (barrel for deleted files)
+  - `src/scenes/IslandScene.ts` — removed stale comment referencing deleted behaviors
+  - `AGENTS.md` — removed `src/behaviors/` from domain map
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean (only pre-existing warnings)
+- **Learnings:**
+  - JollyPixel ActorComponent lifecycle: `initialize → awake → start → update/fixedUpdate → destroy`. Components with `update()` or `fixedUpdate()` are auto-registered for per-frame callbacks via `needUpdate` mechanism.
+  - The PRD referenced `src/engine/behaviors/` but files were actually at `src/behaviors/` — always verify actual paths before acting on spec descriptions
+  - Zero imports of `src/behaviors/` anywhere in `src/` confirmed they were dead code since creation
+  - The functional camera + game-loop approach is architecturally superior for this game: all frame logic is centralized in `gameLoop.ts` with explicit `GameLoopContext` dependency injection, making it easy to reason about update order and debug frame-by-frame behavior
+  - `RenderSyncBehavior` concept (Koota ECS → Actor transforms) would become relevant if enemies/NPCs move to full Koota ECS, but that's a future concern — don't keep dead code for hypothetical use
+---
+

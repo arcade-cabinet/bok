@@ -535,7 +535,6 @@ export class IslandScene extends Scene {
       this.#yukaManager.add(vehicle);
 
       // M11: Create a Three.js mesh for this enemy, sync position from Koota each frame.
-      // RenderSyncBehavior/PlayerCameraBehavior (JollyPixel Actors) can be wired in a follow-up.
       const mesh = new THREE.Mesh(this.#enemyMeshGeometry, this.#enemyMeshMaterial);
       mesh.position.set(spawned.position.x, spawned.position.y, spawned.position.z);
       this.#threeScene?.add(mesh);

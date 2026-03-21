@@ -28,7 +28,7 @@ Each domain has ONE role. Do not add cross-cutting concerns:
 - AI decisions → `src/ai/`
 - World generation → `src/generation/`
 - Content definitions → `src/content/`
-- Rendering → `src/rendering/` and `src/behaviors/`
+- Rendering → `src/rendering/`
 - UI → `src/ui/`
 - Persistence → `src/persistence/`
 
