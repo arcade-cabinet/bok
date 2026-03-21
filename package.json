@@ -29,6 +29,7 @@
     "@jolly-pixel/engine": "^2.5.0",
     "@jolly-pixel/runtime": "^3.3.0",
     "@jolly-pixel/voxel.renderer": "^1.4.0",
+    "daisyui": "^5.5.19",
     "framer-motion": "^12.38.0",
     "koota": "^0.6.5",
     "lucide-react": "^0.577.0",

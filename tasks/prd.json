@@ -1,0 +1,454 @@
+{
+  "name": "Dead Code Convergence & Monolith Decomposition",
+  "description": "Single runtime path: React+JollyPixel only. Port valuable dead code to React components, decompose monolith files, delete dead code, and update documentation.",
+  "branchName": "ralph/dead-code-convergence",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Install and configure daisyUI with Tailwind CSS 4",
+      "description": "As a developer, I want daisyUI integrated with Tailwind CSS 4 so that all ported components use a consistent, themeable component library.",
+      "acceptanceCriteria": [
+        "daisyui added as a dependency via pnpm",
+        "Tailwind CSS 4 config updated with daisyUI @plugin directive",
+        "Custom 'parchment' theme defined matching the game's aesthetic (warm browns, gold accents, parchment backgrounds, ink-dark text)",
+        "A test component renders correctly with daisyUI classes",
+        "Existing Tailwind styles in GameView, HubView, MainMenuView still work",
+        "Verify in browser: daisyUI classes render correctly alongside existing Tailwind",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "",
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
+    },
+    {
+      "id": "US-002",
+      "title": "Extract HealthBar React component from GameView inline JSX",
+      "description": "As a player, I want a polished health bar with low-health pulse animation so that I have clear feedback about my health state.",
+      "acceptanceCriteria": [
+        "src/components/hud/HealthBar.tsx created as a standalone React component",
+        "Props: current: number, max: number",
+        "Animated fill bar (CSS transition on width)",
+        "Pulse animation when health < 20% (opacity pulse, matching dead code behavior from src/ui/hud/HealthBar.ts)",
+        "Uses daisyUI progress component with parchment theme colors",
+        "Label shows 'current / max'",
+        "GameView imports and uses the new component instead of inline JSX",
+        "Verify in browser: health bar renders at top-left, pulse triggers at low health",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Extract Hotbar React component (ported from dead code)",
+      "description": "As a player, I want a weapon/item hotbar so that I can switch between equipped items using keyboard or touch.",
+      "acceptanceCriteria": [
+        "src/components/hud/Hotbar.tsx created, porting logic from dead src/ui/hud/Hotbar.ts",
+        "5 item slots with key hints (1-5)",
+        "Active slot highlight with daisyUI styling",
+        "Keyboard input: 1-5 keys set active slot, mouse wheel to cycle",
+        "Props: slots: SlotData[], activeIndex: number, onSelect: (index: number) => void",
+        "Uses daisyUI btn and kbd components for slot rendering",
+        "GameView integrates the hotbar, wired to weapon selection",
+        "Verify in browser: hotbar visible at bottom-center, keyboard switching works",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Extract DamageIndicator React component with screen shake",
+      "description": "As a player, I want visual feedback (red vignette + screen shake) when I take damage so that hits feel impactful.",
+      "acceptanceCriteria": [
+        "src/components/hud/DamageIndicator.tsx created, porting shake algorithm from dead src/ui/hud/DamageIndicator.ts",
+        "Red radial gradient vignette overlay (CSS, fades over 300ms)",
+        "Screen shake via canvas transform (random dx/dy, Gaussian decay over 150ms)",
+        "flash() method or trigger prop to activate",
+        "GameView integrates, triggered on playerDamaged events",
+        "Verify in browser: vignette + shake visible on damage event",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Port Minimap as React Canvas component",
+      "description": "As a player, I want a minimap showing my position relative to enemies and items so that I have spatial awareness during combat.",
+      "acceptanceCriteria": [
+        "src/components/hud/Minimap.tsx created, porting rendering from dead src/ui/hud/Minimap.ts",
+        "Uses <canvas> element (140x140) with React ref",
+        "Player dot always centered (white with stroke)",
+        "Enemy markers: red dots (radius 3), relative to player position",
+        "Chest/item markers: gold squares",
+        "Markers outside canvas bounds are clipped",
+        "Props: playerX: number, playerZ: number, markers: MarkerData[]",
+        "daisyUI card wrapper with parchment border",
+        "GameView integrates minimap at top-right corner",
+        "Verify in browser: minimap renders with player dot and enemy markers",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Extract PauseMenu React component",
+      "description": "As a player, I want a pause menu with Resume, Settings, Abandon Run, and Quit options so that I can control my session.",
+      "acceptanceCriteria": [
+        "src/components/modals/PauseMenu.tsx created",
+        "Semi-transparent dark overlay with backdrop blur",
+        "'PAUSED' title with parchment panel",
+        "Buttons: Resume, Settings (disabled/placeholder), Abandon Run, Quit to Menu",
+        "Uses daisyUI modal, btn, and card components",
+        "Resume closes overlay, Abandon triggers hub transition, Quit triggers menu transition",
+        "GameView wires Escape key to toggle PauseMenu visibility",
+        "Verify in browser: Escape toggles pause menu, buttons trigger correct actions",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Extract DeathScreen React component",
+      "description": "As a player, I want a death screen showing my run stats so that I can see what I accomplished before returning to hub.",
+      "acceptanceCriteria": [
+        "src/components/modals/DeathScreen.tsx created",
+        "Props: stats: { enemiesDefeated: number, timeSurvived: number, biome: string }",
+        "Title: 'THE CHAPTER ENDS' with parchment styling",
+        "Stats display: Enemies defeated, Time survived, Biome",
+        "'TURN THE PAGE' button returns to hub",
+        "Uses daisyUI modal, stat, btn components",
+        "GameView shows DeathScreen on player death event instead of inline handling",
+        "Verify in browser: death screen displays correct stats, button navigates to hub",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Extract VictoryScreen React component with tome unlock display",
+      "description": "As a player, I want a victory screen showing my run stats and any tome page unlocked so that progression feels rewarding.",
+      "acceptanceCriteria": [
+        "src/components/modals/VictoryScreen.tsx created, porting tome unlock card from dead src/ui/screens/VictoryScreen.ts",
+        "Props: stats: VictoryStats (biome, enemies, time, tomePageUnlocked?, abilityName?)",
+        "Title: 'A NEW PAGE IS WRITTEN' with gold styling",
+        "Tome page unlock card (if applicable): icon, name, description",
+        "Stats display: Biome, Enemies, Time",
+        "Buttons: 'CONTINUE VOYAGE' and 'RETURN TO HUB'",
+        "Uses daisyUI modal, card, stat, btn components",
+        "GameView shows VictoryScreen on boss defeated instead of inline handling",
+        "Verify in browser: victory screen displays stats, tome unlock card renders, buttons work",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "Create SailingTransition React component",
+      "description": "As a player, I want a brief sailing animation between hub and island so that transitions feel immersive rather than instant.",
+      "acceptanceCriteria": [
+        "src/components/transitions/SailingTransition.tsx created, porting concept from dead src/scenes/SailingScene.ts",
+        "Gradient background (sky to water)",
+        "Animated sailboat element (CSS transform, left to right, 4 second duration)",
+        "Text: 'Sailing to {biomeName}...'",
+        "Auto-completes after duration, triggers onComplete callback",
+        "Uses Framer Motion for animation (consistent with existing codebase)",
+        "App.tsx integrates between hub/menu and game view transitions",
+        "Verify in browser: sailing animation plays smoothly between views",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "Port building upgrade system from HubScene to React hooks",
+      "description": "As a player, I want to interact with hub buildings and upgrade them using resources so that there is meaningful meta-progression.",
+      "acceptanceCriteria": [
+        "src/hooks/useHubBuildings.ts created, porting building progression logic from dead src/scenes/HubScene.ts",
+        "Building types: Armory, Docks, Library, Market, Forge",
+        "Each building has levels with resource costs (from HubScene's upgrade mechanics)",
+        "Proximity detection: player within INTERACTION_RANGE (3 units) triggers interaction",
+        "upgradeBuilding(buildingId) checks resources and increments level",
+        "State persisted via SaveManager",
+        "src/components/hud/BuildingInteraction.tsx overlay shows building info + upgrade button",
+        "Uses daisyUI card, btn, badge components",
+        "HubView integrates hook and overlay",
+        "Verify in browser: approaching building shows interaction UI, upgrade button works",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "Port TomePageBrowser as React component",
+      "description": "As a player, I want to browse my unlocked tome pages (abilities/upgrades) so that I can review my progression.",
+      "acceptanceCriteria": [
+        "src/components/modals/TomePageBrowser.tsx created, porting grid layout from dead src/ui/tome/PageBrowser.ts",
+        "Props: pages: TomePage[] (id, name, description, icon, level)",
+        "Dark overlay backdrop",
+        "Parchment panel with CSS Grid (auto-fill, minmax 180px)",
+        "Page cards: emoji icon + name + level indicator + description",
+        "Uses daisyUI modal, card, badge, grid patterns",
+        "Tab key toggles visibility (consistent with dead code behavior)",
+        "GameView or App integrates tome browser",
+        "Verify in browser: Tab opens browser, grid displays pages correctly",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-012",
+      "title": "Decompose GameEngine.ts into focused modules",
+      "description": "As a developer, I want GameEngine.ts split into focused engine modules so that each concern is independently testable and maintainable.",
+      "acceptanceCriteria": [
+        "src/engine/engineSetup.ts — JollyPixel Runtime + Rapier world initialization",
+        "src/engine/terrainSetup.ts — VoxelRenderer creation, island generation, tileset loading",
+        "src/engine/playerSetup.ts — Player entity creation (Koota traits, camera controls)",
+        "src/engine/enemySetup.ts — Enemy spawning, Yuka AI bridge setup",
+        "src/engine/gameLoop.ts — beforeUpdate/beforeFixedUpdate frame loop orchestration",
+        "GameEngine.ts becomes a thin orchestrator calling setup functions and wiring the loop",
+        "initGame() public API unchanged — no breaking changes to GameView",
+        "All existing unit tests pass",
+        "New unit tests for each extracted module's public API",
+        "pnpm typecheck passes",
+        "pnpm run lint passes",
+        "pnpm test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Independent of UI porting stories. Can be done in parallel with US-002 through US-011.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-013",
+      "title": "Decompose GameView.tsx into React components and hooks",
+      "description": "As a developer, I want GameView.tsx decomposed so that HUD, overlays, and game lifecycle are separate concerns.",
+      "acceptanceCriteria": [
+        "src/hooks/useGameLifecycle.ts — canvas ref management, engine init/cleanup, game state",
+        "src/hooks/useGameEvents.ts — event callbacks (playerDamaged, enemyKilled, bossDefeated, playerDied, victory)",
+        "src/hooks/useGameHUD.ts — polling loop for health, stamina, enemies, boss state",
+        "GameView.tsx imports hooks and renders extracted components (HealthBar, Hotbar, Minimap, DamageIndicator, PauseMenu, DeathScreen, VictoryScreen)",
+        "GameView.tsx reduced to <150 LOC (from 311)",
+        "All existing browser tests still pass",
+        "Verify in browser: game plays identically to before decomposition",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Depends on all HUD/modal component extractions being complete so GameView can import them.",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008"
+      ]
+    },
+    {
+      "id": "US-014",
+      "title": "Decompose HubView.tsx into React components and hooks",
+      "description": "As a developer, I want HubView.tsx decomposed so that hub terrain, buildings, NPCs, and UI are separate concerns.",
+      "acceptanceCriteria": [
+        "src/hooks/useHubEngine.ts — canvas ref, JollyPixel Runtime, terrain generation, player setup",
+        "src/hooks/useHubCamera.ts — camera controls specific to hub (no combat)",
+        "Building interaction UI uses extracted BuildingInteraction.tsx from US-010",
+        "HubView.tsx imports hooks and renders components",
+        "HubView.tsx reduced to <150 LOC (from 329)",
+        "Verify in browser: hub renders and plays identically",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Depends on building interaction component from US-010.",
+      "dependsOn": [
+        "US-010"
+      ]
+    },
+    {
+      "id": "US-015",
+      "title": "Evaluate and revive JollyPixel ActorComponent behaviors",
+      "description": "As a developer, I want camera and render-sync logic implemented as proper JollyPixel ActorComponents so that the engine architecture is idiomatic.",
+      "acceptanceCriteria": [
+        "Review dead src/engine/behaviors/PlayerCameraBehavior.ts and RenderSyncBehavior.ts",
+        "Compare to current camera logic in src/engine/camera.ts and render sync in game loop",
+        "If ActorComponent approach is cleaner: port as src/engine/components/PlayerCameraComponent.ts and src/engine/components/RenderSyncComponent.ts",
+        "If current approach is sufficient: document decision and delete dead behavior files",
+        "Whichever path: dead files in src/engine/behaviors/ are removed",
+        "Wire revived components into GameEngine setup if ported",
+        "Verify in browser: camera behavior and render sync work identically",
+        "pnpm typecheck passes",
+        "pnpm run lint passes",
+        "pnpm test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Independent of UI porting. Requires checking JollyPixel reference codebase at /Users/jbogaty/src/reference-codebases/editor for ActorComponent best practices.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-016",
+      "title": "Evaluate dead audio system for missing features",
+      "description": "As a developer, I want to ensure the live audio system has all valuable features from the dead audio code so that no sound design work is lost.",
+      "acceptanceCriteria": [
+        "Audit dead audio files (if any in src/audio/ that are unreferenced)",
+        "Compare feature set to live src/audio/ code",
+        "Port any missing sound effects, music systems, or audio utilities",
+        "Delete confirmed-dead audio files with no unique value",
+        "Document what was ported vs deleted",
+        "pnpm typecheck passes",
+        "pnpm run lint passes",
+        "pnpm test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Independent evaluation task. Quick audit — may result in no changes if live audio is already complete.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-017",
+      "title": "Delete confirmed dead code",
+      "description": "As a developer, I want all truly dead code removed so that the codebase has zero unreachable modules.",
+      "acceptanceCriteria": [
+        "Delete src/scenes/SceneDirector.ts (59 LOC)",
+        "Delete src/scenes/Scene.ts (26 LOC)",
+        "Delete src/scenes/IslandScene.ts (784 LOC)",
+        "Delete src/scenes/HubScene.ts (622 LOC)",
+        "Delete src/scenes/IslandSelectScene.ts (177 LOC)",
+        "Delete src/scenes/SailingScene.ts (97 LOC)",
+        "Delete src/scenes/ResultsScene.ts (131 LOC)",
+        "Delete src/scenes/BossArenaScene.ts (21 LOC)",
+        "Delete src/scenes/MainMenuScene.ts (21 LOC)",
+        "Delete src/scenes/config.ts and src/scenes/types.ts if no live imports",
+        "Delete src/ui/hud/HealthBar.ts (85 LOC)",
+        "Delete src/ui/hud/Hotbar.ts (112 LOC)",
+        "Delete src/ui/hud/DamageIndicator.ts (74 LOC)",
+        "Delete src/ui/hud/Minimap.ts (92 LOC)",
+        "Delete src/ui/screens/PauseMenu.ts (137 LOC)",
+        "Delete src/ui/screens/DeathScreen.ts (120 LOC)",
+        "Delete src/ui/screens/VictoryScreen.ts (197 LOC)",
+        "Delete src/ui/screens/MainMenuScreen.ts (229 LOC)",
+        "Delete src/ui/tome/TomeOverlay.ts (105 LOC)",
+        "Delete src/ui/tome/PageBrowser.ts (151 LOC)",
+        "Verify: grep -r 'src/scenes/' src/ returns zero live imports",
+        "Verify: grep -r 'src/ui/hud/' src/ returns zero live imports",
+        "Verify: grep -r 'src/ui/screens/' src/ returns zero live imports",
+        "Verify: grep -r 'src/ui/tome/' src/ returns zero live imports",
+        "All tests pass after deletion",
+        "pnpm typecheck passes",
+        "pnpm run lint passes",
+        "pnpm test passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Must happen AFTER all port stories are complete. FR-9: Dead code deletion must happen AFTER corresponding port stories are complete.",
+      "dependsOn": [
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008",
+        "US-009",
+        "US-010",
+        "US-011",
+        "US-015",
+        "US-016"
+      ]
+    },
+    {
+      "id": "US-018",
+      "title": "Update stale documentation to reflect converged codebase",
+      "description": "As a developer, I want all documentation accurate so that contributors and AI agents understand the real codebase.",
+      "acceptanceCriteria": [
+        "docs/PRODUCTION_ROADMAP.md §3: Mark dual-stack convergence as complete",
+        "docs/PRODUCTION_ROADMAP.md §8: Update browser test status",
+        "docs/superpowers/plans/2026-03-21-react-refactor-and-completion.md: Check off completed tasks",
+        "docs/superpowers/plans/2026-03-20-bok-implementation.md: Mark Phase 0-3 as complete, note Phase 4 is active",
+        "docs/superpowers/specs/2026-03-20-bok-game-design.md §12.4: Replace ESLint references with Biome 2.4",
+        "CLAUDE.md: Update package structure to reflect new components/hooks, remove references to src/scenes/",
+        "CLAUDE.md: Add daisyUI to architecture layer description",
+        "ARCHITECTURE.md: Update if it references SceneDirector or old UI",
+        "Verify: No doc references src/scenes/, src/ui/hud/, src/ui/screens/, src/ui/tome/, or ESLint",
+        "pnpm typecheck passes",
+        "pnpm run lint passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Final story — update all docs to reflect the converged codebase after dead code is removed.",
+      "dependsOn": [
+        "US-013",
+        "US-014",
+        "US-017"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-03-21T16:05:17.008Z"
+  }
+}
