@@ -84,3 +84,30 @@ after each iteration and it's included in prompts for context.
   - `RenderSyncBehavior` concept (Koota ECS → Actor transforms) would become relevant if enemies/NPCs move to full Koota ECS, but that's a future concern — don't keep dead code for hypothetical use
 ---
 
+## 2026-03-21 - US-016
+- **What was implemented**: Audited dead `src/systems/audio/` (4 files, 314 lines) against live `src/audio/` (3 files, 389 lines). Decision: delete all dead files, nothing to port.
+- **Dead system analyzed**:
+  - `AudioManager.ts` — Web Audio API context singleton with mute/volume
+  - `SFXPlayer.ts` — File-based SFX with buffer preloading + 3D spatial audio (HRTF PannerNode)
+  - `MusicSystem.ts` — Buffer-based music with crossfade, pause/resume
+  - `index.ts` — barrel export
+- **Features unique to dead system (not ported)**:
+  - 3D spatial audio (HRTF PannerNode) — scaffolding only, requires pre-recorded buffers incompatible with live system's procedural Tone.js approach. If needed, should be reimplemented with `Tone.Panner3D`.
+  - Music pause/resume — not needed; current architecture uses Tone.js Player which continues playing (game pause doesn't need explicit music pause).
+  - SFX IDs listed in comments (dodge-swoosh, parry-clang, footstep-grass, etc.) — aspirational only, no implementations or audio files existed.
+- **Live system already has**: All 6 combat SFX (procedural), biome music (8 tracks + hub), atmospheric SFX (7 spooky sounds), underwater ambient, ambient wind noise.
+- **Files deleted**:
+  - `src/systems/audio/AudioManager.ts`
+  - `src/systems/audio/SFXPlayer.ts`
+  - `src/systems/audio/MusicSystem.ts`
+  - `src/systems/audio/index.ts`
+- **No files changed** — `src/systems/index.ts` never re-exported `audio/`, so no barrel update needed.
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean (only pre-existing warnings)
+- **Learnings:**
+  - The dead audio system was a raw Web Audio API implementation written before Tone.js adoption — a parallel stack that was never wired in
+  - `src/systems/index.ts` barrel didn't re-export `systems/audio/`, confirming it was dead from inception (created but never integrated)
+  - Live audio uses two paradigms: procedural Tone.js synthesis for SFX (no audio files needed) and Tone.Player for music/atmosphere (streams .ogg files from `public/audio/`)
+  - The `playHubMusic()` and `playUnderwaterAmbient()` functions exist in live code but are currently uncalled — future integration points, not dead code (they have clear purpose)
+  - Pattern: when evaluating dead vs live code, check not just "does the feature exist" but "is the implementation approach compatible" — the dead system's file-based SFX approach is fundamentally different from the live system's procedural synthesis
+---
+
