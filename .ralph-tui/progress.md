@@ -221,3 +221,16 @@ after each iteration and it's included in prompts for context.
   - Both buttons currently route to `onReturnToMenu` — CONTINUE VOYAGE will diverge when island selection is implemented (currently there's only one island per run)
 ---
 
+## 2026-03-21 - US-009
+- **What was implemented**: Created SailingTransition React component porting the dead `src/scenes/SailingScene.ts` concept, with Framer Motion boat animation, ocean gradient background, biome-specific text, and 4-second auto-complete. Integrated into App.tsx as an intermediate view state between hub and game.
+- **Files changed**:
+  - `src/components/transitions/SailingTransition.tsx` — NEW: full-screen sailing transition with sky-to-ocean gradient, Framer Motion sailboat animation (left→right, 4s linear), "Sailing to {biomeName}..." text in Cinzel font, auto-completes via `useEffect` + `setTimeout`
+  - `src/app/App.tsx` — added `'sailing'` to `AppView` union type; `handleHubNavigate` routes 'game' target through 'sailing' first; renders `<SailingTransition>` between hub and game views with `onComplete={() => setView('game')}`
+- **Results**: typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - The dead `SailingScene.ts` used imperative DOM + CSS `transition` for the boat movement and a game-loop `update(dt)` for timing — the React port replaces both with Framer Motion's declarative `animate` prop and `useEffect`+`setTimeout`, eliminating manual DOM management
+  - Biome formatter prefers `{cond && <Component />}` over `{cond && (\n<Component />\n)}` when the JSX fits on one line — the wrapping parens are unnecessary and get flagged as a format error
+  - Adding an intermediate view state (`'sailing'`) to `AppView` is cleaner than a boolean flag — it composes naturally with the existing `{view === 'x' && ...}` conditional rendering pattern in App.tsx
+  - The `onComplete` callback pattern (vs. the dead scene's `director.transition('island')`) decouples the transition component from knowing what view comes next — App.tsx controls the state machine
+---
+

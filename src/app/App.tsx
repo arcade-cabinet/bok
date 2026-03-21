@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { SailingTransition } from '../components/transitions/SailingTransition';
 import { useProgression } from '../hooks/useProgression';
 import { GameView } from '../views/game/GameView';
 import { HubView } from '../views/hub/HubView';
 import { MainMenuView } from '../views/menu/MainMenuView';
 
-export type AppView = 'menu' | 'game' | 'hub';
+export type AppView = 'menu' | 'game' | 'hub' | 'sailing';
 
 export interface GameConfig {
   biome: string;
@@ -30,7 +31,11 @@ export function App() {
   };
 
   const handleHubNavigate = (target: 'menu' | 'game') => {
-    setView(target);
+    if (target === 'game') {
+      setView('sailing');
+    } else {
+      setView(target);
+    }
   };
 
   return (
@@ -43,6 +48,7 @@ export function App() {
         />
       )}
       {view === 'hub' && <HubView onNavigate={handleHubNavigate} />}
+      {view === 'sailing' && <SailingTransition biomeName={gameConfig.biome} onComplete={() => setView('game')} />}
       {view === 'game' && (
         <GameView
           config={gameConfig}
