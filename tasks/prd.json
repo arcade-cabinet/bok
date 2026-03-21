@@ -419,7 +419,7 @@
         "pnpm test passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Must happen AFTER all port stories are complete. FR-9: Dead code deletion must happen AFTER corresponding port stories are complete.",
       "dependsOn": [
         "US-002",
@@ -434,7 +434,8 @@
         "US-011",
         "US-015",
         "US-016"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-018",
@@ -464,6 +465,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-21T17:15:11.071Z"
+    "updatedAt": "2026-03-21T17:18:46.311Z"
   }
 }

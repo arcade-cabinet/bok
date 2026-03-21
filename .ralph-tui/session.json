@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T17:15:11.071Z",
-  "currentIteration": 15,
+  "updatedAt": "2026-03-21T17:18:46.312Z",
+  "currentIteration": 16,
   "maxIterations": 0,
-  "tasksCompleted": 15,
+  "tasksCompleted": 16,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -95,8 +95,8 @@
       {
         "id": "US-014",
         "title": "Decompose HubView.tsx into React components and hooks",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-015",
@@ -274,6 +274,16 @@
       "durationMs": 336363,
       "startedAt": "2026-03-21T17:03:15.142Z",
       "endedAt": "2026-03-21T17:08:51.505Z"
+    },
+    {
+      "iteration": 16,
+      "status": "completed",
+      "taskId": "US-014",
+      "taskTitle": "Decompose HubView.tsx into React components and hooks",
+      "taskCompleted": true,
+      "durationMs": 378503,
+      "startedAt": "2026-03-21T17:08:52.567Z",
+      "endedAt": "2026-03-21T17:15:11.070Z"
     }
   ],
   "skippedTaskIds": [],

@@ -320,3 +320,23 @@ after each iteration and it's included in prompts for context.
   - Unlike GameView decomposition (which split by lifecycle concern: init, events, polling), HubView split by *frame-loop concern*: engine setup vs. per-frame visual processing — the right axis depends on where the complexity lives
 ---
 
+## 2026-03-21 - US-017
+- **What was implemented**: Deleted all confirmed dead code — the legacy scene-based architecture (`src/scenes/`) and imperative DOM UI (`src/ui/`), both fully superseded by React components and engine modules
+- **Files deleted (25 files)**:
+  - `src/scenes/SceneDirector.ts`, `Scene.ts`, `IslandScene.ts`, `HubScene.ts`, `IslandSelectScene.ts`, `SailingScene.ts`, `ResultsScene.ts`, `BossArenaScene.ts`, `MainMenuScene.ts`, `index.ts`, `SceneDirector.test.ts` (11 files)
+  - `src/ui/hud/HealthBar.ts`, `Hotbar.ts`, `DamageIndicator.ts`, `Minimap.ts`, `index.ts` (5 files)
+  - `src/ui/screens/PauseMenu.ts`, `DeathScreen.ts`, `VictoryScreen.ts`, `MainMenu.ts`, `index.ts` (5 files)
+  - `src/ui/tome/TomeOverlay.ts`, `PageBrowser.ts`, `index.ts` (3 files)
+  - `src/ui/index.ts` (1 file)
+- **Files modified**:
+  - `src/integration.test.ts` — removed `Scene`/`SceneDirector` imports, `MockScene` helper, and `Integration: Scene Lifecycle` test block (the only live import of dead code outside the dead directories)
+- **Directories removed**: `src/scenes/`, `src/ui/`, `src/ui/hud/`, `src/ui/screens/`, `src/ui/tome/`
+- **Results**: 145 tests passing (was 152; removed 7 dead scene tests), typecheck clean, lint clean (only pre-existing warnings)
+- **Learnings:**
+  - The only non-circular import of `src/scenes/` was in `integration.test.ts` — the Scene Lifecycle test block tested the dead SceneDirector pattern. All other scene imports came from `src/ui/screens/` (also dead), forming circular dead code
+  - All `src/ui/` imports from live code were actually `src/components/ui/TouchControls` (different directory) — the grep pattern `src/ui/` matches both, so careful path analysis was needed to distinguish
+  - The acceptance criteria listed `MainMenuScreen.ts` but the actual file was `MainMenu.ts`, and listed `config.ts`/`types.ts` in scenes which didn't exist — always verify actual file names before acting on spec descriptions
+  - 7 tests removed: 1 from `integration.test.ts` (Scene Lifecycle) + 6 from `SceneDirector.test.ts` — all tested dead code exclusively
+  - Comments referencing dead files ("Ported from dead src/ui/hud/...") remain in React components as historical context — these are documentation, not imports
+---
+

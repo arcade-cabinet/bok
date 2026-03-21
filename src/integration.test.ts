@@ -1,89 +1,16 @@
-import { createWorld, type World } from 'koota';
+import { createWorld } from 'koota';
 import { describe, expect, it } from 'vitest';
 import { ContentRegistry } from './content/registry.ts';
 import { IslandGenerator } from './generation/index.ts';
 import { ActionMap } from './input/index.ts';
 import { SaveManager } from './persistence/index.ts';
-import { Scene } from './scenes/Scene.ts';
-import { SceneDirector } from './scenes/SceneDirector.ts';
 import { calculateDamage, type DamageInput } from './systems/combat/DamageCalculator.ts';
 import { MovementSystem } from './systems/movement/MovementSystem.ts';
 import { RunManager } from './systems/progression/RunManager.ts';
 import { EnemySpawner } from './systems/spawning/EnemySpawner.ts';
 import { Health, Position, Stamina, Velocity } from './traits/index.ts';
 
-// --- Helpers ---
-
-class MockScene extends Scene {
-  enterCount = 0;
-  updateCount = 0;
-  exitCount = 0;
-  enter(): void {
-    this.enterCount++;
-  }
-  update(_dt: number): void {
-    this.updateCount++;
-  }
-  exit(): void {
-    this.exitCount++;
-  }
-  constructor(name: string, world: World) {
-    super(name, world, null);
-  }
-}
-
 // --- Integration Tests ---
-
-describe('Integration: Scene Lifecycle', () => {
-  it('transitions through full game flow: menu → hub → island → results → hub', async () => {
-    const world = createWorld();
-    const director = new SceneDirector();
-
-    const menu = new MockScene('mainMenu', world);
-    const hub = new MockScene('hub', world);
-    const island = new MockScene('island', world);
-    const results = new MockScene('results', world);
-
-    director.register('mainMenu', menu);
-    director.register('hub', hub);
-    director.register('island', island);
-    director.register('results', results);
-
-    // Start at menu
-    await director.transition('mainMenu');
-    expect(director.getCurrentScene()).toBe('mainMenu');
-    expect(menu.enterCount).toBe(1);
-
-    // Menu → hub
-    await director.transition('hub');
-    expect(director.getCurrentScene()).toBe('hub');
-    expect(menu.exitCount).toBe(1);
-    expect(hub.enterCount).toBe(1);
-
-    // Hub → island
-    await director.transition('island');
-    expect(director.getCurrentScene()).toBe('island');
-    expect(hub.exitCount).toBe(1);
-    expect(island.enterCount).toBe(1);
-
-    // Simulate some frames
-    director.update(0.016);
-    director.update(0.016);
-    expect(island.updateCount).toBe(2);
-
-    // Island → results
-    await director.transition('results');
-    expect(island.exitCount).toBe(1);
-    expect(results.enterCount).toBe(1);
-
-    // Results → hub (return)
-    await director.transition('hub');
-    expect(results.exitCount).toBe(1);
-    expect(hub.enterCount).toBe(2);
-
-    world.destroy();
-  });
-});
 
 describe('Integration: Save/Load Round-Trip', () => {
   it('persists and restores full game state', async () => {
