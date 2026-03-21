@@ -5,6 +5,7 @@ import { DamageIndicator, type DamageIndicatorHandle } from '../../components/hu
 import { HealthBar } from '../../components/hud/HealthBar';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { Minimap } from '../../components/hud/Minimap';
+import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
@@ -35,6 +36,10 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
   const startTimeRef = useRef(Date.now());
   const [engineState, setEngineState] = useState<EngineState | null>(null);
   const [activeSlot, setActiveSlot] = useState(0);
+  const killCountRef = useRef(0);
+  const [deathStats, setDeathStats] = useState<{ enemiesDefeated: number; timeSurvived: number; biome: string } | null>(
+    null,
+  );
   const { isMobile, screenWidth, screenHeight } = useDeviceType();
 
   // Hotbar slot definitions — weapon selection
@@ -62,6 +67,9 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         if (event.type === 'playerDamaged') {
           damageRef.current?.flash();
         }
+        if (event.type === 'enemyKilled') {
+          killCountRef.current += 1;
+        }
         if (event.type === 'playerDied' || event.type === 'bossDefeated') {
           setEngineState(game.getState());
         }
@@ -72,6 +80,7 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         }
         if (event.type === 'playerDied') {
           const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+          setDeathStats({ enemiesDefeated: killCountRef.current, timeSurvived: duration, biome: config.biome });
           onRunEnd?.(config.seed, config.biome, 'death', duration);
         }
       });
@@ -210,34 +219,7 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
       )}
 
       {/* Death screen */}
-      {engineState?.phase === 'dead' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 overlay-safe-area">
-          <div
-            className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-7 mx-4' : 'p-12'} text-center`}
-          >
-            <h1
-              className={`${isMobile ? 'text-2xl' : 'text-4xl'} mb-2`}
-              style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-            >
-              THE CHAPTER ENDS
-            </h1>
-            <p
-              className={`${isMobile ? 'text-xs' : 'text-sm'} italic mb-6`}
-              style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}
-            >
-              The ink fades, but the story can be rewritten.
-            </p>
-            <button
-              type="button"
-              onClick={onReturnToMenu}
-              className={`${isMobile ? 'py-2.5 px-6 text-base' : 'py-3 px-8 text-lg'} rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer`}
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              TURN THE PAGE
-            </button>
-          </div>
-        </div>
-      )}
+      {engineState?.phase === 'dead' && deathStats && <DeathScreen stats={deathStats} onReturnToHub={onReturnToMenu} />}
 
       {/* Victory screen */}
       {engineState?.phase === 'victory' && (

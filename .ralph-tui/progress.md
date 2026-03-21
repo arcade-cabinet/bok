@@ -194,3 +194,16 @@ after each iteration and it's included in prompts for context.
   - `handleAbandonRun` calls `onRunEnd` with 'abandoned' result before navigating — this ensures the progression system tracks the abandoned run for history/stats
 ---
 
+## 2026-03-21 - US-007
+- **What was implemented**: Extracted DeathScreen React component from GameView inline JSX, with run stats display (enemies defeated, time survived, biome) using daisyUI modal/stat/btn components, plus kill tracking via engine events
+- **Files changed**:
+  - `src/components/modals/DeathScreen.tsx` — NEW: daisyUI modal with `stats stats-vertical` displaying enemies defeated, formatted time survived (M:SS), and biome; parchment-themed card with 'TURN THE PAGE' button
+  - `src/views/game/GameView.tsx` — imported DeathScreen; added `killCountRef` (ref, not state, to avoid re-renders on each kill) and `deathStats` state; wired `enemyKilled` event to increment kill counter; on `playerDied`, snapshots stats into `deathStats`; replaced 28-line inline death screen with `<DeathScreen>`
+- **Results**: typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - `useRef` is correct for accumulating event counts (kills) that don't need to trigger re-renders — the value is only read once at death time, snapshotted into state for the DeathScreen display
+  - daisyUI `stats stats-vertical` with `stat-title` + `stat-value` provides structured stat display that automatically respects theme tokens — no hardcoded colors needed
+  - The inline death screen had zero stats — it was just title + flavor text + button. The component adds real gameplay feedback (enemies defeated, time survived, biome)
+  - Biome formatter requires single-line JSX attributes when they fit within line width — multi-line `<h2 className="..." style={{...}}>` was reformatted to single line
+---
+
