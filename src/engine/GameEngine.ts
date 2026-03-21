@@ -1,40 +1,24 @@
 /**
  * @module engine/GameEngine
- * @role Orchestrate all engine modules into a running game
+ * @role Thin orchestrator — wires setup modules into a running game
  * @input Canvas element, game config
  * @output Running game with cleanup function
  */
-import RAPIER from '@dimforge/rapier3d';
-import { loadRuntime, Runtime } from '@jolly-pixel/runtime';
-import { createWorld } from 'koota';
-import * as THREE from 'three';
-import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
+import { loadRuntime } from '@jolly-pixel/runtime';
+
 import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
-import { InputSystem } from '../input/index.ts';
-import { isMobileDevice } from '../input/MobileControls.ts';
-import { initPlatform } from '../platform/CapacitorBridge.ts';
-import { DayNightCycle } from '../rendering/index.ts';
-import { MAX_DELTA } from '../shared/index.ts';
-import { GamePhase, IslandState, LookIntent, MovementIntent, Time } from '../traits/index.ts';
-import { createCamera } from './camera.ts';
 import { createCombat } from './combat.ts';
-import type { DiegeticContext } from './diegetic.ts';
-import { detectContext, getHeadBob } from './diegetic.ts';
-import { spawnEnemies, updateEnemyAI } from './enemies.ts';
-import { loadModel } from './models.ts';
-import { createTerrain } from './terrain.ts';
-import type { EngineEventListener, EngineState, GameStartConfig } from './types.ts';
+import { spawnEnemies } from './enemySetup.ts';
+import { createEngineCore } from './engineSetup.ts';
+import { createGameLoop } from './gameLoop.ts';
+import { createPlayer } from './playerSetup.ts';
+import { createTerrain } from './terrainSetup.ts';
+import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } from './types.ts';
 
-export interface MobileInput {
-  moveX: number; // -1 to 1 absolute
-  moveZ: number; // -1 to 1 absolute
-  lookX: number; // -1 to 1 absolute — continuous rotation rate
-  lookY: number; // -1 to 1 absolute — continuous rotation rate
-  action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
-}
+export type { MobileInput } from './types.ts';
 
 export interface GameInstance {
   /** Current engine state — polled by React each frame */
@@ -56,43 +40,11 @@ export interface GameInstance {
  * Returns a GameInstance that React can interact with.
  */
 export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfig): Promise<GameInstance> {
-  // Platform init (Capacitor status bar, orientation, etc.)
-  await initPlatform();
-
-  // Koota world
-  const gameWorld = createWorld(Time, GamePhase, MovementIntent, LookIntent, IslandState);
-
-  // Rapier physics
-  const rapierWorld = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
-
-  // JollyPixel runtime
-  const runtime = new Runtime(canvas, {
-    includePerformanceStats: import.meta.env.DEV,
-  });
-  const jpWorld = (runtime as any).world;
-
-  // Mobile detection — React now owns mobile UI via MedievalJoysticks component
-  const isMobile = isMobileDevice();
-  // Buffer for React mobile input (written by setMobileInput, read in frame loop)
-  const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null };
-
-  // Performance scaling
-  const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
-  const webGLRenderer = (jpWorld.renderer as any)?.webGLRenderer as THREE.WebGLRenderer | undefined;
-  if (webGLRenderer) webGLRenderer.setPixelRatio(pixelRatio);
-
-  // Scene setup
-  const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
-  scene.background = new THREE.Color('#87ceeb');
-  scene.fog = new THREE.FogExp2('#87ceeb', 0.015);
-
-  // Day/night cycle + lighting
-  const dayNight = new DayNightCycle();
-  for (const obj of dayNight.sceneObjects) scene.add(obj);
-  scene.add(new THREE.HemisphereLight(0xaaccee, 0x886622, 0.7));
+  // --- Core engine (Runtime, Rapier, Koota, scene, lighting) ---
+  const engine = await createEngineCore(canvas);
 
   // --- Terrain ---
-  const terrain = createTerrain(jpWorld, rapierWorld, config.seed);
+  const terrain = createTerrain(engine.jpWorld, engine.rapierWorld, config.seed);
 
   // --- Enemies + Boss ---
   const {
@@ -101,29 +53,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     bossMesh,
     yukaManager,
     cleanup: cleanupEnemies,
-  } = await spawnEnemies(scene, terrain.getSurfaceY, terrain.islandSize, config.seed);
+  } = await spawnEnemies(engine.scene, terrain.getSurfaceY, terrain.islandSize, config.seed);
 
-  // --- Camera ---
-  const cam = createCamera(jpWorld, terrain.getSurfaceY, terrain.islandSize);
-
-  // --- Center-mounted weapon model (visible in viewport) ---
-  try {
-    const weaponModel = await loadModel('/models/weapons/Sword_Wood.glb');
-    weaponModel.scale.setScalar(0.4);
-    weaponModel.position.set(0.3, -0.25, -0.5);
-    weaponModel.rotation.set(0, 0, -Math.PI / 6);
-    cam.camera.add(weaponModel); // Attach to camera so it moves with player
-  } catch {
-    // Weapon model failed to load — continue without it
-  }
-
-  // --- Input ---
-  const inputSystem = new InputSystem(canvas);
-  if (!isMobile) {
-    canvas.addEventListener('click', () => {
-      if (!document.pointerLockElement) canvas.requestPointerLock();
-    });
-  }
+  // --- Player (camera, input, weapon) ---
+  const { cam, inputSystem } = await createPlayer(engine.jpWorld, canvas, terrain, engine.isMobile);
 
   // --- Boss content lookup ---
   const content = new ContentRegistry();
@@ -133,7 +66,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   // --- Combat ---
   const eventListeners: EngineEventListener[] = [];
   const combat = createCombat(
-    scene,
+    engine.scene,
     enemies,
     boss,
     bossMesh,
@@ -144,112 +77,36 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     bossConfig.tomePageDrop,
   );
 
-  // --- Player Governor (GOAP advisor) ---
-  const governor = createPlayerGovernor();
-  let lastGovernorOutput: GovernorOutput = { suggestedTarget: -1, threatLevel: 'none', canDodge: true };
+  // --- Mobile input buffer (written by setMobileInput, read in frame loop) ---
+  const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null };
 
-  // --- Diegetic state ---
-  let currentContext: DiegeticContext = 'explore';
-  let elapsedTime = 0;
-
-  // --- State ---
-  let paused = false;
-
-  // --- Physics step ---
-  (jpWorld as any).on('beforeFixedUpdate', () => {
-    rapierWorld.step();
+  // --- Game loop (physics + frame logic) ---
+  const loop = createGameLoop({
+    jpWorld: engine.jpWorld,
+    rapierWorld: engine.rapierWorld,
+    gameWorld: engine.gameWorld,
+    scene: engine.scene,
+    dayNight: engine.dayNight,
+    cam,
+    inputSystem,
+    enemies,
+    yukaManager,
+    combat,
+    isMobile: engine.isMobile,
+    mobileInput,
+    getSurfaceY: terrain.getSurfaceY,
   });
 
-  // --- Frame loop ---
-  (jpWorld as any).on('beforeUpdate', (rawDt: number) => {
-    if (paused || combat.state.phase !== 'playing') return;
-    const dt = Math.min(rawDt, MAX_DELTA);
-
-    // Update Koota time
-    const prevTime = gameWorld.get(Time);
-    gameWorld.set(Time, { delta: dt, elapsed: (prevTime?.elapsed ?? 0) + dt });
-
-    // Input
-    inputSystem.update(gameWorld);
-
-    // Enemy AI
-    updateEnemyAI(enemies, cam.camera.position, dt, yukaManager);
-
-    // Camera look
-    // Mobile: right joystick position = continuous rotation rate (not delta)
-    if (isMobile && (mobileInput.lookX !== 0 || mobileInput.lookY !== 0)) {
-      // Scale by dt so rotation is framerate-independent. 150 = degrees per second at full deflection
-      const rotSpeed = 320 * dt;
-      cam.applyLook(mobileInput.lookX * rotSpeed, mobileInput.lookY * rotSpeed, 1.0);
-    } else {
-      const look = gameWorld.get(LookIntent);
-      if (look && document.pointerLockElement) {
-        cam.applyLook(look.deltaX, look.deltaY);
-      }
-    }
-
-    // Player movement
-    let dirX = 0,
-      dirZ = 0,
-      sprinting = false;
-    if (isMobile) {
-      dirX = mobileInput.moveX;
-      dirZ = mobileInput.moveZ;
-    } else {
-      const move = gameWorld.get(MovementIntent);
-      if (move) {
-        dirX = move.dirX;
-        dirZ = move.dirZ;
-        sprinting = move.sprint;
-      }
-    }
-
-    // Diegetic context + head bob
-    elapsedTime += dt;
-    currentContext = detectContext(cam.camera.position, enemies, terrain.getSurfaceY);
-    const isMoving = dirX !== 0 || dirZ !== 0;
-    const bobOffset = getHeadBob(dt, isMoving, currentContext, elapsedTime);
-    cam.applyMovement(dirX, dirZ, sprinting, dt, bobOffset);
-
-    // Mobile attack
-    // Mobile actions from React joystick
-    if (isMobile && mobileInput.action) {
-      if (mobileInput.action === 'attack') combat.triggerAttack();
-      // jump, crouch, defend handled by diegetic system
-      mobileInput.action = null;
-    }
-
-    // Day/night
-    dayNight.update(dt);
-    (scene.background as THREE.Color)?.copy(dayNight.skyColor);
-    if (scene.fog instanceof THREE.FogExp2) scene.fog.color.copy(dayNight.skyColor);
-
-    // Combat (attacks, damage, loot, boss phases)
-    combat.update(dt, cam.camera.position);
-
-    // Player governor — update context and run GOAP evaluation
-    governor.setContext(
-      cam.camera.position.x,
-      cam.camera.position.y,
-      cam.camera.position.z,
-      enemies,
-      combat.state.playerHealth,
-      combat.state.maxHealth,
-    );
-    lastGovernorOutput = governor.update(dt);
-  });
-
-  // Start audio — ambient wind + biome music + atmospheric SFX
+  // --- Audio ---
   startAmbient();
   playBiomeMusic(config.biome);
   startAtmosphericSFX();
 
-  // Boot
-  await loadRuntime(runtime);
+  // --- Boot ---
+  await loadRuntime(engine.runtime);
   console.log('[Bok] Engine initialized');
 
-  // Mobile UI is now handled by React (MedievalJoysticks component)
-
+  // --- Public API (unchanged) ---
   return {
     getState: (): EngineState => ({
       playerHealth: combat.state.playerHealth,
@@ -265,19 +122,22 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         })(),
       bossHealthPct: boss.defeated ? 0 : (enemies.find((e) => e.mesh === bossMesh)?.health ?? 0) / boss.maxHealth,
       bossPhase: boss.phase,
-      paused,
-      phase: paused ? 'paused' : combat.state.phase,
-      context: currentContext,
-      suggestedTargetPos:
-        lastGovernorOutput.suggestedTarget >= 0 && lastGovernorOutput.suggestedTarget < enemies.length
-          ? {
-              x: enemies[lastGovernorOutput.suggestedTarget].mesh.position.x,
-              y: enemies[lastGovernorOutput.suggestedTarget].mesh.position.y,
-              z: enemies[lastGovernorOutput.suggestedTarget].mesh.position.z,
-            }
-          : null,
-      threatLevel: lastGovernorOutput.threatLevel,
-      canDodge: lastGovernorOutput.canDodge,
+      paused: loop.isPaused(),
+      phase: loop.isPaused() ? 'paused' : combat.state.phase,
+      context: loop.getContext(),
+      suggestedTargetPos: (() => {
+        const gov = loop.getGovernorOutput();
+        if (gov.suggestedTarget >= 0 && gov.suggestedTarget < enemies.length) {
+          return {
+            x: enemies[gov.suggestedTarget].mesh.position.x,
+            y: enemies[gov.suggestedTarget].mesh.position.y,
+            z: enemies[gov.suggestedTarget].mesh.position.z,
+          };
+        }
+        return null;
+      })(),
+      threatLevel: loop.getGovernorOutput().threatLevel,
+      canDodge: loop.getGovernorOutput().canDodge,
     }),
     onEvent: (listener) => {
       eventListeners.push(listener);
@@ -290,17 +150,14 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       mobileInput.lookY = input.lookY;
       if (input.action) mobileInput.action = input.action;
     },
-    togglePause: () => {
-      paused = !paused;
-      if (paused && document.pointerLockElement) document.exitPointerLock();
-    },
+    togglePause: () => loop.togglePause(),
     destroy: () => {
       combat.cleanup();
       cleanupEnemies();
       stopMusic();
       stopAtmosphericSFX();
-      runtime.stop();
-      gameWorld.destroy();
+      engine.runtime.stop();
+      engine.gameWorld.destroy();
     },
   };
 }

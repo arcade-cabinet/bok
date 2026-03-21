@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T16:05:17.009Z",
-  "currentIteration": 0,
+  "updatedAt": "2026-03-21T16:20:36.738Z",
+  "currentIteration": 1,
   "maxIterations": 0,
-  "tasksCompleted": 0,
+  "tasksCompleted": 1,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -17,8 +17,8 @@
       {
         "id": "US-001",
         "title": "Install and configure daisyUI with Tailwind CSS 4",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-002",
@@ -124,7 +124,18 @@
       }
     ]
   },
-  "iterations": [],
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "completed",
+      "taskId": "US-001",
+      "taskTitle": "Install and configure daisyUI with Tailwind CSS 4",
+      "taskCompleted": true,
+      "durationMs": 391621,
+      "startedAt": "2026-03-21T15:58:45.385Z",
+      "endedAt": "2026-03-21T16:05:17.006Z"
+    }
+  ],
   "skippedTaskIds": [],
   "cwd": "/Users/jbogaty/src/arcade-cabinet/bok",
   "activeTaskIds": [],

@@ -66,3 +66,12 @@ export type EngineEvent =
   | { type: 'lootPickup'; itemType: string };
 
 export type EngineEventListener = (event: EngineEvent) => void;
+
+/** Mobile joystick input fed from React touch controls */
+export interface MobileInput {
+  moveX: number; // -1 to 1 absolute
+  moveZ: number; // -1 to 1 absolute
+  lookX: number; // -1 to 1 absolute — continuous rotation rate
+  lookY: number; // -1 to 1 absolute — continuous rotation rate
+  action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
+}

@@ -1,5 +1,5 @@
 /**
- * @module engine/enemies
+ * @module engine/enemySetup
  * @role Spawn enemies and boss on terrain with Yuka AI
  * @input Three.js scene, Yuka EntityManager, surface height lookup, seed
  * @output Enemy state array, boss state, Yuka manager

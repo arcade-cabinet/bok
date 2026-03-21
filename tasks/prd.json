@@ -276,9 +276,10 @@
         "pnpm test passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Independent of UI porting stories. Can be done in parallel with US-002 through US-011.",
-      "dependsOn": []
+      "dependsOn": [],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-013",
@@ -449,6 +450,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-21T16:05:17.008Z"
+    "updatedAt": "2026-03-21T16:20:36.737Z"
   }
 }

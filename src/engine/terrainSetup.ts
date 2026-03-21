@@ -1,5 +1,5 @@
 /**
- * @module engine/terrain
+ * @module engine/terrainSetup
  * @role Generate and render voxel terrain on JollyPixel VoxelRenderer
  * @input JollyPixel World, Rapier World, seed string
  * @output VoxelRenderer instance, surface height lookup
