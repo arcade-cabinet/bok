@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T16:41:05.273Z",
-  "currentIteration": 7,
+  "updatedAt": "2026-03-21T16:45:08.945Z",
+  "currentIteration": 8,
   "maxIterations": 0,
-  "tasksCompleted": 7,
+  "tasksCompleted": 8,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -41,8 +41,8 @@
       {
         "id": "US-005",
         "title": "Port Minimap as React Canvas component",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-006",
@@ -194,6 +194,16 @@
       "durationMs": 189805,
       "startedAt": "2026-03-21T16:34:19.516Z",
       "endedAt": "2026-03-21T16:37:29.321Z"
+    },
+    {
+      "iteration": 8,
+      "status": "completed",
+      "taskId": "US-005",
+      "taskTitle": "Port Minimap as React Canvas component",
+      "taskCompleted": true,
+      "durationMs": 214896,
+      "startedAt": "2026-03-21T16:37:30.376Z",
+      "endedAt": "2026-03-21T16:41:05.272Z"
     }
   ],
   "skippedTaskIds": [],

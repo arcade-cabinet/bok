@@ -47,6 +47,7 @@ export function App() {
         <GameView
           config={gameConfig}
           onReturnToMenu={() => setView('hub')}
+          onQuitToMenu={() => setView('menu')}
           onBossDefeated={progression.trackBossKill}
           onRunEnd={progression.recordRun}
         />

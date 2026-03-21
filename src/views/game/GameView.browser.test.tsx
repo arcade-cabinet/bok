@@ -40,7 +40,9 @@ vi.mock('../../engine/GameEngine', () => ({
 test('renders canvas and HUD elements', async () => {
   const { GameView } = await import('./GameView');
 
-  const { container } = await render(<GameView config={{ biome: 'forest', seed: 'test' }} onReturnToMenu={() => {}} />);
+  const { container } = await render(
+    <GameView config={{ biome: 'forest', seed: 'test' }} onReturnToMenu={() => {}} onQuitToMenu={() => {}} />,
+  );
 
   // Canvas should mount with id="game-canvas"
   const canvas = container.querySelector('#game-canvas');

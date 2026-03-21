@@ -5,6 +5,7 @@ import { DamageIndicator, type DamageIndicatorHandle } from '../../components/hu
 import { HealthBar } from '../../components/hud/HealthBar';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { Minimap } from '../../components/hud/Minimap';
+import { PauseMenu } from '../../components/modals/PauseMenu';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -13,6 +14,7 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 interface Props {
   config: GameConfig;
   onReturnToMenu: () => void;
+  onQuitToMenu: () => void;
   onBossDefeated?: (bossId: string, tomeAbility: string) => Promise<void>;
   onRunEnd?: (
     seed: string,
@@ -26,7 +28,7 @@ interface Props {
  * GameView — mounts the JollyPixel canvas, initializes the engine,
  * and renders React HUD overlays on top.
  */
-export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: Props) {
+export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameInstance | null>(null);
   const damageRef = useRef<DamageIndicatorHandle>(null);
@@ -101,6 +103,12 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
   const handleResume = useCallback(() => {
     gameRef.current?.togglePause();
   }, []);
+
+  const handleAbandonRun = useCallback(() => {
+    const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+    onRunEnd?.(config.seed, config.biome, 'abandoned', duration);
+    onReturnToMenu();
+  }, [config, onRunEnd, onReturnToMenu]);
 
   const handleTouchOutput = useCallback((output: TouchControlOutput) => {
     gameRef.current?.setMobileInput({ ...output, action: null });
@@ -196,34 +204,9 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
         </div>
       )}
 
-      {/* Pause overlay */}
+      {/* Pause menu */}
       {engineState?.phase === 'paused' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 overlay-safe-area">
-          <div className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-6' : 'p-9'} text-center`}>
-            <h2
-              className={`${isMobile ? 'text-2xl mb-4' : 'text-3xl mb-6'}`}
-              style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-            >
-              PAUSED
-            </h2>
-            <button
-              type="button"
-              onClick={handleResume}
-              className={`block w-full mb-2 py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer ${isMobile ? 'text-sm' : 'text-base'}`}
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              Resume
-            </button>
-            <button
-              type="button"
-              onClick={onReturnToMenu}
-              className={`block w-full py-2.5 rounded-md border-2 border-[#8b5a2b] bg-[#fef9ef] text-[#2c1e16] cursor-pointer ${isMobile ? 'text-sm' : 'text-base'}`}
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              Quit to Menu
-            </button>
-          </div>
-        </div>
+        <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={onQuitToMenu} />
       )}
 
       {/* Death screen */}

@@ -111,6 +111,13 @@ after each iteration and it's included in prompts for context.
   - Pattern: when evaluating dead vs live code, check not just "does the feature exist" but "is the implementation approach compatible" — the dead system's file-based SFX approach is fundamentally different from the live system's procedural synthesis
 ---
 
+### daisyUI Modal Pattern
+- daisyUI v5 `modal modal-open` is the stateless open-state pattern — parent controls visibility by conditionally rendering the component (React-idiomatic) rather than toggling a `modal-open` class imperatively
+- `modal-backdrop` provides the semi-transparent overlay; add Tailwind utilities (`bg-black/70 backdrop-blur-sm`) for custom opacity and blur effects
+- `modal-box` + `card` can be combined for themed content panels — `card` brings the parchment theme border/bg, `modal-box` handles centering and max-width
+
+---
+
 ## 2026-03-21 - US-002
 - **What was implemented**: Extracted HealthBar React component from GameView inline JSX with daisyUI `progress` component and low-health pulse animation
 - **Files changed**:
@@ -169,5 +176,21 @@ after each iteration and it's included in prompts for context.
   - The dead minimap's `#scale = 2` means 1 pixel = 2 world units — at 140px, the visible radius is 140 world units, which covers roughly half an island (~256 world units across)
   - Loot drops (`combat.state.lootDrops`) map to 'chest' type markers on the minimap — they're the gold squares showing dropped health potions and tome pages
   - Replacing the enemy counter with the minimap is a net improvement: enemy positions on the minimap convey more information than a raw count number
+---
+
+## 2026-03-21 - US-006
+- **What was implemented**: Extracted PauseMenu as React component from GameView inline JSX, using daisyUI modal/btn/card components with Resume, Settings (disabled), Abandon Run, and Quit to Menu buttons
+- **Files changed**:
+  - `src/components/modals/PauseMenu.tsx` — NEW: daisyUI modal with 4 action buttons (Resume, Settings disabled, Abandon Run, Quit to Menu), parchment card styling, backdrop blur overlay
+  - `src/views/game/GameView.tsx` — replaced 28-line inline pause overlay with `<PauseMenu>` component; added `onQuitToMenu` prop and `handleAbandonRun` callback (records run as 'abandoned' then navigates to hub)
+  - `src/app/App.tsx` — added `onQuitToMenu={() => setView('menu')}` prop to GameView for direct menu navigation
+  - `src/views/game/GameView.browser.test.tsx` — added `onQuitToMenu` prop to mock render call
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - daisyUI `modal modal-open` is a stateless pattern — React controls visibility by conditionally rendering the component, not toggling a CSS class; this aligns with the existing `engineState?.phase === 'paused'` conditional in GameView
+  - `modal-backdrop` + `bg-black/70 backdrop-blur-sm` provides the semi-transparent overlay with frosted glass effect; `modal-box` handles centering
+  - `btn-disabled` is daisyUI's visual-only disabled state — add `tabIndex={-1}` to also exclude from keyboard navigation for the placeholder Settings button
+  - The existing `onReturnToMenu` prop navigates to hub (not menu) despite its name — added separate `onQuitToMenu` for the true menu transition, keeping existing prop semantics stable
+  - `handleAbandonRun` calls `onRunEnd` with 'abandoned' result before navigating — this ensures the progression system tracks the abandoned run for history/stats
 ---
 
