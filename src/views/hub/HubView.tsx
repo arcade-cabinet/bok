@@ -126,7 +126,7 @@ export function HubView({ onNavigate }: Props) {
         // Camera look — mobile: from React joystick, desktop: pointer lock
         const mi = mobileInputRef.current;
         if (mobile && mi && (mi.lookX !== 0 || mi.lookY !== 0)) {
-          const rotSpeed = 150 * dt;
+          const rotSpeed = 320 * dt;
           cam.applyLook(mi.lookX * rotSpeed, mi.lookY * rotSpeed, 1.0);
         } else {
           const look = gameWorld.get(LookIntent);

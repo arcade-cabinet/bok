@@ -160,7 +160,7 @@ export async function initGame(
     // Mobile: right joystick position = continuous rotation rate (not delta)
     if (isMobile && (mobileInput.lookX !== 0 || mobileInput.lookY !== 0)) {
       // Scale by dt so rotation is framerate-independent. 150 = degrees per second at full deflection
-      const rotSpeed = 150 * dt;
+      const rotSpeed = 320 * dt;
       cam.applyLook(mobileInput.lookX * rotSpeed, mobileInput.lookY * rotSpeed, 1.0);
     } else {
       const look = gameWorld.get(LookIntent);
