@@ -340,3 +340,20 @@ after each iteration and it's included in prompts for context.
   - Comments referencing dead files ("Ported from dead src/ui/hud/...") remain in React components as historical context — these are documentation, not imports
 ---
 
+## 2026-03-21 - US-018
+- **What was implemented**: Updated all documentation to reflect the converged codebase after dead code removal (US-017). All references to deleted directories (`src/scenes/`, `src/ui/`, `src/behaviors/`), ESLint (replaced by Biome 2.4), and `RenderSyncBehavior` (deleted in US-015) were corrected or annotated.
+- **Files changed**:
+  - `docs/PRODUCTION_ROADMAP.md` — §3: marked dual-stack convergence complete, updated HUD status; §8: updated browser test status (145 unit tests, browser infra configured)
+  - `docs/superpowers/plans/2026-03-21-react-refactor-and-completion.md` — checked off all Phase 1 tasks (Tasks 1-4), Task 5 (browser setup), Task 7 (hub), Task 8 (progression); updated current state description; partial Task 6 (2 of 4 browser tests written)
+  - `docs/superpowers/plans/2026-03-20-bok-implementation.md` — marked Phases 0-3 as ✅ COMPLETE, Phase 4 as 🔄 ACTIVE; annotated Task 12 (SceneDirector) as SUPERSEDED; updated Tasks 18-23 status; fixed ESLint→Biome in domain map, CLAUDE.md template, and Step 9; updated Domain Map with new React directories
+  - `docs/superpowers/specs/2026-03-20-bok-game-design.md` — §5.2: ESLint→Biome in tech stack table; §5.5: ESLint→Biome in enforcement list; §5.7: annotated deleted directories in domain structure tree, added new React directories; §12.4: renamed to "Biome 2.4 Lint Rules" with updated content; annotated `RenderSyncBehavior` code sample as deleted
+  - `CLAUDE.md` — updated CURRENT STATE (sole entry point, no scenes/ui), updated Production checklist (convergence done), added daisyUI to Layer Model, rewrote Package Structure (removed scenes, added components/hooks/engine detail), updated Testing section (145 tests, browser infra exists)
+  - `ARCHITECTURE.md` — rewrote: removed SceneDirector/dual-stack language, removed `RenderSyncBehavior`, added UI Layer section (React+daisyUI), updated Frame Loop to match `gameLoop.ts` reality, added hook decomposition detail
+- **Results**: typecheck clean, lint has only pre-existing warnings (no regressions — only .md files changed)
+- **Learnings:**
+  - The game design spec's domain structure tree (§5.7) is the most impactful doc section to update — it's the first thing developers see when understanding the codebase layout
+  - Historical references in completed plan phases (Phase 0-3) are OK to leave with annotations rather than rewriting — they serve as an audit trail of what was originally planned vs what was actually built
+  - The `tasks/prd-*.md` files describe work to be done and reference dead paths in that context — these are task descriptions, not codebase claims, so they don't need correction
+  - Progress.md entries that reference dead files ("Ported from dead src/ui/hud/...") are historical log entries and should be preserved as-is
+---
+

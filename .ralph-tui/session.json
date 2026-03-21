@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T17:18:46.312Z",
-  "currentIteration": 16,
+  "updatedAt": "2026-03-21T17:29:56.502Z",
+  "currentIteration": 17,
   "maxIterations": 0,
-  "tasksCompleted": 16,
+  "tasksCompleted": 17,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -113,8 +113,8 @@
       {
         "id": "US-017",
         "title": "Delete confirmed dead code",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-018",
@@ -284,6 +284,16 @@
       "durationMs": 378503,
       "startedAt": "2026-03-21T17:08:52.567Z",
       "endedAt": "2026-03-21T17:15:11.070Z"
+    },
+    {
+      "iteration": 17,
+      "status": "completed",
+      "taskId": "US-017",
+      "taskTitle": "Delete confirmed dead code",
+      "taskCompleted": true,
+      "durationMs": 214190,
+      "startedAt": "2026-03-21T17:15:12.120Z",
+      "endedAt": "2026-03-21T17:18:46.310Z"
     }
   ],
   "skippedTaskIds": [],

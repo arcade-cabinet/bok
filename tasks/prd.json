@@ -455,16 +455,17 @@
         "pnpm run lint passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Final story — update all docs to reflect the converged codebase after dead code is removed.",
       "dependsOn": [
         "US-013",
         "US-014",
         "US-017"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-03-21T17:18:46.311Z"
+    "updatedAt": "2026-03-21T17:29:56.502Z"
   }
 }

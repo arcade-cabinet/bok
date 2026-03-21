@@ -6,16 +6,17 @@ Voxel roguelike island-hopper. React 19 owns all UI. JollyPixel engine owns 3D c
 
 ## CURRENT STATE (2026-03-21)
 
-The game is PLAYABLE with React as the entry point (`index.html` → `src/app/index.tsx`). The old monolithic `src/main.ts` is gone; gameplay is split between `src/engine/` (`GameEngine.ts` orchestrates terrain, combat, enemies, camera, audio) and remaining `src/scenes/` code where still used.
+The game is PLAYABLE with React as the sole entry point (`index.html` → `src/app/index.tsx`). The old `src/scenes/` (SceneDirector) and `src/ui/` (imperative DOM HUD) are deleted. All UI is React+daisyUI. Engine is decomposed into focused modules under `src/engine/`.
 
-- **src/app/** — Menu → hub → `GameView`; `useProgression` for meta hooks
-- **src/engine/GameEngine.ts** — `initGame(canvas, config)` — primary island loop
-- **src/views/hub/HubView.tsx** — Hub island (`createHub`)
+- **src/app/** — App.tsx state machine: menu → hub → sailing → game → death/victory
+- **src/engine/GameEngine.ts** — `initGame(canvas, config)` — thin orchestrator calling `engineSetup`, `terrainSetup`, `playerSetup`, `enemySetup`, `gameLoop`
+- **src/views/** — GameView (decomposed: `useGameLifecycle`, `useGameEvents`, `useGameHUD`), HubView (decomposed: `useHubEngine`, `useHubCamera`, `useHubBuildings`), MainMenuView
+- **src/components/** — `hud/` (HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction, ContextIndicator), `modals/` (PauseMenu, DeathScreen, VictoryScreen, TomePageBrowser), `transitions/` (SailingTransition)
 - **Planning docs** — `docs/superpowers/plans/*.md` checkboxes are not automatically synced with the repo; verify in code
 
 ## Production checklist
 
-**SEE: `docs/PRODUCTION_ROADMAP.md`** — remaining work for a full production game (persistence, platform, content, QA, dual-stack convergence).
+**SEE: `docs/PRODUCTION_ROADMAP.md`** — remaining work for a full production game (persistence, platform, content, QA). Dual-stack convergence is complete.
 
 ## Active Plan (incremental)
 
@@ -41,36 +42,49 @@ UI typefaces are **self-hosted** via `@fontsource/*` and imported in `src/fonts.
 ## Architecture
 
 ### Layer Model
-1. **React 19** — all UI (menu, HUD, overlays, modals). Framer Motion for animations. Tailwind CSS 4.
+1. **React 19** — all UI (menu, HUD, overlays, modals). Framer Motion for animations. Tailwind CSS 4 + daisyUI v5 (custom `parchment` theme via OKLCH tokens).
 2. **JollyPixel** — 3D rendering (VoxelRenderer, Camera3DControls, Runtime). Owns the canvas via React ref.
 3. **Koota** — ECS state (traits, relations, queries). Single source of truth for all game entity data.
 4. **Yuka** — AI (Vehicle, SteeringBehavior, StateMachine). Drives enemy movement/combat decisions.
 5. **Rapier3D** — Physics. Passed to VoxelRenderer for auto-generated terrain colliders.
 6. **Capacitor** — Cross-platform (web, iOS, Android). SQLite for persistence.
 
-### Package Structure (target — migration in progress)
+### Package Structure
 ```
 src/
 ├── app/              React app entry (App.tsx, index.tsx)
-├── views/            React view components (menu, game, hub)
-├── components/       React UI components (hud, modals, ui)
-├── hooks/            React hooks (useGameState, useGameEvents)
-├── engine/           Game engine modules (terrain, enemies, combat, camera)
-│   ├── types.ts      Shared engine types
-│   └── GameEngine.ts Orchestrator: initGame(canvas, config)
+├── views/            React view components (menu/, game/, hub/)
+├── components/       React UI components
+│   ├── hud/          HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction, ContextIndicator
+│   ├── modals/       PauseMenu, DeathScreen, VictoryScreen, TomePageBrowser
+│   ├── transitions/  SailingTransition
+│   └── ui/           TouchControls
+├── hooks/            React hooks (useGameLifecycle, useGameEvents, useGameHUD, useHubEngine, useHubCamera, useHubBuildings, useProgression, useDeviceType, usePlayerGovernor)
+├── engine/           Game engine modules
+│   ├── types.ts      Shared engine types (EngineState, GameStartConfig, MobileInput)
+│   ├── GameEngine.ts Thin orchestrator: initGame(canvas, config)
+│   ├── engineSetup.ts JollyPixel Runtime + Rapier + Koota + scene/lighting
+│   ├── playerSetup.ts Camera + input + weapon model + pointer lock
+│   ├── gameLoop.ts   Frame loop orchestration (beforeFixedUpdate/beforeUpdate)
+│   ├── terrainSetup.ts Terrain generation + voxel placement
+│   ├── enemySetup.ts Enemy spawning + AI wiring
+│   ├── combat.ts     Combat loop, damage, loot drops
+│   ├── camera.ts     FPS camera movement + terrain following
+│   └── hub.ts        Hub island terrain + buildings
 ├── traits/           Koota trait definitions
 ├── relations/        Koota relation definitions
 ├── systems/          Koota query-based systems
 ├── ai/               Yuka AI bridge + FSM states
 ├── generation/       Procedural generation (pure functions)
-├── content/          JSON game content + Zod schemas
+├── content/          JSON game content + Zod schemas + tomePages.ts
 ├── rendering/        Visual effects (particles, weather, day/night, tileset)
 ├── input/            Input system (ActionMap, devices, mobile controls)
-├── audio/            Web Audio API procedural sounds
+├── audio/            Tone.js procedural SFX + music/atmosphere
 ├── persistence/      SQLite save/load
 ├── platform/         Capacitor platform bridge
 ├── shared/           Cross-cutting types, constants, EventBus
-└── scenes/           Legacy SceneDirector / IslandScene (parallel to React engine path)
+├── lib/              Utility libraries
+└── types/            Global type declarations
 ```
 
 ### Key Integration Pattern
@@ -142,8 +156,8 @@ const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
 
 ## Testing
 
-- **Unit tests:** `pnpm test` — Vitest in Node, 128 tests passing
-- **Browser tests:** `pnpm test:browser` — NOT YET CONFIGURED (Task 61)
+- **Unit tests:** `pnpm test` — Vitest in Node, 145 tests passing
+- **Browser tests:** `pnpm test:browser` — Vitest browser project configured (MainMenuView, GameView, ContextIndicator tests exist)
 - **No node mocks for Three.js/DOM** — use browser tests instead
 - **Content validation:** Zod schemas validate all JSON at import time
 

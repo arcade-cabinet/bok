@@ -34,8 +34,8 @@ This document is the **single checklist for shipping a production-quality game**
 
 | Area | Status | Remaining work |
 |------|--------|----------------|
-| **Primary runtime** | **React + `GameEngine`** (`initGame`) | **Converge or retire** parallel `SceneDirector` / `IslandScene` stack to avoid duplicate logic |
-| **HUD** | Mix of React HUD + legacy DOM HUD modules | Migrate remaining DOM HUD to React; remove dead paths |
+| **Primary runtime** | **React + `GameEngine`** (`initGame`) | ~~Converge dual stack~~ **DONE** — `src/scenes/` and `src/ui/` deleted (US-017); React is sole UI/orchestration layer |
+| **HUD** | React components (`src/components/hud/`) | ~~Migrate DOM HUD~~ **DONE** — HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction all React+daisyUI |
 | **Barrel imports** | Enforced in `AGENTS.md` | Audit for deep imports across domains |
 | **Lint** | `pnpm run lint` passes (warnings remain) | Reduce `noExplicitAny` / `noNonNullAssertion` in hot paths; address `noStaticOnlyClass` in generation or document exception |
 | **Bundle size** | Main chunk &gt; 500 kB warning | Code-split routes/engine, audit font payload if mobile-first |
@@ -88,8 +88,8 @@ This document is the **single checklist for shipping a production-quality game**
 
 | Area | Status | Remaining work |
 |------|--------|----------------|
-| **Unit tests** | `pnpm test` | Keep coverage on public APIs |
-| **Browser tests** | Vitest browser (components) | **Full journey**: menu → hub → game → end state (Playwright/Vitest browser) |
+| **Unit tests** | 145 passing (`pnpm test`) | Keep coverage on public APIs |
+| **Browser tests** | Vitest browser project configured; `ContextIndicator.browser.test.tsx` exists | **Full journey**: menu → hub → game → end state; more component browser tests needed |
 | **Device QA** | Manual | Phones/tablets: touch, safe areas, thermal throttling |
 | **CI** | Not fully specified | GitHub Actions: `pnpm install`, `typecheck`, `lint`, `test`, `build`, optional `test:browser` |
 

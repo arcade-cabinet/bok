@@ -6,7 +6,7 @@
 
 **Architecture:** Domain-layered monolith with three integration layers — Koota owns all game state (traits/relations), Yuka owns AI decisions (steering/FSM/goals), JollyPixel owns rendering (voxels/scene graph/game loop). Domains communicate only through barrel-exported public APIs. Content is data-driven via JSON configs validated by Zod schemas.
 
-**Tech Stack:** @jolly-pixel/engine + runtime + voxel.renderer, koota, yuka, @dimforge/rapier3d, three.js, Vite, TypeScript (strict ESM), @capacitor/core + @capacitor-community/sqlite, vitest + @vitest/browser, Zod, ESLint
+**Tech Stack:** @jolly-pixel/engine + runtime + voxel.renderer, koota, yuka, @dimforge/rapier3d, three.js, Vite, TypeScript (strict ESM), @capacitor/core + @capacitor-community/sqlite, vitest + @vitest/browser, Zod, Biome 2.4
 
 **Spec:** `docs/superpowers/specs/2026-03-20-bok-game-design.md`
 
@@ -60,7 +60,7 @@ Phase 4: Content + Polish (parallel group C — all independent)
 
 ---
 
-## Phase 0: Foundation
+## Phase 0: Foundation ✅ COMPLETE
 
 ### Task 1: Scaffold Project
 
@@ -297,39 +297,9 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-- [ ] **Step 9: Create eslint.config.js (flat config for ESLint 9.x)**
+- [ ] **Step 9: ~~Create eslint.config.js~~ — SUPERSEDED by Biome 2.4**
 
-```javascript
-import tseslint from 'typescript-eslint';
-import importX from 'eslint-plugin-import-x';
-
-export default tseslint.config(
-  ...tseslint.configs.recommended,
-  {
-    plugins: { 'import-x': importX },
-    rules: {
-      'import-x/no-internal-modules': ['error', {
-        forbid: [
-          'src/systems/*/*',
-          'src/ai/*/*',
-          'src/generation/*/*',
-          'src/content/*/*',
-          'src/ui/*/*',
-          'src/scenes/*/*',
-          'src/rendering/*/*',
-          'src/persistence/*/*',
-          'src/input/*/*',
-          'src/traits/*/*',
-          'src/relations/*/*',
-          'src/shared/*/*',
-          'src/behaviors/*/*',
-        ],
-      }],
-    },
-  },
-  { ignores: ['dist/', 'node_modules/', '*.config.*'] },
-);
-```
+> **Note:** ESLint was replaced by Biome 2.4 (`biome.json`). Barrel export enforcement is now handled by the `domain-reviewer` agent and Claude hooks, not ESLint rules. `src/ui/`, `src/scenes/`, and `src/behaviors/` are deleted.
 
 - [ ] **Step 10: Update .gitignore**
 
@@ -395,13 +365,13 @@ Voxel roguelike island-hopper built on JollyPixel + Koota + Yuka.
 npm install
 npm run dev          # Vite dev server at localhost:5173
 npm test             # Vitest (unit + browser tests)
-npm run lint         # ESLint with barrel export enforcement
+npm run lint         # Biome 2.4 (replaced ESLint)
 npm run typecheck    # TypeScript strict mode check
 \`\`\`
 
 ## Architecture Invariants
 1. **Barrel exports only.** Every domain (`src/<domain>/`) has an `index.ts`. Cross-domain imports MUST use the barrel. Never import from `src/systems/combat/DamageCalculator.ts` — import from `src/systems/combat/`.
-2. **Koota owns state.** All game entity data lives in Koota traits. Yuka reads/writes via the AIBridge. JollyPixel Actors read via RenderSyncBehavior.
+2. **Koota owns state.** All game entity data lives in Koota traits. Yuka reads/writes via the AIBridge. JollyPixel Actors synced via functional approach in `gameLoop.ts`.
 3. **Content is JSON.** Biomes, enemies, weapons, bosses, items are JSON files in `src/content/`. Validated by Zod schemas at build time and runtime.
 4. **Pure generation functions.** Everything in `src/generation/` is deterministic — same seed, same output. No side effects.
 5. **Tests required.** Every barrel-exported public API must have tests. Run `npm test` before committing.
@@ -416,9 +386,14 @@ npm run typecheck    # TypeScript strict mode check
 | `src/ai/` | Yuka integration + bridge | `src/ai/index.ts` |
 | `src/generation/` | Procedural island generation | `src/generation/index.ts` |
 | `src/content/` | JSON content + Zod schemas | `src/content/index.ts` |
-| `src/behaviors/` | JollyPixel ActorComponents | `src/behaviors/index.ts` |
-| `src/ui/` | HUD, menus, Tome overlay | `src/ui/index.ts` |
-| `src/scenes/` | Game state FSM | `src/scenes/index.ts` |
+| ~~`src/behaviors/`~~ | ~~JollyPixel ActorComponents~~ | deleted (US-015) |
+| ~~`src/ui/`~~ | ~~HUD, menus, Tome overlay~~ | deleted (US-017) — replaced by `src/components/` |
+| ~~`src/scenes/`~~ | ~~Game state FSM~~ | deleted (US-017) — replaced by React view routing |
+| `src/app/` | React app entry | `src/app/App.tsx` |
+| `src/views/` | React view components | `src/views/{menu,game,hub}/` |
+| `src/components/` | React UI (hud, modals, transitions) | `src/components/` |
+| `src/hooks/` | React hooks (lifecycle, events, HUD) | `src/hooks/` |
+| `src/engine/` | Game engine modules | `src/engine/GameEngine.ts` |
 | `src/rendering/` | Visual effects | `src/rendering/index.ts` |
 | `src/persistence/` | SQLite save/load | `src/persistence/index.ts` |
 | `src/shared/` | Types, constants, EventBus | `src/shared/index.ts` |
@@ -728,7 +703,7 @@ git commit -m "docs: add root documentation, agent configs, and enforcement hook
 
 ---
 
-## Phase 1: Core Layers (Parallel Group A)
+## Phase 1: Core Layers (Parallel Group A) ✅ COMPLETE
 
 > Tasks 3-7 can all run in parallel. No dependencies between them.
 
@@ -2251,7 +2226,7 @@ git commit -m "feat: add content registry with Zod schemas and first biome/enemy
 
 ---
 
-## Phase 2: Game Systems (Parallel Group B)
+## Phase 2: Game Systems (Parallel Group B) ✅ COMPLETE
 
 > Tasks 8-12 can all run in parallel. Each depends only on Phase 1 outputs.
 
@@ -2320,19 +2295,17 @@ Implementation: RunManager tracks run lifecycle (start → islands visited → d
 
 ---
 
-### Task 12: Scene Management
+### Task 12: Scene Management — ✅ SUPERSEDED
 
-**Files:**
-- Create: `src/scenes/SceneDirector.ts`
-- Create: `src/scenes/Scene.ts` (base class)
-- Create: `src/scenes/MainMenuScene.ts`
-- Create: `src/scenes/HubScene.ts`
-- Create: `src/scenes/IslandScene.ts`
-- Create: `src/scenes/BossArenaScene.ts`
-- Create: `src/scenes/index.ts`
-- Create: `src/scenes/SceneDirector.test.ts`
+> **Note:** The `SceneDirector` + `Scene` class approach was implemented but later replaced by React view routing (`App.tsx` state machine with `AppView` union type) and deleted in US-017. React now owns all view transitions: menu → hub → sailing → game → death/victory → hub/menu.
 
-Implementation: Scene base class with `enter()`, `update(dt)`, `exit()`. SceneDirector is a custom FSM (not Yuka) managing transitions: MainMenu → Hub → Island → BossArena → Results → Hub. Test transitions and lifecycle calls.
+~~**Files:**~~
+- ~~`src/scenes/SceneDirector.ts`~~ — deleted (US-017)
+- ~~`src/scenes/Scene.ts`~~ — deleted (US-017)
+- ~~`src/scenes/MainMenuScene.ts`~~ — replaced by `src/views/menu/MainMenuView.tsx`
+- ~~`src/scenes/HubScene.ts`~~ — replaced by `src/views/hub/HubView.tsx`
+- ~~`src/scenes/IslandScene.ts`~~ — replaced by `src/views/game/GameView.tsx` + `GameEngine.ts`
+- ~~All other scenes~~ — deleted (US-017)
 
 ---
 
@@ -2367,7 +2340,7 @@ Implementation: EnemySpawner takes spawn point data from IslandGenerator output 
 
 ---
 
-## Phase 3: Vertical Slice
+## Phase 3: Vertical Slice ✅ COMPLETE
 
 ### Task 13: Forest Island End-to-End
 
@@ -2382,7 +2355,7 @@ Implementation: Wire all systems into the frame loop. Generate a Forest island f
 
 ---
 
-## Phase 4: Content + Polish (Parallel Group C)
+## Phase 4: Content + Polish (Parallel Group C) 🔄 ACTIVE
 
 > Tasks 14-23 can all run in parallel. Each is independent content/feature authoring.
 
@@ -2402,23 +2375,23 @@ Create: `src/content/weapons/{iron-sword,crystal-blade,volcanic-edge,frost-cleav
 Create: `src/content/hub/buildings.json`, `src/content/hub/npcs.json`, `src/content/items/loot-tables.json`, `src/content/items/crafting-recipes.json`
 Add Zod schemas for hub buildings, NPCs, loot tables, and crafting recipes to `src/content/types.ts`. Register in ContentRegistry. **Note:** When adding new content files, also update `src/content/registry.ts` to import and register them.
 
-### Task 18: UI/HUD
-Create: `src/ui/hud/{HealthBar,Hotbar,Minimap,DamageIndicator}.ts`, `src/ui/tome/{TomeOverlay,PageBrowser}.ts`, `src/ui/index.ts`
+### Task 18: UI/HUD ✅ COMPLETE
+~~Create: `src/ui/hud/...`~~ — Replaced by React components: `src/components/hud/{HealthBar,Hotbar,Minimap,DamageIndicator,BuildingInteraction,ContextIndicator}.tsx`, `src/components/modals/TomePageBrowser.tsx`
 
-### Task 19: Audio System
-Create: `src/systems/audio/{AudioManager,MusicSystem,SFXPlayer}.ts`, `src/systems/audio/index.ts`
+### Task 19: Audio System ✅ COMPLETE
+~~Create: `src/systems/audio/...`~~ — Live audio in `src/audio/` using Tone.js (procedural SFX + music/atmosphere). Dead `src/systems/audio/` deleted in US-016.
 
 ### Task 20: Rendering Effects
 Create: `src/rendering/{ParticleSystem,WeatherSystem,DayNightCycle,WaterRenderer,PostProcessing}.ts`, `src/rendering/index.ts`
 
-### Task 21: Hub Island Scene
-Implement: `src/scenes/HubScene.ts` — persistent hub with buildings, NPCs, upgrade interactions.
+### Task 21: Hub Island Scene ✅ COMPLETE
+~~Implement: `src/scenes/HubScene.ts`~~ — Replaced by `src/views/hub/HubView.tsx` + `src/engine/hub.ts` + hooks (`useHubEngine`, `useHubCamera`, `useHubBuildings`).
 
-### Task 22: Sailing + Island Select
-Create: `src/scenes/SailingScene.ts`, `src/scenes/IslandSelectScene.ts`
+### Task 22: Sailing + Island Select ✅ PARTIAL
+~~Create: `src/scenes/SailingScene.ts`~~ — Replaced by `src/components/transitions/SailingTransition.tsx`. Island select not yet implemented.
 
-### Task 23: Main Menu + Death/Victory Screens
-Create: `src/ui/screens/{MainMenu,PauseMenu,DeathScreen,VictoryScreen}.ts`
+### Task 23: Main Menu + Death/Victory Screens ✅ COMPLETE
+~~Create: `src/ui/screens/...`~~ — Replaced by React components: `src/views/menu/MainMenuView.tsx`, `src/components/modals/{PauseMenu,DeathScreen,VictoryScreen}.tsx`
 
 ### Task 24: Integration Tests + Final Polish
 Create: `src/integration.test.ts` — scene lifecycle, save/load round-trip, full run simulation.

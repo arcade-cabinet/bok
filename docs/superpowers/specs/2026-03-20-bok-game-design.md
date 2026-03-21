@@ -144,7 +144,7 @@ Each weapon has: base damage, attack speed, range, combo chain (3 hits), special
 | Build | Vite + TypeScript (strict, ESM) |
 | Platform | @capacitor/core + @capacitor-community/sqlite |
 | Test | vitest + @vitest/browser |
-| Lint | ESLint (barrel export enforcement) |
+| Lint | Biome 2.4 (format + lint + a11y) |
 
 ### 5.3 Frame Loop Data Flow
 
@@ -240,15 +240,9 @@ class AIBridge {
 }
 
 // === KOOTA → JOLLYPIXEL (state drives rendering) ===
-class RenderSyncBehavior extends ActorComponent {
-  update() {
-    const entity = this.actor.userData.kootaEntity;
-    const pos = entity.get(Position);
-    this.actor.transform.position.set(pos.x, pos.y, pos.z);
-    const ai = entity.get(AIState);
-    this.setAnimation(ai.state); // 'patrol' → walk, 'chase' → run, etc.
-  }
-}
+// Note: RenderSyncBehavior was deleted (US-015). Render sync now uses
+// a functional approach in gameLoop.ts — enemy mesh transforms are
+// updated directly from Yuka vehicle positions each frame.
 ```
 
 ### 5.7 Domain Structure (Full)
@@ -258,15 +252,14 @@ src/
 ├── input/            Platform-agnostic input → Koota traits
 │   ├── ActionMap.ts, KeyboardMouseDevice.ts, TouchDevice.ts, GamepadDevice.ts
 │   └── index.ts      barrel export
-├── behaviors/        JollyPixel ActorComponents (render sync, camera, particles)
-│   └── index.ts      barrel export
+├── # behaviors/     DELETED (US-015) — replaced by functional approach in gameLoop.ts
 ├── systems/          Koota query-based game systems
 │   ├── combat/       CombatSystem, DamageCalculator, HitDetection, WeaponComboSystem
 │   ├── progression/  RunManager, UnlockTracker, TomeProgression
 │   ├── inventory/    Inventory, LootTable, CraftingSystem
 │   ├── movement/     MovementSystem, CollisionResolver
 │   ├── spawning/     EnemySpawner, LootSpawner, IslandPopulator
-│   └── audio/        AudioManager, MusicSystem, SFXPlayer
+│   └── # audio/     DELETED (US-016) — live audio in src/audio/ using Tone.js
 │   └── index.ts      barrel export per subdomain
 ├── ai/               Yuka integration layer
 │   ├── steering/     Enemy movement behaviors
@@ -301,17 +294,19 @@ src/
 │   └── index.ts      barrel export
 ├── relations/        Koota relation definitions
 │   ├── index.ts      ChildOf, Contains, FiredBy, Targeting, etc.
-├── ui/               HUD, menus, Tome interface
-│   ├── hud/          HealthBar, Hotbar, Minimap, DamageIndicator
-│   ├── tome/         TomeOverlay (3D book), PageBrowser
-│   ├── screens/      MainMenu, IslandSelect, PauseMenu, DeathScreen
-│   └── index.ts      barrel export per subdomain
-├── scenes/           Game state management
-│   ├── SceneDirector.ts  FSM: Menu → Hub → Sailing → Island → Boss → Results
-│   ├── HubScene.ts
-│   ├── IslandScene.ts
-│   ├── BossArenaScene.ts
-│   └── index.ts      barrel export
+├── # ui/            DELETED (US-017) — replaced by React components:
+├── components/       React UI components (daisyUI + Tailwind CSS 4)
+│   ├── hud/          HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction, ContextIndicator
+│   ├── modals/       PauseMenu, DeathScreen, VictoryScreen, TomePageBrowser
+│   ├── transitions/  SailingTransition
+│   └── ui/           TouchControls
+├── # scenes/        DELETED (US-017) — replaced by React view routing:
+├── app/              React app entry (App.tsx state machine: menu → hub → sailing → game)
+├── views/            React view components
+│   ├── menu/         MainMenuView
+│   ├── game/         GameView (decomposed into hooks)
+│   └── hub/          HubView (decomposed into hooks)
+├── hooks/            React hooks (useGameLifecycle, useGameEvents, useGameHUD, etc.)
 ├── rendering/        Visual effects, custom renderers
 │   ├── ParticleSystem.ts
 │   ├── WeatherSystem.ts
@@ -328,8 +323,9 @@ src/
 │   ├── constants.ts
 │   ├── EventBus.ts
 │   └── index.ts      barrel export
-├── assets/           Static assets (tilesets, models, audio, fonts)
-└── main.ts           Entry point
+├── audio/            Tone.js procedural SFX + music/atmosphere (live audio system)
+├── engine/           Game engine modules (GameEngine.ts orchestrator + focused modules)
+└── # main.ts        Entry is now src/app/index.tsx (React)
 ```
 
 ### 5.8 Module Contract
@@ -350,7 +346,7 @@ export type { ... } from './types.ts';
 ```
 
 Deep imports across domain boundaries are forbidden and enforced by:
-- ESLint `no-restricted-imports` rules
+- Biome 2.4 lint rules
 - Claude pre-edit hooks (reject `from '../systems/combat/DamageCalculator'`)
 - Claude post-edit hooks (verify barrel re-export exists)
 - Custom `domain-reviewer` agent
@@ -495,7 +491,7 @@ Each scene implements: `enter()`, `update(dt)`, `exit()`. SceneDirector handles 
 - **SECURITY.md**: Input validation, SQLite safety, Capacitor permissions
 - **.github/copilot-instructions.md**: Points to AGENTS.md
 
-### 12.4 ESLint Rules
-- `no-restricted-imports`: Block deep cross-domain imports
-- `import/no-internal-modules`: Only barrel exports cross boundaries
-- Content JSON schema validation at build time
+### 12.4 Biome 2.4 Lint Rules
+- Barrel export enforcement via `domain-reviewer` agent and Claude hooks
+- Biome handles formatting, import ordering, a11y checks, and TypeScript lint rules
+- Content JSON schema validation at import time via Zod
