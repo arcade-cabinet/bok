@@ -123,7 +123,7 @@ export function MainMenuView({ onStartGame }: Props) {
 
   const menuItem = (i: number) => ({
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+    visible: { opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
   });
 
   return (
@@ -141,7 +141,7 @@ export function MainMenuView({ onStartGame }: Props) {
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 max-w-lg mx-auto w-full">
         {/* Title */}
-        <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} className="text-center mb-12">
+        <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }} className="text-center mb-12">
           <h1 className="text-7xl md:text-9xl font-bold mb-2 tracking-tight" style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#d4c5a0', textShadow: '3px 3px 6px rgba(0,0,0,0.7), 0 0 30px rgba(196,165,114,0.3)', letterSpacing: '0.05em' }}>
             BOK
           </h1>
