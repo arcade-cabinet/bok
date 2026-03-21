@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MainMenuView } from '../views/menu/MainMenuView';
 import { GameView } from '../views/game/GameView';
 import { HubView } from '../views/hub/HubView';
+import { useProgression } from '../hooks/useProgression';
 
 export type AppView = 'menu' | 'game' | 'hub';
 
@@ -13,6 +14,7 @@ export interface GameConfig {
 export function App() {
   const [view, setView] = useState<AppView>('menu');
   const [gameConfig, setGameConfig] = useState<GameConfig>({ biome: 'forest', seed: 'Brave Dark Fox' });
+  const progression = useProgression();
 
   const handleStartGame = (config: GameConfig) => {
     setGameConfig(config);
@@ -25,12 +27,14 @@ export function App() {
 
   return (
     <>
-      {view === 'menu' && <MainMenuView onStartGame={handleStartGame} />}
+      {view === 'menu' && <MainMenuView onStartGame={handleStartGame} hasRunHistory={progression.runHistory.length > 0} />}
       {view === 'hub' && <HubView onNavigate={handleHubNavigate} />}
       {view === 'game' && (
         <GameView
           config={gameConfig}
           onReturnToMenu={() => setView('hub')}
+          onBossDefeated={progression.trackBossKill}
+          onRunEnd={progression.recordRun}
         />
       )}
     </>

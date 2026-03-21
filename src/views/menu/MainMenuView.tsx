@@ -101,9 +101,10 @@ function AnimatedBackground() {
 
 interface Props {
   onStartGame: (config: GameConfig) => void;
+  hasRunHistory?: boolean;
 }
 
-export function MainMenuView({ onStartGame }: Props) {
+export function MainMenuView({ onStartGame, hasRunHistory = false }: Props) {
   const [showNewGame, setShowNewGame] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
@@ -167,9 +168,9 @@ export function MainMenuView({ onStartGame }: Props) {
               ✒ Pen New Tale
             </motion.button>
             <motion.button variants={menuItem(1)} initial="hidden" animate="visible"
-              className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer opacity-40"
-              style={{ fontFamily: 'Crimson Text, Georgia, serif', color: '#a89574', background: 'rgba(45,31,23,0.6)', borderColor: 'rgba(139,115,85,0.3)', letterSpacing: '0.05em' }}
-              disabled>
+              className={`w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer ${hasRunHistory ? 'hover:shadow-[0_0_20px_rgba(139,115,85,0.4)]' : 'opacity-40'}`}
+              style={{ fontFamily: 'Crimson Text, Georgia, serif', color: hasRunHistory ? '#d4c5a0' : '#a89574', background: hasRunHistory ? 'rgba(58,40,32,0.8)' : 'rgba(45,31,23,0.6)', borderColor: hasRunHistory ? 'rgba(139,115,85,0.6)' : 'rgba(139,115,85,0.3)', letterSpacing: '0.05em' }}
+              disabled={!hasRunHistory}>
               📖 Resume Chapter
             </motion.button>
             <motion.button variants={menuItem(2)} initial="hidden" animate="visible"

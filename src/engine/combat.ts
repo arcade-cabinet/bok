@@ -47,6 +47,8 @@ export function createCombat(
   boss: BossState,
   bossMesh: THREE.Mesh,
   onEvent: EngineEventListener,
+  bossContentId = 'ancient-treant',
+  bossTomeAbility = 'dash',
 ): CombatSystem {
   const lootGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
   const lootMats: Record<string, THREE.MeshLambertMaterial> = {
@@ -135,7 +137,7 @@ export function createCombat(
             boss.defeated = true;
             playVictory();
             state.phase = 'victory';
-            onEvent({ type: 'bossDefeated' });
+            onEvent({ type: 'bossDefeated', bossId: bossContentId, tomeAbility: bossTomeAbility });
           }
         }
       }

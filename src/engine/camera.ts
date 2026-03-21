@@ -16,7 +16,7 @@ const SPRINT_MULTIPLIER = 1.6;
 export interface CameraResult {
   camera: THREE.PerspectiveCamera;
   euler: THREE.Euler;
-  applyMovement: (dirX: number, dirZ: number, sprint: boolean, dt: number) => void;
+  applyMovement: (dirX: number, dirZ: number, sprint: boolean, dt: number, headBobOffset?: number) => void;
   applyLook: (deltaX: number, deltaY: number, sensitivityScale?: number) => void;
   getPosition: () => THREE.Vector3;
 }
@@ -69,11 +69,11 @@ export function createCamera(
     camera.quaternion.setFromEuler(euler);
   }
 
-  function applyMovement(dirX: number, dirZ: number, sprint: boolean, dt: number): void {
+  function applyMovement(dirX: number, dirZ: number, sprint: boolean, dt: number, headBobOffset = 0): void {
     if (dirX === 0 && dirZ === 0) {
       // Settle to terrain height when standing still
       const standY = getSurfaceY(Math.round(camera.position.x), Math.round(camera.position.z));
-      const targetEye = standY + 1.6;
+      const targetEye = standY + 1.6 + headBobOffset;
       if (Math.abs(camera.position.y - targetEye) > 0.05) {
         camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 8);
       }
@@ -98,7 +98,7 @@ export function createCamera(
     if (heightDiff <= 1.1 && heightDiff >= -3) {
       camera.position.x = newX;
       camera.position.z = newZ;
-      const targetEye = targetY + 1.6;
+      const targetEye = targetY + 1.6 + headBobOffset;
       if (Math.abs(camera.position.y - targetEye) > 0.05) {
         camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 12);
         if (heightDiff > 0.3) {

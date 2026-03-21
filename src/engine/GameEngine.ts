@@ -17,10 +17,14 @@ import { InputSystem } from '../input/index.ts';
 import { isMobileDevice, MobileControls } from '../input/MobileControls.ts';
 import { DayNightCycle } from '../rendering/index.ts';
 
+import { ContentRegistry } from '../content/index.ts';
 import { createTerrain } from './terrain.ts';
 import { spawnEnemies, updateEnemyAI } from './enemies.ts';
 import { createCombat } from './combat.ts';
 import { createCamera } from './camera.ts';
+import { detectContext, getHeadBob } from './diegetic.ts';
+import type { DiegeticContext } from './diegetic.ts';
+import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
 import type { GameStartConfig, EngineState, EngineEventListener } from './types.ts';
 
 export interface GameInstance {
@@ -97,11 +101,24 @@ export async function initGame(
     });
   }
 
+  // --- Boss content lookup ---
+  const content = new ContentRegistry();
+  const biomeConfig = content.getBiome(config.biome);
+  const bossConfig = content.getBoss(biomeConfig.bossId);
+
   // --- Combat ---
   const eventListeners: EngineEventListener[] = [];
   const combat = createCombat(scene, enemies, boss, bossMesh, (event) => {
     for (const listener of eventListeners) listener(event);
-  });
+  }, bossConfig.id, bossConfig.tomePageDrop);
+
+  // --- Player Governor (GOAP advisor) ---
+  const governor = createPlayerGovernor();
+  let lastGovernorOutput: GovernorOutput = { suggestedTarget: -1, threatLevel: 'none', canDodge: true };
+
+  // --- Diegetic state ---
+  let currentContext: DiegeticContext = 'explore';
+  let elapsedTime = 0;
 
   // --- State ---
   let paused = false;
@@ -148,7 +165,13 @@ export async function initGame(
       const move = gameWorld.get(MovementIntent);
       if (move) { dirX = move.dirX; dirZ = move.dirZ; sprinting = move.sprint; }
     }
-    cam.applyMovement(dirX, dirZ, sprinting, dt);
+
+    // Diegetic context + head bob
+    elapsedTime += dt;
+    currentContext = detectContext(cam.camera.position, enemies, terrain.getSurfaceY);
+    const isMoving = dirX !== 0 || dirZ !== 0;
+    const bobOffset = getHeadBob(dt, isMoving, currentContext, elapsedTime);
+    cam.applyMovement(dirX, dirZ, sprinting, dt, bobOffset);
 
     // Mobile attack
     if (mobileControls?.consumeAttack()) combat.triggerAttack();
@@ -160,6 +183,13 @@ export async function initGame(
 
     // Combat (attacks, damage, loot, boss phases)
     combat.update(dt, cam.camera.position);
+
+    // Player governor — update context and run GOAP evaluation
+    governor.setContext(
+      cam.camera.position.x, cam.camera.position.y, cam.camera.position.z,
+      enemies, combat.state.playerHealth, combat.state.maxHealth,
+    );
+    lastGovernorOutput = governor.update(dt);
   });
 
   // Start ambient audio
@@ -186,6 +216,16 @@ export async function initGame(
       bossPhase: boss.phase,
       paused,
       phase: paused ? 'paused' : combat.state.phase,
+      context: currentContext,
+      suggestedTargetPos: lastGovernorOutput.suggestedTarget >= 0 && lastGovernorOutput.suggestedTarget < enemies.length
+        ? {
+            x: enemies[lastGovernorOutput.suggestedTarget].mesh.position.x,
+            y: enemies[lastGovernorOutput.suggestedTarget].mesh.position.y,
+            z: enemies[lastGovernorOutput.suggestedTarget].mesh.position.z,
+          }
+        : null,
+      threatLevel: lastGovernorOutput.threatLevel,
+      canDodge: lastGovernorOutput.canDodge,
     }),
     onEvent: (listener) => { eventListeners.push(listener); },
     triggerAttack: () => combat.triggerAttack(),

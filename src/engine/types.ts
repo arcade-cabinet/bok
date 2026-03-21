@@ -33,6 +33,9 @@ export interface GameStartConfig {
   seed: string;
 }
 
+/** Threat level from the player governor */
+export type ThreatLevel = 'none' | 'low' | 'medium' | 'high';
+
 /** Engine state exposed to React via polling */
 export interface EngineState {
   playerHealth: number;
@@ -44,6 +47,13 @@ export interface EngineState {
   bossPhase: number;
   paused: boolean;
   phase: 'playing' | 'dead' | 'victory' | 'paused';
+  context: 'combat' | 'climb' | 'drop' | 'explore';
+  /** Governor: suggested target enemy world position (null if none) */
+  suggestedTargetPos: { x: number; y: number; z: number } | null;
+  /** Governor: current threat assessment */
+  threatLevel: ThreatLevel;
+  /** Governor: whether stamina allows dodging */
+  canDodge: boolean;
 }
 
 /** Events the engine can emit to React */
@@ -51,7 +61,7 @@ export type EngineEvent =
   | { type: 'playerDamaged'; amount: number }
   | { type: 'enemyKilled'; position: { x: number; y: number; z: number } }
   | { type: 'bossPhaseChange'; phase: number }
-  | { type: 'bossDefeated' }
+  | { type: 'bossDefeated'; bossId: string; tomeAbility: string }
   | { type: 'playerDied' }
   | { type: 'lootPickup'; itemType: string };
 
