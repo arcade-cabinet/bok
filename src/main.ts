@@ -15,6 +15,7 @@ import {
   Time, GamePhase, MovementIntent, LookIntent, IslandState,
 } from './traits/index.ts';
 import { MAX_DELTA } from './shared/index.ts';
+import { initPlatform, hapticImpact } from './platform/CapacitorBridge.ts';
 import { playSwordSwing, playHitImpact, playPlayerHurt, playEnemyDeath, playBossPhase, playVictory, startAmbient } from './audio/GameAudio.ts';
 import { InputSystem } from './input/index.ts';
 import { ContentRegistry } from './content/index.ts';
@@ -664,6 +665,7 @@ function updateLoot(dt: number): void {
       const target = enemyMeshes[closestIdx];
       target.health -= PLAYER_DAMAGE;
       playHitImpact();
+      hapticImpact('medium'); // Native haptic on combat hit
       // Flash enemy red-white on hit
       (target.mesh.material as THREE.MeshLambertMaterial).color.setHex(0xffffff);
       setTimeout(() => {
@@ -764,6 +766,7 @@ function updateLoot(dt: number): void {
         enemy.attackCooldown = 1.5; // Attack every 1.5s
         playerHealth = Math.max(0, playerHealth - 10);
         playPlayerHurt();
+        hapticImpact('heavy'); // Heavy haptic on taking damage
         // Update health bar
         const fill = document.getElementById('health-fill');
         const text = document.getElementById('health-text');
@@ -948,6 +951,10 @@ createMainMenu();
 
 // --- Boot ---
 console.log('[Bok] Loading runtime...');
+
+// Init Capacitor platform (status bar, orientation, wake lock)
+initPlatform().catch(() => {});
+
 loadRuntime(runtime)
   .then(() => {
     console.log('[Bok] Runtime loaded — voxel terrain rendered');
