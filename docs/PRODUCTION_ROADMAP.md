@@ -88,7 +88,7 @@ This document is the **single checklist for shipping a production-quality game**
 
 | Area | Status | Remaining work |
 |------|--------|----------------|
-| **Unit tests** | 145 passing (`pnpm test`) | Keep coverage on public APIs |
+| **Unit tests** | 147 passing (`pnpm test`) | Keep coverage on public APIs |
 | **Browser tests** | Vitest browser project configured; `ContextIndicator.browser.test.tsx` exists | **Full journey**: menu → hub → game → end state; more component browser tests needed |
 | **Device QA** | Manual | Phones/tablets: touch, safe areas, thermal throttling |
 | **CI** | Not fully specified | GitHub Actions: `pnpm install`, `typecheck`, `lint`, `test`, `build`, optional `test:browser` |

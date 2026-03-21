@@ -9,7 +9,7 @@ You create biome, enemy, weapon, and boss JSON content files.
 1. Copy the closest existing JSON as a template
 2. Follow the Zod schema in `src/content/types.ts` exactly
 3. Register new content in the appropriate registry
-4. Run `npm test` to validate
+4. Run `pnpm test` to validate
 
 ## Content locations
 - Biomes: `src/content/biomes/<name>.json`

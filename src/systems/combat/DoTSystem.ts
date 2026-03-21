@@ -18,14 +18,16 @@ export function dotSystem(world: World, dt: number): void {
 
     const newDuration = dot.remainingDuration - dt;
 
-    // Calculate how many ticks occurred in this frame
-    // We track progress by checking if we've crossed a tick boundary
-    const prevElapsed = dot.remainingDuration - newDuration;
-    if (prevElapsed >= dot.tickInterval || newDuration <= 0) {
-      // Apply one tick of damage
+    // Calculate how many tick boundaries were crossed this frame
+    const prevBuckets = Math.floor(dot.remainingDuration / dot.tickInterval);
+    const newBuckets = Math.floor(Math.max(newDuration, 0) / dot.tickInterval);
+    const ticksToApply = prevBuckets - newBuckets;
+
+    if (ticksToApply > 0) {
       const health = entity.get(Health)!;
+      const totalDamage = dot.damagePerTick * ticksToApply;
       entity.set(Health, {
-        current: Math.max(0, health.current - dot.damagePerTick),
+        current: Math.max(0, health.current - totalDamage),
         max: health.max,
       });
     }

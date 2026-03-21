@@ -36,6 +36,10 @@ export class InMemoryDatabase implements DatabaseAdapter {
       let row: unknown[];
       if (valsMatch) {
         const valTokens = valsMatch[1].split(',').map((v) => v.trim());
+        const placeholderCount = valTokens.filter((t) => t === '?').length;
+        if (params.length < placeholderCount) {
+          throw new Error(`Parameter count mismatch: expected ${placeholderCount}, got ${params.length}`);
+        }
         let paramIdx = 0;
         row = valTokens.map((t) => {
           if (t === '?') return params[paramIdx++];

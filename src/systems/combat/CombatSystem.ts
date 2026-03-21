@@ -108,7 +108,7 @@ export function combatSystem(world: World): void {
             armorReduction,
           });
 
-          const blocked = Math.floor(damage * 0.5);
+          const blocked = Math.max(1, Math.floor(damage * 0.5));
           const health = target.get(Health)!;
           target.set(Health, {
             current: Math.max(0, health.current - blocked),

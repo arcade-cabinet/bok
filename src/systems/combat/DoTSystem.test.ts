@@ -67,4 +67,30 @@ describe('DoTSystem', () => {
 
     expect(entity.has(DamageOverTime)).toBe(false);
   });
+
+  it('fires tick when small frames cross a boundary', () => {
+    const entity = world.spawn(
+      Health({ current: 100, max: 100 }),
+      DamageOverTime({ damagePerTick: 5, tickInterval: 1, remainingDuration: 2.1 }),
+    );
+
+    // 2.1 → 1.9: crosses boundary at 2.0 — tick fires
+    dotSystem(world, 0.2);
+    expect(entity.get(Health)!.current).toBe(95);
+
+    // 1.9 → 1.7: no boundary crossed — no tick
+    dotSystem(world, 0.2);
+    expect(entity.get(Health)!.current).toBe(95);
+  });
+
+  it('applies multiple ticks for large dt', () => {
+    const entity = world.spawn(
+      Health({ current: 100, max: 100 }),
+      DamageOverTime({ damagePerTick: 10, tickInterval: 1, remainingDuration: 5 }),
+    );
+
+    // 5.0 → 2.5: prevBuckets=5, newBuckets=2, ticks=3
+    dotSystem(world, 2.5);
+    expect(entity.get(Health)!.current).toBe(70);
+  });
 });

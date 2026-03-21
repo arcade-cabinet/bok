@@ -318,7 +318,7 @@ coverage/
 
 - [ ] **Step 11: Install dependencies and verify build**
 
-Run: `npm install`
+Run: `pnpm install`
 Expected: Clean install, no peer dependency errors
 
 Run: `npx tsc --noEmit`
@@ -362,11 +362,11 @@ Voxel roguelike island-hopper built on JollyPixel + Koota + Yuka.
 
 ## Quick Start
 \`\`\`bash
-npm install
-npm run dev          # Vite dev server at localhost:5173
-npm test             # Vitest (unit + browser tests)
-npm run lint         # Biome 2.4 (replaced ESLint)
-npm run typecheck    # TypeScript strict mode check
+pnpm install
+pnpm run dev          # Vite dev server at localhost:5173
+pnpm test             # Vitest (unit + browser tests)
+pnpm run lint         # Biome 2.4 (replaced ESLint)
+pnpm run typecheck    # TypeScript strict mode check
 \`\`\`
 
 ## Architecture Invariants
@@ -374,7 +374,7 @@ npm run typecheck    # TypeScript strict mode check
 2. **Koota owns state.** All game entity data lives in Koota traits. Yuka reads/writes via the AIBridge. JollyPixel Actors synced via functional approach in `gameLoop.ts`.
 3. **Content is JSON.** Biomes, enemies, weapons, bosses, items are JSON files in `src/content/`. Validated by Zod schemas at build time and runtime.
 4. **Pure generation functions.** Everything in `src/generation/` is deterministic — same seed, same output. No side effects.
-5. **Tests required.** Every barrel-exported public API must have tests. Run `npm test` before committing.
+5. **Tests required.** Every barrel-exported public API must have tests. Run `pnpm test` before committing.
 
 ## Domain Map
 | Domain | Role | Barrel |
@@ -413,9 +413,9 @@ Every `index.ts` barrel must have this JSDoc header:
 
 ## Testing
 \`\`\`bash
-npm test                          # All tests
-npm run test:unit                 # Unit only (node)
-npm run test:browser              # Browser only (playwright)
+pnpm test                          # All tests
+pnpm run test:unit                 # Unit only (node)
+pnpm run test:browser              # Browser only (playwright)
 npx vitest src/generation/        # Single domain
 \`\`\`
 
@@ -441,13 +441,13 @@ npx vitest src/generation/        # Single domain
 1. Create the file in the appropriate domain directory
 2. Add a re-export to the domain's `index.ts` barrel
 3. Write tests for the public API in `<domain>/<name>.test.ts`
-4. Run `npm test` to verify
+4. Run `pnpm test` to verify
 
 ### Adding Content (Biome/Enemy/Weapon/Boss)
 1. Copy an existing JSON from the same `src/content/<type>/` directory
 2. Modify the fields per the Zod schema in `src/content/types.ts`
 3. Register it in the content registry
-4. Run `npm test` to validate the schema
+4. Run `pnpm test` to validate the schema
 
 ### Domain Boundaries
 Each domain has ONE role. Do not add cross-cutting concerns:
@@ -532,8 +532,8 @@ Hub → Sail → Explore Island → Boss Fight → Return or Push On → Hub
 ## Setup
 \`\`\`bash
 git clone <repo> && cd bok
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 \`\`\`
 
 ## Adding Content
@@ -565,7 +565,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the three-layer integration model.
 
 ## Dependencies
 - All dependencies are MIT/Apache-2.0 licensed
-- npm audit run as part of CI
+- pnpm audit run as part of CI
 ```
 
 - [ ] **Step 5: Update README.md**
@@ -578,8 +578,8 @@ A roguelike island-hopping voxel adventure built with JollyPixel, Koota, and Yuk
 ## Quick Start
 
 \`\`\`bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 \`\`\`
 
 Open http://localhost:5173 in your browser.
@@ -630,7 +630,7 @@ You create biome, enemy, weapon, and boss JSON content files.
 1. Copy the closest existing JSON as a template
 2. Follow the Zod schema in `src/content/types.ts` exactly
 3. Register new content in the appropriate registry
-4. Run `npm test` to validate
+4. Run `pnpm test` to validate
 
 ## Content locations
 - Biomes: `src/content/biomes/<name>.json`
@@ -1516,7 +1516,7 @@ export { gameWorld, runtime };
 
 - [ ] **Step 4: Verify dev server starts**
 
-Run: `npm run dev`
+Run: `pnpm run dev`
 Expected: Vite dev server starts, browser shows canvas with JollyPixel loading screen, no console errors
 
 - [ ] **Step 5: Commit**

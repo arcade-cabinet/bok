@@ -17,6 +17,7 @@ export function ContextIndicator({ context }: Props) {
         {context === 'combat' && (
           <motion.div
             key="combat"
+            data-testid="combat-glow"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

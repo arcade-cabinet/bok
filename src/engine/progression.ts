@@ -5,7 +5,6 @@
  * @output trackBossKill, getUnlockedPages, recordRun, getRunHistory
  */
 import type { RunRecord, SaveManager } from '../persistence/index.ts';
-import { RunManager } from '../systems/progression/RunManager.ts';
 import { TomeProgression } from '../systems/progression/TomeProgression.ts';
 
 export interface ProgressionSystem {
@@ -22,7 +21,6 @@ export interface ProgressionSystem {
 
 export function createProgression(save: SaveManager): ProgressionSystem {
   const tome = new TomeProgression(save);
-  const _runs = new RunManager(save);
 
   return {
     async trackBossKill(bossId: string, tomeAbility: string): Promise<void> {

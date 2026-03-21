@@ -53,11 +53,15 @@ export class SaveManager {
 
   async getUnlocks(): Promise<UnlockRecord[]> {
     const rows = await this.#db.query<unknown[]>('SELECT * FROM unlocks');
-    return rows.map((r) => ({
-      id: r[0] as string,
-      type: r[1] as string,
-      data: JSON.parse(r[2] as string),
-    }));
+    return rows.map((r) => {
+      let data: Record<string, unknown> = {};
+      try {
+        data = JSON.parse(r[2] as string);
+      } catch {
+        // Corrupted data — return empty
+      }
+      return { id: r[0] as string, type: r[1] as string, data };
+    });
   }
 
   async addRun(record: RunRecord): Promise<void> {
@@ -72,12 +76,20 @@ export class SaveManager {
 
   async getRuns(): Promise<RunRecord[]> {
     const rows = await this.#db.query<unknown[]>('SELECT * FROM runs ORDER BY timestamp DESC');
-    return rows.map((r) => ({
-      seed: r[1] as string,
-      biomes: JSON.parse(r[2] as string),
-      result: r[3] as RunRecord['result'],
-      duration: r[4] as number,
-    }));
+    return rows.map((r) => {
+      let biomes: string[] = [];
+      try {
+        biomes = JSON.parse(r[2] as string);
+      } catch {
+        // Corrupted data — return empty array
+      }
+      return {
+        seed: r[1] as string,
+        biomes,
+        result: r[3] as RunRecord['result'],
+        duration: r[4] as number,
+      };
+    });
   }
 
   async saveState(state: GameState): Promise<void> {
@@ -91,10 +103,14 @@ export class SaveManager {
     const rows = await this.#db.query<unknown[]>('SELECT * FROM save_state');
     if (rows.length === 0) return null;
     const r = rows[0];
-    return {
-      koota: JSON.parse(r[1] as string),
-      yuka: JSON.parse(r[2] as string),
-      scene: r[3] as string,
-    };
+    try {
+      return {
+        koota: JSON.parse(r[1] as string),
+        yuka: JSON.parse(r[2] as string),
+        scene: r[3] as string,
+      };
+    } catch {
+      return null;
+    }
   }
 }

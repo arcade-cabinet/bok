@@ -4,11 +4,11 @@ import { render } from 'vitest-browser-react';
 import { ContextIndicator } from './ContextIndicator';
 
 test('combat context renders red glow overlay', async () => {
-  const { container } = await render(<ContextIndicator context="combat" />);
+  await render(<ContextIndicator context="combat" />);
 
   // The combat overlay has an inset box-shadow with red tones.
   // Framer motion animates opacity, so wait for it to appear.
-  await expect.element(page.elementLocator(container.querySelector('[style*="box-shadow"]')!)).toBeInTheDocument();
+  await expect.element(page.getByTestId('combat-glow')).toBeInTheDocument();
 });
 
 test('explore context renders no visual indicator', async () => {
