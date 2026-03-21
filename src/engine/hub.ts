@@ -73,11 +73,11 @@ export interface NPCDef {
 }
 
 const BUILDINGS: BuildingDef[] = [
-  { name: 'Armory', x: 5, z: 5, width: 5, depth: 5, height: 5, wallBlock: 8, roofBlock: 3 },
+  { name: 'Armory', x: 5, z: 5, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
   { name: 'Docks', x: 25, z: 5, width: 5, depth: 4, height: 4, wallBlock: 6, roofBlock: 6 },
-  { name: 'Library', x: 5, z: 25, width: 5, depth: 5, height: 6, wallBlock: 8, roofBlock: 6 },
+  { name: 'Library', x: 5, z: 25, width: 5, depth: 5, height: 6, wallBlock: 3, roofBlock: 2 },
   { name: 'Market', x: 15, z: 25, width: 6, depth: 4, height: 4, wallBlock: 6, roofBlock: 7 },
-  { name: 'Forge', x: 25, z: 25, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 8 },
+  { name: 'Forge', x: 25, z: 25, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
 ];
 
 const NPCS: NPCDef[] = [
