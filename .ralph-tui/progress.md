@@ -256,3 +256,22 @@ after each iteration and it's included in prompts for context.
   - The `prevNearbyIdRef` pattern prevents 60 React re-renders per second: only triggers `setNearbyBuilding()` when the _identity_ of the closest building changes, not when the distance changes
 ---
 
+### daisyUI Modal Backdrop as Button
+- Biome's a11y linter flags `onClick` on a `<div>` — use `<button type="button">` for clickable `modal-backdrop` overlays instead of `<div role="button">`; the latter triggers `useSemanticElements` lint error
+
+---
+
+## 2026-03-21 - US-011
+- **What was implemented**: Ported TomePageBrowser React component from dead `src/ui/tome/PageBrowser.ts` with daisyUI modal/card/badge/grid, Tab key toggle in GameView, and ability ID→display metadata mapping
+- **Files changed**:
+  - `src/components/modals/TomePageBrowser.tsx` — NEW: daisyUI modal with CSS Grid (`auto-fill, minmax 180px`), page cards (emoji icon + Cinzel name + level badge + Crimson Text description), empty state message, `<button>` backdrop for a11y-compliant click-to-close
+  - `src/views/game/GameView.tsx` — imported TomePageBrowser; added `TOME_PAGE_CATALOG` mapping (8 boss abilities → display metadata); added `showTome` state and `unlockedAbilitiesRef`; Tab key toggles tome browser, Escape closes it if open; tracks `bossDefeated` events to accumulate unlocked abilities; renders `<TomePageBrowser>` between HUD and pause menu layers
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - `unlockedPages` from `useProgression` are just `string[]` (ability IDs like `"dash"`, `"ice-path"`) — there's no content JSON for tome page display metadata, so a `TOME_PAGE_CATALOG` record in GameView maps IDs to `{name, icon, description}` with a fallback for unknown IDs
+  - Biome's `useSemanticElements` rule rejects `role="button"` on `<div>` — use a native `<button>` element instead; daisyUI's `modal-backdrop` class works on any element type
+  - Tab key needs `e.preventDefault()` to stop browser focus cycling (especially important when pointer lock is active and the HUD has focusable elements like hotbar buttons)
+  - The `showTome` state is separate from `engineState.phase` — the tome browser overlays on top of any phase (playing, paused) but the Escape key handler checks `showTome` first to close the tome before toggling pause
+  - `unlockedAbilitiesRef` (not state) accumulates boss kills during a run without triggering re-renders — the tome browser reads it on open via the `pages` prop derivation
+---
+

@@ -7,11 +7,52 @@ import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { Minimap } from '../../components/hud/Minimap';
 import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
+import { type TomePage, TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen, type VictoryStats } from '../../components/modals/VictoryScreen';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
 import { useDeviceType } from '../../hooks/useDeviceType';
+
+/** Ability ID → display metadata for the tome page browser. */
+const TOME_PAGE_CATALOG: Record<string, Omit<TomePage, 'id' | 'level'>> = {
+  dash: { name: 'Dash', icon: '💨', description: 'Burst forward with uncanny speed, phasing through enemies.' },
+  'ice-path': {
+    name: 'Ice Path',
+    icon: '❄️',
+    description: 'Freeze the ground beneath your feet, creating a slippery trail.',
+  },
+  'fire-lance': {
+    name: 'Fire Lance',
+    icon: '🔥',
+    description: 'Hurl a blazing spear that pierces through multiple foes.',
+  },
+  'block-shield': {
+    name: 'Block Shield',
+    icon: '🛡️',
+    description: 'Conjure a magical barrier that absorbs incoming damage.',
+  },
+  'ground-pound': {
+    name: 'Ground Pound',
+    icon: '💥',
+    description: 'Slam the earth with devastating force, staggering nearby enemies.',
+  },
+  'wind-jump': {
+    name: 'Wind Jump',
+    icon: '🌪️',
+    description: 'Ride an updraft to leap far higher than normally possible.',
+  },
+  'stone-skin': {
+    name: 'Stone Skin',
+    icon: '🪨',
+    description: 'Harden your body to stone, greatly reducing damage taken.',
+  },
+  'shadow-step': {
+    name: 'Shadow Step',
+    icon: '👤',
+    description: 'Melt into the shadows and reappear behind your target.',
+  },
+};
 
 interface Props {
   config: GameConfig;
@@ -42,6 +83,8 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
     null,
   );
   const [victoryStats, setVictoryStats] = useState<VictoryStats | null>(null);
+  const [showTome, setShowTome] = useState(false);
+  const unlockedAbilitiesRef = useRef<string[]>([]);
   const { isMobile, screenWidth, screenHeight } = useDeviceType();
 
   // Hotbar slot definitions — weapon selection
@@ -76,6 +119,9 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
           setEngineState(game.getState());
         }
         if (event.type === 'bossDefeated') {
+          if (!unlockedAbilitiesRef.current.includes(event.tomeAbility)) {
+            unlockedAbilitiesRef.current = [...unlockedAbilitiesRef.current, event.tomeAbility];
+          }
           const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
           setVictoryStats({
             biome: config.biome,
@@ -101,14 +147,24 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
     };
   }, [config, onBossDefeated, onRunEnd]);
 
-  // Escape key → pause
+  // Keyboard shortcuts: Escape → pause, Tab → tome browser
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Escape') gameRef.current?.togglePause();
+      if (e.code === 'Escape') {
+        if (showTome) {
+          setShowTome(false);
+        } else {
+          gameRef.current?.togglePause();
+        }
+      }
+      if (e.code === 'Tab') {
+        e.preventDefault();
+        setShowTome((prev) => !prev);
+      }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, []);
+  }, [showTome]);
 
   // Resize canvas on orientation/screen change
   useEffect(() => {
@@ -220,6 +276,19 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
           {/* Hotbar */}
           <Hotbar slots={hotbarSlots} activeIndex={activeSlot} onSelect={setActiveSlot} />
         </div>
+      )}
+
+      {/* Tome page browser — Tab toggles during play */}
+      {showTome && (
+        <TomePageBrowser
+          pages={unlockedAbilitiesRef.current.map((id, i) => {
+            const meta = TOME_PAGE_CATALOG[id];
+            return meta
+              ? { id, name: meta.name, icon: meta.icon, description: meta.description, level: i + 1 }
+              : { id, name: id, icon: '📜', description: 'An unknown ability inscribed in the tome.', level: i + 1 };
+          })}
+          onClose={() => setShowTome(false)}
+        />
       )}
 
       {/* Pause menu */}
