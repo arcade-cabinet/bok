@@ -57,6 +57,12 @@ export const WEAPON_MODELS: Record<string, string> = {
   'psx-sword': '/models/weapons/psx-sword.glb',
   'psx-axe': '/models/weapons/psx-axe.glb',
   'psx-katana': '/models/weapons/psx-katana.glb',
+  'psx-axe-heavy': '/models/weapons/psx-axe-heavy.glb',
+  'psx-hammer': '/models/weapons/psx-hammer.glb',
+  'psx-machete': '/models/weapons/psx-machete.glb',
+  'psx-pickaxe': '/models/weapons/psx-pickaxe.glb',
+  'psx-sickle': '/models/weapons/psx-sickle.glb',
+  'psx-shovel': '/models/weapons/psx-shovel.glb',
 };
 
 /** Prop model paths */
