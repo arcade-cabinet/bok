@@ -69,7 +69,12 @@ export function Minimap({ playerX, playerZ, markers }: Props) {
 
   return (
     <div className="absolute top-4 right-4 card bg-base-100/85 border-2 border-secondary rounded-md overflow-hidden">
-      <canvas ref={canvasRef} width={SIZE} height={SIZE} className="block w-[140px] h-[140px]" />
+      <canvas
+        ref={canvasRef}
+        width={SIZE}
+        height={SIZE}
+        className="block w-[100px] h-[100px] sm:w-[140px] sm:h-[140px]"
+      />
     </div>
   );
 }

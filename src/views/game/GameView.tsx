@@ -9,6 +9,7 @@ import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen } from '../../components/modals/VictoryScreen';
+import { ActionButtons } from '../../components/ui/ActionButtons';
 import { TouchControls } from '../../components/ui/TouchControls';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
 import { useDeviceType } from '../../hooks/useDeviceType';
@@ -36,7 +37,7 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
  * and renders React HUD overlays on top.
  */
 export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
-  const { isMobile, screenWidth, screenHeight } = useDeviceType();
+  const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
   // Lifecycle: canvas, engine init/cleanup, keyboard, resize
   const { canvasRef, gameRef, showTome, setShowTome, handleResume, handleTouchOutput } = useGameLifecycle(
@@ -56,6 +57,14 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
     onReturnToMenu();
   }, [config, onRunEnd, onReturnToMenu, events.startTimeRef]);
 
+  const handleAttack = useCallback(() => {
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'attack' });
+  }, [gameRef]);
+
+  const handleDodge = useCallback(() => {
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'defend' });
+  }, [gameRef]);
+
   return (
     <div className="fixed inset-0">
       <canvas
@@ -67,6 +76,9 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
       />
       <DamageIndicator ref={events.damageRef} canvasRef={canvasRef} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
+      {(isMobile || isTouch) && engineState?.phase === 'playing' && (
+        <ActionButtons onAttack={handleAttack} onDodge={handleDodge} />
+      )}
       {engineState?.phase === 'playing' && <ContextIndicator context={engineState.context} />}
       {engineState?.phase === 'playing' && (
         <div

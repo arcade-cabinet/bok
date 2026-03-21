@@ -25,6 +25,8 @@ interface TouchState {
 }
 
 const MOVE_RADIUS = 60; // pixels from origin = full speed
+const DEADZONE = 0.15; // 15% of MOVE_RADIUS — ignore tiny accidental touches
+const DEADZONE_PX = MOVE_RADIUS * DEADZONE;
 const LOOK_SENSITIVITY = 0.8; // multiplier for look delta → rate
 
 interface Props {
@@ -47,11 +49,13 @@ export function TouchControls({ onOutput, enabled }: Props) {
       const dx = m.currentX - m.originX;
       const dy = m.currentY - m.originY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const clampedDist = Math.min(dist, MOVE_RADIUS);
-      if (dist > 2) {
+      if (dist > DEADZONE_PX) {
+        // Remap: distance beyond deadzone fills 0..1 over the remaining radius
+        const effective = Math.min(dist - DEADZONE_PX, MOVE_RADIUS - DEADZONE_PX);
+        const magnitude = effective / (MOVE_RADIUS - DEADZONE_PX);
         const angle = Math.atan2(dy, dx);
-        outputRef.current.moveX = (Math.cos(angle) * clampedDist) / MOVE_RADIUS;
-        outputRef.current.moveZ = (Math.sin(angle) * clampedDist) / MOVE_RADIUS; // positive Y = positive Z = backward (matches WASD S key)
+        outputRef.current.moveX = Math.cos(angle) * magnitude;
+        outputRef.current.moveZ = Math.sin(angle) * magnitude; // positive Y = positive Z = backward (matches WASD S key)
       } else {
         outputRef.current.moveX = 0;
         outputRef.current.moveZ = 0;

@@ -112,10 +112,16 @@ class AssessThreatGoal extends CompositeGoal {
 
 class CombatTargetEvaluator extends GoalEvaluator {
   private ctx: GovernorContext;
+  private brain: Think | null = null;
 
   constructor(ctx: GovernorContext, bias: number) {
     super(bias);
     this.ctx = ctx;
+  }
+
+  /** Store a reference to the Think so setGoal can manipulate its subgoals. */
+  setBrain(brain: Think): void {
+    this.brain = brain;
   }
 
   calculateDesirability(): number {
@@ -138,12 +144,10 @@ class CombatTargetEvaluator extends GoalEvaluator {
   }
 
   setGoal(owner: GameEntity): void {
-    const think = owner as unknown as Think;
-    // Only add if not already present
-    if (!think.subgoals.some((g) => g instanceof AssessThreatGoal)) {
-      think.clearSubgoals();
-      think.addSubgoal(new AssessThreatGoal(owner, this.ctx));
-    }
+    if (!this.brain) return;
+    // Clear and re-add each arbitration cycle so the goal runs with fresh context
+    this.brain.clearSubgoals();
+    this.brain.addSubgoal(new AssessThreatGoal(owner, this.ctx));
   }
 }
 
@@ -215,7 +219,9 @@ export function createPlayerGovernor(): PlayerGovernor {
   const entity = new GovernorEntity();
   const brain = new Think(entity);
 
-  brain.addEvaluator(new CombatTargetEvaluator(ctx, 1.0));
+  const combatEval = new CombatTargetEvaluator(ctx, 1.0);
+  combatEval.setBrain(brain);
+  brain.addEvaluator(combatEval);
   brain.addEvaluator(new StaminaConservationEvaluator(ctx, 0.8));
 
   return {
