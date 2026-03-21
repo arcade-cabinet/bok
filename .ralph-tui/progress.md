@@ -298,3 +298,25 @@ after each iteration and it's included in prompts for context.
   - The `useState` import became unnecessary to remove from `useGameLifecycle` when polling moved to `useGameHUD`, but `useState` was still needed for `showTome` — watch for accidental removal of still-needed imports during decomposition.
 ---
 
+### Cross-Hook Frame-Loop Callback Ref Pattern
+- When two hooks need to collaborate on a per-frame callback (one creates the engine loop, the other processes frame data), create a shared `MutableRefObject` in the parent component and pass it to both hooks
+- The "consumer" hook writes its callback into `ref.current` each render; the "producer" hook calls `ref.current?.()` each frame
+- This avoids circular dependencies between hooks that each need something the other creates
+
+---
+
+## 2026-03-21 - US-014
+- **What was implemented**: Decomposed HubView.tsx (353 → 148 LOC) into two hooks: `useHubEngine` (engine lifecycle) and `useHubCamera` (label projection + dock proximity)
+- **Files changed**:
+  - `src/hooks/useHubEngine.ts` — NEW: canvas ref, JollyPixel Runtime init/cleanup, Rapier physics, terrain generation, camera + input setup, frame loop with callback injection (162 LOC)
+  - `src/hooks/useHubCamera.ts` — NEW: building label screen projection, dock proximity detection, lazy precomputation of building centers (102 LOC)
+  - `src/views/hub/HubView.tsx` — rewritten to compose hooks and render components (148 LOC, down from 353)
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files
+- **Learnings:**
+  - Cross-hook collaboration via shared ref: `onFrameRef` is created in HubView, passed to `useHubEngine` (which calls it each frame) and `useHubCamera` (which writes its callback into it) — resolves the circular dependency where the engine hook creates the camera but the camera hook needs to process frame data
+  - Lazy precomputation in `useHubCamera`: building center positions are cached in a ref on first frame invocation (when `hubRef.current` becomes available), avoiding the need for the hook to participate in the async init lifecycle
+  - The `BuildingDef` type import was unused in `useHubEngine` after extracting label projection to `useHubCamera` — Biome caught this immediately as an error
+  - Non-null assertions (`!`) are lint errors, not warnings — replaced `hub.buildings.find(...)!` with safe conditional checks in `useHubCamera`
+  - Unlike GameView decomposition (which split by lifecycle concern: init, events, polling), HubView split by *frame-loop concern*: engine setup vs. per-frame visual processing — the right axis depends on where the complexity lives
+---
+
