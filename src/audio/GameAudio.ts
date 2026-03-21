@@ -1,176 +1,188 @@
 /**
- * Procedural game audio via Web Audio API.
+ * Procedural game audio via Tone.js.
  * No external audio files — generates tones/noise for SFX.
+ * Tone.start() must be called on a user gesture before any audio plays.
  */
 
-let ctx: AudioContext | null = null;
-let masterGain: GainNode | null = null;
+import * as Tone from 'tone';
 
-function ensureCtx(): AudioContext {
-  if (!ctx) {
-    ctx = new AudioContext();
-    masterGain = ctx.createGain();
-    masterGain.gain.value = 0.3;
-    masterGain.connect(ctx.destination);
-  }
-  if (ctx.state === 'suspended') ctx.resume();
-  return ctx;
-}
+const masterVolume = new Tone.Volume(-10).toDestination();
 
-function getMaster(): GainNode {
-  ensureCtx();
-  return masterGain!;
-}
-
-/** Short attack swing sound — descending pitch whoosh */
+/** Sword swing — noise burst with short envelope + bandpass filter */
 export function playSwordSwing(): void {
-  const c = ensureCtx();
-  const osc = c.createOscillator();
-  const gain = c.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(400, c.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.15, c.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
-  osc.connect(gain);
-  gain.connect(getMaster());
-  osc.start(c.currentTime);
-  osc.stop(c.currentTime + 0.12);
+  const filter = new Tone.Filter({
+    type: 'bandpass',
+    frequency: 600,
+    Q: 2,
+  }).connect(masterVolume);
+
+  const synth = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: {
+      attack: 0.005,
+      decay: 0.1,
+      sustain: 0,
+      release: 0.01,
+    },
+  }).connect(filter);
+
+  synth.triggerAttackRelease('0.1');
+
+  // Cleanup after sound finishes
+  setTimeout(() => {
+    synth.dispose();
+    filter.dispose();
+  }, 300);
 }
 
-/** Enemy hit impact — short thud */
+/** Enemy hit impact — low membrane thud */
 export function playHitImpact(): void {
-  const c = ensureCtx();
-  const osc = c.createOscillator();
-  const gain = c.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(120, c.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(60, c.currentTime + 0.08);
-  gain.gain.setValueAtTime(0.2, c.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.1);
-  osc.connect(gain);
-  gain.connect(getMaster());
-  osc.start(c.currentTime);
-  osc.stop(c.currentTime + 0.1);
+  const synth = new Tone.MembraneSynth({
+    pitchDecay: 0.05,
+    octaves: 4,
+    envelope: {
+      attack: 0.001,
+      decay: 0.1,
+      sustain: 0,
+      release: 0.05,
+    },
+  }).connect(masterVolume);
+
+  synth.triggerAttackRelease('C1', '0.1');
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 300);
 }
 
-/** Player takes damage — low rumble */
+/** Player takes damage — pitch bend down */
 export function playPlayerHurt(): void {
-  const c = ensureCtx();
-  const osc = c.createOscillator();
-  const gain = c.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(80, c.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(40, c.currentTime + 0.2);
-  gain.gain.setValueAtTime(0.25, c.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
-  osc.connect(gain);
-  gain.connect(getMaster());
-  osc.start(c.currentTime);
-  osc.stop(c.currentTime + 0.25);
+  const synth = new Tone.Synth({
+    oscillator: { type: 'sine' },
+    envelope: {
+      attack: 0.01,
+      decay: 0.2,
+      sustain: 0,
+      release: 0.05,
+    },
+  }).connect(masterVolume);
+
+  synth.triggerAttackRelease('E3', '0.25');
+  synth.frequency.rampTo('C2', 0.2);
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 500);
 }
 
 /** Enemy death — ascending burst */
 export function playEnemyDeath(): void {
-  const c = ensureCtx();
-  const osc = c.createOscillator();
-  const gain = c.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(200, c.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.15);
-  gain.gain.setValueAtTime(0.2, c.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.2);
-  osc.connect(gain);
-  gain.connect(getMaster());
-  osc.start(c.currentTime);
-  osc.stop(c.currentTime + 0.2);
+  const synth = new Tone.Synth({
+    oscillator: { type: 'triangle' },
+    envelope: {
+      attack: 0.01,
+      decay: 0.15,
+      sustain: 0,
+      release: 0.05,
+    },
+  }).connect(masterVolume);
+
+  synth.triggerAttackRelease('G4', '0.2');
+  synth.frequency.rampTo('G6', 0.15);
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 400);
 }
 
-/** Boss phase transition — deep rumble + rising tone */
+/** Boss phase transition — deep FM rumble + rising tone */
 export function playBossPhase(): void {
-  const c = ensureCtx();
-  // Rumble
-  const osc1 = c.createOscillator();
-  const gain1 = c.createGain();
-  osc1.type = 'sine';
-  osc1.frequency.setValueAtTime(50, c.currentTime);
-  gain1.gain.setValueAtTime(0.3, c.currentTime);
-  gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.5);
-  osc1.connect(gain1);
-  gain1.connect(getMaster());
-  osc1.start(c.currentTime);
-  osc1.stop(c.currentTime + 0.5);
-  // Rising tone
-  const osc2 = c.createOscillator();
-  const gain2 = c.createGain();
-  osc2.type = 'sawtooth';
-  osc2.frequency.setValueAtTime(100, c.currentTime);
-  osc2.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.4);
-  gain2.gain.setValueAtTime(0.1, c.currentTime);
-  gain2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.45);
-  osc2.connect(gain2);
-  gain2.connect(getMaster());
-  osc2.start(c.currentTime);
-  osc2.stop(c.currentTime + 0.45);
+  const synth = new Tone.FMSynth({
+    harmonicity: 1.5,
+    modulationIndex: 10,
+    oscillator: { type: 'sine' },
+    modulation: { type: 'sine' },
+    envelope: {
+      attack: 0.01,
+      decay: 0.4,
+      sustain: 0,
+      release: 0.1,
+    },
+    modulationEnvelope: {
+      attack: 0.01,
+      decay: 0.3,
+      sustain: 0,
+      release: 0.1,
+    },
+  }).connect(masterVolume);
+
+  synth.triggerAttackRelease('C1', '0.5');
+  synth.frequency.rampTo('C4', 0.4);
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 700);
 }
 
-/** Victory fanfare — major chord arpeggio */
+/** Victory fanfare — major chord arpeggio C5-E5-G5-C6 */
 export function playVictory(): void {
-  const c = ensureCtx();
-  const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
-  notes.forEach((freq, i) => {
-    const osc = c.createOscillator();
-    const gain = c.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    const startTime = c.currentTime + i * 0.12;
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
-    osc.connect(gain);
-    gain.connect(getMaster());
-    osc.start(startTime);
-    osc.stop(startTime + 0.4);
-  });
+  const synth = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'triangle' },
+    envelope: {
+      attack: 0.02,
+      decay: 0.3,
+      sustain: 0,
+      release: 0.1,
+    },
+  }).connect(masterVolume);
+
+  const now = Tone.now();
+  synth.triggerAttackRelease('C5', '0.4', now);
+  synth.triggerAttackRelease('E5', '0.4', now + 0.12);
+  synth.triggerAttackRelease('G5', '0.4', now + 0.24);
+  synth.triggerAttackRelease('C6', '0.4', now + 0.36);
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 1200);
 }
 
-/** Ambient forest loop — white noise filtered to sound like wind */
-let ambientNode: AudioBufferSourceNode | null = null;
+/** Ambient wind — noise through auto-filter, looped */
+let ambientNoise: Tone.Noise | null = null;
+let ambientFilter: Tone.AutoFilter | null = null;
+let ambientGain: Tone.Gain | null = null;
 
 export function startAmbient(): void {
-  const c = ensureCtx();
-  if (ambientNode) return;
+  if (ambientNoise) return;
 
-  // Generate white noise buffer
-  const bufferSize = c.sampleRate * 2; // 2 seconds, looped
-  const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * 0.3;
-  }
+  ambientGain = new Tone.Gain(0.06).connect(masterVolume);
 
-  ambientNode = c.createBufferSource();
-  ambientNode.buffer = buffer;
-  ambientNode.loop = true;
+  ambientFilter = new Tone.AutoFilter({
+    frequency: 0.2,
+    baseFrequency: 200,
+    octaves: 2.5,
+    type: 'sine',
+  })
+    .connect(ambientGain)
+    .start();
 
-  // Bandpass filter to make it sound like wind
-  const filter = c.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 400;
-  filter.Q.value = 0.5;
-
-  const gain = c.createGain();
-  gain.gain.value = 0.04; // Very quiet background
-
-  ambientNode.connect(filter);
-  filter.connect(gain);
-  gain.connect(getMaster());
-  ambientNode.start();
+  ambientNoise = new Tone.Noise('pink').connect(ambientFilter);
+  ambientNoise.start();
 }
 
 export function stopAmbient(): void {
-  if (ambientNode) {
-    ambientNode.stop();
-    ambientNode = null;
+  if (ambientNoise) {
+    ambientNoise.stop();
+    ambientNoise.dispose();
+    ambientNoise = null;
+  }
+  if (ambientFilter) {
+    ambientFilter.stop();
+    ambientFilter.dispose();
+    ambientFilter = null;
+  }
+  if (ambientGain) {
+    ambientGain.dispose();
+    ambientGain = null;
   }
 }
