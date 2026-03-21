@@ -7,6 +7,7 @@ import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { Minimap } from '../../components/hud/Minimap';
 import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
+import { VictoryScreen, type VictoryStats } from '../../components/modals/VictoryScreen';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -40,6 +41,7 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
   const [deathStats, setDeathStats] = useState<{ enemiesDefeated: number; timeSurvived: number; biome: string } | null>(
     null,
   );
+  const [victoryStats, setVictoryStats] = useState<VictoryStats | null>(null);
   const { isMobile, screenWidth, screenHeight } = useDeviceType();
 
   // Hotbar slot definitions — weapon selection
@@ -75,6 +77,13 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         }
         if (event.type === 'bossDefeated') {
           const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+          setVictoryStats({
+            biome: config.biome,
+            enemiesDefeated: killCountRef.current,
+            timeSurvived: duration,
+            tomePageUnlocked: event.bossId,
+            abilityName: event.tomeAbility,
+          });
           onBossDefeated?.(event.bossId, event.tomeAbility);
           onRunEnd?.(config.seed, config.biome, 'victory', duration);
         }
@@ -222,39 +231,8 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
       {engineState?.phase === 'dead' && deathStats && <DeathScreen stats={deathStats} onReturnToHub={onReturnToMenu} />}
 
       {/* Victory screen */}
-      {engineState?.phase === 'victory' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 overlay-safe-area">
-          <div
-            className={`bg-[#fdf6e3] border-3 border-[#8b5a2b] rounded-xl ${isMobile ? 'p-7 mx-4' : 'p-12'} text-center`}
-          >
-            <h1
-              className={`${isMobile ? 'text-2xl' : 'text-3xl'} mb-2`}
-              style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-            >
-              A NEW PAGE IS WRITTEN
-            </h1>
-            <p
-              className={`${isMobile ? 'text-base' : 'text-lg'} italic mb-1`}
-              style={{ fontFamily: 'Georgia, serif', color: '#8b5a2b' }}
-            >
-              You have unlocked: Dash
-            </p>
-            <p
-              className={`${isMobile ? 'text-xs' : 'text-sm'} mb-6`}
-              style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-            >
-              The Ancient Treant falls. A new ability inscribes itself into your Tome.
-            </p>
-            <button
-              type="button"
-              onClick={onReturnToMenu}
-              className={`${isMobile ? 'py-2.5 px-6 text-base' : 'py-3 px-8 text-lg'} rounded-md border-2 border-[#8b5a2b] bg-[#2c1e16] text-[#fdf6e3] cursor-pointer`}
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              CONTINUE
-            </button>
-          </div>
-        </div>
+      {engineState?.phase === 'victory' && victoryStats && (
+        <VictoryScreen stats={victoryStats} onContinueVoyage={onReturnToMenu} onReturnToHub={onReturnToMenu} />
       )}
     </div>
   );

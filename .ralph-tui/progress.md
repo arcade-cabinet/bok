@@ -207,3 +207,17 @@ after each iteration and it's included in prompts for context.
   - Biome formatter requires single-line JSX attributes when they fit within line width — multi-line `<h2 className="..." style={{...}}>` was reformatted to single line
 ---
 
+## 2026-03-21 - US-008
+- **What was implemented**: Extracted VictoryScreen React component from dead `src/ui/screens/VictoryScreen.ts` and replaced inline GameView victory overlay, with daisyUI modal/stat/card/btn components, dynamic tome unlock card, real run stats, and two action buttons
+- **Files changed**:
+  - `src/components/modals/VictoryScreen.tsx` — NEW: daisyUI modal with gold-styled 'A NEW PAGE IS WRITTEN' title, conditional tome page unlock card (rendered only when `tomePageUnlocked` and `abilityName` are present), `stats stats-vertical` for biome/enemies/time, and two buttons (CONTINUE VOYAGE primary, RETURN TO HUB ghost)
+  - `src/views/game/GameView.tsx` — imported VictoryScreen; added `victoryStats` state; captures biome, kill count, duration, bossId, and tomeAbility from `bossDefeated` event into `victoryStats`; replaced 28-line inline victory overlay with `<VictoryScreen>`
+- **Results**: typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - The dead VictoryScreen.ts had `islandsVisited` in its stats — the React port uses `biome` instead (matching DeathScreen and the current single-island-per-run design)
+  - `bossDefeated` event carries `bossId` and `tomeAbility` — these map naturally to `tomePageUnlocked` and `abilityName` props, making the tome unlock card data-driven rather than hardcoded (the inline version hardcoded "Dash")
+  - daisyUI `border-warning/50` provides a gold-toned border that matches the tome unlock card's thematic "gold inscription" aesthetic via the theme's warning color token
+  - The `victoryStats` state follows the same snapshot pattern as `deathStats` — capture mutable data (kill count, elapsed time) at event time into state, then pass the frozen snapshot to the component
+  - Both buttons currently route to `onReturnToMenu` — CONTINUE VOYAGE will diverge when island selection is implemented (currently there's only one island per run)
+---
+
