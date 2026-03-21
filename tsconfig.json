@@ -17,7 +17,8 @@
     "sourceMap": true,
     "jsx": "react-jsx",
     "paths": {
-      "@bok/*": ["./src/*"]
+      "@bok/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
     "types": ["vite/client"]
   },
