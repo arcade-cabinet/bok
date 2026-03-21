@@ -138,6 +138,20 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       })(),
       threatLevel: loop.getGovernorOutput().threatLevel,
       canDodge: loop.getGovernorOutput().canDodge,
+      playerX: cam.camera.position.x,
+      playerZ: cam.camera.position.z,
+      minimapMarkers: [
+        ...enemies.map((e) => ({
+          x: e.mesh.position.x,
+          z: e.mesh.position.z,
+          type: 'enemy' as const,
+        })),
+        ...combat.state.lootDrops.map((d) => ({
+          x: d.mesh.position.x,
+          z: d.mesh.position.z,
+          type: 'chest' as const,
+        })),
+      ],
     }),
     onEvent: (listener) => {
       eventListeners.push(listener);

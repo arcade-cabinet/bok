@@ -36,6 +36,13 @@ export interface GameStartConfig {
 /** Threat level from the player governor */
 export type ThreatLevel = 'none' | 'low' | 'medium' | 'high';
 
+/** Minimap marker sent to React for canvas rendering */
+export interface MinimapMarker {
+  x: number;
+  z: number;
+  type: 'enemy' | 'chest';
+}
+
 /** Engine state exposed to React via polling */
 export interface EngineState {
   playerHealth: number;
@@ -54,6 +61,11 @@ export interface EngineState {
   threatLevel: ThreatLevel;
   /** Governor: whether stamina allows dodging */
   canDodge: boolean;
+  /** Player world position for minimap centering */
+  playerX: number;
+  playerZ: number;
+  /** Minimap markers: enemies and loot drops */
+  minimapMarkers: MinimapMarker[];
 }
 
 /** Events the engine can emit to React */

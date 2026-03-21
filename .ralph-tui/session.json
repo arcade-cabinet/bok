@@ -3,10 +3,10 @@
   "sessionId": "32c2dd4e-1a02-44c9-ae1d-42ace8140f6d",
   "status": "running",
   "startedAt": "2026-03-21T15:58:27.819Z",
-  "updatedAt": "2026-03-21T16:37:29.323Z",
-  "currentIteration": 6,
+  "updatedAt": "2026-03-21T16:41:05.273Z",
+  "currentIteration": 7,
   "maxIterations": 0,
-  "tasksCompleted": 6,
+  "tasksCompleted": 7,
   "isPaused": false,
   "agentPlugin": "claude",
   "trackerState": {
@@ -35,8 +35,8 @@
       {
         "id": "US-004",
         "title": "Extract DamageIndicator React component with screen shake",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-005",
@@ -184,6 +184,16 @@
       "durationMs": 140223,
       "startedAt": "2026-03-21T16:31:58.235Z",
       "endedAt": "2026-03-21T16:34:18.458Z"
+    },
+    {
+      "iteration": 7,
+      "status": "completed",
+      "taskId": "US-004",
+      "taskTitle": "Extract DamageIndicator React component with screen shake",
+      "taskCompleted": true,
+      "durationMs": 189805,
+      "startedAt": "2026-03-21T16:34:19.516Z",
+      "endedAt": "2026-03-21T16:37:29.321Z"
     }
   ],
   "skippedTaskIds": [],

@@ -4,6 +4,7 @@ import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator, type DamageIndicatorHandle } from '../../components/hud/DamageIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
+import { Minimap } from '../../components/hud/Minimap';
 import { type TouchControlOutput, TouchControls } from '../../components/ui/TouchControls';
 import { type GameInstance, initGame } from '../../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../../engine/types';
@@ -136,14 +137,8 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
           {/* Health bar */}
           <HealthBar current={engineState.playerHealth} max={engineState.maxHealth} />
 
-          {/* Enemy counter */}
-          <div
-            className={`absolute top-4 right-4 bg-[#fdf6e3]/85 border-2 border-[#8b5a2b] rounded-md ${isMobile ? 'px-2 py-1 text-[9px]' : 'px-3 py-2 text-xs'}`}
-            style={{ fontFamily: 'Georgia, serif', color: '#2c1e16' }}
-          >
-            <div>Enemies: {engineState.enemyCount}</div>
-            <div>Biome: {engineState.biomeName}</div>
-          </div>
+          {/* Minimap */}
+          <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
 
           {/* Crosshair */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />

@@ -17,6 +17,12 @@ const playingState: EngineState = {
   suggestedTargetPos: null,
   threatLevel: 'none',
   canDodge: true,
+  playerX: 50,
+  playerZ: 50,
+  minimapMarkers: [
+    { x: 55, z: 48, type: 'enemy' },
+    { x: 42, z: 60, type: 'chest' },
+  ],
 };
 
 vi.mock('../../engine/GameEngine', () => ({
@@ -43,5 +49,9 @@ test('renders canvas and HUD elements', async () => {
 
   // Wait for engine state polling (100ms interval) to populate HUD
   await expect.element(page.getByText('Health')).toBeVisible();
-  await expect.element(page.getByText(/Enemies/)).toBeVisible();
+
+  // Minimap canvas should be present (140x140)
+  const minimapCanvas = container.querySelector('canvas:not(#game-canvas)');
+  expect(minimapCanvas).not.toBeNull();
+  expect(minimapCanvas?.getAttribute('width')).toBe('140');
 });

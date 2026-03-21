@@ -154,3 +154,20 @@ after each iteration and it's included in prompts for context.
   - The `playerDamaged` event type already existed in `EngineEvent` union — no engine changes needed
 ---
 
+## 2026-03-21 - US-005
+- **What was implemented**: Ported Minimap as React canvas component from dead `src/ui/hud/Minimap.ts`, with engine state integration for real-time enemy/loot marker data
+- **Files changed**:
+  - `src/engine/types.ts` — added `MinimapMarker` interface and `playerX`, `playerZ`, `minimapMarkers` fields to `EngineState`
+  - `src/engine/GameEngine.ts` — populated new `EngineState` fields from `cam.camera.position`, `enemies[]`, and `combat.state.lootDrops[]`
+  - `src/components/hud/Minimap.tsx` — NEW: canvas-rendered minimap (140x140) with player dot centered, red enemy dots, gold chest squares, daisyUI card wrapper
+  - `src/views/game/GameView.tsx` — replaced inline enemy counter div with `<Minimap>` component at top-right
+  - `src/views/game/GameView.browser.test.tsx` — updated mock `EngineState` with new fields, updated assertion from enemy text to minimap canvas presence
+- **Results**: 152 tests passing (unchanged), typecheck clean, lint clean on changed files (only pre-existing warnings)
+- **Learnings:**
+  - Canvas rendering stays imperative in React — `useEffect` redraws on prop changes, but the 2D context API itself (`fillRect`, `arc`, `stroke`) has no React equivalent; this is the correct pattern for pixel-level rendering
+  - `as const` is needed when building `MinimapMarker[]` from `enemies.map()` because TS infers `type: string` from object spread, not the literal union `'enemy' | 'chest'`
+  - The dead minimap's `#scale = 2` means 1 pixel = 2 world units — at 140px, the visible radius is 140 world units, which covers roughly half an island (~256 world units across)
+  - Loot drops (`combat.state.lootDrops`) map to 'chest' type markers on the minimap — they're the gold squares showing dropped health potions and tome pages
+  - Replacing the enemy counter with the minimap is a net improvement: enemy positions on the minimap convey more information than a raw count number
+---
+
