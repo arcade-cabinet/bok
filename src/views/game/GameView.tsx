@@ -4,6 +4,7 @@ import type { GameConfig } from '../../app/App';
 import type { EngineState, EngineEvent } from '../../engine/types';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { useDeviceType } from '../../hooks/useDeviceType';
+import { MedievalJoysticks, type MedievalJoystickOutput } from '../../components/ui/MedievalJoysticks';
 
 interface Props {
   config: GameConfig;
@@ -85,6 +86,10 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
     gameRef.current?.togglePause();
   }, []);
 
+  const handleJoystickOutput = useCallback((output: MedievalJoystickOutput) => {
+    gameRef.current?.setMobileInput(output);
+  }, []);
+
   return (
     <div className="fixed inset-0">
       <canvas
@@ -94,6 +99,11 @@ export function GameView({ config, onReturnToMenu, onBossDefeated, onRunEnd }: P
         className="w-full h-full block outline-none"
         style={{ touchAction: 'none' }}
       />
+
+      {/* Medieval joysticks — mobile only */}
+      {isMobile && engineState?.phase === 'playing' && (
+        <MedievalJoysticks onOutput={handleJoystickOutput} visible={true} />
+      )}
 
       {/* Diegetic context indicator */}
       {engineState?.phase === 'playing' && (

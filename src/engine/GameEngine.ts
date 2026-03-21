@@ -27,6 +27,14 @@ import type { DiegeticContext } from './diegetic.ts';
 import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
 import type { GameStartConfig, EngineState, EngineEventListener } from './types.ts';
 
+export interface MobileInput {
+  moveX: number;
+  moveZ: number;
+  lookDX: number;
+  lookDY: number;
+  action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
+}
+
 export interface GameInstance {
   /** Current engine state — polled by React each frame */
   getState: () => EngineState;
@@ -34,6 +42,8 @@ export interface GameInstance {
   onEvent: (listener: EngineEventListener) => void;
   /** Trigger player attack (from React touch button) */
   triggerAttack: () => void;
+  /** Feed mobile joystick input from React */
+  setMobileInput: (input: MobileInput) => void;
   /** Toggle pause */
   togglePause: () => void;
   /** Cleanup everything */
@@ -63,9 +73,10 @@ export async function initGame(
   });
   const jpWorld = (runtime as any).world;
 
-  // Mobile detection
+  // Mobile detection — React now owns mobile UI via MedievalJoysticks component
   const isMobile = isMobileDevice();
-  const mobileControls = isMobile ? new MobileControls() : null;
+  // Buffer for React mobile input (written by setMobileInput, read in frame loop)
+  const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookDX: 0, lookDY: 0, action: null };
 
   // Performance scaling
   const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
@@ -144,11 +155,10 @@ export async function initGame(
     updateEnemyAI(enemies, cam.camera.position, dt, yukaManager);
 
     // Camera look
-    if (mobileControls) {
-      const touchLook = mobileControls.consumeLookDelta();
-      if (touchLook.x !== 0 || touchLook.y !== 0) {
-        cam.applyLook(touchLook.x, touchLook.y, 0.5);
-      }
+    if (isMobile && (mobileInput.lookDX !== 0 || mobileInput.lookDY !== 0)) {
+      cam.applyLook(mobileInput.lookDX, mobileInput.lookDY, 0.5);
+      mobileInput.lookDX = 0;
+      mobileInput.lookDY = 0;
     } else {
       const look = gameWorld.get(LookIntent);
       if (look && document.pointerLockElement) {
@@ -158,9 +168,9 @@ export async function initGame(
 
     // Player movement
     let dirX = 0, dirZ = 0, sprinting = false;
-    if (mobileControls) {
-      dirX = mobileControls.state.moveX;
-      dirZ = mobileControls.state.moveZ;
+    if (isMobile) {
+      dirX = mobileInput.moveX;
+      dirZ = mobileInput.moveZ;
     } else {
       const move = gameWorld.get(MovementIntent);
       if (move) { dirX = move.dirX; dirZ = move.dirZ; sprinting = move.sprint; }
@@ -174,7 +184,12 @@ export async function initGame(
     cam.applyMovement(dirX, dirZ, sprinting, dt, bobOffset);
 
     // Mobile attack
-    if (mobileControls?.consumeAttack()) combat.triggerAttack();
+    // Mobile actions from React joystick
+    if (isMobile && mobileInput.action) {
+      if (mobileInput.action === 'attack') combat.triggerAttack();
+      // jump, crouch, defend handled by diegetic system
+      mobileInput.action = null;
+    }
 
     // Day/night
     dayNight.update(dt);
@@ -199,7 +214,7 @@ export async function initGame(
   await loadRuntime(runtime);
   console.log('[Bok] Engine initialized');
 
-  if (mobileControls) mobileControls.show();
+  // Mobile UI is now handled by React (MedievalJoysticks component)
 
   return {
     getState: (): EngineState => ({
@@ -229,6 +244,13 @@ export async function initGame(
     }),
     onEvent: (listener) => { eventListeners.push(listener); },
     triggerAttack: () => combat.triggerAttack(),
+    setMobileInput: (input: MobileInput) => {
+      mobileInput.moveX = input.moveX;
+      mobileInput.moveZ = input.moveZ;
+      mobileInput.lookDX += input.lookDX;
+      mobileInput.lookDY += input.lookDY;
+      if (input.action) mobileInput.action = input.action;
+    },
     togglePause: () => {
       paused = !paused;
       if (paused && document.pointerLockElement) document.exitPointerLock();
@@ -236,7 +258,7 @@ export async function initGame(
     destroy: () => {
       combat.cleanup();
       cleanupEnemies();
-      mobileControls?.destroy();
+      // Mobile controls cleaned up by React unmount
       runtime.stop();
       gameWorld.destroy();
     },
