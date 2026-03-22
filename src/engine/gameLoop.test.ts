@@ -98,6 +98,7 @@ function createMockContext(): GameLoopContext & { jpWorld: MockJpWorld } {
     mobileInput: { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null },
     getSurfaceY: () => 5,
     weatherSystem: null,
+    particles: null,
   };
 }
 

@@ -2,8 +2,9 @@
  * @module hooks/useGameEvents
  * @role Engine event callbacks: playerDamaged, enemyKilled, bossDefeated, playerDied, lootPickup, chestOpened
  */
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { DamageIndicatorHandle } from '../components/hud/DamageIndicator';
+import type { DamageNumber } from '../components/hud/DamageNumbers';
 import type { LootItem } from '../components/hud/LootNotification';
 import type { DeathStats } from '../components/modals/DeathScreen';
 import type { VictoryStats } from '../components/modals/VictoryScreen';
@@ -29,6 +30,8 @@ export interface GameEventResult {
   startTimeRef: React.RefObject<number>;
   /** Accumulated loot items for LootNotification display */
   lootItems: LootItem[];
+  /** Active floating damage numbers */
+  damageNumbers: DamageNumber[];
   /** Event handler to pass into useGameLifecycle */
   handleEngineEvent: (event: EngineEvent) => void;
 }
@@ -51,6 +54,22 @@ export function useGameEvents(
   const [deathStats, setDeathStats] = useState<DeathStats | null>(null);
   const [victoryStats, setVictoryStats] = useState<VictoryStats | null>(null);
   const [lootItems, setLootItems] = useState<LootItem[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<DamageNumber[]>([]);
+  const dmgIdRef = useRef(0);
+
+  // Auto-remove expired damage numbers (older than 1 second)
+  const addDamageNumber = useCallback((value: number) => {
+    const id = dmgIdRef.current++;
+    // Randomize screen position near center crosshair
+    const x = 48 + Math.random() * 4; // 48-52% horizontal
+    const y = 42 + Math.random() * 6; // 42-48% vertical
+    const now = Date.now();
+    setDamageNumbers((prev) => [...prev, { id, value, x, y, timestamp: now }]);
+    // Auto-remove after 1 second
+    setTimeout(() => {
+      setDamageNumbers((prev) => prev.filter((n) => n.id !== id));
+    }, 1000);
+  }, []);
 
   // Stable ref for callbacks to avoid stale closures
   const callbacksRef = useRef(callbacks);
@@ -59,6 +78,11 @@ export function useGameEvents(
   const handleEngineEvent = (event: EngineEvent) => {
     if (event.type === 'playerDamaged') {
       damageRef.current?.flash();
+    }
+    if (event.type === 'attackHit') {
+      // Floating damage number + lighter screen shake
+      addDamageNumber(event.damage);
+      damageRef.current?.lightShake();
     }
     if (event.type === 'enemyKilled') {
       killCountRef.current += 1;
@@ -117,6 +141,7 @@ export function useGameEvents(
     unlockedAbilitiesRef,
     startTimeRef,
     lootItems,
+    damageNumbers,
     handleEngineEvent,
   };
 }
