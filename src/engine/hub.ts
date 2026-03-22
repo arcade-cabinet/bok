@@ -8,7 +8,7 @@ import RAPIER from '@dimforge/rapier3d';
 import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
-import { generateTileset, TILES } from '../rendering/index';
+import { generateTileset, TILES, TILESET_COLS, TILESET_ROWS } from '../rendering/index';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 // --- Block Definitions ---
@@ -148,7 +148,7 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
   voxelMap.tilesetManager.registerTexture(
-    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: 3, rows: 3 },
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 

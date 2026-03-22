@@ -21,6 +21,20 @@ import { detectContext, getHeadBob } from './diegetic.ts';
 import { updateEnemyAI } from './enemySetup.ts';
 import type { EnemyState, JpWorld, MobileInput, SurfaceHeightFn } from './types.ts';
 
+/** Dodge mechanic constants */
+const DODGE_DURATION = 0.3;
+const DODGE_COOLDOWN = 0.8;
+const DODGE_STAMINA_COST = 25;
+const DODGE_SPEED = 12;
+const PLAYER_SPEED = 6;
+
+/** Block/parry constants */
+const PARRY_WINDOW_DURATION = 0.15;
+
+/** Stamina constants */
+const STAMINA_REGEN_RATE = 20; // per second
+const MAX_STAMINA = 100;
+
 /** Everything the game loop needs to run each frame */
 export interface GameLoopContext {
   jpWorld: JpWorld;
@@ -44,6 +58,9 @@ export interface GameLoopResult {
   togglePause: () => void;
   getContext: () => DiegeticContext;
   getGovernorOutput: () => GovernorOutput;
+  getStamina: () => number;
+  getMaxStamina: () => number;
+  isBlocking: () => boolean;
 }
 
 /**
@@ -77,6 +94,18 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
 
   // Pause state
   let paused = false;
+
+  // Stamina state
+  let stamina = MAX_STAMINA;
+
+  // Dodge state
+  let dodgeCooldown = 0;
+  let dodgeIFrames = 0;
+
+  // Block/parry state
+  let blockActive = false;
+  let wasBlocking = false;
+  let parryWindow = 0;
 
   // Physics step
   jpWorld.on('beforeFixedUpdate', () => {
@@ -127,6 +156,42 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       }
     }
 
+    // --- Stamina regen ---
+    stamina = Math.min(MAX_STAMINA, stamina + STAMINA_REGEN_RATE * dt);
+
+    // --- Dodge mechanic ---
+    if (dodgeCooldown > 0) dodgeCooldown -= dt;
+    if (dodgeIFrames > 0) dodgeIFrames -= dt;
+
+    const dodgePressed = !isMobile ? inputSystem.actionMap.isActive('dodge') : mobileInput.action === 'dodge';
+
+    if (dodgePressed && dodgeCooldown <= 0 && stamina >= DODGE_STAMINA_COST) {
+      dodgeCooldown = DODGE_COOLDOWN;
+      dodgeIFrames = DODGE_DURATION;
+      stamina -= DODGE_STAMINA_COST;
+      // Dodge movement burst in current facing direction
+      cam.applyMovement(0, -1, false, (DODGE_DURATION * DODGE_SPEED) / PLAYER_SPEED);
+      // Clear mobile dodge action
+      if (isMobile && mobileInput.action === 'dodge') {
+        mobileInput.action = null;
+      }
+    }
+
+    // --- Block / Parry mechanic ---
+    const blockHeld = !isMobile
+      ? inputSystem.keyboard.parryDown // RMB held
+      : mobileInput.action === 'defend';
+
+    blockActive = blockHeld;
+
+    if (blockHeld && !wasBlocking) {
+      // Fresh block press — open parry window
+      parryWindow = PARRY_WINDOW_DURATION;
+    }
+    wasBlocking = blockHeld;
+
+    if (parryWindow > 0) parryWindow -= dt;
+
     // Diegetic context + head bob
     elapsedTime += dt;
     currentContext = detectContext(cam.camera.position, enemies, getSurfaceY);
@@ -137,7 +202,11 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     // Mobile actions from React joystick
     if (isMobile && mobileInput.action) {
       if (mobileInput.action === 'attack') combat.triggerAttack();
-      mobileInput.action = null;
+      // 'defend' is handled above via blockActive
+      // 'dodge' is handled above
+      if (mobileInput.action === 'attack') {
+        mobileInput.action = null;
+      }
     }
 
     // Day/night
@@ -145,8 +214,14 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     (scene.background as THREE.Color)?.copy(dayNight.skyColor);
     if (scene.fog instanceof THREE.FogExp2) scene.fog.color.copy(dayNight.skyColor);
 
-    // Combat (attacks, damage, loot, boss phases)
-    combat.update(dt, cam.camera.position);
+    // Combat (attacks, damage, loot, boss phases) — pass defensive state
+    combat.update(dt, cam.camera.position, {
+      dodgeIFrames,
+      blockActive,
+      parryWindow,
+      stamina,
+      maxStamina: MAX_STAMINA,
+    });
 
     // Player governor — update context and run GOAP evaluation
     governor.setContext(
@@ -158,6 +233,11 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       combat.state.maxHealth,
     );
     lastGovernorOutput = governor.update(dt);
+    // Override canDodge with actual stamina check
+    lastGovernorOutput = {
+      ...lastGovernorOutput,
+      canDodge: stamina >= DODGE_STAMINA_COST && dodgeCooldown <= 0,
+    };
   });
 
   return {
@@ -168,5 +248,8 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     },
     getContext: () => currentContext,
     getGovernorOutput: () => lastGovernorOutput,
+    getStamina: () => stamina,
+    getMaxStamina: () => MAX_STAMINA,
+    isBlocking: () => blockActive,
   };
 }

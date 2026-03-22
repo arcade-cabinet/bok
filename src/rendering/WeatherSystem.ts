@@ -182,6 +182,13 @@ export class WeatherSystem {
     p.velocity.z += (Math.random() - 0.5) * 0.5;
   }
 
+  /** Dispose of GPU resources. Call when tearing down the game. */
+  dispose(): void {
+    this.clear();
+    this.#mesh.geometry.dispose();
+    (this.#mesh.material as THREE.MeshBasicMaterial).dispose();
+  }
+
   #findDead(): WeatherParticle | null {
     for (const p of this.#particles) {
       if (!p.active) return p;
