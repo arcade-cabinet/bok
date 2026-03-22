@@ -126,7 +126,12 @@ interface Props {
   hasRunHistory?: boolean;
   /** Whether a mid-run save exists for "Continue Adventure" */
   hasMidRunSave?: boolean;
+  /** Biome IDs the player has unlocked. Forest is always available. */
+  unlockedBiomes?: string[];
 }
+
+/** Set to true during development to unlock all biomes without progression. */
+const DEV_UNLOCK_ALL = import.meta.env.DEV && import.meta.env.VITE_UNLOCK_ALL_BIOMES === 'true';
 
 export function MainMenuView({
   onStartGame,
@@ -134,6 +139,7 @@ export function MainMenuView({
   onContinueAdventure,
   hasRunHistory = false,
   hasMidRunSave = false,
+  unlockedBiomes = [],
 }: Props) {
   const [showNewGame, setShowNewGame] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
@@ -335,32 +341,66 @@ export function MainMenuView({
               role="radiogroup"
               aria-label="Select biome"
             >
-              {BIOMES.map((b) => (
-                // biome-ignore lint/a11y/useSemanticElements: button with role="radio" is valid ARIA for custom radio group
-                <button
-                  type="button"
-                  key={b.id}
-                  role="radio"
-                  aria-checked={selectedBiome === b.id}
-                  aria-label={`${b.name}: ${b.desc}`}
-                  onClick={() => setSelectedBiome(b.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${selectedBiome === b.id ? 'shadow-lg' : 'hover:bg-[#3a2820]/60'}`}
-                  style={{
-                    background: selectedBiome === b.id ? 'rgba(74,55,40,0.7)' : 'rgba(45,31,23,0.5)',
-                    borderColor: selectedBiome === b.id ? '#c4a572' : 'rgba(107,84,68,0.5)',
-                  }}
-                >
-                  <div className="text-2xl mb-1" aria-hidden="true">
-                    {b.icon}
-                  </div>
-                  <div className="text-sm font-bold" style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#d4c5a0' }}>
-                    {b.name}
-                  </div>
-                  <div className="text-xs italic" style={{ color: '#8b7355' }}>
-                    {b.desc}
-                  </div>
-                </button>
-              ))}
+              {BIOMES.map((b) => {
+                const isUnlocked = DEV_UNLOCK_ALL || b.id === 'forest' || unlockedBiomes.includes(b.id);
+                const isSelected = selectedBiome === b.id;
+
+                if (!isUnlocked) {
+                  return (
+                    <div
+                      key={b.id}
+                      className="p-3 rounded-lg border-2 text-left opacity-40"
+                      style={{
+                        background: 'rgba(30,20,15,0.5)',
+                        borderColor: 'rgba(60,40,30,0.3)',
+                      }}
+                    >
+                      <div className="text-2xl mb-1 grayscale" aria-hidden="true">
+                        🔒
+                      </div>
+                      <div
+                        className="text-sm font-bold"
+                        style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#6b5a4a' }}
+                      >
+                        ???
+                      </div>
+                      <div className="text-xs italic" style={{ color: '#5a4a3a' }}>
+                        Defeat the previous boss to unlock
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  // biome-ignore lint/a11y/useSemanticElements: button with role="radio" is valid ARIA for custom radio group
+                  <button
+                    type="button"
+                    key={b.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={`${b.name}: ${b.desc}`}
+                    onClick={() => setSelectedBiome(b.id)}
+                    className={`p-3 rounded-lg border-2 text-left transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${isSelected ? 'shadow-lg' : 'hover:bg-[#3a2820]/60'}`}
+                    style={{
+                      background: isSelected ? 'rgba(74,55,40,0.7)' : 'rgba(45,31,23,0.5)',
+                      borderColor: isSelected ? '#c4a572' : 'rgba(107,84,68,0.5)',
+                    }}
+                  >
+                    <div className="text-2xl mb-1" aria-hidden="true">
+                      {b.icon}
+                    </div>
+                    <div
+                      className="text-sm font-bold"
+                      style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#d4c5a0' }}
+                    >
+                      {b.name}
+                    </div>
+                    <div className="text-xs italic" style={{ color: '#8b7355' }}>
+                      {b.desc}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Seed input */}

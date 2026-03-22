@@ -31,8 +31,12 @@ export class KeyboardMouseDevice {
       if (e.button === 2) this.#mouseRightDown = false;
     });
     canvas.addEventListener('mousemove', (e) => {
-      this.#mouseDeltaX += e.movementX;
-      this.#mouseDeltaY += e.movementY;
+      // Only accumulate mouse deltas when pointer is locked to prevent
+      // camera flying off on first pointer lock acquisition
+      if (document.pointerLockElement === canvas) {
+        this.#mouseDeltaX += e.movementX;
+        this.#mouseDeltaY += e.movementY;
+      }
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
