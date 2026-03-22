@@ -165,7 +165,7 @@ export function MainMenuView({
   }, [showNewGame]);
 
   const handleStart = () => {
-    onStartGame({ biome: selectedBiome, seed });
+    onStartGame({ biome: selectedBiome, seed, mode: 'survival' });
   };
 
   const randomSeed = () => {

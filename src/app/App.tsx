@@ -11,14 +11,21 @@ const HubView = lazy(() => import('../views/hub/HubView').then((m) => ({ default
 
 export type AppView = 'menu' | 'game' | 'hub' | 'sailing' | 'island-select';
 
+export type GameMode = 'creative' | 'survival';
+
 export interface GameConfig {
   biome: string;
   seed: string;
+  mode: GameMode;
 }
 
 export function App() {
   const [view, setView] = useState<AppView>('menu');
-  const [gameConfig, setGameConfig] = useState<GameConfig>({ biome: 'forest', seed: 'Brave Dark Fox' });
+  const [gameConfig, setGameConfig] = useState<GameConfig>({
+    biome: 'forest',
+    seed: 'Brave Dark Fox',
+    mode: 'survival',
+  });
   const [buildingEffects, setBuildingEffects] = useState<BuildingEffects>({
     startingWeapon: null,
     maxIslandChoices: 1,
@@ -37,7 +44,7 @@ export function App() {
     const last = progression.runHistory[0];
     if (!last) return;
     const biome = last.biomes[0] ?? 'forest';
-    setGameConfig({ biome, seed: last.seed });
+    setGameConfig({ biome, seed: last.seed, mode: 'survival' });
     setView('hub');
   };
 
