@@ -68,6 +68,107 @@ export const BASE_BLOCK_DEFS: BlockDefinition[] = [
   },
 ];
 
+// --- Shaped blocks (IDs 100+) — slabs, poles, ramps, stairs for terrain variety ---
+export const SHAPED_BLOCK_DEFS: BlockDefinition[] = [
+  // Half-height slabs — for paths, ledges, platforms
+  {
+    id: 100,
+    name: 'Stone Slab',
+    shapeId: 'slabBottom',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+  {
+    id: 101,
+    name: 'Wood Slab',
+    shapeId: 'slabBottom',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
+  },
+  {
+    id: 102,
+    name: 'Sand Slab',
+    shapeId: 'slabBottom',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.SAND as TileRef,
+  },
+
+  // Poles — for fences, pillars, posts
+  {
+    id: 110,
+    name: 'Stone Pole',
+    shapeId: 'poleY',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+  {
+    id: 111,
+    name: 'Wood Pole',
+    shapeId: 'poleY',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
+  },
+
+  // Ramps — for natural slopes, terrain transitions
+  {
+    id: 120,
+    name: 'Grass Ramp',
+    shapeId: 'ramp',
+    collidable: true,
+    faceTextures: { [Face.PosY]: TILES.GRASS_TOP as TileRef },
+    defaultTexture: TILES.DIRT as TileRef,
+  },
+  {
+    id: 121,
+    name: 'Stone Ramp',
+    shapeId: 'ramp',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+  {
+    id: 122,
+    name: 'Sand Ramp',
+    shapeId: 'ramp',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.SAND as TileRef,
+  },
+
+  // Stairs — for structured ascents
+  {
+    id: 130,
+    name: 'Stone Stairs',
+    shapeId: 'stair',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+  {
+    id: 131,
+    name: 'Wood Stairs',
+    shapeId: 'stair',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
+  },
+
+  // Top slabs — for ceilings, overhangs
+  {
+    id: 140,
+    name: 'Stone Ceiling',
+    shapeId: 'slabTop',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+];
+
 // --- Biome-specific block definitions ---
 
 const DESERT_BLOCKS: BlockDefinition[] = [
@@ -375,25 +476,31 @@ const OCEAN_BLOCKS: BlockDefinition[] = [
  * Returns the complete BlockDefinition array for a given biome,
  * including the base blocks (IDs 1-7) plus biome-specific blocks.
  */
+/**
+ * Returns the complete BlockDefinition array for a given biome,
+ * including base blocks (IDs 1-7), shaped blocks (IDs 100+),
+ * and biome-specific blocks.
+ */
 export function getBiomeBlockDefs(biomeId: string): BlockDefinition[] {
+  const shaped = SHAPED_BLOCK_DEFS;
   switch (biomeId) {
     case 'forest':
-      return [...BASE_BLOCK_DEFS];
+      return [...BASE_BLOCK_DEFS, ...shaped];
     case 'desert':
-      return [...BASE_BLOCK_DEFS, ...DESERT_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...DESERT_BLOCKS];
     case 'tundra':
-      return [...BASE_BLOCK_DEFS, ...TUNDRA_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...TUNDRA_BLOCKS];
     case 'volcanic':
-      return [...BASE_BLOCK_DEFS, ...VOLCANIC_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...VOLCANIC_BLOCKS];
     case 'swamp':
-      return [...BASE_BLOCK_DEFS, ...SWAMP_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...SWAMP_BLOCKS];
     case 'crystal-caves':
-      return [...BASE_BLOCK_DEFS, ...CRYSTAL_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...CRYSTAL_BLOCKS];
     case 'sky-ruins':
-      return [...BASE_BLOCK_DEFS, ...SKY_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...SKY_BLOCKS];
     case 'deep-ocean':
-      return [...BASE_BLOCK_DEFS, ...OCEAN_BLOCKS];
+      return [...BASE_BLOCK_DEFS, ...shaped, ...OCEAN_BLOCKS];
     default:
-      return [...BASE_BLOCK_DEFS];
+      return [...BASE_BLOCK_DEFS, ...shaped];
   }
 }

@@ -354,6 +354,102 @@ export const BLOCK_MODELS = {
 // Legacy alias
 export const PROP_MODELS = ENVIRONMENT_MODELS;
 
+// =============================================================================
+// Voxel Object Models (from itch pack — barrels, torches, doors, etc.)
+// =============================================================================
+export const OBJECT_MODELS = {
+  banner: '/assets/models/Objects/Banner.gltf',
+  barrel: '/assets/models/Objects/Barrel.gltf',
+  blacksmithSign: '/assets/models/Objects/Blacksmith_Sign.gltf',
+  bookOpen: '/assets/models/Objects/book_open.gltf',
+  corpse: '/assets/models/Objects/corpse_skeleton.gltf',
+  crate: '/assets/models/Objects/Crate.gltf',
+  cratesMultiple: '/assets/models/Objects/Crates_Multiple.gltf',
+  door: '/assets/models/Objects/Door_Reg.gltf',
+  drawGate: '/assets/models/Objects/Draw_Gate.gltf',
+  fire: '/assets/models/Objects/Fire.gltf',
+  fireBlue: '/assets/models/Objects/Fire_Blue.gltf',
+  fishingStatue: '/assets/models/Objects/Fishing_Statue.gltf',
+  fishingStatueRod: '/assets/models/Objects/Fishing_Statue_W_Rod.gltf',
+  fishingStatueMossy: '/assets/models/Objects/Fishing_Statue_W_Rod_Mossy.gltf',
+  flowerRed: '/assets/models/Objects/Flower_Red.gltf',
+  gateOpen: '/assets/models/Objects/gate_opened.gltf',
+  gateClosed: '/assets/models/Objects/gate_closed.gltf',
+  gravestone1: '/assets/models/Objects/Gravestone_1.gltf',
+  gravestone1W: '/assets/models/Objects/Gravestone_1Weathered.gltf',
+  gravestone2: '/assets/models/Objects/Gravestone_2.gltf',
+  gravestone2W: '/assets/models/Objects/Gravestone_2Weathered.gltf',
+  gravestone3: '/assets/models/Objects/Gravestone_3.gltf',
+  gravestone3W: '/assets/models/Objects/Gravestone_3Weathered.gltf',
+  marketStall: '/assets/models/Objects/Market_Stall.gltf',
+  marketStallL: '/assets/models/Objects/Market_Stall_2x_L.gltf',
+  marketStallR: '/assets/models/Objects/Market_Stall_2x_R.gltf',
+  swordRusty: '/assets/models/Objects/Sword_Rusty.gltf',
+  torchLong: '/assets/models/Objects/Torch_Long.gltf',
+  torchBlue: '/assets/models/Objects/Torch_Long_Blue.gltf',
+  tree: '/assets/models/Objects/Tree.gltf',
+  treeBig: '/assets/models/Objects/Tree_Big.gltf',
+  treeBirch: '/assets/models/Objects/Tree_Birch.gltf',
+  treePine: '/assets/models/Objects/Tree_Pine.gltf',
+  treeTrunk: '/assets/models/Objects/Tree_trunk.gltf',
+  rope: '/assets/models/Objects/rope_tied_wood_pole_thing.gltf',
+} as const;
+
+// =============================================================================
+// Village Building Pieces (modular house construction)
+// =============================================================================
+export const VILLAGE_MODELS = {
+  chimney: '/assets/models/Village/CHIMNEY.gltf',
+  cornerL: '/assets/models/Village/VILL_H_CNR_L.gltf',
+  cornerR: '/assets/models/Village/VILL_H_CNR_R.gltf',
+  roofDoorL: '/assets/models/Village/VILL_H_RD_W_L.gltf',
+  roofL2: '/assets/models/Village/VILL_H_RF_W_L2.gltf',
+  roofR: '/assets/models/Village/VILL_H_RF_W_R.gltf',
+  roofR2: '/assets/models/Village/VILL_H_RF_W_R2.gltf',
+  wallInvLR: '/assets/models/Village/VILL_H_W_INV_LR.gltf',
+  wallInv: '/assets/models/Village/VILL_H_W_INV.gltf',
+  wallLR: '/assets/models/Village/VILL_H_W_LR.gltf',
+  wallSBeam: '/assets/models/Village/VILL_H_W_SBEAM.gltf',
+  wallV1: '/assets/models/Village/VILL_H_W_V1.gltf',
+  wallV2: '/assets/models/Village/VILL_H_W_V2.gltf',
+  wallV3: '/assets/models/Village/VILL_H_W_V3.gltf',
+  wallV4: '/assets/models/Village/VILL_H_W_V4.gltf',
+  wallV45: '/assets/models/Village/VILL_H_W_V4.5.gltf',
+} as const;
+
+// =============================================================================
+// Stone/Dungeon Building Pieces (walls, pillars, ground tiles)
+// =============================================================================
+export const STONE_MODELS = {
+  corner: '/assets/models/Stone/STN_CNR.gltf',
+  mossHalf: '/assets/models/Stone/STN_MOSS_HALF_3D.gltf',
+  pillar: '/assets/models/Stone/STN_PLR.gltf',
+  pillarLong: '/assets/models/Stone/STN_PLR_LNGR_DARK.gltf',
+  wallBroken: '/assets/models/Stone/STN_WALL_BRKN.gltf',
+  wallBrokenInv: '/assets/models/Stone/STN_WALL_BRKN_INV.gltf',
+  wallDarkMid: '/assets/models/Stone/STN_WALL_DARK_MID.gltf',
+  wallDarkTop: '/assets/models/Stone/STN_WALL_DRK_TOP.gltf',
+  moss: '/assets/models/Stone/Moss.gltf',
+  forestGrass: '/assets/models/Stone/FRST_GRASS.gltf',
+} as const;
+
+// =============================================================================
+// Collectible Items (food, resources — loot drops, chest contents)
+// =============================================================================
+export const COLLECTIBLE_MODELS = {
+  apple: '/assets/models/Collectibles/apple.gltf',
+  bamboo: '/assets/models/Collectibles/bamboo.gltf',
+  banana: '/assets/models/Collectibles/banana.gltf',
+  candy: '/assets/models/Collectibles/candy.gltf',
+  carrot: '/assets/models/Collectibles/carrot.gltf',
+  cheese: '/assets/models/Collectibles/cheese.gltf',
+  corn: '/assets/models/Collectibles/corn.gltf',
+  fish: '/assets/models/Collectibles/fish.gltf',
+  honey: '/assets/models/Collectibles/honey.gltf',
+  melon: '/assets/models/Collectibles/melon.gltf',
+  worm: '/assets/models/Collectibles/worm.gltf',
+} as const;
+
 /**
  * Spawn an enemy as a JollyPixel actor with ModelRenderer.
  * The actor's object3D is positioned immediately; model mesh loads during awake().

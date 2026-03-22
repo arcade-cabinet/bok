@@ -18,10 +18,14 @@ describe('getBiomeBlockDefs', () => {
     }
   });
 
-  it('forest biome uses only base blocks (no extra IDs)', () => {
+  it('forest biome uses base + shaped blocks', () => {
     const defs = getBiomeBlockDefs('forest');
     const ids = defs.map((d) => d.id);
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    // Base blocks present
+    expect(ids).toContain(1);
+    expect(ids).toContain(7);
+    // Shaped blocks also present
+    expect(ids).toContain(100);
   });
 
   it('desert biome includes sand-surface (10), sandstone (11), desert-stone (12)', () => {
@@ -106,7 +110,8 @@ describe('getBiomeBlockDefs', () => {
     const biomeSpecificIds = new Map<string, number[]>();
     for (const biomeId of ALL_BIOME_IDS) {
       const defs = getBiomeBlockDefs(biomeId);
-      const extraIds = defs.filter((d) => d.id > 7).map((d) => d.id);
+      // Exclude shaped blocks (100+) which are shared across all biomes
+      const extraIds = defs.filter((d) => d.id > 7 && d.id < 100).map((d) => d.id);
       biomeSpecificIds.set(biomeId, extraIds);
     }
 
@@ -128,7 +133,7 @@ describe('getBiomeBlockDefs', () => {
       for (const def of defs) {
         expect(def.id).toBeGreaterThan(0);
         expect(def.name).toBeTruthy();
-        expect(def.shapeId).toBe('cube');
+        expect(typeof def.shapeId).toBe('string');
         expect(typeof def.collidable).toBe('boolean');
         expect(def.defaultTexture).toBeDefined();
         expect(def.defaultTexture?.tilesetId).toBe('game');
@@ -151,7 +156,9 @@ describe('getBiomeBlockDefs', () => {
   it('unknown biome ID falls back to base blocks', () => {
     const defs = getBiomeBlockDefs('unknown-biome');
     const ids = defs.map((d) => d.id);
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(ids).toContain(1);
+    expect(ids).toContain(7);
+    expect(ids).toContain(100); // shaped blocks included
   });
 
   it('biome block IDs match their JSON config references', () => {

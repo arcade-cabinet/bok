@@ -226,6 +226,12 @@ export class ChunkWorld {
         const surfaceY = Math.max(height, this.#waterLevel) + 1;
         this.#surfaceCache.set(`${wx},${wz}`, surfaceY);
 
+        // Terrain edge decoration — place slabs at water edges, poles near cliffs
+        if (height === this.#waterLevel + 1) {
+          // Beach/shore: place a slab on top for transition
+          this.#voxelMap.setVoxel('Ground', { position: { x: wx, y: height + 1, z: wz }, blockId: 102 }); // Sand Slab
+        }
+
         // Biome-specific features (trees, cacti, crystals, etc.)
         this.#placeFeature(wx, wz, height);
       }
