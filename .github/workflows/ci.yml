@@ -134,11 +134,14 @@ jobs:
       - name: Build web assets
         run: pnpm run build
 
+      - name: Install Capacitor CLI
+        run: pnpm add -D @capacitor/cli @capacitor/android
+
       - name: Add Capacitor Android platform
-        run: npx cap add android
+        run: pnpm exec cap add android
 
       - name: Sync web assets to Android
-        run: npx cap sync android
+        run: pnpm exec cap sync android
 
       - name: Build debug APK
         working-directory: android
