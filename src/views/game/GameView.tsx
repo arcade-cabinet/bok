@@ -3,6 +3,7 @@ import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { DamageNumbers } from '../../components/hud/DamageNumbers';
+import { GoalTracker } from '../../components/hud/GoalTracker';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { HintToast, type HintTrigger } from '../../components/hud/HintToast';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
@@ -18,6 +19,7 @@ import { VictoryScreen } from '../../components/modals/VictoryScreen';
 import { ActionButtons } from '../../components/ui/ActionButtons';
 import { TouchControls } from '../../components/ui/TouchControls';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
+import { type BiomeGoals, createGoalSystem } from '../../engine/goalSystem';
 import type { EngineEvent } from '../../engine/types';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useGameEvents } from '../../hooks/useGameEvents';
@@ -53,6 +55,20 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
   const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
 
+  // Goal system — loaded from biome content, null in Creative mode
+  const goalSystem = useMemo(() => {
+    if (config.mode === 'creative') return createGoalSystem(null);
+    try {
+      // Dynamic import would be ideal but for now load from a static map
+      const goalFiles: Record<string, BiomeGoals> = {};
+      // Goals are defined in content/goals/*.json — import them statically
+      return createGoalSystem(goalFiles[config.biome] ?? null);
+    } catch {
+      return createGoalSystem(null);
+    }
+  }, [config.biome, config.mode]);
+  const [goalState, setGoalState] = useState(goalSystem.state);
+
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
   const handleSrSubscribe = useCallback((handler: (event: EngineEvent) => void) => {
@@ -65,6 +81,16 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
     (event) => {
       events.handleEngineEvent(event);
       srEventHandlerRef.current?.(event);
+
+      // Advance goal progress
+      if (event.type === 'enemyKilled') {
+        goalSystem.onEnemyKilled();
+        setGoalState({ ...goalSystem.state });
+      }
+      if (event.type === 'chestOpened') {
+        goalSystem.onChestOpened();
+        setGoalState({ ...goalSystem.state });
+      }
 
       // Show tome unlock banner on boss defeat
       if (event.type === 'bossDefeated') {
@@ -186,6 +212,11 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
             max={engineState.maxHealth}
             stamina={engineState.stamina}
             maxStamina={engineState.maxStamina}
+          />
+          <GoalTracker
+            goals={goalState.goals}
+            bossUnlocked={goalState.bossUnlocked}
+            completionMessage={goalState.completionMessage}
           />
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />
