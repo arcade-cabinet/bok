@@ -54,6 +54,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  base: process.env.GITHUB_ACTIONS ? '/bok/' : '/',
   build: {
     target: 'es2022',
     sourcemap: true,
