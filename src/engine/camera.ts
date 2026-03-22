@@ -1,8 +1,12 @@
 /**
  * @module engine/camera
- * @role FPS camera setup, movement with auto-platforming, look controls
- * @input JollyPixel world, surface height lookup, mobile flag
+ * @role FPS camera setup, smooth movement with terrain following
+ * @input JollyPixel world, surface height lookup
  * @output Camera, update function
+ *
+ * Movement uses acceleration/deceleration for natural feel.
+ * No boundary clamping — world is infinite (chunk-based).
+ * Terrain following smoothly interpolates to surface height.
  */
 import { Camera3DControls } from '@jolly-pixel/engine';
 import * as THREE from 'three';
@@ -10,8 +14,13 @@ import * as THREE from 'three';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 const CAMERA_SENSITIVITY = 0.002;
-const PLAYER_SPEED = 6;
+const PLAYER_MAX_SPEED = 6;
 const SPRINT_MULTIPLIER = 1.6;
+
+// Smooth acceleration/deceleration
+const ACCELERATION = 30; // units/sec² — reaches max speed in ~0.2s
+const DECELERATION = 20; // units/sec² — stops in ~0.3s
+const EYE_HEIGHT = 1.6;
 
 export interface CameraResult {
   camera: THREE.PerspectiveCamera;
@@ -22,14 +31,13 @@ export interface CameraResult {
 }
 
 /**
- * Create FPS camera using JollyPixel's Camera3DControls.
- * Spawns at highest terrain point near center.
- * Movement includes auto-platforming (step up/down terrain).
+ * Create FPS camera with smooth acceleration and terrain following.
+ * Spawns at the given position (or world origin if not specified).
  */
-export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, islandSize: number): CameraResult {
+export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, spawnX = 0, spawnZ = 0): CameraResult {
   const cameraActor = jpWorld.createActor('camera');
   const cameraCtrl = cameraActor.addComponentAndGet(Camera3DControls, {
-    speed: PLAYER_SPEED,
+    speed: PLAYER_MAX_SPEED,
     rotationSpeed: CAMERA_SENSITIVITY,
     bindings: {
       forward: 'ArrowUp',
@@ -41,29 +49,16 @@ export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, isl
   });
   const camera = cameraCtrl.camera;
 
-  // Find highest ground near center for spawn
-  let bestX = islandSize / 2;
-  let bestZ = islandSize / 2;
-  let bestH = 0;
-  for (let sx = -4; sx <= 4; sx++) {
-    for (let sz = -4; sz <= 4; sz++) {
-      const h = getSurfaceY(Math.round(islandSize / 2 + sx), Math.round(islandSize / 2 + sz));
-      if (h > bestH) {
-        bestH = h;
-        bestX = Math.round(islandSize / 2 + sx);
-        bestZ = Math.round(islandSize / 2 + sz);
-      }
-    }
-  }
-  camera.position.set(bestX, bestH + 1.6, bestZ);
+  // Spawn position
+  const spawnY = getSurfaceY(spawnX, spawnZ);
+  camera.position.set(spawnX, spawnY + EYE_HEIGHT, spawnZ);
 
-  // Start looking slightly down toward center of island
-  // Rotate to face the center from spawn position
-  const spawnDirX = islandSize / 2 - bestX;
-  const spawnDirZ = islandSize / 2 - bestZ;
-  const initialYaw = spawnDirX === 0 && spawnDirZ === 0 ? 0 : Math.atan2(-spawnDirX, -spawnDirZ);
-  const euler = new THREE.Euler(-0.1, initialYaw, 0, 'YXZ');
+  const euler = new THREE.Euler(-0.05, 0, 0, 'YXZ');
   camera.quaternion.setFromEuler(euler);
+
+  // Current velocity for smooth acceleration
+  let velocityX = 0;
+  let velocityZ = 0;
 
   function applyLook(deltaX: number, deltaY: number, sensitivityScale = 1): void {
     euler.y -= deltaX * CAMERA_SENSITIVITY * sensitivityScale;
@@ -74,43 +69,84 @@ export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, isl
   }
 
   function applyMovement(dirX: number, dirZ: number, sprint: boolean, dt: number, headBobOffset = 0): void {
-    if (dirX === 0 && dirZ === 0) {
-      // Settle to terrain height when standing still
-      const standY = getSurfaceY(Math.round(camera.position.x), Math.round(camera.position.z));
-      const targetEye = standY + 1.6 + headBobOffset;
-      if (Math.abs(camera.position.y - targetEye) > 0.05) {
-        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 8);
-      }
-      return;
-    }
+    const maxSpeed = sprint ? PLAYER_MAX_SPEED * SPRINT_MULTIPLIER : PLAYER_MAX_SPEED;
 
-    const speed = sprint ? PLAYER_SPEED * SPRINT_MULTIPLIER : PLAYER_SPEED;
+    // Transform input direction by camera yaw
     const yaw = euler.y;
     const cosYaw = Math.cos(yaw);
     const sinYaw = Math.sin(yaw);
-    const worldX = dirX * cosYaw - dirZ * sinYaw;
-    const worldZ = dirX * sinYaw + dirZ * cosYaw;
+    const targetWorldX = dirX * cosYaw - dirZ * sinYaw;
+    const targetWorldZ = dirX * sinYaw + dirZ * cosYaw;
 
-    const newX = camera.position.x + worldX * speed * dt;
-    const newZ = camera.position.z + worldZ * speed * dt;
+    // Target velocity
+    const targetVX = targetWorldX * maxSpeed;
+    const targetVZ = targetWorldZ * maxSpeed;
 
-    // Auto-platforming
+    // Smooth acceleration toward target velocity
+    if (dirX !== 0 || dirZ !== 0) {
+      // Accelerating
+      velocityX += (targetVX - velocityX) * Math.min(1, ACCELERATION * dt);
+      velocityZ += (targetVZ - velocityZ) * Math.min(1, ACCELERATION * dt);
+    } else {
+      // Decelerating — ramp down smoothly
+      const decelFactor = Math.min(1, DECELERATION * dt);
+      velocityX *= 1 - decelFactor;
+      velocityZ *= 1 - decelFactor;
+
+      // Snap to zero when very slow to prevent drift
+      if (Math.abs(velocityX) < 0.01) velocityX = 0;
+      if (Math.abs(velocityZ) < 0.01) velocityZ = 0;
+    }
+
+    // Apply velocity
+    const newX = camera.position.x + velocityX * dt;
+    const newZ = camera.position.z + velocityZ * dt;
+
+    // Terrain following — always move (infinite world, no edges)
     const targetY = getSurfaceY(Math.round(newX), Math.round(newZ));
-    const currentY = camera.position.y - 1.6;
-    const heightDiff = targetY - currentY;
+    const currentFeetY = camera.position.y - EYE_HEIGHT;
+    const heightDiff = targetY - currentFeetY;
 
-    if (heightDiff <= 1.1 && heightDiff >= -3) {
+    // Step up small heights (stairs), block walls
+    if (heightDiff <= 1.5 && heightDiff >= -4) {
       camera.position.x = newX;
       camera.position.z = newZ;
-      const targetEye = targetY + 1.6 + headBobOffset;
+      const targetEye = targetY + EYE_HEIGHT + headBobOffset;
+      // Smooth height interpolation
+      const heightLerp = Math.min(1, dt * (heightDiff > 0 ? 12 : 8));
+      camera.position.y += (targetEye - camera.position.y) * heightLerp;
+    } else if (heightDiff > 1.5) {
+      // Steep wall — don't move horizontally but allow sliding along the wall
+      // Try X-only movement
+      const xOnlyY = getSurfaceY(Math.round(newX), Math.round(camera.position.z));
+      if (xOnlyY - currentFeetY <= 1.5) {
+        camera.position.x = newX;
+        const targetEye = xOnlyY + EYE_HEIGHT + headBobOffset;
+        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 10);
+      }
+      // Try Z-only movement
+      const zOnlyY = getSurfaceY(Math.round(camera.position.x), Math.round(newZ));
+      if (zOnlyY - currentFeetY <= 1.5) {
+        camera.position.z = newZ;
+        const targetEye = zOnlyY + EYE_HEIGHT + headBobOffset;
+        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 10);
+      }
+    } else {
+      // Falling off a cliff — still move but drop
+      camera.position.x = newX;
+      camera.position.z = newZ;
+      const targetEye = targetY + EYE_HEIGHT + headBobOffset;
+      camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 15);
+    }
+
+    // Settle height when stationary
+    if (velocityX === 0 && velocityZ === 0) {
+      const standY = getSurfaceY(Math.round(camera.position.x), Math.round(camera.position.z));
+      const targetEye = standY + EYE_HEIGHT + headBobOffset;
       if (Math.abs(camera.position.y - targetEye) > 0.05) {
-        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 12);
-        if (heightDiff > 0.3) {
-          camera.position.y += Math.sin(Date.now() * 0.02) * 0.03;
-        }
+        camera.position.y += (targetEye - camera.position.y) * Math.min(1, dt * 8);
       }
     }
-    // else: blocked by terrain wall
   }
 
   return {

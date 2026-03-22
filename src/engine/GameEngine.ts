@@ -83,7 +83,16 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   } = await spawnEnemies(engine.scene, terrain.getSurfaceY, terrain.islandSize, config.seed, config.biome);
 
   // --- Player (camera, input, weapon) ---
-  const { cam, inputSystem } = await createPlayer(engine.jpWorld, canvas, terrain, engine.isMobile);
+  const spawnX = Math.round(terrain.islandSize / 2);
+  const spawnZ = Math.round(terrain.islandSize / 2);
+  const { cam, inputSystem } = await createPlayer(
+    engine.jpWorld,
+    canvas,
+    terrain.getSurfaceY,
+    engine.isMobile,
+    spawnX,
+    spawnZ,
+  );
 
   // --- Weapon config (use wooden-sword as default equipped weapon) ---
   const weaponConfig = content.getWeapon('wooden-sword');
