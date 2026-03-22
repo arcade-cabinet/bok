@@ -11,7 +11,7 @@ import type { EntityManager as YukaEntityManager } from 'yuka';
 
 import { createPlayerGovernor, type GovernorOutput } from '../ai/index';
 import type { InputSystem } from '../input/index.ts';
-import type { DayNightCycle } from '../rendering/index.ts';
+import type { DayNightCycle, WeatherSystem } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';
 import { LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import type { CameraResult } from './camera.ts';
@@ -50,6 +50,7 @@ export interface GameLoopContext {
   isMobile: boolean;
   mobileInput: MobileInput;
   getSurfaceY: SurfaceHeightFn;
+  weatherSystem: WeatherSystem | null;
 }
 
 /** Controls and state accessors returned from the game loop */
@@ -213,6 +214,12 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     dayNight.update(dt);
     (scene.background as THREE.Color)?.copy(dayNight.skyColor);
     if (scene.fog instanceof THREE.FogExp2) scene.fog.color.copy(dayNight.skyColor);
+
+    // Weather particles (sandstorm, blizzard, volcanic embers, etc.)
+    if (ctx.weatherSystem) {
+      ctx.weatherSystem.cameraPosition.copy(cam.camera.position);
+      ctx.weatherSystem.update(dt);
+    }
 
     // Combat (attacks, damage, loot, boss phases) — pass defensive state
     combat.update(dt, cam.camera.position, {
