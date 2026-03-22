@@ -1,0 +1,14 @@
+{
+  "id": "war-hammer",
+  "name": "War Hammer",
+  "type": "melee",
+  "baseDamage": 25,
+  "attackSpeed": 0.5,
+  "range": 1.5,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 600, "animation": "overhead-smash" },
+    { "damageMultiplier": 1.2, "windowMs": 550, "animation": "side-swing" },
+    { "damageMultiplier": 2.0, "windowMs": 500, "animation": "ground-pound" }
+  ],
+  "special": "stun"
+}

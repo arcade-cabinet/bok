@@ -1,0 +1,28 @@
+{
+  "id": "sky-ruins",
+  "name": "Stormspire Remnants",
+  "description": "Crumbling platforms float among the clouds. One wrong step means a long fall into nothing.",
+  "terrain": {
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.1,
+    "noiseAmplitude": 8,
+    "waterLevel": 0,
+    "baseHeight": 10,
+    "blocks": {
+      "surface": 60,
+      "subsurface": 61,
+      "stone": 62,
+      "accent": 64
+    }
+  },
+  "enemies": [
+    { "enemyId": "sky-hawk", "weight": 0.5, "minDifficulty": 1 },
+    { "enemyId": "wind-elemental", "weight": 0.5, "minDifficulty": 2 }
+  ],
+  "bossId": "storm-titan",
+  "music": "music/sky-ruins-exploration.ogg",
+  "ambience": "sfx/sky-ruins-ambience.ogg",
+  "skyColor": "#87CEEB",
+  "fogColor": "#B0D4F1",
+  "fogDensity": 0.005
+}

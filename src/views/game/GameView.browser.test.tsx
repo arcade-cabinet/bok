@@ -1,0 +1,59 @@
+import { expect, test, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import { render } from 'vitest-browser-react';
+import type { EngineState } from '../../engine/types';
+
+const playingState: EngineState = {
+  playerHealth: 80,
+  maxHealth: 100,
+  enemyCount: 5,
+  biomeName: 'Whispering Woods',
+  bossNearby: false,
+  bossHealthPct: 0,
+  bossPhase: 0,
+  paused: false,
+  phase: 'playing',
+  context: 'explore',
+  suggestedTargetPos: null,
+  threatLevel: 'none',
+  canDodge: true,
+  playerX: 50,
+  playerZ: 50,
+  minimapMarkers: [
+    { x: 55, z: 48, type: 'enemy' },
+    { x: 42, z: 60, type: 'chest' },
+  ],
+};
+
+vi.mock('../../engine/GameEngine', () => ({
+  initGame: vi.fn(() =>
+    Promise.resolve({
+      getState: () => playingState,
+      onEvent: vi.fn(),
+      triggerAttack: vi.fn(),
+      togglePause: vi.fn(),
+      destroy: vi.fn(),
+    }),
+  ),
+}));
+
+test('renders canvas and HUD elements', async () => {
+  const { GameView } = await import('./GameView');
+
+  const { container } = await render(
+    <GameView config={{ biome: 'forest', seed: 'test' }} onReturnToMenu={() => {}} onQuitToMenu={() => {}} />,
+  );
+
+  // Canvas should mount with id="game-canvas"
+  const canvas = container.querySelector('#game-canvas');
+  expect(canvas).not.toBeNull();
+  expect(canvas?.tagName).toBe('CANVAS');
+
+  // Wait for engine state polling (100ms interval) to populate HUD
+  await expect.element(page.getByText('Health')).toBeVisible();
+
+  // Minimap canvas should be present (140x140)
+  const minimapCanvas = container.querySelector('canvas:not(#game-canvas)');
+  expect(minimapCanvas).not.toBeNull();
+  expect(minimapCanvas?.getAttribute('width')).toBe('140');
+});

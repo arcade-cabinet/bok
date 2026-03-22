@@ -1,0 +1,14 @@
+{
+  "id": "twin-daggers",
+  "name": "Twin Daggers",
+  "type": "melee",
+  "baseDamage": 9,
+  "attackSpeed": 1.5,
+  "range": 1.5,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 250, "animation": "stab-right" },
+    { "damageMultiplier": 1.2, "windowMs": 220, "animation": "stab-left" },
+    { "damageMultiplier": 1.5, "windowMs": 200, "animation": "cross-slash" }
+  ],
+  "special": "bleed-dot"
+}

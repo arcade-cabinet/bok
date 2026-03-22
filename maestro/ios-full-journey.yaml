@@ -1,0 +1,40 @@
+appId: com.apple.mobilesafari
+---
+# iOS Safari Full Journey Test
+# Tests menu flow, biome selection, seed input, and hub transition
+
+- openLink: ${APP_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 20000
+
+# 1. Main menu renders with all buttons
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+- assertVisible: "Resume Chapter"
+- assertVisible: "Inscriptions"
+- takeScreenshot: maestro/screenshots/ios-01-main-menu
+
+# 2. Open biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 10000
+- assertVisible: "Choose Your Chapter"
+- assertVisible: "Brave Dark Fox"
+- takeScreenshot: maestro/screenshots/ios-02-biome-grid
+
+# 3. Select Whispering Woods via accessibility label
+- tapOn:
+    id: "Whispering Woods.*"
+- waitForAnimationToEnd
+- takeScreenshot: maestro/screenshots/ios-03-selected
+
+# 4. Tap Begin Writing
+- tapOn:
+    id: "Begin Writing.*"
+- extendedWaitUntil:
+    visible: "Hub Island"
+    timeout: 30000
+- assertVisible: "Hub Island"
+- takeScreenshot: maestro/screenshots/ios-04-hub

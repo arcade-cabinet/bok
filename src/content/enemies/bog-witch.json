@@ -1,0 +1,31 @@
+{
+  "id": "bog-witch",
+  "name": "Bog Witch",
+  "health": 60,
+  "speed": 2.0,
+  "damage": 11,
+  "attackPattern": "ranged-poison-summon",
+  "attacks": [
+    {
+      "name": "poison-bolt",
+      "type": "ranged",
+      "damage": 11,
+      "cooldown": 2.0,
+      "range": 14.0,
+      "telegraph": 0.5
+    },
+    {
+      "name": "summon-lurkers",
+      "type": "summon",
+      "damage": 0,
+      "cooldown": 12.0,
+      "range": 8.0,
+      "telegraph": 1.5
+    }
+  ],
+  "drops": [
+    { "itemId": "witch-finger", "chance": 0.4, "minAmount": 1, "maxAmount": 1 },
+    { "itemId": "swamp-herb", "chance": 0.5, "minAmount": 1, "maxAmount": 3 }
+  ],
+  "special": "heals-nearby-enemies"
+}

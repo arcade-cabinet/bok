@@ -1,0 +1,38 @@
+{
+  "id": "abyssal-leviathan",
+  "name": "Abyssal Leviathan",
+  "biome": "deep-ocean",
+  "health": 800,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "tentacle-sweep", "type": "melee", "damage": 22, "cooldown": 2.5, "range": 6.0, "telegraph": 0.8 },
+        { "name": "ink-blast", "type": "ranged", "damage": 15, "cooldown": 4.0, "range": 12.0, "telegraph": 1.0 }
+      ],
+      "description": "Tentacle sweeps from the deep — jump over the low ones"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "whirlpool", "type": "aoe", "damage": 18, "cooldown": 5.0, "range": 10.0, "telegraph": 1.2 },
+        { "name": "tentacle-sweep", "type": "melee", "damage": 28, "cooldown": 2.0, "range": 7.0, "telegraph": 0.6 },
+        { "name": "ink-blast", "type": "ranged", "damage": 20, "cooldown": 3.0, "range": 14.0, "telegraph": 0.8 }
+      ],
+      "arenaChange": "whirlpool-pull",
+      "description": "Whirlpools pull you toward the center — fight the current"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "deep-dive", "type": "aoe", "damage": 35, "cooldown": 7.0, "range": 15.0, "telegraph": 1.5 },
+        { "name": "whirlpool", "type": "aoe", "damage": 25, "cooldown": 3.5, "range": 12.0, "telegraph": 0.8 },
+        { "name": "tentacle-sweep", "type": "melee", "damage": 35, "cooldown": 1.5, "range": 8.0, "telegraph": 0.4 },
+        { "name": "ink-blast", "type": "ranged", "damage": 25, "cooldown": 2.0, "range": 14.0, "telegraph": 0.5 }
+      ],
+      "arenaChange": "deep-dive-darkness",
+      "description": "Dives deep then erupts for massive damage — darkness obscures attack tells"
+    }
+  ],
+  "tomePageDrop": "stone-skin"
+}

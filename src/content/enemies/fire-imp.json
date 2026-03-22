@@ -1,0 +1,23 @@
+{
+  "id": "fire-imp",
+  "name": "Fire Imp",
+  "health": 50,
+  "speed": 4.0,
+  "damage": 13,
+  "attackPattern": "flee-ranged",
+  "attacks": [
+    {
+      "name": "fireball",
+      "type": "ranged",
+      "damage": 13,
+      "cooldown": 1.5,
+      "range": 12.0,
+      "telegraph": 0.4
+    }
+  ],
+  "drops": [
+    { "itemId": "ember", "chance": 0.6, "minAmount": 1, "maxAmount": 3 },
+    { "itemId": "imp-horn", "chance": 0.2, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "explodes-on-death"
+}

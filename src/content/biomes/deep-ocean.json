@@ -1,0 +1,29 @@
+{
+  "id": "deep-ocean",
+  "name": "Abyssal Trench",
+  "description": "Coral reefs give way to yawning underwater caves. Bioluminescence is the only light this deep.",
+  "terrain": {
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.05,
+    "noiseAmplitude": 3,
+    "waterLevel": 8,
+    "baseHeight": 3,
+    "blocks": {
+      "surface": 70,
+      "subsurface": 71,
+      "stone": 72,
+      "water": 73,
+      "accent": 74
+    }
+  },
+  "enemies": [
+    { "enemyId": "depth-crawler", "weight": 0.5, "minDifficulty": 1 },
+    { "enemyId": "angler-fish", "weight": 0.5, "minDifficulty": 2 }
+  ],
+  "bossId": "abyssal-leviathan",
+  "music": "music/deep-ocean-exploration.ogg",
+  "ambience": "sfx/deep-ocean-ambience.ogg",
+  "skyColor": "#0A1929",
+  "fogColor": "#0D2137",
+  "fogDensity": 0.035
+}

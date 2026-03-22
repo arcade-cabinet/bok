@@ -1,0 +1,14 @@
+{
+  "id": "frost-cleaver",
+  "name": "Frost Cleaver",
+  "type": "melee",
+  "baseDamage": 20,
+  "attackSpeed": 0.9,
+  "range": 2.0,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 450, "animation": "cleave-right" },
+    { "damageMultiplier": 1.2, "windowMs": 400, "animation": "cleave-left" },
+    { "damageMultiplier": 1.5, "windowMs": 350, "animation": "frost-slam" }
+  ],
+  "special": "freeze-on-hit"
+}

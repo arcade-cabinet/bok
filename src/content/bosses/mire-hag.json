@@ -1,0 +1,38 @@
+{
+  "id": "mire-hag",
+  "name": "Mire Hag",
+  "biome": "swamp",
+  "health": 500,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "poison-rain", "type": "aoe", "damage": 12, "cooldown": 4.0, "range": 10.0, "telegraph": 1.2 },
+        { "name": "claw-rake", "type": "melee", "damage": 18, "cooldown": 2.0, "range": 2.5, "telegraph": 0.6 }
+      ],
+      "description": "Poison rain pools linger — avoid green zones"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "vine-snare", "type": "aoe", "damage": 8, "cooldown": 5.0, "range": 8.0, "telegraph": 0.8 },
+        { "name": "summon-lurkers", "type": "summon", "damage": 0, "cooldown": 8.0, "range": 12.0, "telegraph": 1.5 },
+        { "name": "poison-rain", "type": "aoe", "damage": 15, "cooldown": 3.5, "range": 10.0, "telegraph": 1.0 }
+      ],
+      "arenaChange": "vine-patches",
+      "description": "Vine snares root you in place — lurker adds swarm the arena"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "swamp-flood", "type": "aoe", "damage": 20, "cooldown": 6.0, "range": 15.0, "telegraph": 1.5 },
+        { "name": "poison-rain", "type": "aoe", "damage": 20, "cooldown": 2.5, "range": 12.0, "telegraph": 0.7 },
+        { "name": "vine-snare", "type": "aoe", "damage": 12, "cooldown": 3.5, "range": 8.0, "telegraph": 0.6 },
+        { "name": "summon-lurkers", "type": "summon", "damage": 0, "cooldown": 6.0, "range": 12.0, "telegraph": 1.0 }
+      ],
+      "arenaChange": "rising-water",
+      "description": "Swamp floods — water rises reducing safe ground while adds keep spawning"
+    }
+  ],
+  "tomePageDrop": "block-shield"
+}

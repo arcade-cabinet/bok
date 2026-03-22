@@ -1,0 +1,29 @@
+{
+  "id": "swamp",
+  "name": "Rothollow Marsh",
+  "description": "Murky water choked with dead trees and creeping vines. Things move beneath the surface.",
+  "terrain": {
+    "noiseOctaves": 2,
+    "noiseFrequency": 0.03,
+    "noiseAmplitude": 1.5,
+    "waterLevel": 6,
+    "baseHeight": 4,
+    "blocks": {
+      "surface": 40,
+      "subsurface": 41,
+      "stone": 42,
+      "water": 43,
+      "accent": 44
+    }
+  },
+  "enemies": [
+    { "enemyId": "swamp-lurker", "weight": 0.5, "minDifficulty": 1 },
+    { "enemyId": "bog-witch", "weight": 0.5, "minDifficulty": 2 }
+  ],
+  "bossId": "mire-hag",
+  "music": "music/swamp-exploration.ogg",
+  "ambience": "sfx/swamp-ambience.ogg",
+  "skyColor": "#4A5D23",
+  "fogColor": "#3B4A1C",
+  "fogDensity": 0.03
+}

@@ -1,0 +1,32 @@
+appId: com.apple.mobilesafari
+---
+# iOS Safari: Menu journey test
+# Run: maestro test maestro/ios-menu-journey.yaml --env APP_URL=http://YOUR_IP:5174
+# Note: Start vite with --host 0.0.0.0 for simulator access
+
+- openLink: ${APP_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 20000
+
+# Main menu renders with all elements
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+- assertVisible: "Resume Chapter"
+- assertVisible: "Inscriptions"
+- takeScreenshot: maestro/screenshots/ios-01-menu
+
+# Open biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 10000
+- assertVisible: "Choose Your Chapter"
+- assertVisible: "Brave Dark Fox"
+- takeScreenshot: maestro/screenshots/ios-02-biomes
+
+# Select first biome (point tap — Cinzel font renders text as small caps)
+- tapOn:
+    point: "25%,42%"
+- waitForAnimationToEnd
+- takeScreenshot: maestro/screenshots/ios-03-selected

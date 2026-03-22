@@ -1,0 +1,31 @@
+{
+  "id": "sand-wraith",
+  "name": "Sand Wraith",
+  "health": 45,
+  "speed": 3.5,
+  "damage": 10,
+  "attackPattern": "burrow-emerge",
+  "attacks": [
+    {
+      "name": "sand-claw",
+      "type": "melee",
+      "damage": 10,
+      "cooldown": 1.8,
+      "range": 1.5,
+      "telegraph": 0.4
+    },
+    {
+      "name": "sand-teleport-strike",
+      "type": "melee",
+      "damage": 12,
+      "cooldown": 5.0,
+      "range": 2.0,
+      "telegraph": 0.8
+    }
+  ],
+  "drops": [
+    { "itemId": "desert-sand", "chance": 0.5, "minAmount": 1, "maxAmount": 2 },
+    { "itemId": "wraith-essence", "chance": 0.15, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "teleports-via-sand"
+}

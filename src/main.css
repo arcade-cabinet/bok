@@ -1,0 +1,144 @@
+@import "./fonts.css";
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Custom parchment theme — warm browns, gold accents, ink-dark text */
+@plugin "daisyui/theme" {
+  name: "parchment";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  /* Surfaces: warm parchment → aged paper → border-tan */
+  --color-base-100: oklch(96.5% 0.02 75); /* #fdf6e3 parchment white */
+  --color-base-200: oklch(90% 0.03 70); /* slightly darker parchment */
+  --color-base-300: oklch(82% 0.04 65); /* aged paper edge */
+  --color-base-content: oklch(22% 0.04 45); /* #2c1e16 ink-dark brown */
+
+  /* Primary: warm gold for interactive elements */
+  --color-primary: oklch(72% 0.1 70); /* #c4a572 gold accent */
+  --color-primary-content: oklch(22% 0.04 45);
+
+  /* Secondary: deeper brown for secondary actions */
+  --color-secondary: oklch(50% 0.08 55); /* #8b5a2b medium brown */
+  --color-secondary-content: oklch(96% 0.02 75);
+
+  /* Accent: lighter gold highlight */
+  --color-accent: oklch(80% 0.08 75); /* #d4c5a0 light gold */
+  --color-accent-content: oklch(22% 0.04 45);
+
+  /* Neutral: dark warm brown for structural elements */
+  --color-neutral: oklch(28% 0.04 45); /* #3a2820 warm brown */
+  --color-neutral-content: oklch(90% 0.03 75);
+
+  /* Semantic colors */
+  --color-info: oklch(70% 0.15 230);
+  --color-info-content: oklch(98% 0.01 230);
+  --color-success: oklch(72% 0.19 160);
+  --color-success-content: oklch(98% 0.01 160);
+  --color-warning: oklch(80% 0.15 80);
+  --color-warning-content: oklch(25% 0.05 80);
+  --color-error: oklch(55% 0.22 25); /* #c0392b deep red */
+  --color-error-content: oklch(98% 0.01 25);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.375rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Health bar low-health pulse — matches dead HealthBar.ts behavior (opacity 1→0.5→1, 600ms) */
+@keyframes health-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Safe area insets for notched devices */
+#hud {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.overlay-safe-area {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Mobile breakpoints */
+@media (max-width: 768px) {
+  #hud-health,
+  #hud-info {
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .hotbar-slot {
+    width: 40px;
+    height: 40px;
+    font-size: 9px;
+  }
+
+  /* Scale base font for readability on small screens */
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* Landscape mobile: tighter vertical spacing */
+@media (max-height: 480px) and (orientation: landscape) {
+  #hud-health,
+  #hud-info {
+    padding: 4px 8px;
+  }
+  .hotbar-slot {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Reduced motion: disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}

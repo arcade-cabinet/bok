@@ -1,0 +1,38 @@
+{
+  "id": "frost-wyrm",
+  "name": "Frost Wyrm",
+  "biome": "tundra",
+  "health": 550,
+  "phases": [
+    {
+      "healthThreshold": 1.0,
+      "attacks": [
+        { "name": "ice-breath", "type": "aoe", "damage": 18, "cooldown": 3.5, "range": 10.0, "telegraph": 1.0 },
+        { "name": "claw-swipe", "type": "melee", "damage": 20, "cooldown": 2.0, "range": 3.0, "telegraph": 0.6 }
+      ],
+      "description": "Ice breath cone — stay behind the wyrm"
+    },
+    {
+      "healthThreshold": 0.66,
+      "attacks": [
+        { "name": "tail-sweep", "type": "melee", "damage": 22, "cooldown": 2.5, "range": 5.0, "telegraph": 0.7 },
+        { "name": "blizzard", "type": "aoe", "damage": 12, "cooldown": 5.0, "range": 12.0, "telegraph": 1.2 },
+        { "name": "ice-breath", "type": "aoe", "damage": 22, "cooldown": 3.0, "range": 10.0, "telegraph": 0.8 }
+      ],
+      "arenaChange": "blizzard-visibility",
+      "description": "Blizzard reduces visibility — tail sweeps punish flanking"
+    },
+    {
+      "healthThreshold": 0.33,
+      "attacks": [
+        { "name": "ice-breath", "type": "aoe", "damage": 28, "cooldown": 2.5, "range": 12.0, "telegraph": 0.5 },
+        { "name": "blizzard", "type": "aoe", "damage": 18, "cooldown": 3.5, "range": 15.0, "telegraph": 0.8 },
+        { "name": "ice-spikes", "type": "aoe", "damage": 25, "cooldown": 4.0, "range": 8.0, "telegraph": 0.6 },
+        { "name": "tail-sweep", "type": "melee", "damage": 28, "cooldown": 1.8, "range": 5.0, "telegraph": 0.5 }
+      ],
+      "arenaChange": "ice-spikes-floor",
+      "description": "Full blizzard with ice spikes erupting from the ground"
+    }
+  ],
+  "tomePageDrop": "ice-path"
+}

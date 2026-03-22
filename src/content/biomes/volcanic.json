@@ -1,0 +1,29 @@
+{
+  "id": "volcanic",
+  "name": "Cinderpeak Caldera",
+  "description": "Rivers of lava cut through obsidian plains. The ground cracks and glows beneath your feet.",
+  "terrain": {
+    "noiseOctaves": 4,
+    "noiseFrequency": 0.08,
+    "noiseAmplitude": 6,
+    "waterLevel": 4,
+    "baseHeight": 5,
+    "blocks": {
+      "surface": 30,
+      "subsurface": 31,
+      "stone": 32,
+      "water": 33,
+      "accent": 34
+    }
+  },
+  "enemies": [
+    { "enemyId": "fire-imp", "weight": 0.55, "minDifficulty": 1 },
+    { "enemyId": "lava-elemental", "weight": 0.45, "minDifficulty": 2 }
+  ],
+  "bossId": "magma-king",
+  "music": "music/volcanic-exploration.ogg",
+  "ambience": "sfx/volcanic-ambience.ogg",
+  "skyColor": "#4A1A0A",
+  "fogColor": "#8B2500",
+  "fogDensity": 0.025
+}

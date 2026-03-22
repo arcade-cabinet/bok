@@ -1,0 +1,14 @@
+{
+  "id": "crossbow",
+  "name": "Crossbow",
+  "type": "ranged",
+  "baseDamage": 18,
+  "attackSpeed": 0.6,
+  "range": 15.0,
+  "combo": [
+    { "damageMultiplier": 1.0, "windowMs": 550, "animation": "bolt-shot" },
+    { "damageMultiplier": 1.2, "windowMs": 500, "animation": "heavy-bolt" },
+    { "damageMultiplier": 1.8, "windowMs": 450, "animation": "piercing-bolt" }
+  ],
+  "special": "armor-pierce"
+}

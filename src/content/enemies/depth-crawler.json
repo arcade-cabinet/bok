@@ -1,0 +1,31 @@
+{
+  "id": "depth-crawler",
+  "name": "Depth Crawler",
+  "health": 70,
+  "speed": 2.5,
+  "damage": 16,
+  "attackPattern": "patrol-grab",
+  "attacks": [
+    {
+      "name": "tentacle-grab",
+      "type": "melee",
+      "damage": 16,
+      "cooldown": 2.5,
+      "range": 3.0,
+      "telegraph": 0.6
+    },
+    {
+      "name": "drag-down",
+      "type": "melee",
+      "damage": 20,
+      "cooldown": 8.0,
+      "range": 2.0,
+      "telegraph": 1.0
+    }
+  ],
+  "drops": [
+    { "itemId": "crawler-tentacle", "chance": 0.4, "minAmount": 1, "maxAmount": 2 },
+    { "itemId": "deep-pearl", "chance": 0.15, "minAmount": 1, "maxAmount": 1 }
+  ],
+  "special": "drags-player-down"
+}

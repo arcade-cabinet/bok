@@ -1,0 +1,29 @@
+{
+  "id": "tundra",
+  "name": "Frostbite Expanse",
+  "description": "Frozen tundra with ice lakes and jagged peaks. Blizzards reduce visibility to nothing.",
+  "terrain": {
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.05,
+    "noiseAmplitude": 2.5,
+    "waterLevel": 3,
+    "baseHeight": 5,
+    "blocks": {
+      "surface": 20,
+      "subsurface": 21,
+      "stone": 22,
+      "water": 23,
+      "accent": 24
+    }
+  },
+  "enemies": [
+    { "enemyId": "frost-wolf", "weight": 0.6, "minDifficulty": 1 },
+    { "enemyId": "ice-golem", "weight": 0.4, "minDifficulty": 2 }
+  ],
+  "bossId": "frost-wyrm",
+  "music": "music/tundra-exploration.ogg",
+  "ambience": "sfx/tundra-ambience.ogg",
+  "skyColor": "#B0C4DE",
+  "fogColor": "#8BA5C7",
+  "fogDensity": 0.02
+}
