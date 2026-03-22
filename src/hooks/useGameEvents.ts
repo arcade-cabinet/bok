@@ -1,9 +1,10 @@
 /**
  * @module hooks/useGameEvents
- * @role Engine event callbacks: playerDamaged, enemyKilled, bossDefeated, playerDied, lootPickup
+ * @role Engine event callbacks: playerDamaged, enemyKilled, bossDefeated, playerDied, lootPickup, chestOpened
  */
 import { useRef, useState } from 'react';
 import type { DamageIndicatorHandle } from '../components/hud/DamageIndicator';
+import type { LootItem } from '../components/hud/LootNotification';
 import type { DeathStats } from '../components/modals/DeathScreen';
 import type { VictoryStats } from '../components/modals/VictoryScreen';
 import type { GameInstance } from '../engine/GameEngine';
@@ -26,13 +27,15 @@ export interface GameEventResult {
   victoryStats: VictoryStats | null;
   unlockedAbilitiesRef: React.RefObject<string[]>;
   startTimeRef: React.RefObject<number>;
+  /** Accumulated loot items for LootNotification display */
+  lootItems: LootItem[];
   /** Event handler to pass into useGameLifecycle */
   handleEngineEvent: (event: EngineEvent) => void;
 }
 
 /**
  * Manages engine event side-effects: damage flash, kill tracking,
- * loot tracking, death/victory stats snapshots, boss ability unlocks.
+ * loot tracking, chest loot notifications, death/victory stats snapshots, boss ability unlocks.
  */
 export function useGameEvents(
   config: { biome: string; seed: string },
@@ -47,6 +50,7 @@ export function useGameEvents(
   const unlockedAbilitiesRef = useRef<string[]>([]);
   const [deathStats, setDeathStats] = useState<DeathStats | null>(null);
   const [victoryStats, setVictoryStats] = useState<VictoryStats | null>(null);
+  const [lootItems, setLootItems] = useState<LootItem[]>([]);
 
   // Stable ref for callbacks to avoid stale closures
   const callbacksRef = useRef(callbacks);
@@ -61,6 +65,17 @@ export function useGameEvents(
     }
     if (event.type === 'lootPickup') {
       lootCountRef.current += 1;
+      // Show pickup in LootNotification
+      const displayName = event.itemType
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      setLootItems((prev) => [...prev, { name: displayName, amount: 1 }]);
+    }
+    if (event.type === 'chestOpened') {
+      lootCountRef.current += event.items.length;
+      // Show all chest items in LootNotification
+      setLootItems((prev) => [...prev, ...event.items]);
     }
     if (event.type === 'playerDied' || event.type === 'bossDefeated') {
       const game = gameRef.current;
@@ -101,6 +116,7 @@ export function useGameEvents(
     victoryStats,
     unlockedAbilitiesRef,
     startTimeRef,
+    lootItems,
     handleEngineEvent,
   };
 }

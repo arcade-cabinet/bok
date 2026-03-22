@@ -37,6 +37,7 @@ export class DayNightCycle {
   readonly #ambientLight: THREE.AmbientLight;
   readonly #starfield: THREE.Points;
   readonly #skyColor = new THREE.Color(0x87ceeb);
+  #biomeTint: THREE.Color | null = null;
 
   constructor() {
     // Sun — emissive yellow sphere
@@ -91,6 +92,15 @@ export class DayNightCycle {
   /** Current ambient light reference. */
   get ambientLight(): THREE.AmbientLight {
     return this.#ambientLight;
+  }
+
+  /**
+   * Apply a biome tint that blends with the day/night sky color.
+   * The tint is lerped at 30% influence so the biome atmosphere
+   * is visible without overriding the day/night transition.
+   */
+  setBiomeTint(tintColor: THREE.Color): void {
+    this.#biomeTint = tintColor.clone();
   }
 
   /** Advance the cycle by dt seconds. */
@@ -152,6 +162,11 @@ export class DayNightCycle {
     const range = upper.t - lower.t;
     const alpha = range > 0 ? (t - lower.t) / range : 0;
     this.#skyColor.copy(lower.color).lerp(upper.color, alpha);
+
+    // Blend biome tint at 30% influence
+    if (this.#biomeTint) {
+      this.#skyColor.lerp(this.#biomeTint, 0.3);
+    }
   }
 
   #updateLighting(): void {

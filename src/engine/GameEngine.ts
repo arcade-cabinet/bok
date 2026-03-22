@@ -1,6 +1,6 @@
 /**
  * @module engine/GameEngine
- * @role Thin orchestrator — wires setup modules into a running game
+ * @role Thin orchestrator -- wires setup modules into a running game
  * @input Canvas element, game config
  * @output Running game with cleanup function
  */
@@ -15,6 +15,7 @@ import { spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
 import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
+import { spawnChests } from './lootSetup.ts';
 import { createPlayer } from './playerSetup.ts';
 import { createTerrain } from './terrainSetup.ts';
 import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } from './types.ts';
@@ -22,7 +23,7 @@ import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } f
 export type { MobileInput } from './types.ts';
 
 export interface GameInstance {
-  /** Current engine state — polled by React each frame */
+  /** Current engine state -- polled by React each frame */
   getState: () => EngineState;
   /** Subscribe to engine events (damage, kills, etc.) */
   onEvent: (listener: EngineEventListener) => void;
@@ -47,7 +48,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   const engine = await createEngineCore(canvas);
 
   // --- Terrain ---
-  const terrain = createTerrain(engine.jpWorld, engine.rapierWorld, config.seed);
+  const terrain = createTerrain(engine.jpWorld, engine.rapierWorld, config.seed, config.biome);
 
   // --- Enemies + Boss ---
   const {
@@ -56,15 +57,28 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     bossMesh,
     yukaManager,
     cleanup: cleanupEnemies,
-  } = await spawnEnemies(engine.scene, terrain.getSurfaceY, terrain.islandSize, config.seed);
+  } = await spawnEnemies(engine.scene, terrain.getSurfaceY, terrain.islandSize, config.seed, config.biome);
 
   // --- Player (camera, input, weapon) ---
   const { cam, inputSystem } = await createPlayer(engine.jpWorld, canvas, terrain, engine.isMobile);
 
-  // --- Boss content lookup ---
+  // --- Content lookups ---
   const content = new ContentRegistry();
   const biomeConfig = content.getBiome(config.biome);
   const bossConfig = content.getBoss(biomeConfig.bossId);
+
+  // --- Weapon config (use wooden-sword as default equipped weapon) ---
+  const weaponConfig = content.getWeapon('wooden-sword');
+
+  // --- Loot chests ---
+  const chestCount = 4 + Math.floor(Math.random() * 4); // 4-7 chests per island
+  const { chests, cleanup: cleanupChests } = spawnChests(
+    engine.scene,
+    terrain.getSurfaceY,
+    terrain.islandSize,
+    config.seed,
+    chestCount,
+  );
 
   // --- Combat ---
   const eventListeners: EngineEventListener[] = [];
@@ -78,6 +92,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     },
     bossConfig.id,
     bossConfig.tomePageDrop,
+    bossConfig.phases,
+    weaponConfig,
+    chests,
+    config.seed,
   );
 
   // --- Mobile input buffer (written by setMobileInput, read in frame loop) ---
@@ -128,6 +146,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       paused: loop.isPaused(),
       phase: loop.isPaused() ? 'paused' : combat.state.phase,
       context: loop.getContext(),
+      stamina: loop.getStamina(),
+      maxStamina: loop.getMaxStamina(),
+      comboStep: combat.getComboStep(),
+      isBlocking: loop.isBlocking(),
       suggestedTargetPos: (() => {
         const gov = loop.getGovernorOutput();
         if (gov.suggestedTarget >= 0 && gov.suggestedTarget < enemies.length) {
@@ -154,6 +176,13 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           z: d.mesh.position.z,
           type: 'chest' as const,
         })),
+        ...chests
+          .filter((c) => !c.opened)
+          .map((c) => ({
+            x: c.position.x,
+            z: c.position.z,
+            type: 'chest' as const,
+          })),
       ],
     }),
     onEvent: (listener) => {
@@ -176,8 +205,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         },
         enemies: combatSources.enemies ?? [],
         inventory: {},
-        equippedWeapon: 'sword',
-        openedChests: [],
+        equippedWeapon: weaponConfig.id,
+        openedChests: combatSources.openedChests ?? [],
         defeatedBoss: combatSources.defeatedBoss ?? boss.defeated,
       };
       return captureSnapshot(sources);
@@ -193,6 +222,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     togglePause: () => loop.togglePause(),
     destroy: () => {
       combat.cleanup();
+      cleanupChests();
       cleanupEnemies();
       stopMusic();
       stopAtmosphericSFX();

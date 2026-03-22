@@ -17,6 +17,9 @@ export interface EnemyState {
   mesh: THREE.Object3D;
   vehicle: Vehicle;
   health: number;
+  maxHealth: number;
+  damage: number;
+  type: string;
   attackCooldown: number;
 }
 
@@ -65,11 +68,37 @@ export interface EngineState {
   threatLevel: ThreatLevel;
   /** Governor: whether stamina allows dodging */
   canDodge: boolean;
+  /** Current stamina value */
+  stamina: number;
+  /** Maximum stamina value */
+  maxStamina: number;
+  /** Current combo step (0-2) */
+  comboStep: number;
+  /** Whether the player is currently blocking */
+  isBlocking: boolean;
   /** Player world position for minimap centering */
   playerX: number;
   playerZ: number;
   /** Minimap markers: enemies and loot drops */
   minimapMarkers: MinimapMarker[];
+}
+
+/** Boss attack configuration for a single phase */
+export interface BossAttackConfig {
+  name: string;
+  type: 'melee' | 'ranged' | 'aoe' | 'summon';
+  damage: number;
+  cooldown: number;
+  range: number;
+  telegraph: number;
+}
+
+/** Boss phase configuration — health threshold + available attacks */
+export interface BossPhaseConfig {
+  healthThreshold: number;
+  attacks: BossAttackConfig[];
+  arenaChange?: string;
+  description: string;
 }
 
 /** Events the engine can emit to React */
@@ -79,7 +108,12 @@ export type EngineEvent =
   | { type: 'bossPhaseChange'; phase: number }
   | { type: 'bossDefeated'; bossId: string; tomeAbility: string }
   | { type: 'playerDied' }
-  | { type: 'lootPickup'; itemType: string };
+  | { type: 'lootPickup'; itemType: string }
+  | { type: 'parry' }
+  | { type: 'block'; damage: number }
+  | { type: 'chestOpened'; tier: string; items: Array<{ name: string; amount: number }> }
+  | { type: 'bossTelegraph'; attackName: string; duration: number }
+  | { type: 'bossSummon'; attackName: string };
 
 export type EngineEventListener = (event: EngineEvent) => void;
 
@@ -89,5 +123,5 @@ export interface MobileInput {
   moveZ: number; // -1 to 1 absolute
   lookX: number; // -1 to 1 absolute — continuous rotation rate
   lookY: number; // -1 to 1 absolute — continuous rotation rate
-  action: 'attack' | 'defend' | 'jump' | 'crouch' | null;
+  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | null;
 }

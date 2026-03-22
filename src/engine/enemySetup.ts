@@ -1,18 +1,20 @@
 /**
  * @module engine/enemySetup
- * @role Spawn enemies and boss on terrain with Yuka AI
- * @input Three.js scene, Yuka EntityManager, surface height lookup, seed
+ * @role Spawn biome-specific enemies and boss on terrain with Yuka AI
+ * @input Three.js scene, surface height lookup, seed, biome ID
  * @output Enemy state array, boss state, Yuka manager
  */
 
 import * as THREE from 'three';
 import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 
+import { ContentRegistry } from '../content/index.ts';
+import type { EnemySpawnConfig } from '../content/types.ts';
 import { PRNG } from '../generation/index.ts';
 import { ENEMY_MODELS, loadModel } from './models.ts';
 import type { BossState, EnemyState, SurfaceHeightFn } from './types.ts';
 
-const ENEMY_COUNT = 8;
+const BASE_ENEMY_COUNT = 6;
 
 export interface EnemiesResult {
   enemies: EnemyState[];
@@ -23,28 +25,56 @@ export interface EnemiesResult {
 }
 
 /**
- * Spawn regular enemies and a boss on the terrain.
- * Enemies are red box meshes with Yuka Vehicle AI.
- * Boss is a larger purple mesh at the far corner.
+ * Select an enemy type from a weighted pool using deterministic PRNG.
+ * Exported for testing.
+ */
+export function selectEnemy(pool: ReadonlyArray<EnemySpawnConfig>, rng: PRNG): string {
+  const totalWeight = pool.reduce((sum, e) => sum + e.weight, 0);
+  let roll = rng.next() * totalWeight;
+  for (const entry of pool) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.enemyId;
+  }
+  return pool[0].enemyId;
+}
+
+/**
+ * Calculate enemy count from biome difficulty.
+ * Harder biomes (higher minDifficulty enemies) spawn more enemies.
+ */
+export function calculateEnemyCount(pool: ReadonlyArray<EnemySpawnConfig>): number {
+  const maxDifficulty = Math.max(...pool.map((e) => e.minDifficulty));
+  return BASE_ENEMY_COUNT + maxDifficulty * 2;
+}
+
+/**
+ * Spawn biome-specific enemies and a biome-specific boss on the terrain.
+ * Enemies are selected from the biome's weighted enemy pool.
+ * Stats (health, damage, speed) come from enemy content JSON.
+ * Boss model and stats come from biome's bossId content JSON.
  */
 export async function spawnEnemies(
   scene: THREE.Scene,
   getSurfaceY: SurfaceHeightFn,
   islandSize: number,
   seed: string,
+  biomeId: string,
 ): Promise<EnemiesResult> {
   const yukaManager = new YukaEntityManager();
   const enemies: EnemyState[] = [];
 
-  // Enemy types to cycle through
-  const ENEMY_TYPES = ['skeleton', 'goblin', 'zombie', 'wolf', 'demon', 'wizard', 'yeti', 'hedgehog'];
+  const content = new ContentRegistry();
+  const biome = content.getBiome(biomeId);
+  const enemyPool = biome.enemies;
+  const enemyCount = calculateEnemyCount(enemyPool);
+
   // Fallback box for when GLB fails to load
   const fallbackGeom = new THREE.BoxGeometry(0.7, 1.4, 0.7);
   const fallbackMat = new THREE.MeshLambertMaterial({ color: 0xcc2222 });
 
   const enemyPrng = new PRNG(`${seed}-enemies`);
 
-  for (let i = 0; i < ENEMY_COUNT; i++) {
+  for (let i = 0; i < enemyCount; i++) {
     let ex: number, ez: number, ey: number;
     do {
       ex = 5 + Math.floor(enemyPrng.next() * (islandSize - 10));
@@ -52,7 +82,8 @@ export async function spawnEnemies(
       ey = getSurfaceY(ex, ez);
     } while (ey <= 3);
 
-    const enemyType = ENEMY_TYPES[i % ENEMY_TYPES.length];
+    const enemyType = selectEnemy(enemyPool, enemyPrng);
+    const enemyConfig = content.getEnemy(enemyType);
     const modelPath = ENEMY_MODELS[enemyType];
 
     // Try loading GLB model, fall back to box mesh
@@ -78,7 +109,7 @@ export async function spawnEnemies(
 
     const vehicle = new Vehicle();
     vehicle.position.set(ex + 0.5, ey + 0.7, ez + 0.5);
-    vehicle.maxSpeed = 2;
+    vehicle.maxSpeed = enemyConfig.speed;
     vehicle.mass = 1;
     // biome-ignore lint/suspicious/noExplicitAny: Yuka's setRenderComponent lacks type declarations
     (vehicle as any).setRenderComponent(mesh, (renderObj: THREE.Object3D) => {
@@ -86,15 +117,26 @@ export async function spawnEnemies(
     });
 
     yukaManager.add(vehicle);
-    enemies.push({ mesh: mesh as THREE.Mesh, vehicle, health: 30, attackCooldown: 1.5 });
+    enemies.push({
+      mesh: mesh as THREE.Mesh,
+      vehicle,
+      health: enemyConfig.health,
+      maxHealth: enemyConfig.health,
+      damage: enemyConfig.damage,
+      type: enemyType,
+      attackCooldown: 1.5,
+    });
   }
 
-  // Boss — larger, tougher, at far corner. Use Giant model.
+  // Boss — biome-specific model and stats
+  const bossConfig = content.getBoss(biome.bossId);
+  const bossModelPath = ENEMY_MODELS[biome.bossId] ?? ENEMY_MODELS.giant;
+
   const bossPos = { x: islandSize - 8, z: islandSize - 8 };
   const bossY = getSurfaceY(bossPos.x, bossPos.z);
   let bossMesh: THREE.Object3D;
   try {
-    const bossModel = await loadModel('/models/enemies/Giant.glb');
+    const bossModel = await loadModel(bossModelPath);
     bossModel.scale.setScalar(1.5);
     bossModel.position.set(bossPos.x, bossY, bossPos.z);
     bossModel.castShadow = true;
@@ -122,19 +164,27 @@ export async function spawnEnemies(
   yukaManager.add(bossVehicle);
 
   // Boss also tracked in enemies array for unified combat
-  enemies.push({ mesh: bossMesh, vehicle: bossVehicle, health: 150, attackCooldown: 2.0 });
+  enemies.push({
+    mesh: bossMesh,
+    vehicle: bossVehicle,
+    health: bossConfig.health,
+    maxHealth: bossConfig.health,
+    damage: bossConfig.phases[0].attacks[0].damage,
+    type: biome.bossId,
+    attackCooldown: 2.0,
+  });
 
   const boss: BossState = {
     mesh: bossMesh,
     vehicle: bossVehicle,
-    health: 150,
-    maxHealth: 150,
+    health: bossConfig.health,
+    maxHealth: bossConfig.health,
     attackCooldown: 2.0,
     phase: 1,
     defeated: false,
   };
 
-  console.log(`[Bok] Spawned ${ENEMY_COUNT} enemies + boss`);
+  console.log(`[Bok] Spawned ${enemyCount} enemies + boss (${biome.bossId}) for biome ${biomeId}`);
 
   return {
     enemies,

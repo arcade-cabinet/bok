@@ -17,6 +17,10 @@ const playingState: EngineState = {
   suggestedTargetPos: null,
   threatLevel: 'none',
   canDodge: true,
+  stamina: 100,
+  maxStamina: 100,
+  comboStep: 0,
+  isBlocking: false,
   playerX: 50,
   playerZ: 50,
   minimapMarkers: [

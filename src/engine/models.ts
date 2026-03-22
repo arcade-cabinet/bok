@@ -59,6 +59,15 @@ export const ENEMY_MODELS: Record<string, string> = {
   'depth-crawler': '/models/enemies/Squidle.glb',
   'angler-fish': '/models/enemies/Anglerfish.glb',
   'sand-wraith': '/models/enemies/Wraith.glb',
+  // Boss models — mapped to thematically fitting GLBs
+  'ancient-treant': '/models/enemies/Giant.glb',
+  'pharaoh-construct': '/models/enemies/Cyclops.glb',
+  'frost-wyrm': '/models/enemies/Dragon.glb',
+  'magma-king': '/models/enemies/Demon.glb',
+  'mire-hag': '/models/enemies/Witch.glb',
+  'crystal-hydra': '/models/enemies/Dragon.glb',
+  'storm-titan': '/models/enemies/Giant.glb',
+  'abyssal-leviathan': '/models/enemies/Squidle.glb',
 };
 
 /** Weapon model paths mapped to weapon ID */
