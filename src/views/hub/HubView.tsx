@@ -82,7 +82,7 @@ const NPC_LABEL_DISTANCE = 12;
 /** Hub island: walk between buildings, upgrade, interact with NPCs, set sail. */
 export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
   const [showPause, setShowPause] = useState(false);
-  const [npcDialogueOpen, setNpcDialogueOpen] = useState(true);
+  const [npcDialogueOpen, setNpcDialogueOpen] = useState(false);
   const [upgradeFeedback, setUpgradeFeedback] = useState<{ message: string; success: boolean } | null>(null);
 
   // Shared ref for per-frame callback: useHubCamera writes, useHubEngine reads

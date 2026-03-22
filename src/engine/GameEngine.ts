@@ -5,6 +5,7 @@
  * @output Running game with cleanup function
  */
 import { loadRuntime } from '@jolly-pixel/runtime';
+import * as THREE from 'three';
 
 import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
@@ -44,8 +45,26 @@ export interface GameInstance {
  * Returns a GameInstance that React can interact with.
  */
 export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfig): Promise<GameInstance> {
-  // --- Core engine (Runtime, Rapier, Koota, scene, lighting) ---
-  const engine = await createEngineCore(canvas);
+  // --- Content lookups (needed before engine core for biome atmosphere) ---
+  const content = new ContentRegistry();
+  const biomeConfig = content.getBiome(config.biome);
+  const bossConfig = content.getBoss(biomeConfig.bossId);
+
+  // --- Core engine (Runtime, Rapier, Koota, scene, lighting) with biome atmosphere ---
+  const engine = await createEngineCore(canvas, {
+    skyColor: biomeConfig.skyColor,
+    fogColor: biomeConfig.fogColor,
+    fogDensity: biomeConfig.fogDensity,
+  });
+
+  // --- Biome weather effects ---
+  const { WeatherSystem } = await import('../rendering/index');
+  const weatherSystem = new WeatherSystem();
+  engine.scene.add(weatherSystem.mesh);
+  weatherSystem.setWeather(config.biome);
+
+  // --- Day/night biome tint ---
+  engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
 
   // --- Terrain ---
   const terrain = createTerrain(engine.jpWorld, engine.rapierWorld, config.seed, config.biome);
@@ -61,11 +80,6 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
 
   // --- Player (camera, input, weapon) ---
   const { cam, inputSystem } = await createPlayer(engine.jpWorld, canvas, terrain, engine.isMobile);
-
-  // --- Content lookups ---
-  const content = new ContentRegistry();
-  const biomeConfig = content.getBiome(config.biome);
-  const bossConfig = content.getBoss(biomeConfig.bossId);
 
   // --- Weapon config (use wooden-sword as default equipped weapon) ---
   const weaponConfig = content.getWeapon('wooden-sword');
@@ -116,6 +130,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     isMobile: engine.isMobile,
     mobileInput,
     getSurfaceY: terrain.getSurfaceY,
+    weatherSystem,
   });
 
   // --- Audio ---
@@ -224,6 +239,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       combat.cleanup();
       cleanupChests();
       cleanupEnemies();
+      weatherSystem.dispose();
       stopMusic();
       stopAtmosphericSFX();
       engine.runtime.stop();
