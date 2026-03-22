@@ -1,0 +1,31 @@
+{
+  "biomeId": "volcanic",
+  "goals": [
+    {
+      "id": "volcanic-explore",
+      "title": "Explore the Unknown",
+      "description": "Discover 2 landmarks",
+      "type": "discover",
+      "target": 2,
+      "icon": "🗺️"
+    },
+    {
+      "id": "volcanic-defeat",
+      "title": "Prove Your Strength",
+      "description": "Defeat 6 enemies",
+      "type": "kill",
+      "target": 6,
+      "icon": "⚔️"
+    },
+    {
+      "id": "volcanic-collect",
+      "title": "Gather Resources",
+      "description": "Open 3 chests",
+      "type": "loot",
+      "target": 3,
+      "icon": "📦"
+    }
+  ],
+  "bossGateMessage": "Something awakens...",
+  "completionMessage": "The path to the boss is open."
+}

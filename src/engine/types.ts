@@ -38,10 +38,14 @@ export interface BossState {
   defeated: boolean;
 }
 
+/** Game mode — Creative (build freely) or Survival (combat + goals) */
+export type GameMode = 'creative' | 'survival';
+
 /** Game configuration from menu */
 export interface GameStartConfig {
   biome: string;
   seed: string;
+  mode: GameMode;
 }
 
 /** Threat level from the player governor */

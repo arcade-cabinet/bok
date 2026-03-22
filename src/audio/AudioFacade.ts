@@ -45,10 +45,10 @@ export interface GameAudioSystem {
 
 /** Map of well-known SFX names to their asset URLs */
 const SFX_URLS: Record<string, string> = {
-  'enemy-growl': '/audio/sfx/stalker.ogg',
-  'ambient-wind': '/audio/sfx/phantom.ogg',
-  shadow: '/audio/sfx/shadow.ogg',
-  presence: '/audio/sfx/presence-behind.ogg',
+  'enemy-growl': '/assets/audio/sfx/stalker.ogg',
+  'ambient-wind': '/assets/audio/sfx/phantom.ogg',
+  shadow: '/assets/audio/sfx/shadow.ogg',
+  presence: '/assets/audio/sfx/presence-behind.ogg',
 };
 
 /**

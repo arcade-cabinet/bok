@@ -84,7 +84,7 @@ test('Begin Writing calls onStartGame with selected biome and seed', async () =>
   await screen.getByRole('radio', { name: /Cinderpeak Caldera/ }).click();
   await screen.getByRole('button', { name: /Begin Writing/ }).click();
 
-  expect(cfg).toEqual({ biome: 'volcanic', seed: 'Brave Dark Fox' });
+  expect(cfg).toEqual({ biome: 'volcanic', seed: 'Brave Dark Fox', mode: 'survival' });
 });
 
 test('Resume Chapter calls onResumeGame when run history exists', async () => {

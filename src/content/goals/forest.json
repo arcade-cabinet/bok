@@ -1,0 +1,31 @@
+{
+  "biomeId": "forest",
+  "goals": [
+    {
+      "id": "forest-explore-shrines",
+      "title": "Find the Ancient Shrines",
+      "description": "Discover 2 hidden shrines in the forest",
+      "type": "discover",
+      "target": 2,
+      "icon": "🏛️"
+    },
+    {
+      "id": "forest-defeat-guardians",
+      "title": "Defeat the Forest Guardians",
+      "description": "Slay 5 enemies protecting the sacred grove",
+      "type": "kill",
+      "target": 5,
+      "icon": "⚔️"
+    },
+    {
+      "id": "forest-gather-essence",
+      "title": "Collect Grove Essence",
+      "description": "Open 3 loot chests hidden among the trees",
+      "type": "loot",
+      "target": 3,
+      "icon": "✨"
+    }
+  ],
+  "bossGateMessage": "The Ancient Treant awakens...",
+  "completionMessage": "The grove trembles. The path to the Treant is open."
+}

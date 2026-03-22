@@ -119,7 +119,7 @@ export function useHubEngine(
       setNpcEntities(npcs);
 
       // Camera
-      const cam = createCamera(jpWorld, hub.getSurfaceY, hub.hubSize);
+      const cam = createCamera(jpWorld, hub.getSurfaceY, Math.round(hub.hubSize / 2), Math.round(hub.hubSize / 2));
       camRef.current = cam;
 
       // Input

@@ -8,18 +8,18 @@ import * as Tone from 'tone';
 
 /** Map biome IDs to music track URLs */
 const BIOME_TRACKS: Record<string, string> = {
-  forest: '/audio/music/whispering-woods.ogg',
-  desert: '/audio/music/strange-worlds.ogg',
-  tundra: '/audio/music/drifting-memories.ogg',
-  volcanic: '/audio/music/forgotten-biomes.ogg',
-  swamp: '/audio/music/floating-dream.ogg',
-  crystal: '/audio/music/minuet.ogg',
-  sky: '/audio/music/cuddle-clouds.ogg',
-  ocean: '/audio/music/wanderers-tale.ogg',
+  forest: '/assets/audio/music/whispering-woods.ogg',
+  desert: '/assets/audio/music/strange-worlds.ogg',
+  tundra: '/assets/audio/music/drifting-memories.ogg',
+  volcanic: '/assets/audio/music/forgotten-biomes.ogg',
+  swamp: '/assets/audio/music/floating-dream.ogg',
+  crystal: '/assets/audio/music/minuet.ogg',
+  sky: '/assets/audio/music/cuddle-clouds.ogg',
+  ocean: '/assets/audio/music/wanderers-tale.ogg',
 };
 
 /** Hub gets the Vienna Woods track */
-const HUB_TRACK = '/audio/music/vienna-woods.ogg';
+const HUB_TRACK = '/assets/audio/music/vienna-woods.ogg';
 
 /** Menu gets no music (just ambient from GameAudio) */
 
