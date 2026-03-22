@@ -7,6 +7,8 @@ const SHAKE_DURATION = 150;
 
 export interface DamageIndicatorHandle {
   flash: () => void;
+  /** Lighter shake only (no red vignette) — used for player attack impacts */
+  lightShake: () => void;
 }
 
 interface Props {
@@ -25,34 +27,41 @@ export const DamageIndicator = forwardRef<DamageIndicatorHandle, Props>(function
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeRafRef = useRef<number>(0);
 
-  const shake = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const shakeWith = useCallback(
+    (intensity: number, duration: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    // Cancel any in-flight shake
-    if (shakeRafRef.current) cancelAnimationFrame(shakeRafRef.current);
+      // Cancel any in-flight shake
+      if (shakeRafRef.current) cancelAnimationFrame(shakeRafRef.current);
 
-    const start = performance.now();
-    const originalTransform = canvas.style.transform;
+      const start = performance.now();
+      const originalTransform = canvas.style.transform;
 
-    const step = (now: number) => {
-      const elapsed = now - start;
-      if (elapsed > SHAKE_DURATION) {
-        canvas.style.transform = originalTransform;
-        shakeRafRef.current = 0;
-        return;
-      }
+      const step = (now: number) => {
+        const elapsed = now - start;
+        if (elapsed > duration) {
+          canvas.style.transform = originalTransform;
+          shakeRafRef.current = 0;
+          return;
+        }
 
-      // Linear decay from 1→0 over SHAKE_DURATION
-      const decay = 1 - elapsed / SHAKE_DURATION;
-      const dx = (Math.random() * 2 - 1) * SHAKE_INTENSITY * decay;
-      const dy = (Math.random() * 2 - 1) * SHAKE_INTENSITY * decay;
-      canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+        // Linear decay from 1→0 over duration
+        const decay = 1 - elapsed / duration;
+        const dx = (Math.random() * 2 - 1) * intensity * decay;
+        const dy = (Math.random() * 2 - 1) * intensity * decay;
+        canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+        shakeRafRef.current = requestAnimationFrame(step);
+      };
+
       shakeRafRef.current = requestAnimationFrame(step);
-    };
+    },
+    [canvasRef],
+  );
 
-    shakeRafRef.current = requestAnimationFrame(step);
-  }, [canvasRef]);
+  const shake = useCallback(() => {
+    shakeWith(SHAKE_INTENSITY, SHAKE_DURATION);
+  }, [shakeWith]);
 
   const flash = useCallback(() => {
     // Show vignette immediately
@@ -69,7 +78,11 @@ export const DamageIndicator = forwardRef<DamageIndicatorHandle, Props>(function
     shake();
   }, [shake]);
 
-  useImperativeHandle(ref, () => ({ flash }), [flash]);
+  const lightShake = useCallback(() => {
+    shakeWith(SHAKE_INTENSITY * 0.4, SHAKE_DURATION * 0.6);
+  }, [shakeWith]);
+
+  useImperativeHandle(ref, () => ({ flash, lightShake }), [flash, lightShake]);
 
   return (
     <div

@@ -21,6 +21,10 @@ export interface EnemyState {
   damage: number;
   type: string;
   attackCooldown: number;
+  /** Set to true when health reaches 0 — triggers fade/shrink death animation */
+  dying?: boolean;
+  /** Remaining seconds on the death animation (starts at 0.5) */
+  deathTimer?: number;
 }
 
 /** Boss runtime state */
@@ -105,6 +109,7 @@ export interface BossPhaseConfig {
 export type EngineEvent =
   | { type: 'playerDamaged'; amount: number }
   | { type: 'enemyKilled'; position: { x: number; y: number; z: number } }
+  | { type: 'attackHit'; damage: number; position: { x: number; y: number; z: number } }
   | { type: 'bossPhaseChange'; phase: number }
   | { type: 'bossDefeated'; bossId: string; tomeAbility: string }
   | { type: 'playerDied' }

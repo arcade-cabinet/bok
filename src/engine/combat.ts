@@ -16,6 +16,7 @@ import {
 } from '../audio/GameAudio.ts';
 import { ContentRegistry, type WeaponConfig } from '../content/index.ts';
 import { hapticImpact } from '../platform/CapacitorBridge.ts';
+import type { ParticleSystem } from '../rendering/index.ts';
 import { calculateDamage } from '../systems/combat/DamageCalculator.ts';
 import type { SnapshotSources } from './engineSnapshot.ts';
 import type { ChestState } from './lootSetup.ts';
@@ -77,6 +78,7 @@ export function createCombat(
   weaponConfigOverride?: WeaponConfig,
   chests?: ChestState[],
   chestSeed?: string,
+  particles?: ParticleSystem | null,
 ): CombatSystem {
   const lootGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
   const lootMats: Record<string, THREE.MeshLambertMaterial> = {
@@ -144,9 +146,10 @@ export function createCombat(
       }
     }
 
-    // Auto-attack on proximity (contact combat)
+    // Auto-attack on proximity (contact combat) — skip dying enemies
     if (!pendingAttack && state.playerAttackCooldown <= 0) {
       for (const e of enemies) {
+        if (e.dying) continue;
         const dx = cameraPos.x - e.mesh.position.x;
         const dz = cameraPos.z - e.mesh.position.z;
         if (Math.sqrt(dx * dx + dz * dz) < CONTACT_RANGE) {
@@ -176,10 +179,11 @@ export function createCombat(
       comboTimer = cooldownDuration + comboHit.windowMs / 1000;
       playSwordSwing();
 
-      // Find closest enemy within weapon range
+      // Find closest living enemy within weapon range
       let closestIdx = -1;
       let closestDist = equippedWeapon.range;
       for (let i = 0; i < enemies.length; i++) {
+        if (enemies[i].dying) continue;
         const dx = cameraPos.x - enemies[i].mesh.position.x;
         const dz = cameraPos.z - enemies[i].mesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
@@ -204,6 +208,16 @@ export function createCombat(
         playHitImpact();
         hapticImpact('medium');
 
+        const ex = target.mesh.position.x;
+        const ey = target.mesh.position.y;
+        const ez = target.mesh.position.z;
+
+        // Emit hit particles at impact point
+        particles?.emit('hit', { x: ex, y: ey + 0.5, z: ez }, 8);
+
+        // Emit attackHit event for React (damage numbers + lighter screen shake)
+        onEvent({ type: 'attackHit', damage: finalDamage, position: { x: ex, y: ey, z: ez } });
+
         // Hit flash — scale bounce (works with both box meshes and GLB models)
         const origScale = target.mesh.scale.clone();
         target.mesh.scale.multiplyScalar(1.3);
@@ -211,13 +225,18 @@ export function createCombat(
           if (target.mesh.parent) target.mesh.scale.copy(origScale);
         }, 100);
 
-        if (target.health <= 0) {
+        if (target.health <= 0 && !target.dying) {
           const isBoss = target.mesh === bossMesh;
           const pos = target.mesh.position.clone();
           pos.y += 0.3;
 
-          scene.remove(target.mesh);
-          enemies.splice(closestIdx, 1);
+          // Death particles — larger red burst
+          particles?.emit('enemyDeath', { x: pos.x, y: pos.y, z: pos.z }, 20);
+
+          // Start death animation instead of instant removal
+          target.dying = true;
+          target.deathTimer = 0.5;
+
           killCount += 1;
           playEnemyDeath();
           spawnLoot(pos, isBoss ? 'tome-page' : 'health-potion');
@@ -247,6 +266,16 @@ export function createCombat(
             if (pct <= phaseConfig.healthThreshold && boss.phase < phaseNum) {
               boss.phase = phaseNum;
               playBossPhase();
+              // Dramatic particle burst on phase change
+              particles?.emit(
+                'hit',
+                {
+                  x: bossMesh.position.x,
+                  y: bossMesh.position.y + 1,
+                  z: bossMesh.position.z,
+                },
+                30,
+              );
               // Clear cooldowns and telegraph on phase change
               bossAttackCooldowns.clear();
               bossTelegraphTimer = 0;
@@ -335,9 +364,36 @@ export function createCombat(
       }
     }
 
+    // --- Dying enemy animation (shrink + fade over 0.5s) ---
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
+      if (!enemy.dying || enemy.deathTimer === undefined) continue;
+
+      enemy.deathTimer -= dt;
+      const t = Math.max(0, enemy.deathTimer / 0.5);
+      enemy.mesh.scale.setScalar(t);
+
+      // Fade material opacity if it supports transparency
+      enemy.mesh.traverse((child) => {
+        if ('material' in child) {
+          const mat = (child as THREE.Mesh).material;
+          if (mat && !Array.isArray(mat)) {
+            (mat as THREE.MeshLambertMaterial).transparent = true;
+            (mat as THREE.MeshLambertMaterial).opacity = t;
+          }
+        }
+      });
+
+      if (enemy.deathTimer <= 0) {
+        scene.remove(enemy.mesh);
+        enemies.splice(i, 1);
+      }
+    }
+
     // Enemies attack player — respects dodge i-frames, block, and parry
     for (const enemy of enemies) {
-      // Skip boss for generic contact damage when boss phases are configured
+      // Skip dying enemies and boss for generic contact damage when boss phases are configured
+      if (enemy.dying) continue;
       if (bossPhases && bossPhases.length > 0 && enemy.mesh === bossMesh) continue;
 
       const dx = cameraPos.x - enemy.mesh.position.x;

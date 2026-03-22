@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
+import { DamageNumbers } from '../../components/hud/DamageNumbers';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { HintToast, type HintTrigger } from '../../components/hud/HintToast';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
@@ -151,6 +152,7 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
 
       <ScreenReaderAnnouncer engineState={engineState} onSubscribe={handleSrSubscribe} />
       <DamageIndicator ref={events.damageRef} canvasRef={canvasRef} />
+      <DamageNumbers numbers={events.damageNumbers} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (
         <ActionButtons onAttack={handleAttack} onDodge={handleDodge} />
