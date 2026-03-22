@@ -4,22 +4,22 @@ import { render } from 'vitest-browser-react';
 import type { GameConfig } from '../../app/App';
 import { MainMenuView } from './MainMenuView';
 
+/** All biomes unlocked for tests that need full grid. */
+const ALL_BIOMES = ['forest', 'desert', 'tundra', 'volcanic', 'swamp', 'crystal', 'sky', 'ocean'];
+
 test('renders title and menu buttons', async () => {
   const screen = await render(<MainMenuView onStartGame={() => {}} />);
 
   await expect.element(screen.getByRole('heading', { name: 'BOK' })).toBeVisible();
-
   await expect.element(screen.getByRole('button', { name: /Pen New Tale/ })).toBeVisible();
 });
 
 test('clicking Pen New Tale shows biome grid with 8 biomes', async () => {
-  const screen = await render(<MainMenuView onStartGame={() => {}} />);
+  const screen = await render(<MainMenuView onStartGame={() => {}} unlockedBiomes={ALL_BIOMES} />);
 
   await screen.getByRole('button', { name: /Pen New Tale/ }).click();
-
   await expect.element(screen.getByRole('heading', { name: 'Choose Your Chapter' })).toBeVisible();
 
-  // 8 biome buttons + "Begin Writing" + close button = 10 buttons total
   const biomeNames = [
     'Whispering Woods',
     'Sunscorched Dunes',
@@ -36,15 +36,13 @@ test('clicking Pen New Tale shows biome grid with 8 biomes', async () => {
 });
 
 test('selecting Cinderpeak Caldera updates border color', async () => {
-  const screen = await render(<MainMenuView onStartGame={() => {}} />);
+  const screen = await render(<MainMenuView onStartGame={() => {}} unlockedBiomes={ALL_BIOMES} />);
 
   await screen.getByRole('button', { name: /Pen New Tale/ }).click();
 
-  // Biome selectors have role="radio"
   const calderaBtn = screen.getByRole('radio', { name: /Cinderpeak Caldera/ });
   await calderaBtn.click();
 
-  // Selected biome gets the gold border (#c4a572)
   await expect.element(calderaBtn).toHaveStyle({ borderColor: '#c4a572' });
 });
 
@@ -65,12 +63,9 @@ test('clicking dice button changes the seed', async () => {
   const seedInput = screen.getByPlaceholder('Let fate decide...');
   await expect.element(seedInput).toHaveValue('Brave Dark Fox');
 
-  // The dice button uses emoji text
   const diceBtn = page.getByText('🎲');
   await diceBtn.click();
 
-  // Seed should have changed (it's random, so just check it's not empty)
-  // The random seed is always "Adj Adj Noun" format — 3 words
   await expect.element(seedInput).not.toHaveValue('');
 });
 
@@ -81,6 +76,7 @@ test('Begin Writing calls onStartGame with selected biome and seed', async () =>
       onStartGame={(c) => {
         cfg = c;
       }}
+      unlockedBiomes={ALL_BIOMES}
     />,
   );
 
@@ -105,4 +101,25 @@ test('Resume Chapter calls onResumeGame when run history exists', async () => {
 
   await screen.getByRole('button', { name: /Resume Chapter/ }).click();
   expect(resumed).toBe(true);
+});
+
+test('only forest is selectable when no biomes unlocked', async () => {
+  const screen = await render(<MainMenuView onStartGame={() => {}} />);
+
+  await screen.getByRole('button', { name: /Pen New Tale/ }).click();
+
+  // Forest should be a selectable radio button
+  await expect.element(screen.getByRole('radio', { name: /Whispering Woods/ })).toBeInTheDocument();
+
+  // Other biomes should be locked (shown as ??? divs, not radio buttons — 7 of them)
+  await expect.element(screen.getByText('???').first()).toBeInTheDocument();
+});
+
+test('unlocked biomes are selectable', async () => {
+  const screen = await render(<MainMenuView onStartGame={() => {}} unlockedBiomes={['forest', 'desert']} />);
+
+  await screen.getByRole('button', { name: /Pen New Tale/ }).click();
+
+  await expect.element(screen.getByRole('radio', { name: /Whispering Woods/ })).toBeInTheDocument();
+  await expect.element(screen.getByRole('radio', { name: /Sunscorched Dunes/ })).toBeInTheDocument();
 });
