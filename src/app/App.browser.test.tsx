@@ -17,12 +17,12 @@ test('full menu flow: open biome grid, select biome, configure seed', async () =
   await page.getByRole('button', { name: /Pen New Tale/ }).click();
   await expect.element(page.getByRole('heading', { name: 'Choose Your Chapter' })).toBeVisible();
 
-  // All 8 biomes are shown
+  // All 8 biomes are shown (role="radio" buttons in a radiogroup)
   await expect.element(page.getByText('Whispering Woods')).toBeInTheDocument();
   await expect.element(page.getByText('Abyssal Trench')).toBeInTheDocument();
 
-  // Select a biome
-  await page.getByRole('button', { name: /Cinderpeak Caldera/ }).click();
+  // Select a biome via its radio role
+  await page.getByRole('radio', { name: /Cinderpeak Caldera/ }).click();
 
   // Seed input is present with default
   await expect.element(page.getByPlaceholder('Let fate decide...')).toHaveValue('Brave Dark Fox');

@@ -52,12 +52,35 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm test --project unit --run
+
+  browser-tests:
+    name: Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm run test:browser
 
   build:
-    name: Build
+    name: Build Web
     runs-on: ubuntu-latest
-    needs: [check, test]
+    needs: [check, test, browser-tests]
     steps:
       - uses: actions/checkout@v4
 
@@ -82,10 +105,10 @@ jobs:
           path: dist/
           retention-days: 7
 
-  browser-tests:
-    name: Browser Tests
+  build-android:
+    name: Build Android Debug APK
     runs-on: ubuntu-latest
-    continue-on-error: true
+    needs: [build]
     steps:
       - uses: actions/checkout@v4
 
@@ -98,10 +121,32 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Build web assets
+        run: pnpm run build
 
-      - name: Run browser tests
-        run: pnpm run test:browser
+      - name: Add Capacitor Android platform
+        run: npx cap add android
+
+      - name: Sync web assets to Android
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bok-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14

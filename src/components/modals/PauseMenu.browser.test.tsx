@@ -45,12 +45,11 @@ test('Quit to Menu button calls onQuitToMenu when clicked', async () => {
   expect(onQuitToMenu).toHaveBeenCalledOnce();
 });
 
-test('Settings button is disabled', async () => {
-  const { container } = await render(<PauseMenu onResume={() => {}} onAbandonRun={() => {}} onQuitToMenu={() => {}} />);
+test('Settings button is enabled and clickable', async () => {
+  await render(<PauseMenu onResume={() => {}} onAbandonRun={() => {}} onQuitToMenu={() => {}} />);
 
-  // daisyUI uses btn-disabled class + tabIndex={-1} rather than the HTML disabled attribute
-  const settingsBtn = container.querySelector('button.btn-disabled') as HTMLElement;
-  expect(settingsBtn).not.toBeNull();
-  expect(settingsBtn.textContent).toBe('Settings');
-  expect(settingsBtn.getAttribute('tabindex')).toBe('-1');
+  const settingsBtn = page.getByRole('button', { name: 'Settings' });
+  await expect.element(settingsBtn).toBeVisible();
+  // Settings button should be interactive (not disabled)
+  await settingsBtn.click();
 });

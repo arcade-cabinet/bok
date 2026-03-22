@@ -40,7 +40,8 @@ test('selecting Cinderpeak Caldera updates border color', async () => {
 
   await screen.getByRole('button', { name: /Pen New Tale/ }).click();
 
-  const calderaBtn = screen.getByRole('button', { name: /Cinderpeak Caldera/ });
+  // Biome selectors have role="radio"
+  const calderaBtn = screen.getByRole('radio', { name: /Cinderpeak Caldera/ });
   await calderaBtn.click();
 
   // Selected biome gets the gold border (#c4a572)
@@ -84,7 +85,7 @@ test('Begin Writing calls onStartGame with selected biome and seed', async () =>
   );
 
   await screen.getByRole('button', { name: /Pen New Tale/ }).click();
-  await screen.getByRole('button', { name: /Cinderpeak Caldera/ }).click();
+  await screen.getByRole('radio', { name: /Cinderpeak Caldera/ }).click();
   await screen.getByRole('button', { name: /Begin Writing/ }).click();
 
   expect(cfg).toEqual({ biome: 'volcanic', seed: 'Brave Dark Fox' });
