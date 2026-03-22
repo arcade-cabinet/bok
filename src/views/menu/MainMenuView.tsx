@@ -151,6 +151,7 @@ export function MainMenuView({
   const [showTome, setShowTome] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
+  const [selectedMode, setSelectedMode] = useState<'creative' | 'survival'>('survival');
   const prefersReducedMotion = useReducedMotion();
   const newGameButtonRef = useRef<HTMLButtonElement>(null);
   const backButtonRef = useRef<HTMLButtonElement>(null);
@@ -165,7 +166,7 @@ export function MainMenuView({
   }, [showNewGame]);
 
   const handleStart = () => {
-    onStartGame({ biome: selectedBiome, seed, mode: 'survival' });
+    onStartGame({ biome: selectedBiome, seed, mode: selectedMode });
   };
 
   const randomSeed = () => {
@@ -350,7 +351,8 @@ export function MainMenuView({
               aria-label="Select biome"
             >
               {BIOMES.map((b) => {
-                const isUnlocked = DEV_UNLOCK_ALL || b.id === 'forest' || unlockedBiomes.includes(b.id);
+                const isUnlocked =
+                  DEV_UNLOCK_ALL || selectedMode === 'creative' || b.id === 'forest' || unlockedBiomes.includes(b.id);
                 const isSelected = selectedBiome === b.id;
 
                 if (!isUnlocked) {
@@ -410,6 +412,42 @@ export function MainMenuView({
                 );
               })}
             </div>
+
+            {/* Game mode toggle */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedMode('survival')}
+                className={`flex-1 py-2 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
+                  selectedMode === 'survival' ? 'shadow-lg' : 'opacity-60'
+                }`}
+                style={{
+                  fontFamily: 'Cinzel, Georgia, serif',
+                  color: selectedMode === 'survival' ? '#fdf6e3' : '#a89574',
+                  background: selectedMode === 'survival' ? 'rgba(139,26,26,0.7)' : 'rgba(45,31,23,0.5)',
+                  borderColor: selectedMode === 'survival' ? '#c44a4a' : 'rgba(107,84,68,0.4)',
+                }}
+              >
+                Survival
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedMode('creative')}
+                className={`flex-1 py-2 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
+                  selectedMode === 'creative' ? 'shadow-lg' : 'opacity-60'
+                }`}
+                style={{
+                  fontFamily: 'Cinzel, Georgia, serif',
+                  color: selectedMode === 'creative' ? '#fdf6e3' : '#a89574',
+                  background: selectedMode === 'creative' ? 'rgba(39,100,57,0.7)' : 'rgba(45,31,23,0.5)',
+                  borderColor: selectedMode === 'creative' ? '#4a9c60' : 'rgba(107,84,68,0.4)',
+                }}
+              >
+                Creative
+              </button>
+            </div>
+
+            {/* In creative mode, all biomes are unlocked */}
 
             {/* Seed input */}
             <div>
