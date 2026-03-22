@@ -95,6 +95,7 @@ export function App() {
             <GameView
               config={gameConfig}
               onReturnToMenu={() => setView('hub')}
+              onContinueVoyage={() => setView('island-select')}
               onQuitToMenu={() => setView('menu')}
               onBossDefeated={progression.trackBossKill}
               onRunEnd={progression.recordRun}

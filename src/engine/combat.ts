@@ -24,7 +24,7 @@ import { checkChestInteraction, getLootTables } from './lootSetup.ts';
 import type { BossPhaseConfig, BossState, EnemyState, EngineEventListener } from './types.ts';
 
 const CONTACT_RANGE = 1.8;
-const ENEMY_DAMAGE = 10;
+const DEFAULT_ENEMY_DAMAGE = 10;
 
 /** Defensive state fed from the game loop each frame */
 export interface DefensiveState {
@@ -415,9 +415,12 @@ export function createCombat(
             continue;
           }
 
+          // Use per-enemy damage from content config
+          const enemyDmg = enemy.damage ?? DEFAULT_ENEMY_DAMAGE;
+
           // Block: reduce damage by 50%, minimum 1
           if (def.blockActive) {
-            const reduced = Math.max(1, Math.floor(ENEMY_DAMAGE * 0.5));
+            const reduced = Math.max(1, Math.floor(enemyDmg * 0.5));
             state.playerHealth = Math.max(0, state.playerHealth - reduced);
             playPlayerHurt();
             hapticImpact('medium');
@@ -431,10 +434,10 @@ export function createCombat(
           }
 
           // Full damage
-          state.playerHealth = Math.max(0, state.playerHealth - ENEMY_DAMAGE);
+          state.playerHealth = Math.max(0, state.playerHealth - enemyDmg);
           playPlayerHurt();
           hapticImpact('heavy');
-          onEvent({ type: 'playerDamaged', amount: ENEMY_DAMAGE });
+          onEvent({ type: 'playerDamaged', amount: enemyDmg });
 
           if (state.playerHealth <= 0) {
             state.phase = 'dead';
