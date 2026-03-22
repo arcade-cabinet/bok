@@ -10,6 +10,9 @@
  */
 import { type GameEntity, GoalEvaluator, Think, type Vector3 } from 'yuka';
 
+import type { BossPhase } from '../content/types.ts';
+import { createBossBrain } from './bossBrain.ts';
+
 /** Extended GameEntity with custom game properties. */
 interface BokEntity extends GameEntity {
   _targetPosition?: Vector3;
@@ -136,8 +139,17 @@ export const ENEMY_AI_TYPES: Record<string, EnemyAIType> = {
 /**
  * Create a Yuka Think brain for an enemy based on its AI type.
  * Returns the brain with appropriate evaluators configured.
+ *
+ * For 'boss' AI type, pass `bossPhases` from the boss content JSON
+ * to get a full BossBrain with phase-aware evaluators. Without phases,
+ * falls back to a simple chase+attack brain.
  */
-export function createEnemyBrain(entity: GameEntity, aiType: EnemyAIType): Think {
+export function createEnemyBrain(entity: GameEntity, aiType: EnemyAIType, bossPhases?: BossPhase[]): Think {
+  // Boss AI type with phase data — use the dedicated BossBrain
+  if (aiType === 'boss' && bossPhases && bossPhases.length > 0) {
+    return createBossBrain(entity, bossPhases);
+  }
+
   const brain = new Think(entity);
   (entity as BokEntity)._brain = brain;
 
@@ -167,9 +179,9 @@ export function createEnemyBrain(entity: GameEntity, aiType: EnemyAIType): Think
       break;
 
     case 'boss':
+      // Fallback when no phase data — simple chase + attack
       brain.addEvaluator(new ChaseEvaluator(0.5));
       brain.addEvaluator(new MeleeAttackEvaluator(1.0));
-      // Boss phases are handled by combat system, not GOAP
       break;
 
     case 'passive':

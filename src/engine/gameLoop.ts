@@ -5,14 +5,17 @@
  * @output GameLoopResult with pause control and state accessors
  */
 import type RAPIER from '@dimforge/rapier3d';
-import type { createWorld } from 'koota';
+import type { createWorld, World } from 'koota';
 import * as THREE from 'three';
 import type { EntityManager as YukaEntityManager } from 'yuka';
 
 import { createPlayerGovernor, type GovernorOutput } from '../ai/index';
+import { runFrame } from '../frameloop';
 import type { InputSystem } from '../input/index.ts';
+import { hapticImpact } from '../platform/CapacitorBridge.ts';
 import type { DayNightCycle, ParticleSystem, WeatherSystem } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';
+import { IsPlayer, Transform } from '../traits';
 import { LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import type { CameraResult } from './camera.ts';
 import type { CombatSystem } from './combat.ts';
@@ -40,6 +43,8 @@ export interface GameLoopContext {
   jpWorld: JpWorld;
   rapierWorld: RAPIER.World;
   gameWorld: ReturnType<typeof createWorld>;
+  /** Koota ECS world singleton — runs alongside old engine systems */
+  kootaWorld?: World;
   scene: THREE.Scene;
   dayNight: DayNightCycle;
   cam: CameraResult;
@@ -173,6 +178,7 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       stamina -= DODGE_STAMINA_COST;
       // Dodge movement burst in current facing direction
       cam.applyMovement(0, -1, false, (DODGE_DURATION * DODGE_SPEED) / PLAYER_SPEED);
+      hapticImpact('light');
       // Clear mobile dodge action
       if (isMobile && mobileInput.action === 'dodge') {
         mobileInput.action = null;
@@ -203,10 +209,16 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
 
     // Mobile actions from React joystick
     if (isMobile && mobileInput.action) {
-      if (mobileInput.action === 'attack') combat.triggerAttack();
-      // 'defend' is handled above via blockActive
-      // 'dodge' is handled above
       if (mobileInput.action === 'attack') {
+        combat.triggerAttack();
+        mobileInput.action = null;
+      }
+      // 'defend' is handled above via blockActive — stays active while held
+      // 'dodge' is handled above
+      if (mobileInput.action === 'interact') {
+        // Chest interaction is proximity-based and runs every frame in combat.update.
+        // The interact button serves as a visual affordance for mobile players.
+        // Clear action so it doesn't persist.
         mobileInput.action = null;
       }
     }
@@ -233,6 +245,25 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
 
     // Particle system update
     if (ctx.particles) ctx.particles.update(dt);
+
+    // --- Koota ECS frame (runs alongside old systems) ---
+    if (ctx.kootaWorld) {
+      try {
+        // Sync player position from camera into Koota so ECS systems can read it
+        const players = ctx.kootaWorld.query(IsPlayer, Transform);
+        for (const player of players) {
+          const transform = player.get(Transform);
+          if (transform) {
+            transform.position.set(cam.camera.position.x, cam.camera.position.y, cam.camera.position.z);
+          }
+        }
+
+        runFrame(ctx.kootaWorld, dt);
+      } catch (err) {
+        // Koota systems should not break the game — log and continue with old path
+        console.warn('[Bok] Koota runFrame error (old engine still running):', err);
+      }
+    }
 
     // Player governor — update context and run GOAP evaluation
     governor.setContext(

@@ -9,19 +9,32 @@ import { loadRuntime } from '@jolly-pixel/runtime';
 import { VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 
+import { actions } from '../actions';
 import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
-import { generateTileset, ParticleSystem, TILESET_COLS, TILESET_ROWS, WeatherSystem } from '../rendering/index';
+import {
+  CW_TILESET_COLS,
+  CW_TILESET_ROWS,
+  generateCubeWorldTileset,
+  generateTileset,
+  ParticleSystem,
+  TILESET_COLS,
+  TILESET_ROWS,
+  WeatherSystem,
+} from '../rendering/index';
+import { GameModeState } from '../traits';
+import { world as kootaWorld } from '../world';
 import { getBiomeBlockDefs } from './biomeBlocks.ts';
 import { ChunkWorld } from './chunkWorld.ts';
 import { createCombat } from './combat.ts';
-import { spawnEnemies } from './enemySetup.ts';
+import { applyTintsAfterLoad, spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
 import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
 import { spawnChests } from './lootSetup.ts';
+import { spawnModelActor } from './models.ts';
 import { createPlayer } from './playerSetup.ts';
 import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } from './types.ts';
 
@@ -54,6 +67,14 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     fogDensity: biomeConfig.fogDensity,
   });
 
+  // --- Initialize Koota ECS world (runs alongside old engine systems) ---
+  try {
+    kootaWorld.set(GameModeState, { mode: config.mode });
+    console.log('[Bok] Koota ECS world initialized with mode:', config.mode);
+  } catch (err) {
+    console.warn('[Bok] Failed to initialize Koota ECS world:', err);
+  }
+
   // --- Chunk-based infinite terrain ---
   const blockDefs = getBiomeBlockDefs(config.biome);
   const voxelMap = engine.jpWorld.createActor('terrain').addComponentAndGet(VoxelRenderer, {
@@ -65,14 +86,21 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     rapier: { api: RAPIER as never, world: engine.rapierWorld as never },
   });
 
-  // Register tileset
-  const tileset = generateTileset();
+  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
+  const tileset = (() => {
+    try {
+      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
+    } catch {
+      const fallback = generateTileset();
+      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
+    }
+  })();
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
   voxelMap.tilesetManager.registerTexture(
-    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: tileset.cols, rows: tileset.rows },
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 
@@ -92,8 +120,9 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
 
   // --- Environment props (3D models: trees, rocks, crystals, etc.) ---
+  // Props use JollyPixel actors with ModelRenderer — models batch-load during awake().
   try {
-    const { generatePropPlacements, spawnPropsInScene } = await import('../systems/spawn-props');
+    const { generatePropPlacements, spawnPropActors } = await import('../systems/spawn-props');
     const propPlacements = generatePropPlacements(
       config.seed,
       config.biome,
@@ -103,23 +132,60 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       32,
       chunkWorld.getSurfaceY.bind(chunkWorld),
     );
-    spawnPropsInScene(engine.scene, propPlacements);
+    spawnPropActors(engine.jpWorld, propPlacements);
   } catch (err) {
     console.warn('[Bok] Prop spawning failed:', err);
   }
 
+  // --- Structures (ruins, dungeons, shrines, markets, towers, houses) ---
+  // Structures are multi-piece glTF placements driven by StructureTemplates.
+  // Each piece gets a JollyPixel actor with ModelRenderer — batch-loads during awake().
+  let shrineLandmarks: Array<{ x: number; z: number; discovered: boolean }> = [];
+  try {
+    const { generateStructurePlacements, spawnStructureActors, getShrineLandmarks } = await import(
+      '../systems/spawn-structures'
+    );
+    const structurePlacements = generateStructurePlacements(
+      config.seed,
+      config.biome,
+      -30,
+      -30,
+      30,
+      30,
+      chunkWorld.getSurfaceY.bind(chunkWorld),
+      4,
+    );
+    spawnStructureActors(engine.jpWorld, structurePlacements, chunkWorld.getSurfaceY.bind(chunkWorld));
+    shrineLandmarks = getShrineLandmarks(structurePlacements).map((s) => ({ ...s, discovered: false }));
+  } catch (err) {
+    console.warn('[Bok] Structure spawning failed:', err);
+  }
+
   // --- Enemies + Boss (spawn around origin for now) ---
+  // Enemies are now JollyPixel actors with ModelRenderer — models load during awake().
   const worldSize = 64; // effective area for initial enemy placement
   const {
     enemies,
     boss,
     bossMesh,
     yukaManager,
+    actors: enemyActors,
+    kootaEntities: _kootaEntities,
+    kootaBossEntity: _kootaBossEntity,
     cleanup: cleanupEnemies,
-  } = await spawnEnemies(engine.scene, chunkWorld.getSurfaceY.bind(chunkWorld), worldSize, config.seed, config.biome);
+  } = spawnEnemies(
+    engine.jpWorld,
+    engine.scene,
+    chunkWorld.getSurfaceY.bind(chunkWorld),
+    worldSize,
+    config.seed,
+    config.biome,
+    kootaWorld,
+  );
 
   // --- Player at world origin ---
-  const { cam, inputSystem } = await createPlayer(
+  // Weapon model is a JollyPixel actor — loads during awake().
+  const { cam, inputSystem } = createPlayer(
     engine.jpWorld,
     canvas,
     chunkWorld.getSurfaceY.bind(chunkWorld),
@@ -128,10 +194,19 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     0,
   );
 
+  // --- Spawn Koota player entity for ECS systems ---
+  try {
+    const { spawnPlayer } = actions(kootaWorld);
+    spawnPlayer(0, 0);
+    console.log('[Bok] Koota player entity spawned');
+  } catch (err) {
+    console.warn('[Bok] Failed to spawn Koota player entity:', err);
+  }
+
   // --- Passive animals (spawn near player, wander) ---
+  // Animals use JollyPixel actors with ModelRenderer — models load during awake().
   try {
     const { generateAnimalSpawns } = await import('../systems/spawn-animals');
-    const { loadGLTF } = await import('../systems/load-model');
     const animalSpawns = generateAnimalSpawns(
       config.seed,
       config.biome,
@@ -142,10 +217,13 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       0,
     );
     for (const spawn of animalSpawns) {
-      const model = await loadGLTF(`/assets/models/Animals/${spawn.modelFile}.gltf`);
-      model.scale.setScalar(0.6);
-      model.position.set(spawn.x, spawn.y, spawn.z);
-      engine.scene.add(model);
+      spawnModelActor(
+        engine.jpWorld,
+        `animal-${spawn.type}`,
+        `/assets/models/Animals/${spawn.modelFile}.gltf`,
+        { x: spawn.x, y: spawn.y, z: spawn.z },
+        0.6,
+      );
     }
   } catch (err) {
     console.warn('[Bok] Animal spawning failed:', err);
@@ -192,6 +270,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     jpWorld: engine.jpWorld,
     rapierWorld: engine.rapierWorld,
     gameWorld: engine.gameWorld,
+    kootaWorld,
     scene: engine.scene,
     dayNight: engine.dayNight,
     cam,
@@ -212,13 +291,33 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   startAtmosphericSFX();
 
   // --- Boot ---
+  // loadRuntime() batch-loads all enqueued assets, then runtime.start() triggers
+  // awake() on all actors. After this, ModelRenderer children are in the scene graph.
   await loadRuntime(engine.runtime);
-  console.log('[Bok] Engine initialized — infinite ChunkWorld');
+
+  // Apply biome tinting now that model meshes are loaded and available.
+  applyTintsAfterLoad(enemyActors, config.biome);
+
+  console.log('[Bok] Engine initialized — infinite ChunkWorld (JollyPixel ModelRenderer)');
 
   return {
     getState: (): EngineState => {
       // Update chunks based on player position
       chunkWorld.updateAroundPlayer(cam.camera.position.x, cam.camera.position.z);
+
+      // Check shrine proximity for landmark discovery (radius 6 world units)
+      const SHRINE_DISCOVER_RADIUS = 6;
+      for (const shrine of shrineLandmarks) {
+        if (shrine.discovered) continue;
+        const dx = cam.camera.position.x - shrine.x;
+        const dz = cam.camera.position.z - shrine.z;
+        if (dx * dx + dz * dz < SHRINE_DISCOVER_RADIUS * SHRINE_DISCOVER_RADIUS) {
+          shrine.discovered = true;
+          for (const listener of eventListeners) {
+            listener({ type: 'landmarkDiscovered', position: { x: shrine.x, z: shrine.z } });
+          }
+        }
+      }
 
       return {
         playerHealth: combat.state.playerHealth,
@@ -263,6 +362,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
             z: d.mesh.position.z,
             type: 'chest' as const,
           })),
+          ...shrineLandmarks.filter((s) => !s.discovered).map((s) => ({ x: s.x, z: s.z, type: 'shrine' as const })),
         ],
       };
     },
@@ -307,6 +407,12 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       stopAtmosphericSFX();
       engine.runtime.stop();
       engine.gameWorld.destroy();
+      // Koota ECS world is a singleton — reset it rather than destroy
+      try {
+        kootaWorld.reset();
+      } catch (err) {
+        console.warn('[Bok] Failed to reset Koota world:', err);
+      }
     },
   };
 }

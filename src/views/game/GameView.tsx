@@ -173,7 +173,20 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
   }, [gameRef]);
 
   const handleDodge = useCallback(() => {
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'dodge' });
+  }, [gameRef]);
+
+  const handleBlock = useCallback(() => {
     gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'defend' });
+  }, [gameRef]);
+
+  const handleBlockRelease = useCallback(() => {
+    // Clear the defend action so block deactivates
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null });
+  }, [gameRef]);
+
+  const handleInteract = useCallback(() => {
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'interact' });
   }, [gameRef]);
 
   const handleTutorialComplete = useCallback(() => {
@@ -199,7 +212,13 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
       <DamageNumbers numbers={events.damageNumbers} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (
-        <ActionButtons onAttack={handleAttack} onDodge={handleDodge} />
+        <ActionButtons
+          onAttack={handleAttack}
+          onDodge={handleDodge}
+          onBlock={handleBlock}
+          onBlockRelease={handleBlockRelease}
+          onInteract={handleInteract}
+        />
       )}
       {engineState?.phase === 'playing' && <ContextIndicator context={engineState.context} />}
 

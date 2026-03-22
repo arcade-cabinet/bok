@@ -8,7 +8,15 @@ import RAPIER from '@dimforge/rapier3d';
 import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
-import { generateTileset, TILES, TILESET_COLS, TILESET_ROWS } from '../rendering/index';
+import {
+  CW_TILESET_COLS,
+  CW_TILESET_ROWS,
+  generateCubeWorldTileset,
+  generateTileset,
+  TILES,
+  TILESET_COLS,
+  TILESET_ROWS,
+} from '../rendering/index';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 // --- Block Definitions ---
@@ -141,14 +149,21 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
     },
   });
 
-  // Generate and register programmatic tileset
-  const tileset = generateTileset();
+  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
+  const tileset = (() => {
+    try {
+      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
+    } catch {
+      const fallback = generateTileset();
+      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
+    }
+  })();
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
   voxelMap.tilesetManager.registerTexture(
-    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: tileset.cols, rows: tileset.rows },
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 

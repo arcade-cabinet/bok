@@ -27,7 +27,7 @@ export interface QualityConfig {
 export const QUALITY_PRESETS: Record<QualityPreset, QualityConfig> = {
   low: {
     particleBudget: 50,
-    renderDistance: 4,
+    renderDistance: 3,
     shadowsEnabled: false,
     dayNightEnabled: false,
     weatherEnabled: false,

@@ -2,20 +2,22 @@
  * @module systems/spawn-props
  * @role Deterministic environment prop spawning per biome
  * @input Seed, biome ID, terrain region, surface-height lookup
- * @output PropPlacement descriptors + scene-placement helper
- * @depends generation/noise (PRNG), engine/types (SurfaceHeightFn)
+ * @output PropPlacement descriptors + scene-placement helpers
+ * @depends generation/noise (PRNG), engine/models (spawnModelActor)
  * @tested spawn-props.test.ts
  *
  * Places 3D glTF models (trees, bushes, rocks, crystals, mushrooms)
  * on the terrain as decorative props. Placement is deterministic from
  * seed + world position, so the same island always looks the same.
  *
- * Two-phase API:
+ * Three-phase API:
  *   1. `generatePropPlacements()` — pure, testable, returns data descriptors
- *   2. `spawnPropsInScene()` — loads models, adds to Three.js scene
+ *   2. `spawnPropActors()` — creates JollyPixel actors with ModelRenderer (preferred)
+ *   3. `spawnPropsInScene()` — legacy fallback using raw GLTFLoader
  */
 import type * as THREE from 'three';
-
+import { type ModelActorResult, spawnModelActor } from '../engine/models.ts';
+import type { JpWorld } from '../engine/types.ts';
 import { PRNG } from '../generation/index';
 import { loadGLTF } from './load-model';
 
@@ -169,14 +171,50 @@ export function generatePropPlacements(
 }
 
 // ---------------------------------------------------------------------------
-// Scene integration (loads models, adds to Three.js scene)
+// JollyPixel actor integration (preferred)
 // ---------------------------------------------------------------------------
 
 /** Asset base path for environment models. */
 const MODELS_PATH = '/assets/models/Environment';
 
 /**
+ * Create JollyPixel actors with ModelRenderer for prop placements.
+ *
+ * Models are enqueued for batch loading via the AssetManager. Actual geometry
+ * appears after `loadRuntime()` triggers `awake()`. The actors' object3D groups
+ * are positioned immediately.
+ *
+ * @param jpWorld     JollyPixel World instance.
+ * @param placements  Output of `generatePropPlacements()`.
+ * @returns Array of actor results (for cleanup via `actor.destroy()`).
+ */
+export function spawnPropActors(jpWorld: JpWorld, placements: PropPlacement[]): ModelActorResult[] {
+  const results: ModelActorResult[] = [];
+
+  for (const p of placements) {
+    const actorName = `prop-${p.modelFile}-${Math.round(p.x)}-${Math.round(p.z)}`;
+    const result = spawnModelActor(
+      jpWorld,
+      actorName,
+      `${MODELS_PATH}/${p.modelFile}.gltf`,
+      { x: p.x, y: p.y, z: p.z },
+      p.scale,
+    );
+    result.object3D.rotation.y = p.rotationY;
+    results.push(result);
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy scene integration (raw GLTFLoader fallback)
+// ---------------------------------------------------------------------------
+
+/**
  * Load and place prop models into a Three.js scene from placement descriptors.
+ *
+ * @deprecated Prefer `spawnPropActors()` when a JpWorld is available.
  *
  * @param scene       Three.js scene to add models to.
  * @param placements  Output of `generatePropPlacements()`.
