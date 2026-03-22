@@ -6,7 +6,7 @@
  *
  * All models are from the CubeWorld pack — one cohesive art style.
  */
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const loader = new GLTFLoader();
