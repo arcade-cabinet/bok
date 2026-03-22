@@ -91,6 +91,23 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   // --- Day/night biome tint ---
   engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
 
+  // --- Environment props (3D models: trees, rocks, crystals, etc.) ---
+  try {
+    const { generatePropPlacements, spawnPropsInScene } = await import('../systems/spawn-props');
+    const propPlacements = generatePropPlacements(
+      config.seed,
+      config.biome,
+      -32,
+      -32,
+      32,
+      32,
+      chunkWorld.getSurfaceY.bind(chunkWorld),
+    );
+    spawnPropsInScene(engine.scene, propPlacements);
+  } catch (err) {
+    console.warn('[Bok] Prop spawning failed:', err);
+  }
+
   // --- Enemies + Boss (spawn around origin for now) ---
   const worldSize = 64; // effective area for initial enemy placement
   const {
@@ -110,6 +127,29 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     0,
     0,
   );
+
+  // --- Passive animals (spawn near player, wander) ---
+  try {
+    const { generateAnimalSpawns } = await import('../systems/spawn-animals');
+    const { loadGLTF } = await import('../systems/load-model');
+    const animalSpawns = generateAnimalSpawns(
+      config.seed,
+      config.biome,
+      0,
+      0,
+      0,
+      chunkWorld.getSurfaceY.bind(chunkWorld),
+      0,
+    );
+    for (const spawn of animalSpawns) {
+      const model = await loadGLTF(`/assets/models/Animals/${spawn.modelFile}.gltf`);
+      model.scale.setScalar(0.6);
+      model.position.set(spawn.x, spawn.y, spawn.z);
+      engine.scene.add(model);
+    }
+  } catch (err) {
+    console.warn('[Bok] Animal spawning failed:', err);
+  }
 
   // --- Weapon ---
   const weaponConfig = content.getWeapon('wooden-sword');
