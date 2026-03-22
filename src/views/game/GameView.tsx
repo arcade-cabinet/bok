@@ -18,9 +18,33 @@ import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen } from '../../components/modals/VictoryScreen';
 import { ActionButtons } from '../../components/ui/ActionButtons';
 import { TouchControls } from '../../components/ui/TouchControls';
+import crystalCavesGoals from '../../content/goals/crystal-caves.json';
+import deepOceanGoals from '../../content/goals/deep-ocean.json';
+import desertGoals from '../../content/goals/desert.json';
+import forestGoals from '../../content/goals/forest.json';
+import skyRuinsGoals from '../../content/goals/sky-ruins.json';
+import swampGoals from '../../content/goals/swamp.json';
+import tundraGoals from '../../content/goals/tundra.json';
+import volcanicGoals from '../../content/goals/volcanic.json';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
 import { type BiomeGoals, createGoalSystem } from '../../engine/goalSystem';
 import type { EngineEvent } from '../../engine/types';
+
+/** Map biome IDs (both menu short names and content full names) to goal definitions */
+const GOAL_FILES: Record<string, BiomeGoals> = {
+  forest: forestGoals as BiomeGoals,
+  desert: desertGoals as BiomeGoals,
+  tundra: tundraGoals as BiomeGoals,
+  volcanic: volcanicGoals as BiomeGoals,
+  swamp: swampGoals as BiomeGoals,
+  crystal: crystalCavesGoals as BiomeGoals,
+  'crystal-caves': crystalCavesGoals as BiomeGoals,
+  sky: skyRuinsGoals as BiomeGoals,
+  'sky-ruins': skyRuinsGoals as BiomeGoals,
+  ocean: deepOceanGoals as BiomeGoals,
+  'deep-ocean': deepOceanGoals as BiomeGoals,
+};
+
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useGameEvents } from '../../hooks/useGameEvents';
 import { useGameHUD } from '../../hooks/useGameHUD';
@@ -51,21 +75,14 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
 export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialCompleted());
+  const [showTutorial, setShowTutorial] = useState(() => config.mode !== 'creative' && !isTutorialCompleted());
   const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
 
   // Goal system — loaded from biome content, null in Creative mode
   const goalSystem = useMemo(() => {
     if (config.mode === 'creative') return createGoalSystem(null);
-    try {
-      // Dynamic import would be ideal but for now load from a static map
-      const goalFiles: Record<string, BiomeGoals> = {};
-      // Goals are defined in content/goals/*.json — import them statically
-      return createGoalSystem(goalFiles[config.biome] ?? null);
-    } catch {
-      return createGoalSystem(null);
-    }
+    return createGoalSystem(GOAL_FILES[config.biome] ?? null);
   }, [config.biome, config.mode]);
   const [goalState, setGoalState] = useState(goalSystem.state);
 
@@ -213,6 +230,20 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
             stamina={engineState.stamina}
             maxStamina={engineState.maxStamina}
           />
+          {config.mode === 'creative' && (
+            <div
+              className="fixed top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase z-20"
+              style={{
+                fontFamily: 'Cinzel, Georgia, serif',
+                color: '#fdf6e3',
+                background: 'rgba(39,100,57,0.8)',
+                border: '1px solid rgba(74,156,96,0.6)',
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+              }}
+            >
+              Creative
+            </div>
+          )}
           <GoalTracker
             goals={goalState.goals}
             bossUnlocked={goalState.bossUnlocked}

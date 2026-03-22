@@ -32,7 +32,7 @@ export async function createPlayer(
 
   // Center-mounted weapon model (visible in viewport)
   try {
-    const weaponModel = await loadModel('/models/weapons/Sword_Wood.glb');
+    const weaponModel = await loadModel('/assets/models/Tools/Sword_Wood.gltf');
     weaponModel.scale.setScalar(0.4);
     weaponModel.position.set(0.3, -0.25, -0.5);
     weaponModel.rotation.set(0, 0, -Math.PI / 6);

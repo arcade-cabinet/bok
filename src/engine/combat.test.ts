@@ -474,4 +474,100 @@ describe('createCombat — boss attack system', () => {
       expect(events.some((e) => e.type === 'playerDied')).toBe(true);
     });
   });
+
+  describe('creative mode', () => {
+    it('skips all enemy damage to player in creative mode', () => {
+      // Create combat in creative mode with no boss phases (generic contact damage)
+      const combat = createCombat(
+        scene,
+        enemies,
+        boss,
+        bossMesh,
+        onEvent,
+        'test-boss',
+        'dash',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'creative',
+      );
+      const playerPos = new THREE.Vector3(5, 0, 5); // right on top of boss
+
+      // Multiple updates — enough time for enemy attack cooldown
+      combat.update(1.6, playerPos);
+      combat.update(1.6, playerPos);
+
+      // Player should take no damage
+      expect(combat.state.playerHealth).toBe(100);
+      expect(events.every((e) => e.type !== 'playerDamaged')).toBe(true);
+      expect(combat.state.phase).toBe('playing');
+    });
+
+    it('skips boss phase attack damage in creative mode', () => {
+      const phases: BossPhaseConfig[] = [
+        {
+          healthThreshold: 1.0,
+          attacks: [{ name: 'lethal-blow', type: 'melee', damage: 200, cooldown: 1.0, range: 5.0, telegraph: 0.1 }],
+          description: 'Phase 1',
+        },
+      ];
+      const combat = createCombat(
+        scene,
+        enemies,
+        boss,
+        bossMesh,
+        onEvent,
+        'test-boss',
+        'dash',
+        phases,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'creative',
+      );
+      const playerPos = new THREE.Vector3(5, 0, 6);
+
+      // Telegraph starts
+      combat.update(0.016, playerPos);
+      expect(events.some((e) => e.type === 'bossTelegraph')).toBe(true);
+
+      // Telegraph completes, but damage is skipped
+      combat.update(0.1, playerPos);
+      expect(combat.state.playerHealth).toBe(100);
+      expect(combat.state.phase).toBe('playing');
+    });
+
+    it('still allows player to damage enemies in creative mode', () => {
+      const minionMesh = new THREE.Object3D();
+      minionMesh.position.set(0, 0, 0);
+      const minion = makeEnemyEntry(minionMesh, 50);
+      const allEnemies = [minion];
+
+      const combat = createCombat(
+        scene,
+        allEnemies,
+        boss,
+        bossMesh,
+        onEvent,
+        'test-boss',
+        'dash',
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'creative',
+      );
+
+      // Player right next to minion — should trigger auto-attack
+      const playerPos = new THREE.Vector3(0, 0, 0.5);
+      combat.update(0.016, playerPos);
+
+      // Player can still deal damage to enemies
+      expect(minion.health).toBeLessThan(50);
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import forestGoalsJson from '../content/goals/forest.json';
 import { type BiomeGoals, createGoalSystem } from './goalSystem';
 
 const FOREST_GOALS: BiomeGoals = {
@@ -80,5 +81,33 @@ describe('goalSystem', () => {
     sys.onChestOpened();
     sys.onLandmarkDiscovered();
     expect(sys.state.bossUnlocked).toBe(true);
+  });
+
+  it('loads goals from imported JSON (forest biome)', () => {
+    const sys = createGoalSystem(forestGoalsJson as BiomeGoals);
+    expect(sys.state.goals.length).toBeGreaterThan(0);
+    expect(sys.state.bossUnlocked).toBe(false);
+    expect(sys.state.bossGateMessage).toBe('The Ancient Treant awakens...');
+
+    // Each goal has proper structure
+    for (const goal of sys.state.goals) {
+      expect(goal.definition.id).toBeTruthy();
+      expect(goal.definition.title).toBeTruthy();
+      expect(goal.definition.target).toBeGreaterThan(0);
+      expect(['discover', 'kill', 'loot']).toContain(goal.definition.type);
+      expect(goal.current).toBe(0);
+      expect(goal.completed).toBe(false);
+    }
+  });
+
+  it('completing all JSON-loaded goals unlocks boss', () => {
+    const sys = createGoalSystem(forestGoalsJson as BiomeGoals);
+    // Forest goals: 2 discover, 5 kill, 3 loot
+    for (let i = 0; i < 5; i++) sys.onEnemyKilled();
+    for (let i = 0; i < 3; i++) sys.onChestOpened();
+    for (let i = 0; i < 2; i++) sys.onLandmarkDiscovered();
+    expect(sys.state.allCompleted).toBe(true);
+    expect(sys.state.bossUnlocked).toBe(true);
+    expect(sys.state.completionMessage).toBe('The grove trembles. The path to the Treant is open.');
   });
 });

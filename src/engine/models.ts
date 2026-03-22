@@ -1,6 +1,6 @@
 /**
  * @module engine/models
- * @role Load GLB models from public/models/ (CubeWorld asset pack)
+ * @role Load glTF models from public/assets/models/ (CubeWorld asset pack)
  * @input Three.js scene, model path
  * @output Loaded THREE.Group clones positioned in scene
  *
@@ -13,7 +13,7 @@ const loader = new GLTFLoader();
 const cache = new Map<string, THREE.Group>();
 
 /**
- * Load a GLB model from public/models/. Caches by path.
+ * Load a glTF model from public/assets/models/. Caches by path.
  * Returns a clone of the loaded scene group.
  */
 export async function loadModel(path: string): Promise<THREE.Group> {
@@ -40,42 +40,42 @@ export async function loadModel(path: string): Promise<THREE.Group> {
 // =============================================================================
 export const ENEMY_MODELS: Record<string, string> = {
   // --- CubeWorld core enemies ---
-  skeleton: '/models/enemies/Skeleton.glb',
-  'skeleton-archer': '/models/enemies/Skeleton_Armor.glb',
-  goblin: '/models/enemies/Goblin.glb',
-  zombie: '/models/enemies/Zombie.glb',
-  demon: '/models/enemies/Demon.glb',
-  wizard: '/models/enemies/Wizard.glb',
-  yeti: '/models/enemies/Yeti.glb',
-  giant: '/models/enemies/Giant.glb',
-  hedgehog: '/models/enemies/Hedgehog.glb',
+  skeleton: '/assets/models/Enemies/Skeleton.gltf',
+  'skeleton-archer': '/assets/models/Enemies/Skeleton_Armor.gltf',
+  goblin: '/assets/models/Enemies/Goblin.gltf',
+  zombie: '/assets/models/Enemies/Zombie.gltf',
+  demon: '/assets/models/Enemies/Demon.gltf',
+  wizard: '/assets/models/Enemies/Wizard.gltf',
+  yeti: '/assets/models/Enemies/Yeti.gltf',
+  giant: '/assets/models/Enemies/Giant.gltf',
+  hedgehog: '/assets/models/Enemies/Hedgehog.gltf',
 
   // --- Biome enemy mappings (CubeWorld best-fit) ---
-  slime: '/models/enemies/Hedgehog.glb',
-  'sand-wraith': '/models/enemies/Wizard.glb',
-  scorpion: '/models/enemies/Hedgehog.glb',
-  'frost-wolf': '/models/animals/Wolf.glb',
-  'ice-golem': '/models/enemies/Giant.glb',
-  'fire-imp': '/models/enemies/Goblin.glb',
-  'lava-elemental': '/models/enemies/Demon.glb',
-  'swamp-lurker': '/models/enemies/Zombie.glb',
-  'bog-witch': '/models/enemies/Wizard.glb',
-  'crystal-sentinel': '/models/enemies/Skeleton_Armor.glb',
-  'gem-spider': '/models/enemies/Hedgehog.glb',
-  'sky-hawk': '/models/animals/Chicken.glb',
-  'wind-elemental': '/models/enemies/Wizard.glb',
-  'depth-crawler': '/models/enemies/Zombie.glb',
-  'angler-fish': '/models/enemies/Hedgehog.glb',
+  slime: '/assets/models/Enemies/Hedgehog.gltf',
+  'sand-wraith': '/assets/models/Enemies/Wizard.gltf',
+  scorpion: '/assets/models/Enemies/Hedgehog.gltf',
+  'frost-wolf': '/assets/models/Animals/Wolf.gltf',
+  'ice-golem': '/assets/models/Enemies/Giant.gltf',
+  'fire-imp': '/assets/models/Enemies/Goblin.gltf',
+  'lava-elemental': '/assets/models/Enemies/Demon.gltf',
+  'swamp-lurker': '/assets/models/Enemies/Zombie.gltf',
+  'bog-witch': '/assets/models/Enemies/Wizard.gltf',
+  'crystal-sentinel': '/assets/models/Enemies/Skeleton_Armor.gltf',
+  'gem-spider': '/assets/models/Enemies/Hedgehog.gltf',
+  'sky-hawk': '/assets/models/Animals/Chicken.gltf',
+  'wind-elemental': '/assets/models/Enemies/Wizard.gltf',
+  'depth-crawler': '/assets/models/Enemies/Zombie.gltf',
+  'angler-fish': '/assets/models/Enemies/Hedgehog.gltf',
 
   // --- Boss models ---
-  'ancient-treant': '/models/enemies/Giant.glb',
-  'pharaoh-construct': '/models/enemies/Skeleton_Armor.glb',
-  'frost-wyrm': '/models/enemies/Yeti.glb',
-  'magma-king': '/models/enemies/Demon.glb',
-  'mire-hag': '/models/enemies/Wizard.glb',
-  'crystal-hydra': '/models/enemies/Giant.glb',
-  'storm-titan': '/models/enemies/Giant.glb',
-  'abyssal-leviathan': '/models/enemies/Demon.glb',
+  'ancient-treant': '/assets/models/Enemies/Giant.gltf',
+  'pharaoh-construct': '/assets/models/Enemies/Skeleton_Armor.gltf',
+  'frost-wyrm': '/assets/models/Enemies/Yeti.gltf',
+  'magma-king': '/assets/models/Enemies/Demon.gltf',
+  'mire-hag': '/assets/models/Enemies/Wizard.gltf',
+  'crystal-hydra': '/assets/models/Enemies/Giant.gltf',
+  'storm-titan': '/assets/models/Enemies/Giant.gltf',
+  'abyssal-leviathan': '/assets/models/Enemies/Demon.gltf',
 };
 
 // =============================================================================
@@ -83,43 +83,43 @@ export const ENEMY_MODELS: Record<string, string> = {
 // =============================================================================
 export const WEAPON_MODELS: Record<string, string> = {
   // Swords
-  'wooden-sword': '/models/weapons/Sword_Wood.glb',
-  'iron-sword': '/models/weapons/Sword_Stone.glb',
-  'crystal-blade': '/models/weapons/Sword_Diamond.glb',
-  'volcanic-edge': '/models/weapons/Sword_Gold.glb',
-  'frost-cleaver': '/models/weapons/Sword_Diamond.glb',
+  'wooden-sword': '/assets/models/Tools/Sword_Wood.gltf',
+  'iron-sword': '/assets/models/Tools/Sword_Stone.gltf',
+  'crystal-blade': '/assets/models/Tools/Sword_Diamond.gltf',
+  'volcanic-edge': '/assets/models/Tools/Sword_Gold.gltf',
+  'frost-cleaver': '/assets/models/Tools/Sword_Diamond.gltf',
 
   // Axes
-  'battle-axe': '/models/weapons/Axe_Wood.glb',
-  'war-hammer': '/models/weapons/Pickaxe_Stone.glb',
+  'battle-axe': '/assets/models/Tools/Axe_Wood.gltf',
+  'war-hammer': '/assets/models/Tools/Pickaxe_Stone.gltf',
 
   // Pickaxes (mining tools — double as weapons)
-  pickaxe_wood: '/models/weapons/Pickaxe_Wood.glb',
-  pickaxe_stone: '/models/weapons/Pickaxe_Stone.glb',
-  pickaxe_gold: '/models/weapons/Pickaxe_Gold.glb',
-  pickaxe_diamond: '/models/weapons/Pickaxe_Diamond.glb',
+  pickaxe_wood: '/assets/models/Tools/Pickaxe_Wood.gltf',
+  pickaxe_stone: '/assets/models/Tools/Pickaxe_Stone.gltf',
+  pickaxe_gold: '/assets/models/Tools/Pickaxe_Gold.gltf',
+  pickaxe_diamond: '/assets/models/Tools/Pickaxe_Diamond.gltf',
 
   // Shovels
-  shovel_wood: '/models/weapons/Shovel_Wood.glb',
-  shovel_stone: '/models/weapons/Shovel_Stone.glb',
-  shovel_gold: '/models/weapons/Shovel_Gold.glb',
-  shovel_diamond: '/models/weapons/Shovel_Diamond.glb',
+  shovel_wood: '/assets/models/Tools/Shovel_Wood.gltf',
+  shovel_stone: '/assets/models/Tools/Shovel_Stone.gltf',
+  shovel_gold: '/assets/models/Tools/Shovel_Gold.gltf',
+  shovel_diamond: '/assets/models/Tools/Shovel_Diamond.gltf',
 
   // Axes (all tiers)
-  axe_wood: '/models/weapons/Axe_Wood.glb',
-  axe_stone: '/models/weapons/Axe_Stone.glb',
-  axe_gold: '/models/weapons/Axe_Gold.glb',
-  axe_diamond: '/models/weapons/Axe_Diamond.glb',
+  axe_wood: '/assets/models/Tools/Axe_Wood.gltf',
+  axe_stone: '/assets/models/Tools/Axe_Stone.gltf',
+  axe_gold: '/assets/models/Tools/Axe_Gold.gltf',
+  axe_diamond: '/assets/models/Tools/Axe_Diamond.gltf',
 
   // Legacy mappings
-  'twin-daggers': '/models/weapons/Sword_Wood.glb',
-  trident: '/models/weapons/Sword_Gold.glb',
-  'short-bow': '/models/weapons/Axe_Wood.glb',
-  crossbow: '/models/weapons/Axe_Stone.glb',
-  'fire-staff': '/models/weapons/Pickaxe_Gold.glb',
-  'ice-wand': '/models/weapons/Pickaxe_Diamond.glb',
-  'lightning-rod': '/models/weapons/Shovel_Gold.glb',
-  'crystal-sling': '/models/weapons/Shovel_Diamond.glb',
+  'twin-daggers': '/assets/models/Tools/Sword_Wood.gltf',
+  trident: '/assets/models/Tools/Sword_Gold.gltf',
+  'short-bow': '/assets/models/Tools/Axe_Wood.gltf',
+  crossbow: '/assets/models/Tools/Axe_Stone.gltf',
+  'fire-staff': '/assets/models/Tools/Pickaxe_Gold.gltf',
+  'ice-wand': '/assets/models/Tools/Pickaxe_Diamond.gltf',
+  'lightning-rod': '/assets/models/Tools/Shovel_Gold.gltf',
+  'crystal-sling': '/assets/models/Tools/Shovel_Diamond.gltf',
 };
 
 // =============================================================================
@@ -127,106 +127,106 @@ export const WEAPON_MODELS: Record<string, string> = {
 // =============================================================================
 export const ENVIRONMENT_MODELS = {
   // Trees
-  tree1: '/models/environment/Tree_1.glb',
-  tree2: '/models/environment/Tree_2.glb',
-  tree3: '/models/environment/Tree_3.glb',
-  deadTree1: '/models/environment/DeadTree_1.glb',
-  deadTree2: '/models/environment/DeadTree_2.glb',
-  deadTree3: '/models/environment/DeadTree_3.glb',
+  tree1: '/assets/models/Environment/Tree_1.gltf',
+  tree2: '/assets/models/Environment/Tree_2.gltf',
+  tree3: '/assets/models/Environment/Tree_3.gltf',
+  deadTree1: '/assets/models/Environment/DeadTree_1.gltf',
+  deadTree2: '/assets/models/Environment/DeadTree_2.gltf',
+  deadTree3: '/assets/models/Environment/DeadTree_3.gltf',
 
   // Chests
-  chestClosed: '/models/environment/Chest_Closed.glb',
-  chestOpen: '/models/environment/Chest_Open.glb',
+  chestClosed: '/assets/models/Environment/Chest_Closed.gltf',
+  chestOpen: '/assets/models/Environment/Chest_Open.gltf',
 
   // Crystals
-  crystalBig: '/models/environment/Crystal_Big.glb',
-  crystalSmall: '/models/environment/Crystal_Small.glb',
+  crystalBig: '/assets/models/Environment/Crystal_Big.gltf',
+  crystalSmall: '/assets/models/Environment/Crystal_Small.gltf',
 
   // Vegetation
-  bush: '/models/environment/Bush.glb',
-  flowers1: '/models/environment/Flowers_1.glb',
-  flowers2: '/models/environment/Flowers_2.glb',
-  grassBig: '/models/environment/Grass_Big.glb',
-  grassSmall: '/models/environment/Grass_Small.glb',
-  mushroom: '/models/environment/Mushroom.glb',
-  plant2: '/models/environment/Plant_2.glb',
-  plant3: '/models/environment/Plant_3.glb',
+  bush: '/assets/models/Environment/Bush.gltf',
+  flowers1: '/assets/models/Environment/Flowers_1.gltf',
+  flowers2: '/assets/models/Environment/Flowers_2.gltf',
+  grassBig: '/assets/models/Environment/Grass_Big.gltf',
+  grassSmall: '/assets/models/Environment/Grass_Small.gltf',
+  mushroom: '/assets/models/Environment/Mushroom.gltf',
+  plant2: '/assets/models/Environment/Plant_2.gltf',
+  plant3: '/assets/models/Environment/Plant_3.gltf',
 
   // Bamboo
-  bamboo: '/models/environment/Bamboo.glb',
-  bambooMid: '/models/environment/Bamboo_Mid.glb',
-  bambooSmall: '/models/environment/Bamboo_Small.glb',
+  bamboo: '/assets/models/Environment/Bamboo.gltf',
+  bambooMid: '/assets/models/Environment/Bamboo_Mid.gltf',
+  bambooSmall: '/assets/models/Environment/Bamboo_Small.gltf',
 
   // Rocks
-  rock1: '/models/environment/Rock1.glb',
-  rock2: '/models/environment/Rock2.glb',
-  stone: '/models/environment/Stone.glb',
+  rock1: '/assets/models/Environment/Rock1.gltf',
+  rock2: '/assets/models/Environment/Rock2.gltf',
+  stone: '/assets/models/Environment/Rock1.gltf',
 
   // Structures
-  fenceCenter: '/models/environment/Fence_Center.glb',
-  fenceCorner: '/models/environment/Fence_Corner.glb',
-  fenceEnd: '/models/environment/Fence_End.glb',
-  fenceT: '/models/environment/Fence_T.glb',
-  doorClosed: '/models/environment/Door_Closed.glb',
+  fenceCenter: '/assets/models/Environment/Fence_Center.gltf',
+  fenceCorner: '/assets/models/Environment/Fence_Corner.gltf',
+  fenceEnd: '/assets/models/Environment/Fence_End.gltf',
+  fenceT: '/assets/models/Environment/Fence_T.gltf',
+  doorClosed: '/assets/models/Environment/Door_Closed.gltf',
 
   // Interactive
-  key: '/models/environment/Key.glb',
-  leverLeft: '/models/environment/Lever_Left.glb',
-  leverRight: '/models/environment/Lever_Right.glb',
-  button: '/models/environment/Button.glb',
-  buttonPressed: '/models/environment/Button_Pressed.glb',
-  cart: '/models/environment/Cart.glb',
+  key: '/assets/models/Environment/Key.gltf',
+  leverLeft: '/assets/models/Environment/Lever_Left.gltf',
+  leverRight: '/assets/models/Environment/Lever_Right.gltf',
+  button: '/assets/models/Environment/Button.gltf',
+  buttonPressed: '/assets/models/Environment/Button.gltf',
+  cart: '/assets/models/Environment/Cart.gltf',
 
   // Rails
-  railStraight: '/models/environment/Rail_Straight.glb',
-  railCorner: '/models/environment/Rail_Corner.glb',
-  railIncline: '/models/environment/Rail_Incline.glb',
+  railStraight: '/assets/models/Environment/Rail_Straight.gltf',
+  railCorner: '/assets/models/Environment/Rail_Corner.gltf',
+  railIncline: '/assets/models/Environment/Rail_Incline.gltf',
 } as const;
 
 // =============================================================================
 // CubeWorld Animal Models (passive mobs, NPCs, hub decoration)
 // =============================================================================
 export const ANIMAL_MODELS = {
-  cat: '/models/animals/Cat.glb',
-  chick: '/models/animals/Chick.glb',
-  chicken: '/models/animals/Chicken.glb',
-  dog: '/models/animals/Dog.glb',
-  horse: '/models/animals/Horse.glb',
-  pig: '/models/animals/Pig.glb',
-  raccoon: '/models/animals/Raccoon.glb',
-  sheep: '/models/animals/Sheep.glb',
-  wolf: '/models/animals/Wolf.glb',
+  cat: '/assets/models/Animals/Cat.gltf',
+  chick: '/assets/models/Animals/Chick.gltf',
+  chicken: '/assets/models/Animals/Chicken.gltf',
+  dog: '/assets/models/Animals/Dog.gltf',
+  horse: '/assets/models/Animals/Horse.gltf',
+  pig: '/assets/models/Animals/Pig.gltf',
+  raccoon: '/assets/models/Animals/Raccoon.gltf',
+  sheep: '/assets/models/Animals/Sheep.gltf',
+  wolf: '/assets/models/Animals/Wolf.gltf',
 } as const;
 
 // =============================================================================
 // CubeWorld Character Models (player/NPC)
 // =============================================================================
 export const CHARACTER_MODELS = {
-  female1: '/models/characters/Character_Female_1.glb',
-  female2: '/models/characters/Character_Female_2.glb',
-  male1: '/models/characters/Character_Male_1.glb',
-  male2: '/models/characters/Character_Male_2.glb',
+  female1: '/assets/models/Characters/Character_Female_1.gltf',
+  female2: '/assets/models/Characters/Character_Female_2.gltf',
+  male1: '/assets/models/Characters/Character_Male_1.gltf',
+  male2: '/assets/models/Characters/Character_Male_2.gltf',
 } as const;
 
 // =============================================================================
 // CubeWorld Block Models (decorative 3D blocks)
 // =============================================================================
 export const BLOCK_MODELS = {
-  grass: '/models/blocks/Block_Grass.glb',
-  dirt: '/models/blocks/Block_Dirt.glb',
-  stone: '/models/blocks/Block_Stone.glb',
-  ice: '/models/blocks/Block_Ice.glb',
-  snow: '/models/blocks/Block_Snow.glb',
-  coal: '/models/blocks/Block_Coal.glb',
-  diamond: '/models/blocks/Block_Diamond.glb',
-  crystal: '/models/blocks/Block_Crystal.glb',
-  metal: '/models/blocks/Block_Metal.glb',
-  woodPlanks: '/models/blocks/Block_WoodPlanks.glb',
-  brick: '/models/blocks/Block_Brick.glb',
-  greyBricks: '/models/blocks/Block_GreyBricks.glb',
-  crate: '/models/blocks/Block_Crate.glb',
-  cheese: '/models/blocks/Block_Cheese.glb',
-  blank: '/models/blocks/Block_Blank.glb',
+  grass: '/assets/models/Blocks/Block_Grass.gltf',
+  dirt: '/assets/models/Blocks/Block_Dirt.gltf',
+  stone: '/assets/models/Blocks/Block_Stone.gltf',
+  ice: '/assets/models/Blocks/Block_Ice.gltf',
+  snow: '/assets/models/Blocks/Block_Snow.gltf',
+  coal: '/assets/models/Blocks/Block_Coal.gltf',
+  diamond: '/assets/models/Blocks/Block_Diamond.gltf',
+  crystal: '/assets/models/Blocks/Block_Crystal.gltf',
+  metal: '/assets/models/Blocks/Block_Metal.gltf',
+  woodPlanks: '/assets/models/Blocks/Block_WoodPlanks.gltf',
+  brick: '/assets/models/Blocks/Block_Brick.gltf',
+  greyBricks: '/assets/models/Blocks/Block_GreyBricks.gltf',
+  crate: '/assets/models/Blocks/Block_Crate.gltf',
+  cheese: '/assets/models/Blocks/Block_Cheese.gltf',
+  blank: '/assets/models/Blocks/Block_Blank.gltf',
 } as const;
 
 // Legacy alias

@@ -142,6 +142,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     chests,
     config.seed,
     particles,
+    config.mode,
   );
 
   // --- Mobile input ---

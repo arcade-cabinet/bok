@@ -79,6 +79,7 @@ export function createCombat(
   chests?: ChestState[],
   chestSeed?: string,
   particles?: ParticleSystem | null,
+  gameMode: 'creative' | 'survival' = 'survival',
 ): CombatSystem {
   const lootGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
   const lootMats: Record<string, THREE.MeshLambertMaterial> = {
@@ -325,8 +326,9 @@ export function createCombat(
 
             if (atk.type === 'summon') {
               onEvent({ type: 'bossSummon', attackName: atk.name });
-            } else if (atk.type === 'ranged' || bDist <= atk.range) {
+            } else if (gameMode !== 'creative' && (atk.type === 'ranged' || bDist <= atk.range)) {
               // Ranged always hits if in range at selection, melee/aoe check range at execution
+              // Creative mode: skip all boss damage to player
               const dmg = atk.damage;
               state.playerHealth = Math.max(0, state.playerHealth - dmg);
               if (dmg > 0) {
@@ -394,6 +396,7 @@ export function createCombat(
     for (const enemy of enemies) {
       // Skip dying enemies and boss for generic contact damage when boss phases are configured
       if (enemy.dying) continue;
+      if (gameMode === 'creative') continue; // Creative mode: player is invincible
       if (bossPhases && bossPhases.length > 0 && enemy.mesh === bossMesh) continue;
 
       const dx = cameraPos.x - enemy.mesh.position.x;

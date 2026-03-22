@@ -6,16 +6,16 @@
 import * as Tone from 'tone';
 
 const SFX_POOL = [
-  '/audio/sfx/stalker.ogg',
-  '/audio/sfx/shadow.ogg',
-  '/audio/sfx/phantom.ogg',
-  '/audio/sfx/presence-behind.ogg',
-  '/audio/sfx/alien-remarks-1.ogg',
-  '/audio/sfx/alien-remarks-2.ogg',
-  '/audio/sfx/alien-remarks-3.ogg',
+  '/assets/audio/sfx/stalker.ogg',
+  '/assets/audio/sfx/shadow.ogg',
+  '/assets/audio/sfx/phantom.ogg',
+  '/assets/audio/sfx/presence-behind.ogg',
+  '/assets/audio/sfx/alien-remarks-1.ogg',
+  '/assets/audio/sfx/alien-remarks-2.ogg',
+  '/assets/audio/sfx/alien-remarks-3.ogg',
 ];
 
-const UNDERWATER_SFX = '/audio/sfx/underwater-world.ogg';
+const UNDERWATER_SFX = '/assets/audio/sfx/underwater-world.ogg';
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let sfxGain: Tone.Gain | null = null;
