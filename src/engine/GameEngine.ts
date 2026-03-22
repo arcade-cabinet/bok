@@ -4,6 +4,7 @@
  * @input Canvas element, game config
  * @output Running game with cleanup function
  */
+import RAPIER from '@dimforge/rapier3d';
 import { loadRuntime } from '@jolly-pixel/runtime';
 import { VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
@@ -12,6 +13,7 @@ import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
+import { generateTileset, ParticleSystem, TILESET_COLS, TILESET_ROWS, WeatherSystem } from '../rendering/index';
 import { getBiomeBlockDefs } from './biomeBlocks.ts';
 import { ChunkWorld } from './chunkWorld.ts';
 import { createCombat } from './combat.ts';
@@ -54,7 +56,6 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
 
   // --- Chunk-based infinite terrain ---
   const blockDefs = getBiomeBlockDefs(config.biome);
-  const RAPIER = (await import('@dimforge/rapier3d')).default;
   const voxelMap = engine.jpWorld.createActor('terrain').addComponentAndGet(VoxelRenderer, {
     chunkSize: 16,
     layers: ['Ground'],
@@ -65,7 +66,6 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   });
 
   // Register tileset
-  const { generateTileset, TILESET_COLS, TILESET_ROWS } = await import('../rendering/index');
   const tileset = generateTileset();
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
@@ -82,7 +82,6 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   chunkWorld.updateAroundPlayer(0, 0);
 
   // --- Weather + Particles ---
-  const { WeatherSystem, ParticleSystem } = await import('../rendering/index');
   const weatherSystem = new WeatherSystem();
   engine.scene.add(weatherSystem.mesh);
   weatherSystem.setWeather(config.biome);
