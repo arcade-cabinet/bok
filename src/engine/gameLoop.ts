@@ -11,7 +11,7 @@ import type { EntityManager as YukaEntityManager } from 'yuka';
 
 import { createPlayerGovernor, type GovernorOutput } from '../ai/index';
 import type { InputSystem } from '../input/index.ts';
-import type { DayNightCycle, WeatherSystem } from '../rendering/index.ts';
+import type { DayNightCycle, ParticleSystem, WeatherSystem } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';
 import { LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import type { CameraResult } from './camera.ts';
@@ -51,6 +51,7 @@ export interface GameLoopContext {
   mobileInput: MobileInput;
   getSurfaceY: SurfaceHeightFn;
   weatherSystem: WeatherSystem | null;
+  particles: ParticleSystem | null;
 }
 
 /** Controls and state accessors returned from the game loop */
@@ -229,6 +230,9 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       stamina,
       maxStamina: MAX_STAMINA,
     });
+
+    // Particle system update
+    if (ctx.particles) ctx.particles.update(dt);
 
     // Player governor — update context and run GOAP evaluation
     governor.setContext(

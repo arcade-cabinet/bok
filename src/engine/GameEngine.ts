@@ -58,10 +58,14 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   });
 
   // --- Biome weather effects ---
-  const { WeatherSystem } = await import('../rendering/index');
+  const { WeatherSystem, ParticleSystem } = await import('../rendering/index');
   const weatherSystem = new WeatherSystem();
   engine.scene.add(weatherSystem.mesh);
   weatherSystem.setWeather(config.biome);
+
+  // --- Particle system (combat effects, ambient) ---
+  const particles = new ParticleSystem();
+  engine.scene.add(particles.mesh);
 
   // --- Day/night biome tint ---
   engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
@@ -110,6 +114,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     weaponConfig,
     chests,
     config.seed,
+    particles,
   );
 
   // --- Mobile input buffer (written by setMobileInput, read in frame loop) ---
@@ -131,6 +136,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     mobileInput,
     getSurfaceY: terrain.getSurfaceY,
     weatherSystem,
+    particles,
   });
 
   // --- Audio ---
@@ -240,6 +246,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       cleanupChests();
       cleanupEnemies();
       weatherSystem.dispose();
+      engine.scene.remove(particles.mesh);
       stopMusic();
       stopAtmosphericSFX();
       engine.runtime.stop();
