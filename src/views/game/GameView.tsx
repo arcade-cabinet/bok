@@ -3,6 +3,7 @@ import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { DamageNumbers } from '../../components/hud/DamageNumbers';
+import { GoalTracker } from '../../components/hud/GoalTracker';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { HintToast, type HintTrigger } from '../../components/hud/HintToast';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
@@ -17,8 +18,33 @@ import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen } from '../../components/modals/VictoryScreen';
 import { ActionButtons } from '../../components/ui/ActionButtons';
 import { TouchControls } from '../../components/ui/TouchControls';
+import crystalCavesGoals from '../../content/goals/crystal-caves.json';
+import deepOceanGoals from '../../content/goals/deep-ocean.json';
+import desertGoals from '../../content/goals/desert.json';
+import forestGoals from '../../content/goals/forest.json';
+import skyRuinsGoals from '../../content/goals/sky-ruins.json';
+import swampGoals from '../../content/goals/swamp.json';
+import tundraGoals from '../../content/goals/tundra.json';
+import volcanicGoals from '../../content/goals/volcanic.json';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
+import { type BiomeGoals, createGoalSystem } from '../../engine/goalSystem';
 import type { EngineEvent } from '../../engine/types';
+
+/** Map biome IDs (both menu short names and content full names) to goal definitions */
+const GOAL_FILES: Record<string, BiomeGoals> = {
+  forest: forestGoals as BiomeGoals,
+  desert: desertGoals as BiomeGoals,
+  tundra: tundraGoals as BiomeGoals,
+  volcanic: volcanicGoals as BiomeGoals,
+  swamp: swampGoals as BiomeGoals,
+  crystal: crystalCavesGoals as BiomeGoals,
+  'crystal-caves': crystalCavesGoals as BiomeGoals,
+  sky: skyRuinsGoals as BiomeGoals,
+  'sky-ruins': skyRuinsGoals as BiomeGoals,
+  ocean: deepOceanGoals as BiomeGoals,
+  'deep-ocean': deepOceanGoals as BiomeGoals,
+};
+
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useGameEvents } from '../../hooks/useGameEvents';
 import { useGameHUD } from '../../hooks/useGameHUD';
@@ -49,9 +75,16 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
 export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialCompleted());
+  const [showTutorial, setShowTutorial] = useState(() => config.mode !== 'creative' && !isTutorialCompleted());
   const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
+
+  // Goal system — loaded from biome content, null in Creative mode
+  const goalSystem = useMemo(() => {
+    if (config.mode === 'creative') return createGoalSystem(null);
+    return createGoalSystem(GOAL_FILES[config.biome] ?? null);
+  }, [config.biome, config.mode]);
+  const [goalState, setGoalState] = useState(goalSystem.state);
 
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
@@ -65,6 +98,16 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
     (event) => {
       events.handleEngineEvent(event);
       srEventHandlerRef.current?.(event);
+
+      // Advance goal progress
+      if (event.type === 'enemyKilled') {
+        goalSystem.onEnemyKilled();
+        setGoalState({ ...goalSystem.state });
+      }
+      if (event.type === 'chestOpened') {
+        goalSystem.onChestOpened();
+        setGoalState({ ...goalSystem.state });
+      }
 
       // Show tome unlock banner on boss defeat
       if (event.type === 'bossDefeated') {
@@ -186,6 +229,25 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
             max={engineState.maxHealth}
             stamina={engineState.stamina}
             maxStamina={engineState.maxStamina}
+          />
+          {config.mode === 'creative' && (
+            <div
+              className="fixed top-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-md text-xs font-bold tracking-widest uppercase z-20"
+              style={{
+                fontFamily: 'Cinzel, Georgia, serif',
+                color: '#fdf6e3',
+                background: 'rgba(39,100,57,0.8)',
+                border: '1px solid rgba(74,156,96,0.6)',
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+              }}
+            >
+              Creative
+            </div>
+          )}
+          <GoalTracker
+            goals={goalState.goals}
+            bossUnlocked={goalState.bossUnlocked}
+            completionMessage={goalState.completionMessage}
           />
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />

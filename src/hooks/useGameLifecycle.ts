@@ -40,7 +40,7 @@ async function performAutoSave(game: GameInstance, saveManager: SaveManager): Pr
  * Returns refs and state needed by other game hooks and the view.
  */
 export function useGameLifecycle(
-  config: { biome: string; seed: string },
+  config: { biome: string; seed: string; mode?: string },
   onEngineEvent: (event: EngineEvent) => void,
   screenWidth: number,
   screenHeight: number,
@@ -66,7 +66,11 @@ export function useGameLifecycle(
   useEffect(() => {
     if (!canvasRef.current || gameRef.current) return;
 
-    initGame(canvasRef.current, { biome: config.biome, seed: config.seed }).then((game) => {
+    initGame(canvasRef.current, {
+      biome: config.biome,
+      seed: config.seed,
+      mode: (config.mode as 'creative' | 'survival') ?? 'survival',
+    }).then((game) => {
       gameRef.current = game;
       game.onEvent((event: EngineEvent) => onEngineEventRef.current(event));
     });
@@ -75,7 +79,7 @@ export function useGameLifecycle(
       gameRef.current?.destroy();
       gameRef.current = null;
     };
-  }, [config.biome, config.seed]);
+  }, [config.biome, config.seed, config.mode]);
 
   // Periodic auto-save every 60 seconds
   useEffect(() => {

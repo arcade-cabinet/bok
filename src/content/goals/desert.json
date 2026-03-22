@@ -1,0 +1,31 @@
+{
+  "biomeId": "desert",
+  "goals": [
+    {
+      "id": "desert-explore-oasis",
+      "title": "Find the Hidden Oases",
+      "description": "Discover 2 oases in the endless dunes",
+      "type": "discover",
+      "target": 2,
+      "icon": "🏝️"
+    },
+    {
+      "id": "desert-defeat-wraiths",
+      "title": "Silence the Sand Wraiths",
+      "description": "Defeat 6 desert warriors",
+      "type": "kill",
+      "target": 6,
+      "icon": "⚔️"
+    },
+    {
+      "id": "desert-gather-relics",
+      "title": "Unearth Ancient Relics",
+      "description": "Open 3 buried treasure chests",
+      "type": "loot",
+      "target": 3,
+      "icon": "🏺"
+    }
+  ],
+  "bossGateMessage": "The sands shift... The Pharaoh stirs.",
+  "completionMessage": "The desert reveals its master. The Pharaoh Construct awaits."
+}

@@ -1,16 +1,19 @@
 /**
  * @module engine/GameEngine
- * @role Thin orchestrator -- wires setup modules into a running game
+ * @role Thin orchestrator — wires setup modules into a running game
  * @input Canvas element, game config
  * @output Running game with cleanup function
  */
 import { loadRuntime } from '@jolly-pixel/runtime';
+import { VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 
 import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
+import { getBiomeBlockDefs } from './biomeBlocks.ts';
+import { ChunkWorld } from './chunkWorld.ts';
 import { createCombat } from './combat.ts';
 import { spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
@@ -18,82 +21,106 @@ import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
 import { spawnChests } from './lootSetup.ts';
 import { createPlayer } from './playerSetup.ts';
-import { createTerrain } from './terrainSetup.ts';
 import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } from './types.ts';
 
 export type { MobileInput } from './types.ts';
 
 export interface GameInstance {
-  /** Current engine state -- polled by React each frame */
   getState: () => EngineState;
-  /** Subscribe to engine events (damage, kills, etc.) */
   onEvent: (listener: EngineEventListener) => void;
-  /** Trigger player attack (from React touch button) */
   triggerAttack: () => void;
-  /** Feed mobile joystick input from React */
   setMobileInput: (input: MobileInput) => void;
-  /** Toggle pause */
   togglePause: () => void;
-  /** Capture a mid-run snapshot for save/resume */
   captureSnapshot: () => import('../persistence/GameStateSerializer.ts').SerializedGameState;
-  /** Cleanup everything */
   destroy: () => void;
 }
 
 /**
  * Initialize the full game on a canvas element.
- * Returns a GameInstance that React can interact with.
+ * Uses ChunkWorld for infinite seed-based terrain generation.
  */
 export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfig): Promise<GameInstance> {
-  // --- Content lookups (needed before engine core for biome atmosphere) ---
+  // --- Content lookups ---
   const content = new ContentRegistry();
   const biomeConfig = content.getBiome(config.biome);
   const bossConfig = content.getBoss(biomeConfig.bossId);
 
-  // --- Core engine (Runtime, Rapier, Koota, scene, lighting) with biome atmosphere ---
+  // --- Core engine with biome atmosphere ---
   const engine = await createEngineCore(canvas, {
     skyColor: biomeConfig.skyColor,
     fogColor: biomeConfig.fogColor,
     fogDensity: biomeConfig.fogDensity,
   });
 
-  // --- Biome weather effects ---
+  // --- Chunk-based infinite terrain ---
+  const blockDefs = getBiomeBlockDefs(config.biome);
+  const RAPIER = (await import('@dimforge/rapier3d')).default;
+  const voxelMap = engine.jpWorld.createActor('terrain').addComponentAndGet(VoxelRenderer, {
+    chunkSize: 16,
+    layers: ['Ground'],
+    blocks: blockDefs,
+    alphaTest: 0.5,
+    material: 'lambert',
+    rapier: { api: RAPIER as never, world: engine.rapierWorld as never },
+  });
+
+  // Register tileset
+  const { generateTileset, TILESET_COLS, TILESET_ROWS } = await import('../rendering/index');
+  const tileset = generateTileset();
+  const tilesetTexture = new THREE.Texture(tileset.canvas);
+  tilesetTexture.magFilter = THREE.NearestFilter;
+  tilesetTexture.minFilter = THREE.NearestFilter;
+  tilesetTexture.needsUpdate = true;
+  voxelMap.tilesetManager.registerTexture(
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
+    tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
+  );
+
+  // Create ChunkWorld — infinite terrain from seed
+  const chunkWorld = new ChunkWorld(voxelMap, { seed: config.seed, biome: biomeConfig });
+  // Generate initial chunks around spawn (0,0)
+  chunkWorld.updateAroundPlayer(0, 0);
+
+  // --- Weather + Particles ---
   const { WeatherSystem, ParticleSystem } = await import('../rendering/index');
   const weatherSystem = new WeatherSystem();
   engine.scene.add(weatherSystem.mesh);
   weatherSystem.setWeather(config.biome);
-
-  // --- Particle system (combat effects, ambient) ---
   const particles = new ParticleSystem();
   engine.scene.add(particles.mesh);
 
   // --- Day/night biome tint ---
   engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
 
-  // --- Terrain ---
-  const terrain = createTerrain(engine.jpWorld, engine.rapierWorld, config.seed, config.biome);
-
-  // --- Enemies + Boss ---
+  // --- Enemies + Boss (spawn around origin for now) ---
+  const worldSize = 64; // effective area for initial enemy placement
   const {
     enemies,
     boss,
     bossMesh,
     yukaManager,
     cleanup: cleanupEnemies,
-  } = await spawnEnemies(engine.scene, terrain.getSurfaceY, terrain.islandSize, config.seed, config.biome);
+  } = await spawnEnemies(engine.scene, chunkWorld.getSurfaceY.bind(chunkWorld), worldSize, config.seed, config.biome);
 
-  // --- Player (camera, input, weapon) ---
-  const { cam, inputSystem } = await createPlayer(engine.jpWorld, canvas, terrain, engine.isMobile);
+  // --- Player at world origin ---
+  const { cam, inputSystem } = await createPlayer(
+    engine.jpWorld,
+    canvas,
+    chunkWorld.getSurfaceY.bind(chunkWorld),
+    engine.isMobile,
+    0,
+    0,
+  );
 
-  // --- Weapon config (use wooden-sword as default equipped weapon) ---
+  // --- Weapon ---
   const weaponConfig = content.getWeapon('wooden-sword');
 
   // --- Loot chests ---
-  const chestCount = 4 + Math.floor(Math.random() * 4); // 4-7 chests per island
+  const chestCount = 4 + Math.floor(Math.random() * 4);
   const { chests, cleanup: cleanupChests } = spawnChests(
     engine.scene,
-    terrain.getSurfaceY,
-    terrain.islandSize,
+    chunkWorld.getSurfaceY.bind(chunkWorld),
+    worldSize,
     config.seed,
     chestCount,
   );
@@ -115,12 +142,13 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     chests,
     config.seed,
     particles,
+    config.mode,
   );
 
-  // --- Mobile input buffer (written by setMobileInput, read in frame loop) ---
+  // --- Mobile input ---
   const mobileInput: MobileInput = { moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: null };
 
-  // --- Game loop (physics + frame logic) ---
+  // --- Game loop ---
   const loop = createGameLoop({
     jpWorld: engine.jpWorld,
     rapierWorld: engine.rapierWorld,
@@ -134,7 +162,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     combat,
     isMobile: engine.isMobile,
     mobileInput,
-    getSurfaceY: terrain.getSurfaceY,
+    getSurfaceY: chunkWorld.getSurfaceY.bind(chunkWorld),
     weatherSystem,
     particles,
   });
@@ -146,66 +174,59 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
 
   // --- Boot ---
   await loadRuntime(engine.runtime);
-  console.log('[Bok] Engine initialized');
+  console.log('[Bok] Engine initialized — infinite ChunkWorld');
 
-  // --- Public API (unchanged) ---
   return {
-    getState: (): EngineState => ({
-      playerHealth: combat.state.playerHealth,
-      maxHealth: combat.state.maxHealth,
-      enemyCount: enemies.length,
-      biomeName: config.biome,
-      bossNearby:
-        !boss.defeated &&
-        (() => {
-          const dx = cam.camera.position.x - bossMesh.position.x;
-          const dz = cam.camera.position.z - bossMesh.position.z;
-          return Math.sqrt(dx * dx + dz * dz) < 20;
+    getState: (): EngineState => {
+      // Update chunks based on player position
+      chunkWorld.updateAroundPlayer(cam.camera.position.x, cam.camera.position.z);
+
+      return {
+        playerHealth: combat.state.playerHealth,
+        maxHealth: combat.state.maxHealth,
+        enemyCount: enemies.length,
+        biomeName: config.biome,
+        bossNearby:
+          !boss.defeated &&
+          (() => {
+            const dx = cam.camera.position.x - bossMesh.position.x;
+            const dz = cam.camera.position.z - bossMesh.position.z;
+            return Math.sqrt(dx * dx + dz * dz) < 20;
+          })(),
+        bossHealthPct: boss.defeated ? 0 : (enemies.find((e) => e.mesh === bossMesh)?.health ?? 0) / boss.maxHealth,
+        bossPhase: boss.phase,
+        paused: loop.isPaused(),
+        phase: loop.isPaused() ? 'paused' : combat.state.phase,
+        context: loop.getContext(),
+        stamina: loop.getStamina(),
+        maxStamina: loop.getMaxStamina(),
+        comboStep: combat.getComboStep(),
+        isBlocking: loop.isBlocking(),
+        suggestedTargetPos: (() => {
+          const gov = loop.getGovernorOutput();
+          if (gov.suggestedTarget >= 0 && gov.suggestedTarget < enemies.length) {
+            return {
+              x: enemies[gov.suggestedTarget].mesh.position.x,
+              y: enemies[gov.suggestedTarget].mesh.position.y,
+              z: enemies[gov.suggestedTarget].mesh.position.z,
+            };
+          }
+          return null;
         })(),
-      bossHealthPct: boss.defeated ? 0 : (enemies.find((e) => e.mesh === bossMesh)?.health ?? 0) / boss.maxHealth,
-      bossPhase: boss.phase,
-      paused: loop.isPaused(),
-      phase: loop.isPaused() ? 'paused' : combat.state.phase,
-      context: loop.getContext(),
-      stamina: loop.getStamina(),
-      maxStamina: loop.getMaxStamina(),
-      comboStep: combat.getComboStep(),
-      isBlocking: loop.isBlocking(),
-      suggestedTargetPos: (() => {
-        const gov = loop.getGovernorOutput();
-        if (gov.suggestedTarget >= 0 && gov.suggestedTarget < enemies.length) {
-          return {
-            x: enemies[gov.suggestedTarget].mesh.position.x,
-            y: enemies[gov.suggestedTarget].mesh.position.y,
-            z: enemies[gov.suggestedTarget].mesh.position.z,
-          };
-        }
-        return null;
-      })(),
-      threatLevel: loop.getGovernorOutput().threatLevel,
-      canDodge: loop.getGovernorOutput().canDodge,
-      playerX: cam.camera.position.x,
-      playerZ: cam.camera.position.z,
-      minimapMarkers: [
-        ...enemies.map((e) => ({
-          x: e.mesh.position.x,
-          z: e.mesh.position.z,
-          type: 'enemy' as const,
-        })),
-        ...combat.state.lootDrops.map((d) => ({
-          x: d.mesh.position.x,
-          z: d.mesh.position.z,
-          type: 'chest' as const,
-        })),
-        ...chests
-          .filter((c) => !c.opened)
-          .map((c) => ({
-            x: c.position.x,
-            z: c.position.z,
+        threatLevel: loop.getGovernorOutput().threatLevel,
+        canDodge: loop.getGovernorOutput().canDodge,
+        playerX: cam.camera.position.x,
+        playerZ: cam.camera.position.z,
+        minimapMarkers: [
+          ...enemies.map((e) => ({ x: e.mesh.position.x, z: e.mesh.position.z, type: 'enemy' as const })),
+          ...combat.state.lootDrops.map((d) => ({
+            x: d.mesh.position.x,
+            z: d.mesh.position.z,
             type: 'chest' as const,
           })),
-      ],
-    }),
+        ],
+      };
+    },
     onEvent: (listener) => {
       eventListeners.push(listener);
     },
@@ -213,11 +234,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       const combatSources = combat.getSnapshotSources();
       const sources: SnapshotSources = {
         config: { biome: config.biome, seed: config.seed },
-        cameraPosition: {
-          x: cam.camera.position.x,
-          y: cam.camera.position.y,
-          z: cam.camera.position.z,
-        },
+        cameraPosition: { x: cam.camera.position.x, y: cam.camera.position.y, z: cam.camera.position.z },
         combatState: combatSources.combatState ?? {
           playerHealth: combat.state.playerHealth,
           maxHealth: combat.state.maxHealth,
@@ -226,8 +243,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         },
         enemies: combatSources.enemies ?? [],
         inventory: {},
-        equippedWeapon: weaponConfig.id,
-        openedChests: combatSources.openedChests ?? [],
+        equippedWeapon: 'sword',
+        openedChests: [],
         defeatedBoss: combatSources.defeatedBoss ?? boss.defeated,
       };
       return captureSnapshot(sources);
