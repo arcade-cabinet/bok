@@ -1,0 +1,34 @@
+appId: browser
+---
+# Web Chromium: Full menu journey test
+# Run: maestro test maestro/web-menu-journey.yaml --env APP_URL=http://localhost:5174
+
+- openLink: ${APP_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 10000
+
+# Main menu
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+- takeScreenshot: maestro/screenshots/web-01-menu
+
+# Biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 5000
+- assertVisible: "Whispering Woods"
+- assertVisible: "Sunscorched Dunes"
+- assertVisible: "Frostbite Expanse"
+- assertVisible: "Cinderpeak Caldera"
+- assertVisible: "Rothollow Marsh"
+- assertVisible: "Prismatic Depths"
+- assertVisible: "Stormspire Remnants"
+- assertVisible: "Abyssal Trench"
+- takeScreenshot: maestro/screenshots/web-02-biomes
+
+# Select biome
+- tapOn: "Whispering Woods"
+- waitForAnimationToEnd
+- takeScreenshot: maestro/screenshots/web-03-selected
