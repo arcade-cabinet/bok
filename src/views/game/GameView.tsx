@@ -29,6 +29,7 @@ interface Props {
   config: GameConfig;
   savedState?: SerializedGameState | null;
   onReturnToMenu: () => void;
+  onContinueVoyage?: () => void;
   onQuitToMenu: () => void;
   onBossDefeated?: (bossId: string, tomeAbility: string) => Promise<void>;
   onRunEnd?: (
@@ -45,7 +46,7 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
  * GameView — mounts the JollyPixel canvas, initializes the engine,
  * and renders React HUD overlays on top.
  */
-export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
+export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialCompleted());
@@ -252,7 +253,11 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         <DeathScreen stats={events.deathStats} onReturnToHub={onReturnToMenu} onTryAgain={onReturnToMenu} />
       )}
       {engineState?.phase === 'victory' && events.victoryStats && (
-        <VictoryScreen stats={events.victoryStats} onContinueVoyage={onReturnToMenu} onReturnToHub={onReturnToMenu} />
+        <VictoryScreen
+          stats={events.victoryStats}
+          onContinueVoyage={onContinueVoyage ?? onReturnToMenu}
+          onReturnToHub={onReturnToMenu}
+        />
       )}
     </div>
   );
