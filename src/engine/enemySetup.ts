@@ -11,7 +11,7 @@ import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 import { ContentRegistry } from '../content/index.ts';
 import type { EnemySpawnConfig } from '../content/types.ts';
 import { PRNG } from '../generation/index.ts';
-import { applyBiomeTint, applyBossTint } from '../systems/tint-model';
+import { applyBiomeTint, applyBossTint } from '../systems/tint-model.ts';
 import { ENEMY_MODELS, loadModel } from './models.ts';
 import type { BossState, EnemyState, SurfaceHeightFn } from './types.ts';
 
@@ -95,6 +95,7 @@ export async function spawnEnemies(
         model.scale.setScalar(0.8);
         model.position.set(ex + 0.5, ey, ez + 0.5);
         model.castShadow = true;
+        applyBiomeTint(model, biomeId);
         scene.add(model);
         mesh = model;
       } else {
@@ -141,6 +142,7 @@ export async function spawnEnemies(
     bossModel.scale.setScalar(1.5);
     bossModel.position.set(bossPos.x, bossY, bossPos.z);
     bossModel.castShadow = true;
+    applyBossTint(bossModel, biomeId);
     scene.add(bossModel);
     bossMesh = bossModel;
   } catch {

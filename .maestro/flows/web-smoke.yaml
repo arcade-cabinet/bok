@@ -1,0 +1,32 @@
+appId: browser
+---
+# Web Smoke Test — verifies menu renders correctly on Chromium
+- openLink: ${LOCAL_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 15000
+
+# Main menu elements
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+- assertVisible: "Resume Chapter"
+- assertVisible: "Inscriptions"
+
+# Open biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 5000
+
+# Forest is always available
+- assertVisible: "Whispering Woods"
+
+# Locked biomes show ???
+- assertVisible: "???"
+
+# Seed input
+- assertVisible: "Brave Dark Fox"
+
+# Mode buttons
+- assertVisible: "Survival"
+- assertVisible: "Creative"
