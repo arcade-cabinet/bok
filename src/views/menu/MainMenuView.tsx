@@ -336,6 +336,7 @@ export function MainMenuView({
               aria-label="Select biome"
             >
               {BIOMES.map((b) => (
+                // biome-ignore lint/a11y/useSemanticElements: button with role="radio" is valid ARIA for custom radio group
                 <button
                   type="button"
                   key={b.id}

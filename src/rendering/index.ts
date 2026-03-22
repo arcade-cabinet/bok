@@ -8,19 +8,19 @@
  */
 
 export { DayNightCycle, type TimeOfDay } from './DayNightCycle.ts';
-export { LODManager, type LODConfig } from './LODManager.ts';
+export { type LODConfig, LODManager } from './LODManager.ts';
 export { ParticleSystem, type ParticleType } from './ParticleSystem.ts';
 export { PostProcessing } from './PostProcessing.ts';
-export { generateTileset, TILES } from './TilesetGenerator.ts';
 export {
-  type QualityConfig,
-  type QualityPreset,
-  QUALITY_PRESETS,
   detectQualityPreset,
   getEffectiveQualityConfig,
   loadQualitySettings,
+  QUALITY_PRESETS,
+  type QualityConfig,
+  type QualityPreset,
   resolveQualityConfig,
   saveQualitySettings,
 } from './QualitySettings.ts';
+export { generateTileset, TILES } from './TilesetGenerator.ts';
 export { WaterRenderer } from './WaterRenderer.ts';
 export { WeatherSystem } from './WeatherSystem.ts';

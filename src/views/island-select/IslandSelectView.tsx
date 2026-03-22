@@ -4,20 +4,20 @@ import { ContentRegistry } from '../../content/registry.ts';
 import type { BiomeConfig } from '../../content/types.ts';
 
 /** Set to true during development to unlock all biomes without progression. */
-const DEV_UNLOCK_ALL = import.meta.env.DEV && (import.meta.env.VITE_UNLOCK_ALL_BIOMES === 'true');
+const DEV_UNLOCK_ALL = import.meta.env.DEV && import.meta.env.VITE_UNLOCK_ALL_BIOMES === 'true';
 
 /** The starter biome — always available. */
 const STARTER_BIOME = 'forest';
 
 /** Biome unlock order — which boss/biome unlocks the next one. */
 const BIOME_UNLOCK_ORDER: Record<string, string> = {
-  forest: 'desert',      // Defeating Ancient Treant unlocks Desert
-  desert: 'tundra',      // Defeating Pharaoh Construct unlocks Tundra
-  tundra: 'volcanic',    // Defeating Frost Wyrm unlocks Volcanic
-  volcanic: 'swamp',     // Defeating Magma King unlocks Swamp
+  forest: 'desert', // Defeating Ancient Treant unlocks Desert
+  desert: 'tundra', // Defeating Pharaoh Construct unlocks Tundra
+  tundra: 'volcanic', // Defeating Frost Wyrm unlocks Volcanic
+  volcanic: 'swamp', // Defeating Magma King unlocks Swamp
   swamp: 'crystal-caves', // Defeating Mire Hag unlocks Crystal Caves
   'crystal-caves': 'sky-ruins', // Defeating Crystal Hydra unlocks Sky Ruins
-  'sky-ruins': 'deep-ocean',   // Defeating Storm Titan unlocks Deep Ocean
+  'sky-ruins': 'deep-ocean', // Defeating Storm Titan unlocks Deep Ocean
 };
 
 interface Props {
@@ -99,9 +99,10 @@ export function IslandSelectView({ onSelectBiome, onCancel, maxChoices, unlocked
 
     if (DEV_UNLOCK_ALL) {
       // Dev mode: everything unlocked
-      const limited = maxChoices !== undefined && maxChoices < all.length
-        ? [...all].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
-        : all;
+      const limited =
+        maxChoices !== undefined && maxChoices < all.length
+          ? [...all].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
+          : all;
       return { available: limited, locked: [] as BiomeConfig[] };
     }
 
@@ -112,9 +113,10 @@ export function IslandSelectView({ onSelectBiome, onCancel, maxChoices, unlocked
     const lockedBiomes = all.filter((b) => !unlockedSet.has(b.id));
 
     // Apply maxChoices limit to available biomes only
-    const limited = maxChoices !== undefined && maxChoices < availableBiomes.length
-      ? [...availableBiomes].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
-      : availableBiomes;
+    const limited =
+      maxChoices !== undefined && maxChoices < availableBiomes.length
+        ? [...availableBiomes].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
+        : availableBiomes;
 
     return { available: limited, locked: lockedBiomes };
   }, [maxChoices, unlockedBiomes]);

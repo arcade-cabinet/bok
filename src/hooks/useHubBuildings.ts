@@ -166,9 +166,7 @@ export function useHubBuildings(
           if (inv) {
             canAfford = inv.canAfford(nextLevel.cost);
           } else {
-            canAfford = Object.entries(nextLevel.cost).every(
-              ([resource, amount]) => (res[resource] ?? 0) >= amount,
-            );
+            canAfford = Object.entries(nextLevel.cost).every(([resource, amount]) => (res[resource] ?? 0) >= amount);
           }
         }
 

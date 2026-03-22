@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
-import type { SerializedGameState } from '../../persistence/GameStateSerializer';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
@@ -23,6 +22,7 @@ import { useDeviceType } from '../../hooks/useDeviceType';
 import { useGameEvents } from '../../hooks/useGameEvents';
 import { useGameHUD } from '../../hooks/useGameHUD';
 import { useGameLifecycle } from '../../hooks/useGameLifecycle';
+import type { SerializedGameState } from '../../persistence/GameStateSerializer';
 
 interface Props {
   config: GameConfig;

@@ -84,9 +84,7 @@ export function App() {
             onSelectBiome={handleSelectBiome}
             onCancel={() => setView('hub')}
             maxChoices={buildingEffects.maxIslandChoices}
-            unlockedBiomes={progression.runHistory
-              .filter((r) => r.result === 'victory')
-              .flatMap((r) => r.biomes)}
+            unlockedBiomes={progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes)}
           />
         )}
         {view === 'sailing' && <SailingTransition biomeName={gameConfig.biome} onComplete={() => setView('game')} />}

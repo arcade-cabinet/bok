@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from 'vitest';
 import * as THREE from 'three';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { LODManager } from './LODManager.ts';
 
 describe('LODManager', () => {

@@ -5,7 +5,7 @@ import { NPCDialogue } from '../../components/hud/NPCDialogue';
 import { TouchControls } from '../../components/ui/TouchControls';
 import { ContentRegistry } from '../../content/index';
 import type { CameraResult } from '../../engine/camera';
-import { computeBuildingEffects, type BuildingEffects } from '../../hooks/useBuildingEffects';
+import { type BuildingEffects, computeBuildingEffects } from '../../hooks/useBuildingEffects';
 import { useHubBuildings } from '../../hooks/useHubBuildings';
 import { useHubCamera } from '../../hooks/useHubCamera';
 import { useHubEngine } from '../../hooks/useHubEngine';
@@ -306,13 +306,8 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
             onUpgrade={handleUpgrade}
           />
           {upgradeFeedback && (
-            <div
-              className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30"
-              role="status"
-            >
-              <span
-                className={`badge badge-lg ${upgradeFeedback.success ? 'badge-success' : 'badge-error'}`}
-              >
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30" role="status">
+              <span className={`badge badge-lg ${upgradeFeedback.success ? 'badge-success' : 'badge-error'}`}>
                 {upgradeFeedback.message}
               </span>
             </div>

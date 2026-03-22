@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  getEffectiveQualityConfig,
+  QUALITY_PRESETS,
   type QualityConfig,
   type QualityPreset,
-  QUALITY_PRESETS,
   resolveQualityConfig,
   saveQualitySettings,
-  getEffectiveQualityConfig,
 } from '../../rendering/QualitySettings.ts';
 
 interface Props {
@@ -149,10 +149,7 @@ export function SettingsModal({ onClose }: Props) {
 
         {/* Quality Preset */}
         <section className="mb-4">
-          <h3
-            className="text-lg font-semibold mb-2 text-base-content"
-            style={{ fontFamily: 'Cinzel, Georgia, serif' }}
-          >
+          <h3 className="text-lg font-semibold mb-2 text-base-content" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
             Graphics Quality
           </h3>
           <div className="flex gap-2 justify-center">
@@ -171,10 +168,7 @@ export function SettingsModal({ onClose }: Props) {
 
         {/* Individual Toggles */}
         <section className="mb-4 space-y-2">
-          <h3
-            className="text-lg font-semibold mb-2 text-base-content"
-            style={{ fontFamily: 'Cinzel, Georgia, serif' }}
-          >
+          <h3 className="text-lg font-semibold mb-2 text-base-content" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
             Features
           </h3>
 
@@ -221,71 +215,76 @@ export function SettingsModal({ onClose }: Props) {
 
         {/* Particle Budget */}
         <section className="mb-4 px-2">
-          <label className="flex items-center justify-between">
-            <span className="label-text text-base-content">Particle Budget</span>
-            <span className="text-sm text-base-content/70 tabular-nums">{resolved.particleBudget}</span>
+          <label className="block">
+            <span className="flex items-center justify-between">
+              <span className="label-text text-base-content">Particle Budget</span>
+              <span className="text-sm text-base-content/70 tabular-nums">{resolved.particleBudget}</span>
+            </span>
+            <input
+              type="range"
+              min="50"
+              max="200"
+              step="10"
+              className="range range-primary range-sm w-full"
+              value={resolved.particleBudget}
+              onChange={(e) => handleParticleBudget(Number(e.target.value))}
+            />
           </label>
-          <input
-            type="range"
-            min="50"
-            max="200"
-            step="10"
-            className="range range-primary range-sm w-full"
-            value={resolved.particleBudget}
-            onChange={(e) => handleParticleBudget(Number(e.target.value))}
-          />
         </section>
 
         {/* Audio */}
         <section className="mb-4 px-2 space-y-3">
-          <h3
-            className="text-lg font-semibold mb-2 text-base-content"
-            style={{ fontFamily: 'Cinzel, Georgia, serif' }}
-          >
+          <h3 className="text-lg font-semibold mb-2 text-base-content" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
             Audio
           </h3>
 
-          <label className="flex items-center justify-between">
-            <span className="label-text text-base-content">Master Volume</span>
-            <span className="text-sm text-base-content/70 tabular-nums">{volume.master}%</span>
+          <label className="block">
+            <span className="flex items-center justify-between">
+              <span className="label-text text-base-content">Master Volume</span>
+              <span className="text-sm text-base-content/70 tabular-nums">{volume.master}%</span>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              className="range range-primary range-sm w-full"
+              value={volume.master}
+              onChange={(e) => setVolume((v) => ({ ...v, master: Number(e.target.value) }))}
+            />
           </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            className="range range-primary range-sm w-full"
-            value={volume.master}
-            onChange={(e) => setVolume((v) => ({ ...v, master: Number(e.target.value) }))}
-          />
 
-          <label className="flex items-center justify-between">
-            <span className="label-text text-base-content">SFX Volume</span>
-            <span className="text-sm text-base-content/70 tabular-nums">{volume.sfx}%</span>
+          <label className="block">
+            <span className="flex items-center justify-between">
+              <span className="label-text text-base-content">SFX Volume</span>
+              <span className="text-sm text-base-content/70 tabular-nums">{volume.sfx}%</span>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              className="range range-primary range-sm w-full"
+              value={volume.sfx}
+              onChange={(e) => setVolume((v) => ({ ...v, sfx: Number(e.target.value) }))}
+            />
           </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            className="range range-primary range-sm w-full"
-            value={volume.sfx}
-            onChange={(e) => setVolume((v) => ({ ...v, sfx: Number(e.target.value) }))}
-          />
 
-          <label className="flex items-center justify-between">
-            <span className="label-text text-base-content">Music Volume</span>
-            <span className="text-sm text-base-content/70 tabular-nums">{volume.music}%</span>
+          <label className="block">
+            <span className="flex items-center justify-between">
+              <span className="label-text text-base-content">Music Volume</span>
+              <span className="text-sm text-base-content/70 tabular-nums">{volume.music}%</span>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              className="range range-primary range-sm w-full"
+              value={volume.music}
+              onChange={(e) => setVolume((v) => ({ ...v, music: Number(e.target.value) }))}
+            />
           </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            className="range range-primary range-sm w-full"
-            value={volume.music}
-            onChange={(e) => setVolume((v) => ({ ...v, music: Number(e.target.value) }))}
-          />
         </section>
 
         {/* Action Buttons */}

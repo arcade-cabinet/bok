@@ -80,9 +80,7 @@ function MerchantPanel({ inventory, playerInventory, onBuy }: MerchantPanelProps
         Wares
       </h4>
       {playerInventory && (
-        <div className="text-xs text-base-content/60">
-          Your wood: {playerInventory.getCount('wood')}
-        </div>
+        <div className="text-xs text-base-content/60">Your wood: {playerInventory.getCount('wood')}</div>
       )}
       <div className="space-y-1">
         {inventory.map((item) => {
@@ -94,15 +92,16 @@ function MerchantPanel({ inventory, playerInventory, onBuy }: MerchantPanelProps
               </span>
               <div className="flex items-center gap-2">
                 {itemFeedback && (
-                  <span
-                    className={`text-xs ${itemFeedback.success ? 'text-success' : 'text-error'}`}
-                    role="status"
-                  >
+                  <span className={`text-xs ${itemFeedback.success ? 'text-success' : 'text-error'}`} role="status">
                     {itemFeedback.message}
                   </span>
                 )}
                 <span className="badge badge-sm badge-outline badge-warning">{item.basePrice} wood</span>
-                <button type="button" className="btn btn-xs btn-primary" onClick={() => handleBuy(item.itemId, item.basePrice)}>
+                <button
+                  type="button"
+                  className="btn btn-xs btn-primary"
+                  onClick={() => handleBuy(item.itemId, item.basePrice)}
+                >
                   Buy
                 </button>
               </div>
@@ -184,10 +183,7 @@ function CrafterPanel({ recipes, playerInventory, onCraft }: CrafterPanelProps) 
                 </span>
                 <div className="flex items-center gap-2">
                   {recipeFeedback && (
-                    <span
-                      className={`text-xs ${recipeFeedback.success ? 'text-success' : 'text-error'}`}
-                      role="status"
-                    >
+                    <span className={`text-xs ${recipeFeedback.success ? 'text-success' : 'text-error'}`} role="status">
                       {recipeFeedback.message}
                     </span>
                   )}
@@ -402,12 +398,8 @@ export function NPCDialogue({
           <div className="border-t" style={{ borderColor: '#c4a572' }} />
 
           {/* Role-specific panel */}
-          {npc.role === 'merchant' && (
-            <MerchantPanel inventory={npc.inventory} playerInventory={inv} onBuy={onBuy} />
-          )}
-          {npc.role === 'crafter' && (
-            <CrafterPanel recipes={craftingRecipes} playerInventory={inv} onCraft={onCraft} />
-          )}
+          {npc.role === 'merchant' && <MerchantPanel inventory={npc.inventory} playerInventory={inv} onBuy={onBuy} />}
+          {npc.role === 'crafter' && <CrafterPanel recipes={craftingRecipes} playerInventory={inv} onCraft={onCraft} />}
           {npc.role === 'lore' && <LorePanel unlockedPages={unlockedPages} />}
           {npc.role === 'navigation' && (
             <NavigatorPanel destinations={biomeDestinations} onSelect={onSelectDestination} />

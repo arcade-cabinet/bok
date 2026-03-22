@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  type QualityPreset,
-  QUALITY_PRESETS,
   detectQualityPreset,
   getEffectiveQualityConfig,
   loadQualitySettings,
+  QUALITY_PRESETS,
   resolveQualityConfig,
   saveQualitySettings,
 } from './QualitySettings.ts';
@@ -94,8 +93,8 @@ describe('QualitySettings', () => {
       saveQualitySettings('high', { shadowsEnabled: false });
       const loaded = loadQualitySettings();
       expect(loaded).not.toBeNull();
-      expect(loaded!.preset).toBe('high');
-      expect(loaded!.overrides.shadowsEnabled).toBe(false);
+      expect(loaded?.preset).toBe('high');
+      expect(loaded?.overrides.shadowsEnabled).toBe(false);
     });
 
     it('returns null for invalid JSON in localStorage', () => {

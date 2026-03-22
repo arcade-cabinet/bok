@@ -14,9 +14,7 @@ export {
   type GameAudioSystem,
 } from './AudioFacade.ts';
 
-export {
-  setupAudioResumeOnGesture,
-} from './AudioResume.ts';
+export { setupAudioResumeOnGesture } from './AudioResume.ts';
 
 export {
   playBossPhase,

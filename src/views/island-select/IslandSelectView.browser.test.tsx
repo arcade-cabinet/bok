@@ -33,9 +33,7 @@ test('renders all 8 biome cards when all unlocked', async () => {
 
 test('selecting a biome highlights it and enables Set Sail', async () => {
   const onSelectBiome = vi.fn();
-  await render(
-    <IslandSelectView onSelectBiome={onSelectBiome} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />,
-  );
+  await render(<IslandSelectView onSelectBiome={onSelectBiome} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />);
 
   // Set Sail starts disabled
   const setSailBtn = page.getByTestId('set-sail-btn');
@@ -52,18 +50,14 @@ test('selecting a biome highlights it and enables Set Sail', async () => {
 
 test('clicking Back to Hub calls onCancel', async () => {
   const onCancel = vi.fn();
-  await render(
-    <IslandSelectView onSelectBiome={() => {}} onCancel={onCancel} unlockedBiomes={ALL_BIOMES} />,
-  );
+  await render(<IslandSelectView onSelectBiome={() => {}} onCancel={onCancel} unlockedBiomes={ALL_BIOMES} />);
 
   await page.getByRole('button', { name: /Back to Hub/ }).click();
   expect(onCancel).toHaveBeenCalled();
 });
 
 test('biome cards have data-testid attributes for each biome', async () => {
-  await render(
-    <IslandSelectView onSelectBiome={() => {}} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />,
-  );
+  await render(<IslandSelectView onSelectBiome={() => {}} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />);
 
   for (const id of ALL_BIOMES) {
     await expect.element(page.getByTestId(`biome-card-${id}`)).toBeInTheDocument();
@@ -72,9 +66,7 @@ test('biome cards have data-testid attributes for each biome', async () => {
 
 test('selecting different biomes updates the highlight', async () => {
   const onSelectBiome = vi.fn();
-  await render(
-    <IslandSelectView onSelectBiome={onSelectBiome} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />,
-  );
+  await render(<IslandSelectView onSelectBiome={onSelectBiome} onCancel={() => {}} unlockedBiomes={ALL_BIOMES} />);
 
   // Select forest
   await page.getByTestId('biome-card-forest').click();
@@ -88,9 +80,7 @@ test('selecting different biomes updates the highlight', async () => {
 });
 
 test('only forest is available with no unlocked biomes', async () => {
-  await render(
-    <IslandSelectView onSelectBiome={() => {}} onCancel={() => {}} />,
-  );
+  await render(<IslandSelectView onSelectBiome={() => {}} onCancel={() => {}} />);
 
   // Forest always available
   await expect.element(page.getByTestId('biome-card-forest')).toBeInTheDocument();

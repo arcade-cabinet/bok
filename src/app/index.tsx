@@ -1,8 +1,8 @@
 import { createRoot } from 'react-dom/client';
+import { setupAudioResumeOnGesture } from '../audio/AudioResume.ts';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { App } from './App';
 import { installGlobalErrorHandler } from './globalErrorHandler';
-import { setupAudioResumeOnGesture } from '../audio/AudioResume.ts';
 import '../main.css';
 
 // Global error handling — catches uncaught errors and unhandled rejections
