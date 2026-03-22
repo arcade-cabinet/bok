@@ -10,4 +10,5 @@ export { ActionMap, type GameAction } from './ActionMap.ts';
 export { GamepadDevice } from './GamepadDevice.ts';
 export { InputSystem } from './InputSystem.ts';
 export { KeyboardMouseDevice } from './KeyboardMouseDevice.ts';
+export { isMobileDevice, type MobileControlState } from './MobileControls.ts';
 export { TouchDevice } from './TouchDevice.ts';

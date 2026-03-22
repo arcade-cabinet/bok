@@ -9,7 +9,7 @@ import type { createWorld } from 'koota';
 import * as THREE from 'three';
 import type { EntityManager as YukaEntityManager } from 'yuka';
 
-import { createPlayerGovernor, type GovernorOutput } from '../ai/PlayerGovernor.ts';
+import { createPlayerGovernor, type GovernorOutput } from '../ai/index';
 import type { InputSystem } from '../input/index.ts';
 import type { DayNightCycle } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';

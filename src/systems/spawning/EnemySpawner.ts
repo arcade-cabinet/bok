@@ -15,8 +15,8 @@ export interface SpawnedEnemy {
  * Takes spawn point data from IslandGenerator output + EnemyConfig from ContentRegistry.
  * Produces SpawnedEnemy descriptors for Koota entity creation.
  */
-export class EnemySpawner {
-  static spawn(spawns: EnemySpawn[], configs: Map<string, EnemyConfig>): SpawnedEnemy[] {
+export const EnemySpawner = {
+  spawn(spawns: EnemySpawn[], configs: Map<string, EnemyConfig>): SpawnedEnemy[] {
     const result: SpawnedEnemy[] = [];
 
     for (const sp of spawns) {
@@ -33,5 +33,5 @@ export class EnemySpawner {
     }
 
     return result;
-  }
-}
+  },
+};

@@ -8,10 +8,11 @@ export function knockbackSystem(world: World): void {
   const entities = world.query(Knockback, Velocity);
 
   for (const entity of entities) {
-    const kb = entity.get(Knockback)!;
-    if (kb.x === 0 && kb.y === 0 && kb.z === 0) continue;
+    const kb = entity.get(Knockback);
+    if (!kb || (kb.x === 0 && kb.y === 0 && kb.z === 0)) continue;
 
-    const vel = entity.get(Velocity)!;
+    const vel = entity.get(Velocity);
+    if (!vel) continue;
     entity.set(Velocity, {
       x: vel.x + kb.x,
       y: vel.y + kb.y,

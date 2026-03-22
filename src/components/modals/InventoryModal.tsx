@@ -16,25 +16,55 @@ const TAB_LABELS: Record<ItemCategory, string> = {
 
 /** Known weapon item IDs. */
 const WEAPON_IDS = new Set([
-  'wooden-sword', 'iron-sword', 'crystal-blade', 'volcanic-edge', 'frost-cleaver',
-  'war-hammer', 'battle-axe', 'twin-daggers', 'trident', 'short-bow', 'crossbow',
-  'fire-staff', 'ice-wand', 'lightning-rod', 'crystal-sling',
+  'wooden-sword',
+  'iron-sword',
+  'crystal-blade',
+  'volcanic-edge',
+  'frost-cleaver',
+  'war-hammer',
+  'battle-axe',
+  'twin-daggers',
+  'trident',
+  'short-bow',
+  'crossbow',
+  'fire-staff',
+  'ice-wand',
+  'lightning-rod',
+  'crystal-sling',
 ]);
 
 /** Known consumable item IDs. */
-const CONSUMABLE_IDS = new Set([
-  'health-potion', 'stamina-elixir', 'torch',
-]);
+const CONSUMABLE_IDS = new Set(['health-potion', 'stamina-elixir', 'torch']);
 
 /** Item display icons (emoji stand-ins). */
 const ITEM_ICONS: Record<string, string> = {
-  wood: '🪵', stone: '🪨', coal: '⬛', herbs: '🌿', iron: '⛓️',
-  'iron-ore': '⛏️', emerald: '💚', ruby: '❤️', mushroom: '🍄', honey: '🍯',
-  'magma-crystal': '🔥', 'frost-shard': '❄️', 'void-essence': '🌑', 'ancient-bone': '🦴',
-  'dragon-scale': '🐉', 'star-fragment': '⭐', 'tome-ink': '🖋️', 'phoenix-feather': '🪶',
-  'wooden-planks': '🪵', 'stone-bricks': '🧱', water: '💧',
-  'wooden-sword': '🗡️', 'iron-sword': '⚔️', 'fire-staff': '🔮',
-  'health-potion': '🧪', 'stamina-elixir': '⚗️', torch: '🔦',
+  wood: '🪵',
+  stone: '🪨',
+  coal: '⬛',
+  herbs: '🌿',
+  iron: '⛓️',
+  'iron-ore': '⛏️',
+  emerald: '💚',
+  ruby: '❤️',
+  mushroom: '🍄',
+  honey: '🍯',
+  'magma-crystal': '🔥',
+  'frost-shard': '❄️',
+  'void-essence': '🌑',
+  'ancient-bone': '🦴',
+  'dragon-scale': '🐉',
+  'star-fragment': '⭐',
+  'tome-ink': '🖋️',
+  'phoenix-feather': '🪶',
+  'wooden-planks': '🪵',
+  'stone-bricks': '🧱',
+  water: '💧',
+  'wooden-sword': '🗡️',
+  'iron-sword': '⚔️',
+  'fire-staff': '🔮',
+  'health-potion': '🧪',
+  'stamina-elixir': '⚗️',
+  torch: '🔦',
 };
 
 /** Format an item ID into a display name (kebab-case to Title Case). */

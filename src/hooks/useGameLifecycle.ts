@@ -1,12 +1,16 @@
 /**
  * @module hooks/useGameLifecycle
- * @role Canvas ref management, engine init/cleanup, keyboard shortcuts
+ * @role Canvas ref management, engine init/cleanup, keyboard shortcuts, auto-save
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TouchControlOutput } from '../components/ui/TouchControls';
 import type { GameInstance } from '../engine/GameEngine';
 import { initGame } from '../engine/GameEngine';
 import type { EngineEvent } from '../engine/types';
+import type { SerializedGameState } from '../persistence/GameStateSerializer.ts';
+import { SaveManager } from '../persistence/SaveManager.ts';
+
+const AUTO_SAVE_INTERVAL_MS = 60_000;
 
 export interface GameLifecycleResult {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -18,7 +22,21 @@ export interface GameLifecycleResult {
 }
 
 /**
+ * Save a snapshot of the running game to the persistence layer.
+ * Fails silently — save errors must not crash the game loop.
+ */
+async function performAutoSave(game: GameInstance, saveManager: SaveManager): Promise<void> {
+  try {
+    const snapshot = game.captureSnapshot();
+    await saveManager.saveGameState(snapshot);
+  } catch (err) {
+    console.warn('[Bok] Auto-save failed:', err);
+  }
+}
+
+/**
  * Manages engine lifecycle: canvas ref, init/cleanup, keyboard shortcuts, canvas resize.
+ * Also wires auto-save on pause and periodic 60-second auto-save.
  * Returns refs and state needed by other game hooks and the view.
  */
 export function useGameLifecycle(
@@ -26,14 +44,23 @@ export function useGameLifecycle(
   onEngineEvent: (event: EngineEvent) => void,
   screenWidth: number,
   screenHeight: number,
+  _savedState?: SerializedGameState | null,
 ): GameLifecycleResult {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<GameInstance | null>(null);
+  const saveManagerRef = useRef<SaveManager | null>(null);
   const [showTome, setShowTome] = useState(false);
 
   // Stable ref for the event callback to avoid stale closures in the init effect
   const onEngineEventRef = useRef(onEngineEvent);
   onEngineEventRef.current = onEngineEvent;
+
+  // Initialize SaveManager once
+  useEffect(() => {
+    SaveManager.createInMemory().then((mgr) => {
+      saveManagerRef.current = mgr;
+    });
+  }, []);
 
   // Initialize engine
   useEffect(() => {
@@ -50,14 +77,38 @@ export function useGameLifecycle(
     };
   }, [config.biome, config.seed]);
 
-  // Keyboard shortcuts: Escape → pause, Tab → tome browser
+  // Periodic auto-save every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const game = gameRef.current;
+      const mgr = saveManagerRef.current;
+      if (game && mgr) {
+        const state = game.getState();
+        if (state.phase === 'playing') {
+          performAutoSave(game, mgr);
+        }
+      }
+    }, AUTO_SAVE_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Keyboard shortcuts: Escape → pause (+ auto-save), Tab → tome browser
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.code === 'Escape') {
         if (showTome) {
           setShowTome(false);
         } else {
-          gameRef.current?.togglePause();
+          const game = gameRef.current;
+          game?.togglePause();
+          // Auto-save when pausing (not unpausing)
+          const mgr = saveManagerRef.current;
+          if (game && mgr) {
+            const state = game.getState();
+            if (state.paused) {
+              performAutoSave(game, mgr);
+            }
+          }
         }
       }
       if (e.code === 'Tab') {
@@ -68,6 +119,22 @@ export function useGameLifecycle(
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [showTome]);
+
+  // Clear save on death/victory (run is over)
+  useEffect(() => {
+    const wrappedOnEvent = onEngineEventRef.current;
+    onEngineEventRef.current = (event: EngineEvent) => {
+      wrappedOnEvent(event);
+      if (event.type === 'playerDied' || event.type === 'bossDefeated') {
+        const mgr = saveManagerRef.current;
+        if (mgr) {
+          mgr.clearGameState().catch((err) => {
+            console.warn('[Bok] Failed to clear save on run end:', err);
+          });
+        }
+      }
+    };
+  }, []);
 
   // Resize canvas on orientation/screen change
   useEffect(() => {

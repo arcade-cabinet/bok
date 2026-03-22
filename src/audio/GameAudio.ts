@@ -6,7 +6,15 @@
 
 import * as Tone from 'tone';
 
-const masterVolume = new Tone.Volume(-10).toDestination();
+/** Master compressor prevents audio clipping when multiple sounds overlap. */
+const masterCompressor = new Tone.Compressor({
+  threshold: -24,
+  ratio: 3,
+  attack: 0.003,
+  release: 0.25,
+}).toDestination();
+
+const masterVolume = new Tone.Volume(-10).connect(masterCompressor);
 
 /** Sword swing — noise burst with short envelope + bandpass filter */
 export function playSwordSwing(): void {

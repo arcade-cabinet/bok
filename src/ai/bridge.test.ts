@@ -57,10 +57,11 @@ describe('AIBridge', () => {
 
       bridge.syncToKoota(vehicle, entity);
 
-      const vel = entity.get(Velocity)!;
-      expect(vel.x).toBe(3);
-      expect(vel.y).toBe(0);
-      expect(vel.z).toBe(-2);
+      const vel = entity.get(Velocity);
+      expect(vel).toBeDefined();
+      expect(vel?.x).toBe(3);
+      expect(vel?.y).toBe(0);
+      expect(vel?.z).toBe(-2);
     });
 
     it('writes FSM current state name to AIState trait', () => {
@@ -70,8 +71,9 @@ describe('AIBridge', () => {
 
       bridge.syncToKoota(vehicle, entity);
 
-      const aiState = entity.get(AIState)!;
-      expect(aiState.state).toBe('chase');
+      const aiState = entity.get(AIState);
+      expect(aiState).toBeDefined();
+      expect(aiState?.state).toBe('chase');
     });
 
     it('writes "idle" when FSM has no current state', () => {
@@ -83,8 +85,9 @@ describe('AIBridge', () => {
 
       bridge.syncToKoota(vehicle, entity);
 
-      const aiState = entity.get(AIState)!;
-      expect(aiState.state).toBe('idle');
+      const aiState = entity.get(AIState);
+      expect(aiState).toBeDefined();
+      expect(aiState?.state).toBe('idle');
     });
   });
 

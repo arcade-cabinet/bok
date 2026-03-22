@@ -4,8 +4,8 @@
   "description": "Vast underground caverns lined with luminous crystal formations. Light refracts in dazzling patterns.",
   "terrain": {
     "noiseOctaves": 4,
-    "noiseFrequency": 0.035,
-    "noiseAmplitude": 10,
+    "noiseFrequency": 0.07,
+    "noiseAmplitude": 5,
     "waterLevel": 2,
     "baseHeight": 7,
     "blocks": {

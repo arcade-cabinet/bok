@@ -1,22 +1,25 @@
 /**
  * @module components/hud/NPCDialogue
  * @role HUD overlay for NPC interaction: dialogue, shop, crafting, lore, and navigation
- * @input NPCEntity from proximity hook, crafting recipes, biome list, tome pages
- * @output Role-specific interactive panel with dismiss controls
+ * @input NPCEntity from proximity hook, crafting recipes, biome list, tome pages, player inventory
+ * @output Role-specific interactive panel with dismiss controls and transaction feedback
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { CraftingRecipeConfig, NPCConfig } from '../../content/types.ts';
 import type { NPCEntity } from '../../engine/npcEntities.ts';
+import type { PlayerInventory } from '../../hooks/usePlayerInventory.ts';
 
 // --- Sub-panel props ---
 
 interface MerchantPanelProps {
   inventory: NPCConfig['inventory'];
+  playerInventory: PlayerInventory | null;
   onBuy: (itemId: string) => void;
 }
 
 interface CrafterPanelProps {
   recipes: CraftingRecipeConfig[];
+  playerInventory: PlayerInventory | null;
   onCraft: (recipeId: string) => void;
 }
 
@@ -31,7 +34,35 @@ interface NavigatorPanelProps {
 
 // --- Sub-panels ---
 
-function MerchantPanel({ inventory, onBuy }: MerchantPanelProps) {
+function MerchantPanel({ inventory, playerInventory, onBuy }: MerchantPanelProps) {
+  const [feedback, setFeedback] = useState<{ itemId: string; message: string; success: boolean } | null>(null);
+
+  const handleBuy = useCallback(
+    (itemId: string, basePrice: number) => {
+      if (!playerInventory) {
+        onBuy(itemId);
+        return;
+      }
+
+      // Gold-based purchase: check if player has enough gold (basePrice)
+      // For now, use wood as currency (since we don't have gold yet)
+      const costs: Record<string, number> = { wood: basePrice };
+
+      if (!playerInventory.canAfford(costs)) {
+        setFeedback({ itemId, message: 'Not enough resources!', success: false });
+        setTimeout(() => setFeedback(null), 2000);
+        return;
+      }
+
+      playerInventory.removeResource('wood', basePrice);
+      playerInventory.addResource(itemId, 1);
+      setFeedback({ itemId, message: 'Purchased!', success: true });
+      setTimeout(() => setFeedback(null), 2000);
+      onBuy(itemId);
+    },
+    [playerInventory, onBuy],
+  );
+
   if (inventory.length === 0) {
     return (
       <p className="text-sm italic text-base-content/60" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
@@ -48,26 +79,77 @@ function MerchantPanel({ inventory, onBuy }: MerchantPanelProps) {
       >
         Wares
       </h4>
+      {playerInventory && (
+        <div className="text-xs text-base-content/60">
+          Your wood: {playerInventory.getCount('wood')}
+        </div>
+      )}
       <div className="space-y-1">
-        {inventory.map((item) => (
-          <div key={item.itemId} className="flex items-center justify-between bg-base-200/50 rounded px-3 py-2">
-            <span className="text-sm text-base-content" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
-              {formatItemName(item.itemId)}
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="badge badge-sm badge-outline badge-warning">{item.basePrice}g</span>
-              <button type="button" className="btn btn-xs btn-primary" onClick={() => onBuy(item.itemId)}>
-                Buy
-              </button>
+        {inventory.map((item) => {
+          const itemFeedback = feedback?.itemId === item.itemId ? feedback : null;
+          return (
+            <div key={item.itemId} className="flex items-center justify-between bg-base-200/50 rounded px-3 py-2">
+              <span className="text-sm text-base-content" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
+                {formatItemName(item.itemId)}
+              </span>
+              <div className="flex items-center gap-2">
+                {itemFeedback && (
+                  <span
+                    className={`text-xs ${itemFeedback.success ? 'text-success' : 'text-error'}`}
+                    role="status"
+                  >
+                    {itemFeedback.message}
+                  </span>
+                )}
+                <span className="badge badge-sm badge-outline badge-warning">{item.basePrice} wood</span>
+                <button type="button" className="btn btn-xs btn-primary" onClick={() => handleBuy(item.itemId, item.basePrice)}>
+                  Buy
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function CrafterPanel({ recipes, onCraft }: CrafterPanelProps) {
+function CrafterPanel({ recipes, playerInventory, onCraft }: CrafterPanelProps) {
+  const [feedback, setFeedback] = useState<{ recipeId: string; message: string; success: boolean } | null>(null);
+
+  const handleCraft = useCallback(
+    (recipe: CraftingRecipeConfig) => {
+      if (!playerInventory) {
+        onCraft(recipe.id);
+        return;
+      }
+
+      // Check all ingredients
+      const costs: Record<string, number> = {};
+      for (const ing of recipe.ingredients) {
+        costs[ing.itemId] = (costs[ing.itemId] ?? 0) + ing.amount;
+      }
+
+      if (!playerInventory.canAfford(costs)) {
+        setFeedback({ recipeId: recipe.id, message: 'Missing ingredients!', success: false });
+        setTimeout(() => setFeedback(null), 2000);
+        return;
+      }
+
+      // Deduct ingredients
+      for (const ing of recipe.ingredients) {
+        playerInventory.removeResource(ing.itemId, ing.amount);
+      }
+
+      // Add output
+      playerInventory.addResource(recipe.output.itemId, recipe.output.amount);
+      setFeedback({ recipeId: recipe.id, message: `Crafted ${formatItemName(recipe.output.itemId)}!`, success: true });
+      setTimeout(() => setFeedback(null), 2000);
+      onCraft(recipe.id);
+    },
+    [playerInventory, onCraft],
+  );
+
   if (recipes.length === 0) {
     return (
       <p className="text-sm italic text-base-content/60" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
@@ -85,32 +167,61 @@ function CrafterPanel({ recipes, onCraft }: CrafterPanelProps) {
         Recipes
       </h4>
       <div className="space-y-1">
-        {recipes.map((recipe) => (
-          <div key={recipe.id} className="bg-base-200/50 rounded px-3 py-2">
-            <div className="flex items-center justify-between mb-1">
-              <span
-                className="text-sm font-semibold text-base-content"
-                style={{ fontFamily: 'Cinzel, Georgia, serif' }}
-              >
-                {recipe.name}
-              </span>
-              <button type="button" className="btn btn-xs btn-primary" onClick={() => onCraft(recipe.id)}>
-                Craft
-              </button>
-            </div>
-            <div className="flex gap-1 flex-wrap">
-              {recipe.ingredients.map((ing) => (
-                <span key={ing.itemId} className="badge badge-xs badge-outline badge-secondary">
-                  {formatItemName(ing.itemId)} x{ing.amount}
+        {recipes.map((recipe) => {
+          const recipeFeedback = feedback?.recipeId === recipe.id ? feedback : null;
+          const canAffordRecipe = playerInventory
+            ? recipe.ingredients.every((ing) => playerInventory.getCount(ing.itemId) >= ing.amount)
+            : true;
+
+          return (
+            <div key={recipe.id} className="bg-base-200/50 rounded px-3 py-2">
+              <div className="flex items-center justify-between mb-1">
+                <span
+                  className="text-sm font-semibold text-base-content"
+                  style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+                >
+                  {recipe.name}
                 </span>
-              ))}
-              <span className="text-xs text-base-content/50 mx-1">&rarr;</span>
-              <span className="badge badge-xs badge-accent">
-                {formatItemName(recipe.output.itemId)} x{recipe.output.amount}
-              </span>
+                <div className="flex items-center gap-2">
+                  {recipeFeedback && (
+                    <span
+                      className={`text-xs ${recipeFeedback.success ? 'text-success' : 'text-error'}`}
+                      role="status"
+                    >
+                      {recipeFeedback.message}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className={`btn btn-xs ${canAffordRecipe ? 'btn-primary' : 'btn-disabled'}`}
+                    onClick={() => handleCraft(recipe)}
+                    disabled={!canAffordRecipe}
+                  >
+                    Craft
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                {recipe.ingredients.map((ing) => {
+                  const hasEnough = playerInventory ? playerInventory.getCount(ing.itemId) >= ing.amount : true;
+                  return (
+                    <span
+                      key={ing.itemId}
+                      className={`badge badge-xs badge-outline ${hasEnough ? 'badge-secondary' : 'badge-error'}`}
+                    >
+                      {formatItemName(ing.itemId)} x{ing.amount}
+                      {playerInventory && ` (${playerInventory.getCount(ing.itemId)})`}
+                    </span>
+                  );
+                })}
+                <span className="text-xs text-base-content/50 mx-1">&rarr;</span>
+                <span className="badge badge-xs badge-accent">
+                  {formatItemName(recipe.output.itemId)} x{recipe.output.amount}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -188,6 +299,7 @@ interface Props {
   craftingRecipes: CraftingRecipeConfig[];
   unlockedPages: string[];
   biomeDestinations: { id: string; name: string }[];
+  playerInventory?: PlayerInventory | null;
   onBuy: (itemId: string) => void;
   onCraft: (recipeId: string) => void;
   onSelectDestination: (biomeId: string) => void;
@@ -198,11 +310,12 @@ interface Props {
  * NPCDialogue — floating HUD panel shown when the player is near a hub NPC.
  *
  * Renders a greeting message and role-specific interactive UI:
- * - Merchant: item shop with prices and buy buttons
- * - Crafter: recipe list with ingredient requirements
+ * - Merchant: item shop with prices and buy buttons (deducts from player inventory)
+ * - Crafter: recipe list with ingredient requirements (checks and deducts inventory)
  * - Lore: collected tome pages and flavor text
  * - Navigation: island destination picker
  *
+ * When playerInventory is provided, transactions are validated and feedback is shown.
  * Dismissible via close button or ESC key.
  */
 export function NPCDialogue({
@@ -210,6 +323,7 @@ export function NPCDialogue({
   craftingRecipes,
   unlockedPages,
   biomeDestinations,
+  playerInventory,
   onBuy,
   onCraft,
   onSelectDestination,
@@ -242,6 +356,8 @@ export function NPCDialogue({
   }, [onClose]);
 
   if (dismissed) return null;
+
+  const inv = playerInventory ?? null;
 
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-[90%] max-w-md">
@@ -286,8 +402,12 @@ export function NPCDialogue({
           <div className="border-t" style={{ borderColor: '#c4a572' }} />
 
           {/* Role-specific panel */}
-          {npc.role === 'merchant' && <MerchantPanel inventory={npc.inventory} onBuy={onBuy} />}
-          {npc.role === 'crafter' && <CrafterPanel recipes={craftingRecipes} onCraft={onCraft} />}
+          {npc.role === 'merchant' && (
+            <MerchantPanel inventory={npc.inventory} playerInventory={inv} onBuy={onBuy} />
+          )}
+          {npc.role === 'crafter' && (
+            <CrafterPanel recipes={craftingRecipes} playerInventory={inv} onCraft={onCraft} />
+          )}
           {npc.role === 'lore' && <LorePanel unlockedPages={unlockedPages} />}
           {npc.role === 'navigation' && (
             <NavigatorPanel destinations={biomeDestinations} onSelect={onSelectDestination} />

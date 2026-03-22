@@ -2,9 +2,9 @@
   "id": "trident",
   "name": "Trident",
   "type": "melee",
-  "baseDamage": 18,
+  "baseDamage": 16,
   "attackSpeed": 1.0,
-  "range": 2.2,
+  "range": 2.5,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 400, "animation": "thrust-forward" },
     { "damageMultiplier": 1.2, "windowMs": 350, "animation": "sweep" },

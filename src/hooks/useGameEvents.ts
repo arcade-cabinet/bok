@@ -1,9 +1,10 @@
 /**
  * @module hooks/useGameEvents
- * @role Engine event callbacks: playerDamaged, enemyKilled, bossDefeated, playerDied
+ * @role Engine event callbacks: playerDamaged, enemyKilled, bossDefeated, playerDied, lootPickup
  */
 import { useRef, useState } from 'react';
 import type { DamageIndicatorHandle } from '../components/hud/DamageIndicator';
+import type { DeathStats } from '../components/modals/DeathScreen';
 import type { VictoryStats } from '../components/modals/VictoryScreen';
 import type { GameInstance } from '../engine/GameEngine';
 import type { EngineEvent, EngineState } from '../engine/types';
@@ -21,7 +22,7 @@ export interface GameEventCallbacks {
 export interface GameEventResult {
   damageRef: React.RefObject<DamageIndicatorHandle | null>;
   killCountRef: React.RefObject<number>;
-  deathStats: { enemiesDefeated: number; timeSurvived: number; biome: string } | null;
+  deathStats: DeathStats | null;
   victoryStats: VictoryStats | null;
   unlockedAbilitiesRef: React.RefObject<string[]>;
   startTimeRef: React.RefObject<number>;
@@ -31,7 +32,7 @@ export interface GameEventResult {
 
 /**
  * Manages engine event side-effects: damage flash, kill tracking,
- * death/victory stats snapshots, boss ability unlocks.
+ * loot tracking, death/victory stats snapshots, boss ability unlocks.
  */
 export function useGameEvents(
   config: { biome: string; seed: string },
@@ -41,11 +42,10 @@ export function useGameEvents(
 ): GameEventResult {
   const damageRef = useRef<DamageIndicatorHandle>(null);
   const killCountRef = useRef(0);
+  const lootCountRef = useRef(0);
   const startTimeRef = useRef(Date.now());
   const unlockedAbilitiesRef = useRef<string[]>([]);
-  const [deathStats, setDeathStats] = useState<{ enemiesDefeated: number; timeSurvived: number; biome: string } | null>(
-    null,
-  );
+  const [deathStats, setDeathStats] = useState<DeathStats | null>(null);
   const [victoryStats, setVictoryStats] = useState<VictoryStats | null>(null);
 
   // Stable ref for callbacks to avoid stale closures
@@ -58,6 +58,9 @@ export function useGameEvents(
     }
     if (event.type === 'enemyKilled') {
       killCountRef.current += 1;
+    }
+    if (event.type === 'lootPickup') {
+      lootCountRef.current += 1;
     }
     if (event.type === 'playerDied' || event.type === 'bossDefeated') {
       const game = gameRef.current;
@@ -72,6 +75,7 @@ export function useGameEvents(
         biome: config.biome,
         enemiesDefeated: killCountRef.current,
         timeSurvived: duration,
+        lootCollected: lootCountRef.current,
         tomePageUnlocked: event.bossId,
         abilityName: event.tomeAbility,
       });
@@ -80,7 +84,12 @@ export function useGameEvents(
     }
     if (event.type === 'playerDied') {
       const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
-      setDeathStats({ enemiesDefeated: killCountRef.current, timeSurvived: duration, biome: config.biome });
+      setDeathStats({
+        enemiesDefeated: killCountRef.current,
+        timeSurvived: duration,
+        biome: config.biome,
+        lootCollected: lootCountRef.current,
+      });
       callbacksRef.current.onRunEnd?.(config.seed, config.biome, 'death', duration);
     }
   };

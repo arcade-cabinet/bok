@@ -4,7 +4,7 @@
   "type": "melee",
   "baseDamage": 20,
   "attackSpeed": 0.9,
-  "range": 1.8,
+  "range": 2.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 450, "animation": "cleave-right" },
     { "damageMultiplier": 1.2, "windowMs": 400, "animation": "cleave-left" },

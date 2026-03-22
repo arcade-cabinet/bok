@@ -5,13 +5,16 @@ import { NPCDialogue } from '../../components/hud/NPCDialogue';
 import { TouchControls } from '../../components/ui/TouchControls';
 import { ContentRegistry } from '../../content/index';
 import type { CameraResult } from '../../engine/camera';
+import { computeBuildingEffects, type BuildingEffects } from '../../hooks/useBuildingEffects';
 import { useHubBuildings } from '../../hooks/useHubBuildings';
 import { useHubCamera } from '../../hooks/useHubCamera';
 import { useHubEngine } from '../../hooks/useHubEngine';
 import { useNPCProximity } from '../../hooks/useNPCProximity';
+import { usePlayerInventory } from '../../hooks/usePlayerInventory';
 
 interface Props {
   onNavigate: (view: 'menu' | 'game') => void;
+  onBuildingEffectsChange?: (effects: BuildingEffects) => void;
 }
 
 /** Accessible hub pause modal with focus trap and Escape key support. */
@@ -77,17 +80,32 @@ function getRegistry(): ContentRegistry {
 const NPC_LABEL_DISTANCE = 12;
 
 /** Hub island: walk between buildings, upgrade, interact with NPCs, set sail. */
-export function HubView({ onNavigate }: Props) {
+export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
   const [showPause, setShowPause] = useState(false);
   const [npcDialogueOpen, setNpcDialogueOpen] = useState(true);
+  const [upgradeFeedback, setUpgradeFeedback] = useState<{ message: string; success: boolean } | null>(null);
 
   // Shared ref for per-frame callback: useHubCamera writes, useHubEngine reads
   const onFrameRef = useRef<((cam: CameraResult) => void) | null>(null);
 
-  // Building upgrade system
-  const hubBuildings = useHubBuildings();
+  // Player inventory (shared resource pool for NPC transactions and building upgrades)
+  const playerInventory = usePlayerInventory();
+
+  // Building upgrade system — uses player inventory for resource management
+  const hubBuildings = useHubBuildings(undefined, playerInventory);
   const buildingProximityRef = useRef(hubBuildings.updatePlayerPosition);
   buildingProximityRef.current = hubBuildings.updatePlayerPosition;
+
+  // Compute building effects from current levels
+  const buildingEffects = useMemo(
+    () => computeBuildingEffects(hubBuildings.buildingLevels),
+    [hubBuildings.buildingLevels],
+  );
+
+  // Notify parent of building effects changes
+  useEffect(() => {
+    onBuildingEffectsChange?.(buildingEffects);
+  }, [buildingEffects, onBuildingEffectsChange]);
 
   // NPC proximity system
   const npcProximityHook = useNPCProximity([]);
@@ -145,22 +163,24 @@ export function HubView({ onNavigate }: Props) {
 
   const handleSetSail = useCallback(() => onNavigate('game'), [onNavigate]);
 
-  // Content data for NPC panels
+  // Content data for NPC panels — filter crafting recipes by forge tier
   const { craftingRecipes, biomeDestinations } = useMemo(() => {
     const reg = getRegistry();
+    const allRecipes = reg.getAllCraftingRecipes();
+    const filteredRecipes = allRecipes.filter((r) => r.tier <= buildingEffects.maxCraftingTier);
     return {
-      craftingRecipes: reg.getAllCraftingRecipes(),
+      craftingRecipes: filteredRecipes,
       biomeDestinations: reg.getAllBiomes().map((b) => ({ id: b.id, name: b.name })),
     };
-  }, []);
+  }, [buildingEffects.maxCraftingTier]);
 
   // NPC interaction callbacks
-  const handleBuy = useCallback((itemId: string) => {
-    console.log('[Hub] Buy item:', itemId);
+  const handleBuy = useCallback((_itemId: string) => {
+    // Transaction is handled by MerchantPanel via playerInventory
   }, []);
 
-  const handleCraft = useCallback((recipeId: string) => {
-    console.log('[Hub] Craft recipe:', recipeId);
+  const handleCraft = useCallback((_recipeId: string) => {
+    // Transaction is handled by CrafterPanel via playerInventory
   }, []);
 
   const handleSelectDestination = useCallback(
@@ -174,6 +194,20 @@ export function HubView({ onNavigate }: Props) {
   const handleCloseDialogue = useCallback(() => {
     setNpcDialogueOpen(false);
   }, []);
+
+  // Building upgrade with feedback
+  const handleUpgrade = useCallback(
+    (buildingId: string) => {
+      const success = hubBuildings.upgradeBuilding(buildingId);
+      if (success) {
+        setUpgradeFeedback({ message: 'Upgrade successful!', success: true });
+      } else {
+        setUpgradeFeedback({ message: 'Not enough resources!', success: false });
+      }
+      setTimeout(() => setUpgradeFeedback(null), 2000);
+    },
+    [hubBuildings.upgradeBuilding],
+  );
 
   // Re-open dialogue when a new NPC comes into range
   const nearbyNPC = npcProximity.nearbyNPC;
@@ -265,11 +299,25 @@ export function HubView({ onNavigate }: Props) {
       )}
 
       {hubBuildings.nearbyBuilding && (
-        <BuildingInteraction
-          nearby={hubBuildings.nearbyBuilding}
-          resources={hubBuildings.resources}
-          onUpgrade={hubBuildings.upgradeBuilding}
-        />
+        <>
+          <BuildingInteraction
+            nearby={hubBuildings.nearbyBuilding}
+            resources={playerInventory.resources}
+            onUpgrade={handleUpgrade}
+          />
+          {upgradeFeedback && (
+            <div
+              className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30"
+              role="status"
+            >
+              <span
+                className={`badge badge-lg ${upgradeFeedback.success ? 'badge-success' : 'badge-error'}`}
+              >
+                {upgradeFeedback.message}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* NPC dialogue panel */}
@@ -279,6 +327,7 @@ export function HubView({ onNavigate }: Props) {
           craftingRecipes={craftingRecipes}
           unlockedPages={[]}
           biomeDestinations={biomeDestinations}
+          playerInventory={playerInventory}
           onBuy={handleBuy}
           onCraft={handleCraft}
           onSelectDestination={handleSelectDestination}
@@ -298,8 +347,8 @@ export function HubView({ onNavigate }: Props) {
           Visit the Docks to set sail
         </div>
         <div className="flex gap-2 mt-1 text-xs">
-          <span>Wood: {hubBuildings.resources.wood ?? 0}</span>
-          <span>Stone: {hubBuildings.resources.stone ?? 0}</span>
+          <span>Wood: {playerInventory.resources.wood ?? 0}</span>
+          <span>Stone: {playerInventory.resources.stone ?? 0}</span>
         </div>
       </div>
 

@@ -16,8 +16,7 @@ describe('StaminaSystem', () => {
 
     staminaSystem(world, 1.0);
 
-    const s = entity.get(Stamina)!;
-    expect(s.current).toBe(70); // 50 + 20*1.0
+    expect(entity.get(Stamina)?.current).toBe(70); // 50 + 20*1.0
   });
 
   it('drains stamina while sprinting', () => {
@@ -26,8 +25,7 @@ describe('StaminaSystem', () => {
 
     staminaSystem(world, 1.0);
 
-    const s = entity.get(Stamina)!;
-    expect(s.current).toBe(40); // 50 - 10*1.0
+    expect(entity.get(Stamina)?.current).toBe(40); // 50 - 10*1.0
   });
 
   it('clamps stamina to max', () => {
@@ -36,8 +34,7 @@ describe('StaminaSystem', () => {
 
     staminaSystem(world, 1.0);
 
-    const s = entity.get(Stamina)!;
-    expect(s.current).toBe(100);
+    expect(entity.get(Stamina)?.current).toBe(100);
   });
 
   it('clamps stamina to 0', () => {
@@ -46,8 +43,7 @@ describe('StaminaSystem', () => {
 
     staminaSystem(world, 1.0);
 
-    const s = entity.get(Stamina)!;
-    expect(s.current).toBe(0);
+    expect(entity.get(Stamina)?.current).toBe(0);
   });
 
   it('regenerates when no MovementIntent exists', () => {
@@ -55,7 +51,6 @@ describe('StaminaSystem', () => {
 
     staminaSystem(world, 0.5);
 
-    const s = entity.get(Stamina)!;
-    expect(s.current).toBe(60); // 50 + 20*0.5
+    expect(entity.get(Stamina)?.current).toBe(60); // 50 + 20*0.5
   });
 });

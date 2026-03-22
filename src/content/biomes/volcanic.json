@@ -3,9 +3,9 @@
   "name": "Cinderpeak Caldera",
   "description": "Rivers of lava cut through obsidian plains. The ground cracks and glows beneath your feet.",
   "terrain": {
-    "noiseOctaves": 3,
-    "noiseFrequency": 0.04,
-    "noiseAmplitude": 16,
+    "noiseOctaves": 4,
+    "noiseFrequency": 0.08,
+    "noiseAmplitude": 6,
     "waterLevel": 4,
     "baseHeight": 5,
     "blocks": {

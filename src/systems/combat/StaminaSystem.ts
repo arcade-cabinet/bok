@@ -15,7 +15,8 @@ export function staminaSystem(world: World, dt: number): void {
   const entities = world.query(Stamina);
 
   for (const entity of entities) {
-    const stamina = entity.get(Stamina)!;
+    const stamina = entity.get(Stamina);
+    if (!stamina) continue;
 
     let newCurrent = stamina.current;
 

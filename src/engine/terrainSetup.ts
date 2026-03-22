@@ -8,7 +8,7 @@ import RAPIER from '@dimforge/rapier3d';
 import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
-import { generateTileset, TILES } from '../rendering/TilesetGenerator.ts';
+import { generateTileset, TILES } from '../rendering/index';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 // --- Block Definitions ---

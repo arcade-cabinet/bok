@@ -69,16 +69,10 @@ export function LootNotification({ items }: Props) {
             className="bg-base-100/90 border-2 border-secondary/60 rounded-lg px-4 py-2 shadow-lg"
             data-testid="loot-item"
           >
-            <span
-              className="text-sm font-bold text-accent"
-              style={{ fontFamily: 'Cinzel, Georgia, serif' }}
-            >
+            <span className="text-sm font-bold text-accent" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
               +{entry.amount}
             </span>{' '}
-            <span
-              className="text-sm text-base-content"
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
+            <span className="text-sm text-base-content" style={{ fontFamily: 'Georgia, serif' }}>
               {entry.name}
             </span>
           </motion.div>

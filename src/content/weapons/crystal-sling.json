@@ -2,8 +2,8 @@
   "id": "crystal-sling",
   "name": "Crystal Sling",
   "type": "ranged",
-  "baseDamage": 10,
-  "attackSpeed": 1.5,
+  "baseDamage": 8,
+  "attackSpeed": 1.0,
   "range": 10.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 320, "animation": "sling-shot" },

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { SettingsModal } from './SettingsModal';
 
 interface Props {
   onResume: () => void;
@@ -14,6 +15,7 @@ interface Props {
 export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
   const resumeRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Focus the Resume button on mount
   useEffect(() => {
@@ -61,6 +63,10 @@ export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  if (showSettings) {
+    return <SettingsModal onClose={() => setShowSettings(false)} />;
+  }
+
   return (
     <div
       className="modal modal-open overlay-safe-area"
@@ -91,10 +97,8 @@ export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
 
           <button
             type="button"
-            className="btn btn-ghost btn-disabled w-full"
-            disabled
-            aria-disabled="true"
-            tabIndex={-1}
+            className="btn btn-ghost w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+            onClick={() => setShowSettings(true)}
           >
             Settings
           </button>

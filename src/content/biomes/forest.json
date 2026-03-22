@@ -4,8 +4,8 @@
   "description": "Dense canopy of ancient trees. Limited visibility but rich resources.",
   "terrain": {
     "noiseOctaves": 3,
-    "noiseFrequency": 0.03,
-    "noiseAmplitude": 8,
+    "noiseFrequency": 0.06,
+    "noiseAmplitude": 4,
     "waterLevel": 3,
     "baseHeight": 5,
     "blocks": {

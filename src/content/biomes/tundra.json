@@ -3,11 +3,11 @@
   "name": "Frostbite Expanse",
   "description": "Frozen tundra with ice lakes and jagged peaks. Blizzards reduce visibility to nothing.",
   "terrain": {
-    "noiseOctaves": 4,
-    "noiseFrequency": 0.025,
-    "noiseAmplitude": 14,
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.05,
+    "noiseAmplitude": 2.5,
     "waterLevel": 3,
-    "baseHeight": 6,
+    "baseHeight": 5,
     "blocks": {
       "surface": 20,
       "subsurface": 21,

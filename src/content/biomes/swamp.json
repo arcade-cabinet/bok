@@ -3,10 +3,10 @@
   "name": "Rothollow Marsh",
   "description": "Murky water choked with dead trees and creeping vines. Things move beneath the surface.",
   "terrain": {
-    "noiseOctaves": 3,
-    "noiseFrequency": 0.02,
-    "noiseAmplitude": 5,
-    "waterLevel": 5,
+    "noiseOctaves": 2,
+    "noiseFrequency": 0.03,
+    "noiseAmplitude": 1.5,
+    "waterLevel": 6,
     "baseHeight": 4,
     "blocks": {
       "surface": 40,

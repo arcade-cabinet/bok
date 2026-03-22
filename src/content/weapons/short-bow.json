@@ -2,12 +2,13 @@
   "id": "short-bow",
   "name": "Short Bow",
   "type": "ranged",
-  "baseDamage": 12,
-  "attackSpeed": 1.2,
-  "range": 15.0,
+  "baseDamage": 10,
+  "attackSpeed": 1.0,
+  "range": 12.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 400, "animation": "quick-shot" },
     { "damageMultiplier": 1.2, "windowMs": 350, "animation": "aimed-shot" },
     { "damageMultiplier": 1.5, "windowMs": 300, "animation": "triple-shot" }
-  ]
+  ],
+  "special": "quick-draw"
 }

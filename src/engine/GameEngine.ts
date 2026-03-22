@@ -13,6 +13,7 @@ import { ContentRegistry } from '../content/index.ts';
 import { createCombat } from './combat.ts';
 import { spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
+import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
 import { createPlayer } from './playerSetup.ts';
 import { createTerrain } from './terrainSetup.ts';
@@ -31,6 +32,8 @@ export interface GameInstance {
   setMobileInput: (input: MobileInput) => void;
   /** Toggle pause */
   togglePause: () => void;
+  /** Capture a mid-run snapshot for save/resume */
+  captureSnapshot: () => import('../persistence/GameStateSerializer.ts').SerializedGameState;
   /** Cleanup everything */
   destroy: () => void;
 }
@@ -155,6 +158,29 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     }),
     onEvent: (listener) => {
       eventListeners.push(listener);
+    },
+    captureSnapshot: () => {
+      const combatSources = combat.getSnapshotSources();
+      const sources: SnapshotSources = {
+        config: { biome: config.biome, seed: config.seed },
+        cameraPosition: {
+          x: cam.camera.position.x,
+          y: cam.camera.position.y,
+          z: cam.camera.position.z,
+        },
+        combatState: combatSources.combatState ?? {
+          playerHealth: combat.state.playerHealth,
+          maxHealth: combat.state.maxHealth,
+          killCount: 0,
+          elapsed: 0,
+        },
+        enemies: combatSources.enemies ?? [],
+        inventory: {},
+        equippedWeapon: 'sword',
+        openedChests: [],
+        defeatedBoss: combatSources.defeatedBoss ?? boss.defeated,
+      };
+      return captureSnapshot(sources);
     },
     triggerAttack: () => combat.triggerAttack(),
     setMobileInput: (input: MobileInput) => {

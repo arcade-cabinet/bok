@@ -1,15 +1,15 @@
 {
   "id": "lava-elemental",
   "name": "Lava Elemental",
-  "health": 70,
+  "health": 65,
   "speed": 2.0,
-  "damage": 18,
+  "damage": 15,
   "attackPattern": "seek-engulf",
   "attacks": [
     {
       "name": "lava-slam",
       "type": "melee",
-      "damage": 18,
+      "damage": 15,
       "cooldown": 2.0,
       "range": 2.5,
       "telegraph": 0.7

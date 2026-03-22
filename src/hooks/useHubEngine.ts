@@ -11,15 +11,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { TouchControlOutput } from '../components/ui/TouchControls';
 import hubNpcsData from '../content/hub/npcs.json';
-import type { NPCConfig } from '../content/types.ts';
-import { NPCConfigSchema } from '../content/types.ts';
+import { type NPCConfig, NPCConfigSchema } from '../content/index';
 import type { CameraResult } from '../engine/camera';
 import { createCamera } from '../engine/camera';
 import type { HubResult } from '../engine/hub';
 import { createHub } from '../engine/hub';
 import { type NPCEntity, spawnHubNPCs } from '../engine/npcEntities';
-import { InputSystem } from '../input/index';
-import { isMobileDevice } from '../input/MobileControls';
+import { InputSystem, isMobileDevice } from '../input/index';
 import { initPlatform } from '../platform/CapacitorBridge';
 import { MAX_DELTA } from '../shared/index';
 import { LookIntent, MovementIntent, Time } from '../traits/index';
@@ -83,16 +81,22 @@ export function useHubEngine(
 
       const rapierWorld = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
 
-      const runtime = new Runtime(canvasRef.current!, {
+      // canvasRef.current is guaranteed non-null by the guard at the top of useEffect
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const runtime = new Runtime(canvas, {
         includePerformanceStats: import.meta.env.DEV,
       });
       runtimeRef.current = runtime;
+      // biome-ignore lint/suspicious/noExplicitAny: JollyPixel Runtime exposes world via internal property
       const jpWorld = (runtime as any).world;
 
       const mobile = isMobileDevice();
       setIsMobile(mobile);
 
       const pixelRatio = Math.min(window.devicePixelRatio, mobile ? 1.5 : 2);
+      // biome-ignore lint/suspicious/noExplicitAny: JollyPixel internal renderer structure
       const webGLRenderer = (jpWorld.renderer as any)?.webGLRenderer as THREE.WebGLRenderer | undefined;
       if (webGLRenderer) webGLRenderer.setPixelRatio(pixelRatio);
 
@@ -119,7 +123,7 @@ export function useHubEngine(
       camRef.current = cam;
 
       // Input
-      const inputSystem = new InputSystem(canvasRef.current!);
+      const inputSystem = new InputSystem(canvas);
       if (!mobile) {
         canvasRef.current?.addEventListener('click', () => {
           if (!document.pointerLockElement) canvasRef.current?.requestPointerLock();
@@ -127,11 +131,13 @@ export function useHubEngine(
       }
 
       // Physics step
+      // biome-ignore lint/suspicious/noExplicitAny: JollyPixel World event emitter API is untyped
       (jpWorld as any).on('beforeFixedUpdate', () => {
         rapierWorld.step();
       });
 
       // Frame loop
+      // biome-ignore lint/suspicious/noExplicitAny: JollyPixel World event emitter API is untyped
       (jpWorld as any).on('beforeUpdate', (rawDt: number) => {
         const dt = Math.min(rawDt, MAX_DELTA);
 

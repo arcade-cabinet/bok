@@ -176,11 +176,7 @@ export function IslandSelectView({ onSelectBiome, onCancel, maxChoices }: Props)
 
         <button
           type="button"
-          className={`btn px-8 ${
-            selectedBiome
-              ? 'btn-primary shadow-lg'
-              : 'btn-disabled'
-          }`}
+          className={`btn px-8 ${selectedBiome ? 'btn-primary shadow-lg' : 'btn-disabled'}`}
           style={{ fontFamily: 'Cinzel, Georgia, serif' }}
           onClick={handleSetSail}
           tabIndex={selectedBiome ? 0 : -1}

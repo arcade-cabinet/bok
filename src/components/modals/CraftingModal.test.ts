@@ -20,9 +20,7 @@ describe('CraftingModal — recipe data', () => {
     const recipe = registry.getCraftingRecipe('wooden-planks');
     const resources: Record<string, number> = { wood: 10, stone: 5 };
 
-    const affordable = recipe.ingredients.every(
-      (ing) => (resources[ing.itemId] ?? 0) >= ing.amount,
-    );
+    const affordable = recipe.ingredients.every((ing) => (resources[ing.itemId] ?? 0) >= ing.amount);
     expect(affordable).toBe(true);
   });
 
@@ -31,9 +29,7 @@ describe('CraftingModal — recipe data', () => {
     const recipe = registry.getCraftingRecipe('iron-sword-recipe');
     const resources: Record<string, number> = { 'iron-ore': 2, wood: 1 };
 
-    const affordable = recipe.ingredients.every(
-      (ing) => (resources[ing.itemId] ?? 0) >= ing.amount,
-    );
+    const affordable = recipe.ingredients.every((ing) => (resources[ing.itemId] ?? 0) >= ing.amount);
     expect(affordable).toBe(false);
   });
 

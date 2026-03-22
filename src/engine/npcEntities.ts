@@ -5,7 +5,7 @@
  * @output NPCEntity[] with world positions, names, roles, and mesh references
  */
 import * as THREE from 'three';
-import type { NPCConfig } from '../content/types.ts';
+import type { NPCConfig } from '../content/index';
 import type { SurfaceHeightFn } from './types.ts';
 
 /** Runtime NPC entity with world position and mesh reference. */

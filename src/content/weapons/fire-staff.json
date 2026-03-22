@@ -2,9 +2,9 @@
   "id": "fire-staff",
   "name": "Fire Staff",
   "type": "ranged",
-  "baseDamage": 18,
+  "baseDamage": 16,
   "attackSpeed": 0.9,
-  "range": 12.0,
+  "range": 10.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 450, "animation": "fireball" },
     { "damageMultiplier": 1.2, "windowMs": 400, "animation": "flame-burst" },

@@ -1,15 +1,15 @@
 {
   "id": "sky-hawk",
   "name": "Sky Hawk",
-  "health": 30,
+  "health": 42,
   "speed": 5.0,
-  "damage": 14,
+  "damage": 12,
   "attackPattern": "dive-bomb-retreat",
   "attacks": [
     {
       "name": "dive-bomb",
       "type": "melee",
-      "damage": 14,
+      "damage": 12,
       "cooldown": 3.0,
       "range": 2.0,
       "telegraph": 0.8

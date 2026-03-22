@@ -4,8 +4,8 @@
   "description": "Endless sand dunes with hidden oases and crumbling ruins. Heat shimmers distort the horizon.",
   "terrain": {
     "noiseOctaves": 2,
-    "noiseFrequency": 0.015,
-    "noiseAmplitude": 12,
+    "noiseFrequency": 0.04,
+    "noiseAmplitude": 3,
     "waterLevel": 2,
     "baseHeight": 4,
     "blocks": {

@@ -4,8 +4,8 @@
   "description": "Coral reefs give way to yawning underwater caves. Bioluminescence is the only light this deep.",
   "terrain": {
     "noiseOctaves": 3,
-    "noiseFrequency": 0.02,
-    "noiseAmplitude": 6,
+    "noiseFrequency": 0.05,
+    "noiseAmplitude": 3,
     "waterLevel": 8,
     "baseHeight": 3,
     "blocks": {

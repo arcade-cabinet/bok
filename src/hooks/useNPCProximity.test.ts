@@ -58,7 +58,7 @@ describe('NPC Proximity Detection', () => {
     // Player is right next to the shopkeeper
     const result = findNearestNPC(13.5, 10.5, allNPCs);
     expect(result).not.toBeNull();
-    expect(result!.id).toBe('shopkeeper');
+    expect(result?.id).toBe('shopkeeper');
   });
 
   it('returns the closest NPC when multiple are within range', () => {
@@ -71,7 +71,7 @@ describe('NPC Proximity Detection', () => {
     // Player at 10.8, 10 — closer to npc-b (0.2) than npc-a (0.8)
     const result = findNearestNPC(10.8, 10, closeNPCs);
     expect(result).not.toBeNull();
-    expect(result!.id).toBe('npc-b');
+    expect(result?.id).toBe('npc-b');
   });
 
   it('returns null when player is exactly at the boundary (equal to range)', () => {
@@ -88,7 +88,7 @@ describe('NPC Proximity Detection', () => {
     // Distance of 2.99 units — just inside the range
     const result = findNearestNPC(12.99, 10, [npc]);
     expect(result).not.toBeNull();
-    expect(result!.id).toBe('inside-npc');
+    expect(result?.id).toBe('inside-npc');
   });
 
   it('returns null for an empty NPC list', () => {

@@ -10,7 +10,8 @@ export function dotSystem(world: World, dt: number): void {
   const entities = world.query(DamageOverTime, Health);
 
   for (const entity of entities) {
-    const dot = entity.get(DamageOverTime)!;
+    const dot = entity.get(DamageOverTime);
+    if (!dot) continue;
     if (dot.remainingDuration <= 0) {
       entity.remove(DamageOverTime);
       continue;
@@ -24,7 +25,8 @@ export function dotSystem(world: World, dt: number): void {
     const ticksToApply = prevBuckets - newBuckets;
 
     if (ticksToApply > 0) {
-      const health = entity.get(Health)!;
+      const health = entity.get(Health);
+      if (!health) continue;
       const totalDamage = dot.damagePerTick * ticksToApply;
       entity.set(Health, {
         current: Math.max(0, health.current - totalDamage),

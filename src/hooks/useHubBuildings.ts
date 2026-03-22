@@ -1,12 +1,13 @@
 /**
  * @module hooks/useHubBuildings
- * @role Manage hub building state: levels, resources, proximity detection, and upgrades
- * @input Building definitions from content JSON, player position from engine frame loop
- * @output Building state, nearby building, upgrade function, resource totals
+ * @role Manage hub building state: levels, proximity detection, and upgrades
+ * @input Building definitions from content JSON, player position from engine frame loop, PlayerInventory for resource checks
+ * @output Building state, nearby building, upgrade function
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import buildingsData from '../content/hub/buildings.json';
 import type { SaveManager } from '../persistence/index';
+import type { PlayerInventory } from './usePlayerInventory';
 
 // --- Types ported from dead HubScene.ts ---
 
@@ -43,6 +44,7 @@ export interface UseHubBuildingsResult {
   ready: boolean;
   buildings: HubBuilding[];
   resources: Record<string, number>;
+  buildingLevels: Record<string, number>;
   nearbyBuilding: NearbyBuilding | null;
   /** Call each frame with player world position to update proximity. */
   updatePlayerPosition: (px: number, pz: number) => void;
@@ -58,17 +60,35 @@ const ALL_BUILDINGS: HubBuilding[] = buildingsData as HubBuilding[];
  * Hub building progression hook.
  *
  * Ported from dead `src/scenes/HubScene.ts` building interaction system.
- * Manages building levels, resource tracking, proximity detection, and upgrades.
+ * Manages building levels, proximity detection, and upgrades.
+ * When a PlayerInventory is provided, resource checks and deductions use
+ * the shared inventory rather than internal state.
  * State is persisted via SaveManager when a saveManager is provided.
  */
-export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildingsResult {
+export function useHubBuildings(
+  saveManager?: SaveManager | null,
+  inventory?: PlayerInventory | null,
+): UseHubBuildingsResult {
   const [ready, setReady] = useState(false);
-  const [resources, setResources] = useState<Record<string, number>>({ wood: 500, stone: 500 });
-  const [, setBuildingLevels] = useState<Record<string, number>>({});
+  const [buildingLevels, setBuildingLevels] = useState<Record<string, number>>({});
   const [nearbyBuilding, setNearbyBuilding] = useState<NearbyBuilding | null>(null);
 
+  // Internal resources used when no inventory is provided (backwards compat)
+  const [internalResources, setInternalResources] = useState<Record<string, number>>({
+    wood: 500,
+    stone: 500,
+  });
+
+  // The resources to display come from inventory if available, else internal
+  const resources = inventory ? inventory.resources : internalResources;
+
   // Mutable refs for frame-loop access (avoids re-renders per frame)
-  const stateRef = useRef<HubBuildingState>({ buildingLevels: {}, resources: { wood: 500, stone: 500 } });
+  const stateRef = useRef<HubBuildingState>({
+    buildingLevels: {},
+    resources: { wood: 500, stone: 500 },
+  });
+  const inventoryRef = useRef(inventory);
+  inventoryRef.current = inventory;
 
   // Load persisted state
   useEffect(() => {
@@ -89,7 +109,9 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
           if (saved.hubState) {
             stateRef.current = saved.hubState;
             setBuildingLevels(saved.hubState.buildingLevels);
-            setResources(saved.hubState.resources);
+            if (!inventoryRef.current) {
+              setInternalResources(saved.hubState.resources);
+            }
           }
         }
         setReady(true);
@@ -112,11 +134,6 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
     let closestDist = INTERACTION_RANGE;
 
     for (const building of ALL_BUILDINGS) {
-      // Building positions in content JSON are relative to hub center (±offset).
-      // The live engine (hub.ts) places buildings at absolute grid coords defined in BUILDINGS array.
-      // We use the building name to look up the engine position instead.
-      // For proximity, we match against the content JSON positions shifted to world space.
-      // HubScene.ts used: bx = position.x + HUB_SIZE/2, bz = position.z + HUB_SIZE/2
       const bx = building.position.x + 16; // HUB_SIZE / 2 = 16
       const bz = building.position.z + 16;
       const dx = px - bx;
@@ -137,7 +154,8 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
         setNearbyBuilding(null);
       } else {
         const levels = stateRef.current.buildingLevels;
-        const res = stateRef.current.resources;
+        const inv = inventoryRef.current;
+        const res = inv ? inv.resources : stateRef.current.resources;
         const currentLevel = levels[closest.id] ?? 1;
         const currentLevelDef = closest.levels.find((l) => l.level === currentLevel);
         const nextLevel = closest.levels.find((l) => l.level === currentLevel + 1) ?? null;
@@ -145,7 +163,13 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
 
         let canAfford = false;
         if (nextLevel) {
-          canAfford = Object.entries(nextLevel.cost).every(([resource, amount]) => (res[resource] ?? 0) >= amount);
+          if (inv) {
+            canAfford = inv.canAfford(nextLevel.cost);
+          } else {
+            canAfford = Object.entries(nextLevel.cost).every(
+              ([resource, amount]) => (res[resource] ?? 0) >= amount,
+            );
+          }
         }
 
         setNearbyBuilding({
@@ -170,29 +194,39 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
       const nextLevel = building.levels.find((l) => l.level === currentLevel + 1);
       if (!nextLevel) return false;
 
-      // Check resources
-      for (const [resource, amount] of Object.entries(nextLevel.cost)) {
-        if ((state.resources[resource] ?? 0) < amount) return false;
-      }
+      const inv = inventoryRef.current;
 
-      // Deduct resources
-      const newResources = { ...state.resources };
-      for (const [resource, amount] of Object.entries(nextLevel.cost)) {
-        newResources[resource] = (newResources[resource] ?? 0) - amount;
+      if (inv) {
+        // Use PlayerInventory for resource checks and deductions
+        if (!inv.canAfford(nextLevel.cost)) return false;
+
+        for (const [resource, amount] of Object.entries(nextLevel.cost)) {
+          const removed = inv.removeResource(resource, amount);
+          if (!removed) return false; // Should not happen after canAfford check
+        }
+      } else {
+        // Legacy: internal resource management
+        for (const [resource, amount] of Object.entries(nextLevel.cost)) {
+          if ((state.resources[resource] ?? 0) < amount) return false;
+        }
+
+        const newResources = { ...state.resources };
+        for (const [resource, amount] of Object.entries(nextLevel.cost)) {
+          newResources[resource] = (newResources[resource] ?? 0) - amount;
+        }
+        stateRef.current = { ...stateRef.current, resources: newResources };
+        setInternalResources(newResources);
       }
 
       // Level up
       const newLevels = { ...state.buildingLevels, [buildingId]: currentLevel + 1 };
-
-      // Update mutable ref + React state
-      stateRef.current = { buildingLevels: newLevels, resources: newResources };
+      stateRef.current = { ...stateRef.current, buildingLevels: newLevels };
       setBuildingLevels(newLevels);
-      setResources(newResources);
 
       // Refresh nearby building info
       prevNearbyIdRef.current = null; // Force re-evaluation on next frame
 
-      // Persist
+      // Persist building levels
       if (saveManager) {
         saveManager
           .saveState({
@@ -214,6 +248,7 @@ export function useHubBuildings(saveManager?: SaveManager | null): UseHubBuildin
     ready,
     buildings: ALL_BUILDINGS,
     resources,
+    buildingLevels,
     nearbyBuilding,
     updatePlayerPosition,
     upgradeBuilding,

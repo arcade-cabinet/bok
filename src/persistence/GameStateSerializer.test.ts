@@ -127,12 +127,12 @@ describe('stringifyGameState / parseGameState', () => {
     const json = stringifyGameState(original);
     const parsed = parseGameState(json);
     expect(parsed).not.toBeNull();
-    expect(parsed!.version).toBe(1);
-    expect(parsed!.config.biome).toBe('forest');
-    expect(parsed!.player.health.current).toBe(80);
-    expect(parsed!.enemies).toHaveLength(1);
-    expect(parsed!.world.defeatedBoss).toBe(false);
-    expect(parsed!.stats.killCount).toBe(3);
+    expect(parsed?.version).toBe(1);
+    expect(parsed?.config.biome).toBe('forest');
+    expect(parsed?.player.health.current).toBe(80);
+    expect(parsed?.enemies).toHaveLength(1);
+    expect(parsed?.world.defeatedBoss).toBe(false);
+    expect(parsed?.stats.killCount).toBe(3);
   });
 
   it('returns null for invalid JSON', () => {

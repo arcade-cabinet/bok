@@ -18,8 +18,7 @@ describe('DoTSystem', () => {
 
     dotSystem(world, 1.0);
 
-    const h = entity.get(Health)!;
-    expect(h.current).toBe(95); // 100 - 5
+    expect(entity.get(Health)?.current).toBe(95); // 100 - 5
   });
 
   it('decrements remaining duration', () => {
@@ -30,8 +29,7 @@ describe('DoTSystem', () => {
 
     dotSystem(world, 0.5);
 
-    const dot = entity.get(DamageOverTime)!;
-    expect(dot.remainingDuration).toBeCloseTo(2.5);
+    expect(entity.get(DamageOverTime)?.remainingDuration).toBeCloseTo(2.5);
   });
 
   it('removes DamageOverTime when expired', () => {
@@ -53,8 +51,7 @@ describe('DoTSystem', () => {
 
     dotSystem(world, 1.0);
 
-    const h = entity.get(Health)!;
-    expect(h.current).toBe(0);
+    expect(entity.get(Health)?.current).toBe(0);
   });
 
   it('removes trait when remainingDuration is already 0', () => {
@@ -76,11 +73,11 @@ describe('DoTSystem', () => {
 
     // 2.1 → 1.9: crosses boundary at 2.0 — tick fires
     dotSystem(world, 0.2);
-    expect(entity.get(Health)!.current).toBe(95);
+    expect(entity.get(Health)?.current).toBe(95);
 
     // 1.9 → 1.7: no boundary crossed — no tick
     dotSystem(world, 0.2);
-    expect(entity.get(Health)!.current).toBe(95);
+    expect(entity.get(Health)?.current).toBe(95);
   });
 
   it('applies multiple ticks for large dt', () => {
@@ -91,6 +88,6 @@ describe('DoTSystem', () => {
 
     // 5.0 → 2.5: prevBuckets=5, newBuckets=2, ticks=3
     dotSystem(world, 2.5);
-    expect(entity.get(Health)!.current).toBe(70);
+    expect(entity.get(Health)?.current).toBe(70);
   });
 });

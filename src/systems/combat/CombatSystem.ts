@@ -33,8 +33,9 @@ export function combatSystem(world: World): void {
     const intent = attacker.get(AttackIntent);
     if (!intent || !intent.active) continue;
 
-    const attackerPos = attacker.get(Position)!;
-    const weapon = attacker.get(WeaponStats)!;
+    const attackerPos = attacker.get(Position);
+    const weapon = attacker.get(WeaponStats);
+    if (!attackerPos || !weapon) continue;
 
     // Get or create combo tracker for this attacker
     let tracker = comboTrackers.get(attacker);
@@ -62,17 +63,18 @@ export function combatSystem(world: World): void {
 
       // Skip invincible targets
       if (target.has(Invincible)) {
-        const inv = target.get(Invincible)!;
-        if (inv.remainingTime > 0) continue;
+        const inv = target.get(Invincible);
+        if (inv && inv.remainingTime > 0) continue;
       }
 
       // H3: Check dodge i-frames — skip damage entirely
       if (target.has(DodgeState)) {
-        const dodge = target.get(DodgeState)!;
-        if (dodge.iFrames) continue;
+        const dodge = target.get(DodgeState);
+        if (dodge?.iFrames) continue;
       }
 
-      const targetPos = target.get(Position)!;
+      const targetPos = target.get(Position);
+      if (!targetPos) continue;
 
       // Range check
       if (
@@ -91,13 +93,13 @@ export function combatSystem(world: World): void {
 
       // H3: Check parry window — deal 0 damage, emit counter opportunity
       if (target.has(ParryState)) {
-        const parry = target.get(ParryState)!;
-        if (parry.parryWindow) {
+        const parry = target.get(ParryState);
+        if (parry?.parryWindow) {
           // Perfect parry — no damage, counter opportunity
           // TODO: emit 'parry' event for counter-attack system
           continue;
         }
-        if (parry.blocking) {
+        if (parry?.blocking) {
           // Blocking — deal 50% damage
           const armorReduction = target.has(ArmorStats) ? (target.get(ArmorStats)?.reduction ?? 0) : 0;
 
@@ -109,7 +111,8 @@ export function combatSystem(world: World): void {
           });
 
           const blocked = Math.max(1, Math.floor(damage * 0.5));
-          const health = target.get(Health)!;
+          const health = target.get(Health);
+          if (!health) continue;
           target.set(Health, {
             current: Math.max(0, health.current - blocked),
             max: health.max,
@@ -129,7 +132,8 @@ export function combatSystem(world: World): void {
       });
 
       // Apply damage
-      const health = target.get(Health)!;
+      const health = target.get(Health);
+      if (!health) continue;
       target.set(Health, {
         current: Math.max(0, health.current - damage),
         max: health.max,

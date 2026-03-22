@@ -1,9 +1,11 @@
 import { createWorld } from 'koota';
 import { describe, expect, it } from 'vitest';
-import { ContentRegistry } from './content/registry.ts';
+import { ContentRegistry } from './content/index';
 import { IslandGenerator } from './generation/index.ts';
 import { ActionMap } from './input/index.ts';
 import { SaveManager } from './persistence/index.ts';
+// Direct file imports to avoid barrel re-exporting PhysicsWorld/CollisionResolver
+// which depend on @dimforge/rapier3d WASM (unavailable in Node test environment)
 import { calculateDamage, type DamageInput } from './systems/combat/DamageCalculator.ts';
 import { MovementSystem } from './systems/movement/MovementSystem.ts';
 import { RunManager } from './systems/progression/RunManager.ts';
@@ -108,8 +110,9 @@ describe('Integration: Full Run Simulation', () => {
     const movementSystem = new MovementSystem();
     player.set(Velocity, { x: 1, y: 0, z: 0 });
     movementSystem.update(world, 1.0);
-    const playerPos = player.get(Position)!;
-    expect(playerPos.x).toBeCloseTo(blueprint.playerSpawn.x + 1);
+    const playerPos = player.get(Position);
+    expect(playerPos).toBeDefined();
+    expect(playerPos?.x).toBeCloseTo(blueprint.playerSpawn.x + 1);
 
     // 6. Simulate combat — player attacks enemy
     const woodenSword = registry.getWeapon('wooden-sword');
@@ -123,10 +126,11 @@ describe('Integration: Full Run Simulation', () => {
     expect(damage).toBe(woodenSword.baseDamage);
 
     // Apply damage to first enemy
-    const enemyHealth = enemyEntities[0].get(Health)!;
-    const newHealth = enemyHealth.current - damage;
-    enemyEntities[0].set(Health, { current: Math.max(0, newHealth), max: enemyHealth.max });
-    expect(enemyEntities[0].get(Health)?.current).toBeLessThan(enemyHealth.max);
+    const enemyHealth = enemyEntities[0].get(Health);
+    expect(enemyHealth).toBeDefined();
+    const newHealth = (enemyHealth?.current ?? 0) - damage;
+    enemyEntities[0].set(Health, { current: Math.max(0, newHealth), max: enemyHealth?.max ?? 0 });
+    expect(enemyEntities[0].get(Health)?.current).toBeLessThan(enemyHealth?.max ?? 0);
 
     // 7. Simulate boss defeat + run progression
     const save = await SaveManager.createInMemory();

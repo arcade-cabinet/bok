@@ -8,6 +8,15 @@
  */
 
 export {
+  isAnalyticsOptedIn,
+  setAnalyticsOptIn,
+  trackBossKill,
+  trackEvent,
+  trackRunEnd,
+  trackRunStart,
+  trackSessionStart,
+} from './analytics.ts';
+export {
   CHUNK_SIZE,
   DODGE_DURATION,
   DODGE_IFRAMES,
@@ -21,5 +30,11 @@ export {
   PLAYER_SPRINT_MULTIPLIER,
 } from './constants.ts';
 export { EventBus } from './EventBus.ts';
+export {
+  type GameSettings,
+  getDefaultGameSettings,
+  loadGameSettings,
+  saveGameSettings,
+} from './gameSettings.ts';
 export type { BiomeId, ConfigId, EntityId, GamePhaseName, Vec3 } from './types.ts';
 export { APP_NAME, APP_VERSION } from './version.ts';

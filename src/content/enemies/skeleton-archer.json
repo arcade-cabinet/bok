@@ -1,15 +1,15 @@
 {
   "id": "skeleton-archer",
   "name": "Skeleton Archer",
-  "health": 40,
+  "health": 35,
   "speed": 2.5,
-  "damage": 12,
+  "damage": 7,
   "attackPattern": "patrol-ranged",
   "attacks": [
     {
       "name": "arrow-shot",
       "type": "ranged",
-      "damage": 12,
+      "damage": 7,
       "cooldown": 2.0,
       "range": 15.0,
       "telegraph": 0.6
@@ -17,7 +17,7 @@
     {
       "name": "bone-swipe",
       "type": "melee",
-      "damage": 6,
+      "damage": 5,
       "cooldown": 1.0,
       "range": 1.5,
       "telegraph": 0.3

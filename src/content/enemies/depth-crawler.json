@@ -1,15 +1,15 @@
 {
   "id": "depth-crawler",
   "name": "Depth Crawler",
-  "health": 50,
+  "health": 70,
   "speed": 2.5,
-  "damage": 14,
+  "damage": 16,
   "attackPattern": "patrol-grab",
   "attacks": [
     {
       "name": "tentacle-grab",
       "type": "melee",
-      "damage": 14,
+      "damage": 16,
       "cooldown": 2.5,
       "range": 3.0,
       "telegraph": 0.6

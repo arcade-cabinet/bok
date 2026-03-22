@@ -10,7 +10,7 @@ import { Runtime } from '@jolly-pixel/runtime';
 import { createWorld } from 'koota';
 import * as THREE from 'three';
 
-import { isMobileDevice } from '../input/MobileControls.ts';
+import { isMobileDevice } from '../input/index';
 import { initPlatform } from '../platform/CapacitorBridge.ts';
 import { DayNightCycle } from '../rendering/index.ts';
 import { GamePhase, IslandState, LookIntent, MovementIntent, Time } from '../traits/index.ts';

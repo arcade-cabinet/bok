@@ -1,15 +1,15 @@
 {
   "id": "ice-golem",
   "name": "Ice Golem",
-  "health": 80,
+  "health": 55,
   "speed": 1.5,
-  "damage": 20,
+  "damage": 13,
   "attackPattern": "slow-chase-pound",
   "attacks": [
     {
       "name": "ice-fist",
       "type": "melee",
-      "damage": 20,
+      "damage": 13,
       "cooldown": 2.5,
       "range": 2.0,
       "telegraph": 0.8
@@ -17,7 +17,7 @@
     {
       "name": "ground-pound",
       "type": "aoe",
-      "damage": 15,
+      "damage": 10,
       "cooldown": 6.0,
       "range": 4.0,
       "telegraph": 1.2

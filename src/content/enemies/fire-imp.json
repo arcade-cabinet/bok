@@ -1,15 +1,15 @@
 {
   "id": "fire-imp",
   "name": "Fire Imp",
-  "health": 20,
+  "health": 50,
   "speed": 4.0,
-  "damage": 8,
+  "damage": 13,
   "attackPattern": "flee-ranged",
   "attacks": [
     {
       "name": "fireball",
       "type": "ranged",
-      "damage": 8,
+      "damage": 13,
       "cooldown": 1.5,
       "range": 12.0,
       "telegraph": 0.4

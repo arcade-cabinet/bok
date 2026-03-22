@@ -3,11 +3,11 @@
   "name": "Stormspire Remnants",
   "description": "Crumbling platforms float among the clouds. One wrong step means a long fall into nothing.",
   "terrain": {
-    "noiseOctaves": 2,
-    "noiseFrequency": 0.05,
-    "noiseAmplitude": 18,
+    "noiseOctaves": 3,
+    "noiseFrequency": 0.1,
+    "noiseAmplitude": 8,
     "waterLevel": 0,
-    "baseHeight": 8,
+    "baseHeight": 10,
     "blocks": {
       "surface": 60,
       "subsurface": 61,

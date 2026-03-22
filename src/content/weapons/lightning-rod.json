@@ -2,9 +2,9 @@
   "id": "lightning-rod",
   "name": "Lightning Rod",
   "type": "ranged",
-  "baseDamage": 22,
+  "baseDamage": 20,
   "attackSpeed": 0.8,
-  "range": 18.0,
+  "range": 15.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 480, "animation": "spark-bolt" },
     { "damageMultiplier": 1.2, "windowMs": 420, "animation": "thunder-strike" },

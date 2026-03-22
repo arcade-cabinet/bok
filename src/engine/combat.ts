@@ -15,6 +15,7 @@ import {
   playVictory,
 } from '../audio/GameAudio.ts';
 import { hapticImpact } from '../platform/CapacitorBridge.ts';
+import type { SnapshotSources } from './engineSnapshot.ts';
 import type { BossState, EnemyState, EngineEventListener } from './types.ts';
 
 const ATTACK_RANGE = 2.5;
@@ -42,6 +43,8 @@ export interface CombatSystem {
   triggerAttack: () => void;
   update: (dt: number, cameraPos: THREE.Vector3) => void;
   cleanup: () => void;
+  /** Return current combat-related data for mid-run snapshot capture */
+  getSnapshotSources: () => Partial<SnapshotSources>;
 }
 
 /**
@@ -72,6 +75,8 @@ export function createCombat(
   };
 
   let pendingAttack = false;
+  let killCount = 0;
+  let elapsedTime = 0;
 
   function spawnLoot(pos: THREE.Vector3, type: string): void {
     const mat = lootMats[type] ?? lootMats['health-potion'];
@@ -83,6 +88,7 @@ export function createCombat(
 
   function update(dt: number, cameraPos: THREE.Vector3): void {
     if (state.phase !== 'playing') return;
+    elapsedTime += dt;
 
     state.playerAttackCooldown = Math.max(0, state.playerAttackCooldown - dt);
 
@@ -136,6 +142,7 @@ export function createCombat(
 
           scene.remove(target.mesh);
           enemies.splice(closestIdx, 1);
+          killCount += 1;
           playEnemyDeath();
           spawnLoot(pos, isBoss ? 'tome-page' : 'health-potion');
           onEvent({ type: 'enemyKilled', position: { x: pos.x, y: pos.y, z: pos.z } });
@@ -222,5 +229,26 @@ export function createCombat(
       for (const drop of state.lootDrops) scene.remove(drop.mesh);
       state.lootDrops.length = 0;
     },
+    getSnapshotSources: (): Partial<SnapshotSources> => ({
+      combatState: {
+        playerHealth: state.playerHealth,
+        maxHealth: state.maxHealth,
+        killCount,
+        elapsed: Math.round(elapsedTime),
+      },
+      enemies: enemies.map((e, i) => ({
+        id: `enemy-${i}`,
+        type: e.mesh === bossMesh ? 'boss' : 'minion',
+        position: {
+          x: e.mesh.position.x,
+          y: e.mesh.position.y,
+          z: e.mesh.position.z,
+        },
+        health: e.health,
+        maxHealth: e.mesh === bossMesh ? boss.maxHealth : 50,
+        aiState: 'active',
+      })),
+      defeatedBoss: boss.defeated,
+    }),
   };
 }

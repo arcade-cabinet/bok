@@ -1,15 +1,15 @@
 {
   "id": "slime",
   "name": "Forest Slime",
-  "health": 30,
+  "health": 25,
   "speed": 2.0,
-  "damage": 8,
+  "damage": 6,
   "attackPattern": "wander-chase",
   "attacks": [
     {
       "name": "bounce",
       "type": "melee",
-      "damage": 8,
+      "damage": 6,
       "cooldown": 1.5,
       "range": 1.2,
       "telegraph": 0.3

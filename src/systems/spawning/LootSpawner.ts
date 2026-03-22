@@ -10,11 +10,11 @@ export interface SpawnedChest {
 /**
  * Creates loot entity descriptors at chest positions from island generation.
  */
-export class LootSpawner {
-  static spawn(chests: ChestPlacement[]): SpawnedChest[] {
+export const LootSpawner = {
+  spawn(chests: ChestPlacement[]): SpawnedChest[] {
     return chests.map((c) => ({
       position: c.position,
       tier: c.tier,
     }));
-  }
-}
+  },
+};

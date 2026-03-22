@@ -1,15 +1,15 @@
 {
   "id": "frost-wolf",
   "name": "Frost Wolf",
-  "health": 30,
+  "health": 45,
   "speed": 4.5,
-  "damage": 10,
+  "damage": 11,
   "attackPattern": "pack-chase",
   "attacks": [
     {
       "name": "bite",
       "type": "melee",
-      "damage": 10,
+      "damage": 11,
       "cooldown": 1.2,
       "range": 1.5,
       "telegraph": 0.2

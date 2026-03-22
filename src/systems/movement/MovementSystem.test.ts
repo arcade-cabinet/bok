@@ -11,10 +11,9 @@ describe('MovementSystem', () => {
 
     system.update(world, 1.0);
 
-    const pos = entity.get(Position)!;
-    expect(pos.x).toBeCloseTo(1);
-    expect(pos.y).toBeCloseTo(0);
-    expect(pos.z).toBeCloseTo(0);
+    expect(entity.get(Position)?.x).toBeCloseTo(1);
+    expect(entity.get(Position)?.y).toBeCloseTo(0);
+    expect(entity.get(Position)?.z).toBeCloseTo(0);
   });
 
   it('does not move entity with zero velocity', () => {
@@ -24,10 +23,9 @@ describe('MovementSystem', () => {
 
     system.update(world, 1.0);
 
-    const pos = entity.get(Position)!;
-    expect(pos.x).toBeCloseTo(0);
-    expect(pos.y).toBeCloseTo(0);
-    expect(pos.z).toBeCloseTo(0);
+    expect(entity.get(Position)?.x).toBeCloseTo(0);
+    expect(entity.get(Position)?.y).toBeCloseTo(0);
+    expect(entity.get(Position)?.z).toBeCloseTo(0);
   });
 
   it('handles negative velocity', () => {
@@ -37,10 +35,9 @@ describe('MovementSystem', () => {
 
     system.update(world, 0.5);
 
-    const pos = entity.get(Position)!;
-    expect(pos.x).toBeCloseTo(-1);
-    expect(pos.y).toBeCloseTo(-0.5);
-    expect(pos.z).toBeCloseTo(-1.5);
+    expect(entity.get(Position)?.x).toBeCloseTo(-1);
+    expect(entity.get(Position)?.y).toBeCloseTo(-0.5);
+    expect(entity.get(Position)?.z).toBeCloseTo(-1.5);
   });
 
   it('scales with delta time', () => {
@@ -50,7 +47,6 @@ describe('MovementSystem', () => {
 
     system.update(world, 0.016);
 
-    const pos = entity.get(Position)!;
-    expect(pos.x).toBeCloseTo(0.16);
+    expect(entity.get(Position)?.x).toBeCloseTo(0.16);
   });
 });

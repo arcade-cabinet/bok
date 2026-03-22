@@ -9,6 +9,7 @@ export class EventBus {
     if (!this.#listeners.has(event)) {
       this.#listeners.set(event, new Set());
     }
+    // biome-ignore lint/style/noNonNullAssertion: guaranteed by the set above
     const set = this.#listeners.get(event)!;
     set.add(listener as Listener);
     return () => set.delete(listener as Listener);

@@ -125,7 +125,9 @@ export async function requestWebWakeLock(): Promise<void> {
   if (Capacitor.isNativePlatform()) return;
   if (!('wakeLock' in navigator)) return; // API not available in this browser
   try {
-    await (navigator as any).wakeLock.request('screen');
+    await (navigator as unknown as { wakeLock: { request: (type: string) => Promise<unknown> } }).wakeLock.request(
+      'screen',
+    );
   } catch (e) {
     recordError('WebWakeLock', e);
   }

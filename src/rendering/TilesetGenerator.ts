@@ -113,7 +113,8 @@ export function generateTileset(): { canvas: HTMLCanvasElement; dataUrl: string 
   const canvas = document.createElement('canvas');
   canvas.width = COLS * TILE_SIZE;
   canvas.height = ROWS * TILE_SIZE;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Failed to get 2D canvas context for tileset generation');
 
   for (let col = 0; col < COLS; col++) {
     for (let row = 0; row < ROWS; row++) {

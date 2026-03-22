@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPlayerGovernor, type GovernorOutput, type PlayerGovernor, type ThreatLevel } from '../ai/PlayerGovernor';
+import { createPlayerGovernor, type GovernorOutput, type PlayerGovernor, type ThreatLevel } from '../ai/index';
 
 export interface PlayerGovernorState {
   suggestedTarget: number;

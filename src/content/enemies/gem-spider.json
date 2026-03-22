@@ -1,15 +1,15 @@
 {
   "id": "gem-spider",
   "name": "Gem Spider",
-  "health": 25,
+  "health": 58,
   "speed": 3.5,
-  "damage": 8,
+  "damage": 14,
   "attackPattern": "ceiling-drop-web",
   "attacks": [
     {
       "name": "fang-bite",
       "type": "melee",
-      "damage": 8,
+      "damage": 14,
       "cooldown": 1.2,
       "range": 1.2,
       "telegraph": 0.2
@@ -17,7 +17,7 @@
     {
       "name": "web-spit",
       "type": "ranged",
-      "damage": 3,
+      "damage": 8,
       "cooldown": 4.0,
       "range": 10.0,
       "telegraph": 0.4

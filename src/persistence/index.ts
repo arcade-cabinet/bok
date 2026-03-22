@@ -6,18 +6,19 @@
  * @depends @capacitor-community/sqlite
  * @tested Database.test.ts, GameStateSerializer.test.ts, CapacitorDatabase.test.ts
  */
-export { type DatabaseAdapter, InMemoryDatabase } from './Database.ts';
+
 export { CapacitorDatabase } from './CapacitorDatabase.ts';
 export { createDatabase } from './createDatabase.ts';
+export { type DatabaseAdapter, InMemoryDatabase } from './Database.ts';
 export {
+  parseGameState,
+  type SerializedEnemyState,
   type SerializedGameState,
   type SerializedPlayerState,
-  type SerializedEnemyState,
-  type SerializedWorldState,
   type SerializedRunStats,
-  validateGameState,
+  type SerializedWorldState,
   stringifyGameState,
-  parseGameState,
+  validateGameState,
 } from './GameStateSerializer.ts';
 export { runMigrations } from './migrations.ts';
 export { type GameState, type RunRecord, SaveManager, type UnlockRecord } from './SaveManager.ts';

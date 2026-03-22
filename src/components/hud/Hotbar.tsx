@@ -11,6 +11,7 @@ interface Props {
 }
 
 const SLOT_COUNT = 5;
+const SLOT_KEYS = ['slot-1', 'slot-2', 'slot-3', 'slot-4', 'slot-5'] as const;
 
 /**
  * Weapon/item hotbar — 5 slots with keyboard (1-5) and mouse wheel cycling.
@@ -52,7 +53,7 @@ export function Hotbar({ slots, activeIndex, onSelect }: Props) {
 
         return (
           <button
-            key={i}
+            key={SLOT_KEYS[i]}
             type="button"
             aria-label={`Slot ${i + 1}${label ? `: ${label}` : ': empty'}${isActive ? ' (selected)' : ''}`}
             aria-pressed={isActive}

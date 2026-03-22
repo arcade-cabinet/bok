@@ -81,11 +81,11 @@ describe('SaveManager mid-run save', () => {
     await mgr.saveGameState(state);
     const loaded = await mgr.loadGameState();
     expect(loaded).not.toBeNull();
-    expect(loaded!.version).toBe(1);
-    expect(loaded!.config.biome).toBe('forest');
-    expect(loaded!.player.health.current).toBe(80);
-    expect(loaded!.enemies).toHaveLength(1);
-    expect(loaded!.stats.killCount).toBe(3);
+    expect(loaded?.version).toBe(1);
+    expect(loaded?.config.biome).toBe('forest');
+    expect(loaded?.player.health.current).toBe(80);
+    expect(loaded?.enemies).toHaveLength(1);
+    expect(loaded?.stats.killCount).toBe(3);
   });
 
   it('hasSavedGame returns false when no save exists', async () => {
@@ -124,6 +124,6 @@ describe('SaveManager mid-run save', () => {
     await mgr.saveGameState(state2);
 
     const loaded = await mgr.loadGameState();
-    expect(loaded!.player.health.current).toBe(90);
+    expect(loaded?.player.health.current).toBe(90);
   });
 });

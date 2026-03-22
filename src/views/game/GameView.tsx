@@ -1,11 +1,16 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
+import type { SerializedGameState } from '../../persistence/GameStateSerializer';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
+import { HintToast, type HintTrigger } from '../../components/hud/HintToast';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
+import { type Inscription, Inscriptions } from '../../components/hud/Inscriptions';
 import { Minimap } from '../../components/hud/Minimap';
 import { ScreenReaderAnnouncer } from '../../components/hud/ScreenReaderAnnouncer';
+import { TomeUnlockBanner } from '../../components/hud/TomeUnlockBanner';
+import { isTutorialCompleted, TutorialOverlay } from '../../components/hud/TutorialOverlay';
 import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
@@ -21,6 +26,7 @@ import { useGameLifecycle } from '../../hooks/useGameLifecycle';
 
 interface Props {
   config: GameConfig;
+  savedState?: SerializedGameState | null;
   onReturnToMenu: () => void;
   onQuitToMenu: () => void;
   onBossDefeated?: (bossId: string, tomeAbility: string) => Promise<void>;
@@ -41,25 +47,75 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
 export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialCompleted());
+  const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
+  const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
+
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
   const handleSrSubscribe = useCallback((handler: (event: EngineEvent) => void) => {
     srEventHandlerRef.current = handler;
   }, []);
+
   // Lifecycle: canvas, engine init/cleanup, keyboard, resize
   const { canvasRef, gameRef, showTome, setShowTome, handleResume, handleTouchOutput } = useGameLifecycle(
     config,
     (event) => {
       events.handleEngineEvent(event);
       srEventHandlerRef.current?.(event);
+
+      // Show tome unlock banner on boss defeat
+      if (event.type === 'bossDefeated') {
+        const meta = TOME_PAGE_CATALOG[event.tomeAbility];
+        if (meta) {
+          setTomeUnlock({ name: meta.name, icon: meta.icon });
+          setNewlyUnlockedTomeId(event.tomeAbility);
+        }
+      }
     },
     screenWidth,
     screenHeight,
   );
+
   // HUD polling: 10fps engine state bridge
   const [engineState, setEngineState] = useGameHUD(gameRef);
+
   // Event side-effects: damage flash, kill tracking, death/victory stats
   const events = useGameEvents(config, gameRef, setEngineState, { onBossDefeated, onRunEnd });
+
+  // Derive hint triggers from engine state
+  const hintTriggers = useMemo<HintTrigger[]>(() => {
+    if (!engineState || engineState.phase !== 'playing') return [];
+    const triggers: HintTrigger[] = [];
+    if (engineState.enemyCount > 0 && engineState.threatLevel !== 'none') triggers.push('enemyNearby');
+    if (engineState.bossNearby) triggers.push('bossNearby');
+    if (engineState.playerHealth < engineState.maxHealth * 0.3) triggers.push('healthLow');
+    return triggers;
+  }, [engineState]);
+
+  // Derive active inscriptions from engine state
+  const pendingInscriptions = useMemo<Inscription[]>(() => {
+    if (!engineState || engineState.phase !== 'playing') return [];
+    const inscriptions: Inscription[] = [];
+    // Biome discovery inscription
+    if (engineState.biomeName) {
+      inscriptions.push({
+        id: `biome-${config.biome}`,
+        title: engineState.biomeName,
+        text: `You have arrived at ${engineState.biomeName}. Explore carefully.`,
+        icon: '🏝️',
+      });
+    }
+    return inscriptions;
+  }, [engineState, config.biome]);
+
+  // Extend hint triggers with damage events
+  const extendedHintTriggers = useMemo<HintTrigger[]>(() => {
+    if (events.damageRef.current && events.killCountRef.current === 0) {
+      return [...hintTriggers, 'takeDamage' as HintTrigger];
+    }
+    return hintTriggers;
+  }, [hintTriggers, events.damageRef, events.killCountRef]);
 
   const handleAbandonRun = useCallback(() => {
     const duration = Math.round((Date.now() - events.startTimeRef.current) / 1000);
@@ -75,6 +131,10 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
     gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'defend' });
   }, [gameRef]);
 
+  const handleTutorialComplete = useCallback(() => {
+    setShowTutorial(false);
+  }, []);
+
   return (
     <div className="fixed inset-0" role="application" aria-label="Game canvas - use keyboard or touch controls to play">
       <canvas
@@ -85,6 +145,10 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         style={{ touchAction: 'none' }}
         aria-label="3D game world"
       />
+
+      {/* First-run tutorial overlay — pauses game while active */}
+      {showTutorial && <TutorialOverlay onComplete={handleTutorialComplete} />}
+
       <ScreenReaderAnnouncer engineState={engineState} onSubscribe={handleSrSubscribe} />
       <DamageIndicator ref={events.damageRef} canvasRef={canvasRef} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
@@ -92,6 +156,20 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
         <ActionButtons onAttack={handleAttack} onDodge={handleDodge} />
       )}
       {engineState?.phase === 'playing' && <ContextIndicator context={engineState.context} />}
+
+      {/* Contextual hint toasts */}
+      {engineState?.phase === 'playing' && !showTutorial && <HintToast activeTriggers={extendedHintTriggers} />}
+
+      {/* Discovery inscriptions */}
+      {engineState?.phase === 'playing' && !showTutorial && <Inscriptions pending={pendingInscriptions} />}
+
+      {/* Tome unlock banner */}
+      <TomeUnlockBanner
+        abilityName={tomeUnlock?.name ?? null}
+        abilityIcon={tomeUnlock?.icon ?? null}
+        onDismiss={() => setTomeUnlock(null)}
+      />
+
       {engineState?.phase === 'playing' && (
         <div
           className="fixed inset-0 pointer-events-none z-10"
@@ -157,13 +235,14 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
               : { id, name: id, icon: '📜', description: 'An unknown ability inscribed in the tome.', level: i + 1 };
           })}
           onClose={() => setShowTome(false)}
+          newlyUnlockedId={newlyUnlockedTomeId}
         />
       )}
       {engineState?.phase === 'paused' && (
         <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={onQuitToMenu} />
       )}
       {engineState?.phase === 'dead' && events.deathStats && (
-        <DeathScreen stats={events.deathStats} onReturnToHub={onReturnToMenu} />
+        <DeathScreen stats={events.deathStats} onReturnToHub={onReturnToMenu} onTryAgain={onReturnToMenu} />
       )}
       {engineState?.phase === 'victory' && events.victoryStats && (
         <VictoryScreen stats={events.victoryStats} onContinueVoyage={onReturnToMenu} onReturnToHub={onReturnToMenu} />

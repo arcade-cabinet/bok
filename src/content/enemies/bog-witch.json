@@ -1,15 +1,15 @@
 {
   "id": "bog-witch",
   "name": "Bog Witch",
-  "health": 50,
+  "health": 60,
   "speed": 2.0,
-  "damage": 10,
+  "damage": 11,
   "attackPattern": "ranged-poison-summon",
   "attacks": [
     {
       "name": "poison-bolt",
       "type": "ranged",
-      "damage": 10,
+      "damage": 11,
       "cooldown": 2.0,
       "range": 14.0,
       "telegraph": 0.5

@@ -10,8 +10,9 @@ export function bossPhaseSystem(world: World, content: ContentRegistry): void {
   const entities = world.query(BossType, Health);
 
   for (const entity of entities) {
-    const boss = entity.get(BossType)!;
-    const health = entity.get(Health)!;
+    const boss = entity.get(BossType);
+    const health = entity.get(Health);
+    if (!boss || !health) continue;
 
     let bossConfig: BossConfig;
     try {

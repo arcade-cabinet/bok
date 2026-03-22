@@ -18,13 +18,13 @@ export function dodgeTickSystem(world: World, dt: number): void {
   const entities = world.query(DodgeState);
 
   for (const entity of entities) {
-    const dodge = entity.get(DodgeState)!;
-    if (!dodge.active) continue;
+    const dodge = entity.get(DodgeState);
+    if (!dodge || !dodge.active) continue;
 
     // On first frame of dodge, check and deduct stamina
     if (dodge.cooldownRemaining <= 0) {
       // Fresh dodge — set cooldown and deduct stamina
-      const stamina = entity.has(Stamina) ? entity.get(Stamina)! : null;
+      const stamina = entity.has(Stamina) ? entity.get(Stamina) : null;
       if (stamina && stamina.current < DODGE_STAMINA_COST) {
         // Not enough stamina — cancel dodge
         entity.set(DodgeState, { active: false, iFrames: false, cooldownRemaining: 0 });

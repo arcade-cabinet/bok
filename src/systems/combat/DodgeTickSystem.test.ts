@@ -16,9 +16,9 @@ describe('DodgeTickSystem', () => {
     // Tick past i-frame duration
     dodgeTickSystem(world, 0.31);
 
-    const dodge = entity.get(DodgeState)!;
-    expect(dodge.active).toBe(true);
-    expect(dodge.iFrames).toBe(false);
+    const dodge = entity.get(DodgeState);
+    expect(dodge?.active).toBe(true);
+    expect(dodge?.iFrames).toBe(false);
   });
 
   it('resets dodge entirely after 0.8s cooldown', () => {
@@ -26,10 +26,10 @@ describe('DodgeTickSystem', () => {
 
     dodgeTickSystem(world, 0.81);
 
-    const dodge = entity.get(DodgeState)!;
-    expect(dodge.active).toBe(false);
-    expect(dodge.iFrames).toBe(false);
-    expect(dodge.cooldownRemaining).toBe(0);
+    const dodge = entity.get(DodgeState);
+    expect(dodge?.active).toBe(false);
+    expect(dodge?.iFrames).toBe(false);
+    expect(dodge?.cooldownRemaining).toBe(0);
   });
 
   it('does not touch inactive dodge', () => {
@@ -37,9 +37,9 @@ describe('DodgeTickSystem', () => {
 
     dodgeTickSystem(world, 0.1);
 
-    const dodge = entity.get(DodgeState)!;
-    expect(dodge.active).toBe(false);
-    expect(dodge.iFrames).toBe(false);
+    const dodge = entity.get(DodgeState);
+    expect(dodge?.active).toBe(false);
+    expect(dodge?.iFrames).toBe(false);
   });
 
   it('deducts stamina on fresh dodge activation', () => {
@@ -50,8 +50,8 @@ describe('DodgeTickSystem', () => {
 
     dodgeTickSystem(world, 0.016);
 
-    const stamina = entity.get(Stamina)!;
-    expect(stamina.current).toBe(75); // 100 - 25 cost
+    const stamina = entity.get(Stamina);
+    expect(stamina?.current).toBe(75); // 100 - 25 cost
   });
 
   it('cancels dodge when stamina is insufficient', () => {
@@ -62,12 +62,12 @@ describe('DodgeTickSystem', () => {
 
     dodgeTickSystem(world, 0.016);
 
-    const dodge = entity.get(DodgeState)!;
-    expect(dodge.active).toBe(false);
-    expect(dodge.iFrames).toBe(false);
+    const dodge = entity.get(DodgeState);
+    expect(dodge?.active).toBe(false);
+    expect(dodge?.iFrames).toBe(false);
 
-    const stamina = entity.get(Stamina)!;
-    expect(stamina.current).toBe(10); // unchanged
+    const stamina = entity.get(Stamina);
+    expect(stamina?.current).toBe(10); // unchanged
   });
 
   it('keeps i-frames during initial 0.3s window', () => {
@@ -75,8 +75,8 @@ describe('DodgeTickSystem', () => {
 
     dodgeTickSystem(world, 0.1);
 
-    const dodge = entity.get(DodgeState)!;
-    expect(dodge.active).toBe(true);
-    expect(dodge.iFrames).toBe(true);
+    const dodge = entity.get(DodgeState);
+    expect(dodge?.active).toBe(true);
+    expect(dodge?.iFrames).toBe(true);
   });
 });

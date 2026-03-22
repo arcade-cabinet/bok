@@ -15,6 +15,10 @@ export {
 } from './AudioFacade.ts';
 
 export {
+  setupAudioResumeOnGesture,
+} from './AudioResume.ts';
+
+export {
   playBossPhase,
   playEnemyDeath,
   playHitImpact,

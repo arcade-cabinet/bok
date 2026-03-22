@@ -2,7 +2,7 @@
   "id": "volcanic-edge",
   "name": "Volcanic Edge",
   "type": "melee",
-  "baseDamage": 30,
+  "baseDamage": 22,
   "attackSpeed": 0.8,
   "range": 1.6,
   "combo": [

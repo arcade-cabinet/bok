@@ -1,7 +1,7 @@
 {
   "id": "crystal-sentinel",
   "name": "Crystal Sentinel",
-  "health": 60,
+  "health": 70,
   "speed": 1.8,
   "damage": 16,
   "attackPattern": "guard-laser",
@@ -17,7 +17,7 @@
     {
       "name": "laser-beam",
       "type": "ranged",
-      "damage": 22,
+      "damage": 18,
       "cooldown": 6.0,
       "range": 18.0,
       "telegraph": 1.5

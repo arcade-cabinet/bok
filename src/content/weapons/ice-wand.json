@@ -2,9 +2,9 @@
   "id": "ice-wand",
   "name": "Ice Wand",
   "type": "ranged",
-  "baseDamage": 14,
-  "attackSpeed": 1.1,
-  "range": 14.0,
+  "baseDamage": 12,
+  "attackSpeed": 1.0,
+  "range": 12.0,
   "combo": [
     { "damageMultiplier": 1.0, "windowMs": 380, "animation": "ice-bolt" },
     { "damageMultiplier": 1.2, "windowMs": 340, "animation": "frost-wave" },

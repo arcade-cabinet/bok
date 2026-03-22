@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import { SailingTransition } from '../components/transitions/SailingTransition';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
+import type { BuildingEffects } from '../hooks/useBuildingEffects';
 import { useProgression } from '../hooks/useProgression';
 import { IslandSelectView } from '../views/island-select/IslandSelectView';
 import { MainMenuView } from '../views/menu/MainMenuView';
@@ -18,6 +19,13 @@ export interface GameConfig {
 export function App() {
   const [view, setView] = useState<AppView>('menu');
   const [gameConfig, setGameConfig] = useState<GameConfig>({ biome: 'forest', seed: 'Brave Dark Fox' });
+  const [buildingEffects, setBuildingEffects] = useState<BuildingEffects>({
+    startingWeapon: null,
+    maxIslandChoices: 1,
+    tomePowerMultiplier: 1.0,
+    shopTier: 0,
+    maxCraftingTier: 0,
+  });
   const progression = useProgression();
 
   const handleStartGame = (config: GameConfig) => {
@@ -46,6 +54,10 @@ export function App() {
     setView('sailing');
   };
 
+  const handleBuildingEffectsChange = useCallback((effects: BuildingEffects) => {
+    setBuildingEffects(effects);
+  }, []);
+
   return (
     <>
       <a
@@ -64,13 +76,14 @@ export function App() {
         )}
         {view === 'hub' && (
           <Suspense fallback={<LoadingScreen />}>
-            <HubView onNavigate={handleHubNavigate} />
+            <HubView onNavigate={handleHubNavigate} onBuildingEffectsChange={handleBuildingEffectsChange} />
           </Suspense>
         )}
         {view === 'island-select' && (
           <IslandSelectView
             onSelectBiome={handleSelectBiome}
             onCancel={() => setView('hub')}
+            maxChoices={buildingEffects.maxIslandChoices}
           />
         )}
         {view === 'sailing' && <SailingTransition biomeName={gameConfig.biome} onComplete={() => setView('game')} />}

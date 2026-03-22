@@ -81,7 +81,7 @@ export function CraftingModal({ recipes, resources, onCraft, onClose }: Props) {
         ) : (
           <div className="flex flex-col gap-6">
             {CATEGORY_ORDER.filter((cat) => grouped.has(cat)).map((category) => {
-              const categoryRecipes = grouped.get(category)!;
+              const categoryRecipes = grouped.get(category) ?? [];
               return (
                 <div key={category}>
                   <h3
@@ -95,10 +95,7 @@ export function CraftingModal({ recipes, resources, onCraft, onClose }: Props) {
                     {categoryRecipes.map((recipe) => {
                       const affordable = canAffordRecipe(recipe, resources);
                       return (
-                        <div
-                          key={recipe.id}
-                          className="card bg-base-200/60 border border-secondary/40 p-3"
-                        >
+                        <div key={recipe.id} className="card bg-base-200/60 border border-secondary/40 p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div

@@ -3,13 +3,13 @@
   "name": "Sand Wraith",
   "health": 45,
   "speed": 3.5,
-  "damage": 14,
+  "damage": 10,
   "attackPattern": "burrow-emerge",
   "attacks": [
     {
       "name": "sand-claw",
       "type": "melee",
-      "damage": 14,
+      "damage": 10,
       "cooldown": 1.8,
       "range": 1.5,
       "telegraph": 0.4
@@ -17,7 +17,7 @@
     {
       "name": "sand-teleport-strike",
       "type": "melee",
-      "damage": 18,
+      "damage": 12,
       "cooldown": 5.0,
       "range": 2.0,
       "telegraph": 0.8

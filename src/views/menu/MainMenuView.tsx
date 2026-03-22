@@ -121,10 +121,20 @@ interface Props {
   onStartGame: (config: GameConfig) => void;
   /** Most recent run — used by Resume Chapter */
   onResumeGame?: () => void;
+  /** Mid-run save resume — skip hub, go straight to game */
+  onContinueAdventure?: () => void;
   hasRunHistory?: boolean;
+  /** Whether a mid-run save exists for "Continue Adventure" */
+  hasMidRunSave?: boolean;
 }
 
-export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false }: Props) {
+export function MainMenuView({
+  onStartGame,
+  onResumeGame,
+  onContinueAdventure,
+  hasRunHistory = false,
+  hasMidRunSave = false,
+}: Props) {
   const [showNewGame, setShowNewGame] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
@@ -229,10 +239,29 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
         {/* Menu buttons */}
         {!showNewGame ? (
           <nav aria-label="Main menu" className="w-full space-y-3">
+            {hasMidRunSave && (
+              <motion.button
+                type="button"
+                variants={menuItem(0)}
+                initial="hidden"
+                animate="visible"
+                onClick={() => onContinueAdventure?.()}
+                className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,165,114,0.5)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+                style={{
+                  fontFamily: 'Crimson Text, Georgia, serif',
+                  color: '#fdf6e3',
+                  background: 'rgba(74,55,40,0.9)',
+                  borderColor: '#c4a572',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Continue Adventure
+              </motion.button>
+            )}
             <motion.button
               ref={newGameButtonRef}
               type="button"
-              variants={menuItem(0)}
+              variants={menuItem(hasMidRunSave ? 1 : 0)}
               initial="hidden"
               animate="visible"
               onClick={() => setShowNewGame(true)}
@@ -245,11 +274,11 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
                 letterSpacing: '0.05em',
               }}
             >
-              ✒ Pen New Tale
+              Pen New Tale
             </motion.button>
             <motion.button
               type="button"
-              variants={menuItem(1)}
+              variants={menuItem(hasMidRunSave ? 2 : 1)}
               initial="hidden"
               animate="visible"
               onClick={() => hasRunHistory && onResumeGame?.()}
@@ -264,11 +293,11 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
               }}
               disabled={!hasRunHistory}
             >
-              📖 Resume Chapter
+              Resume Chapter
             </motion.button>
             <motion.button
               type="button"
-              variants={menuItem(2)}
+              variants={menuItem(hasMidRunSave ? 3 : 2)}
               initial="hidden"
               animate="visible"
               className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
@@ -280,7 +309,7 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
                 letterSpacing: '0.05em',
               }}
             >
-              ⚙ Inscriptions
+              Inscriptions
             </motion.button>
           </nav>
         ) : (

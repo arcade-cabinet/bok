@@ -5,7 +5,7 @@
  * @output trackBossKill, getUnlockedPages, recordRun, getRunHistory
  */
 import type { RunRecord, SaveManager } from '../persistence/index.ts';
-import { TomeProgression } from '../systems/progression/TomeProgression.ts';
+import { TomeProgression } from '../systems/progression/index';
 
 export interface ProgressionSystem {
   trackBossKill: (bossId: string, tomeAbility: string) => Promise<void>;
