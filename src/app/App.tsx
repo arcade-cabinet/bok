@@ -72,6 +72,7 @@ export function App() {
             onStartGame={handleStartGame}
             onResumeGame={handleResumeGame}
             hasRunHistory={progression.runHistory.length > 0}
+            unlockedBiomes={progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes)}
           />
         )}
         {view === 'hub' && (
