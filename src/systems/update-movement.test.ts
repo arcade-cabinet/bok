@@ -16,7 +16,8 @@ describe('updateMovement', () => {
 
     updateMovement(world);
 
-    const pos = entity.get(Transform)?.position;
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    const pos = entity.get(Transform)!.position;
     expect(pos.x).toBeCloseTo(5);
     expect(pos.y).toBeCloseTo(0);
     expect(pos.z).toBeCloseTo(0);
@@ -30,7 +31,8 @@ describe('updateMovement', () => {
 
     updateMovement(world);
 
-    const vel = entity.get(Movement)?.velocity;
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    const vel = entity.get(Movement)!.velocity;
     expect(vel.x).toBeCloseTo(5);
   });
 
@@ -45,7 +47,8 @@ describe('updateMovement', () => {
 
     updateMovement(world);
 
-    const vel = entity.get(Movement)?.velocity;
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    const vel = entity.get(Movement)!.velocity;
     expect(vel.x).toBe(0);
     expect(vel.z).toBe(0);
   });
@@ -58,7 +61,8 @@ describe('updateMovement', () => {
 
     updateMovement(world);
 
-    const pos = entity.get(Transform)?.position;
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    const pos = entity.get(Transform)!.position;
     expect(pos.x).toBeCloseTo(1.6);
   });
 
@@ -71,8 +75,10 @@ describe('updateMovement', () => {
 
     updateMovement(world);
 
-    expect(e1.get(Transform)?.position.x).toBeCloseTo(1);
-    expect(e2.get(Transform)?.position.z).toBeCloseTo(2);
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    expect(e1.get(Transform)!.position.x).toBeCloseTo(1);
+    // biome-ignore lint/style/noNonNullAssertion: test assertion — value guaranteed by spawn
+    expect(e2.get(Transform)!.position.z).toBeCloseTo(2);
   });
 
   it('throws if world is missing Time trait', () => {
