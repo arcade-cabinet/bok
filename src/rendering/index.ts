@@ -21,6 +21,6 @@ export {
   resolveQualityConfig,
   saveQualitySettings,
 } from './QualitySettings.ts';
-export { generateTileset, TILES } from './TilesetGenerator.ts';
+export { generateTileset, TILES, TILESET_COLS, TILESET_ROWS } from './TilesetGenerator.ts';
 export { WaterRenderer } from './WaterRenderer.ts';
 export { WeatherSystem } from './WeatherSystem.ts';

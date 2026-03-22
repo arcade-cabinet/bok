@@ -178,7 +178,12 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
               'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
           }}
         >
-          <HealthBar current={engineState.playerHealth} max={engineState.maxHealth} />
+          <HealthBar
+            current={engineState.playerHealth}
+            max={engineState.maxHealth}
+            stamina={engineState.stamina}
+            maxStamina={engineState.maxStamina}
+          />
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />
           {engineState.threatLevel !== 'none' && (

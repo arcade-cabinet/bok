@@ -81,7 +81,11 @@ function createMockContext(): GameLoopContext & { jpWorld: MockJpWorld } {
       applyLook: vi.fn(),
       getPosition: vi.fn(),
     } as unknown as GameLoopContext['cam'],
-    inputSystem: { update: vi.fn() } as unknown as GameLoopContext['inputSystem'],
+    inputSystem: {
+      update: vi.fn(),
+      actionMap: { isActive: vi.fn().mockReturnValue(false) },
+      keyboard: { parryDown: false },
+    } as unknown as GameLoopContext['inputSystem'],
     enemies: [],
     yukaManager: { update: vi.fn() } as unknown as GameLoopContext['yukaManager'],
     combat: {

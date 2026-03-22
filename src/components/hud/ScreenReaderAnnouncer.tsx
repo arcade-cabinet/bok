@@ -78,6 +78,12 @@ export function ScreenReaderAnnouncer({ engineState, onSubscribe }: Props) {
         case 'bossDefeated':
           announce('Boss defeated! Victory!', 'assertive');
           break;
+        case 'chestOpened':
+          announce(
+            `Opened ${event.tier} chest! Found ${event.items.map((i) => `${i.amount} ${i.name}`).join(', ')}`,
+            'polite',
+          );
+          break;
         case 'playerDied':
           announce('You have fallen. The chapter ends.', 'assertive');
           break;

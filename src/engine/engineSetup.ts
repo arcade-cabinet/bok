@@ -27,11 +27,21 @@ export interface EngineCore {
   isMobile: boolean;
 }
 
+/** Optional biome-specific atmosphere colors for scene setup */
+export interface BiomeAtmosphere {
+  skyColor: string;
+  fogColor: string;
+  fogDensity: number;
+}
+
 /**
  * Initialize core engine systems: platform, Koota world, Rapier physics,
  * JollyPixel Runtime, scene setup, day/night cycle, and lighting.
  */
-export async function createEngineCore(canvas: HTMLCanvasElement): Promise<EngineCore> {
+export async function createEngineCore(
+  canvas: HTMLCanvasElement,
+  biomeAtmosphere?: BiomeAtmosphere,
+): Promise<EngineCore> {
   // Platform init (Capacitor status bar, orientation, etc.)
   await initPlatform();
 
@@ -55,10 +65,14 @@ export async function createEngineCore(canvas: HTMLCanvasElement): Promise<Engin
   const threeRenderer = jpWorld.renderer as unknown as Systems.ThreeRenderer;
   if (threeRenderer.webGLRenderer) threeRenderer.webGLRenderer.setPixelRatio(pixelRatio);
 
-  // Scene setup
+  // Scene setup — apply biome atmosphere or defaults
+  const skyHex = biomeAtmosphere?.skyColor ?? '#87ceeb';
+  const fogHex = biomeAtmosphere?.fogColor ?? '#87ceeb';
+  const fogDensity = biomeAtmosphere?.fogDensity ?? 0.015;
+
   const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
-  scene.background = new THREE.Color('#87ceeb');
-  scene.fog = new THREE.FogExp2('#87ceeb', 0.015);
+  scene.background = new THREE.Color(skyHex);
+  scene.fog = new THREE.FogExp2(fogHex, fogDensity);
 
   // Day/night cycle + lighting
   const dayNight = new DayNightCycle();

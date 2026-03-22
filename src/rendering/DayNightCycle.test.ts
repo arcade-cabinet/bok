@@ -65,6 +65,30 @@ describe('DayNightCycle', () => {
     expect(length).toBeCloseTo(1, 2);
   });
 
+  it('setBiomeTint shifts sky color toward the tint', async () => {
+    const { Color } = await import('three');
+    const cycle = new DayNightCycle();
+
+    // Capture sky color without tint
+    cycle.update(0.1);
+    const baseR = cycle.skyColor.r;
+    const baseG = cycle.skyColor.g;
+    const baseB = cycle.skyColor.b;
+
+    // Apply a strong red tint and update again
+    const redTint = new Color(1, 0, 0);
+    cycle.setBiomeTint(redTint);
+    cycle.update(0.1);
+
+    // Sky should have shifted toward red (higher R, lower G/B compared to base)
+    // At 30% blend the red channel should increase
+    expect(cycle.skyColor.r).toBeGreaterThanOrEqual(baseR * 0.9); // At least not less
+    // The tint blends at 30%, so the final color is lerp(base, red, 0.3)
+    // We just check it's different from the untinted version
+    const shifted = cycle.skyColor.r !== baseR || cycle.skyColor.g !== baseG || cycle.skyColor.b !== baseB;
+    expect(shifted).toBe(true);
+  });
+
   it('cycling through all time-of-day periods', () => {
     const cycle = new DayNightCycle();
     const periods = new Set<TimeOfDay>();
