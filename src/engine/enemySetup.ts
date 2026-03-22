@@ -11,6 +11,7 @@ import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 import { ContentRegistry } from '../content/index.ts';
 import type { EnemySpawnConfig } from '../content/types.ts';
 import { PRNG } from '../generation/index.ts';
+import { applyBiomeTint, applyBossTint } from '../systems/tint-model';
 import { ENEMY_MODELS, loadModel } from './models.ts';
 import type { BossState, EnemyState, SurfaceHeightFn } from './types.ts';
 
