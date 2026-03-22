@@ -7,7 +7,7 @@
 
 import * as THREE from 'three';
 import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
-
+import { createEnemyBrain, ENEMY_AI_TYPES } from '../ai/enemyBrain';
 import { ContentRegistry } from '../content/index.ts';
 import type { EnemySpawnConfig } from '../content/types.ts';
 import { PRNG } from '../generation/index.ts';
@@ -117,6 +117,10 @@ export async function spawnEnemies(
     (vehicle as any).setRenderComponent(mesh, (renderObj: THREE.Object3D) => {
       renderObj.position.set(vehicle.position.x, vehicle.position.y, vehicle.position.z);
     });
+
+    // Attach GOAP brain based on enemy AI type
+    const aiType = ENEMY_AI_TYPES[enemyType] ?? 'melee';
+    createEnemyBrain(vehicle, aiType);
 
     yukaManager.add(vehicle);
     enemies.push({
