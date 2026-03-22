@@ -3,10 +3,29 @@ import { useMemo, useState } from 'react';
 import { ContentRegistry } from '../../content/registry.ts';
 import type { BiomeConfig } from '../../content/types.ts';
 
+/** Set to true during development to unlock all biomes without progression. */
+const DEV_UNLOCK_ALL = import.meta.env.DEV && (import.meta.env.VITE_UNLOCK_ALL_BIOMES === 'true');
+
+/** The starter biome — always available. */
+const STARTER_BIOME = 'forest';
+
+/** Biome unlock order — which boss/biome unlocks the next one. */
+const BIOME_UNLOCK_ORDER: Record<string, string> = {
+  forest: 'desert',      // Defeating Ancient Treant unlocks Desert
+  desert: 'tundra',      // Defeating Pharaoh Construct unlocks Tundra
+  tundra: 'volcanic',    // Defeating Frost Wyrm unlocks Volcanic
+  volcanic: 'swamp',     // Defeating Magma King unlocks Swamp
+  swamp: 'crystal-caves', // Defeating Mire Hag unlocks Crystal Caves
+  'crystal-caves': 'sky-ruins', // Defeating Crystal Hydra unlocks Sky Ruins
+  'sky-ruins': 'deep-ocean',   // Defeating Storm Titan unlocks Deep Ocean
+};
+
 interface Props {
   onSelectBiome: (biomeId: string) => void;
   onCancel: () => void;
   maxChoices?: number;
+  /** Biome IDs the player has unlocked via boss kills. Forest is always unlocked. */
+  unlockedBiomes?: string[];
 }
 
 /** Difficulty tier derived from the biome's enemy difficulty requirements and terrain complexity. */
@@ -47,23 +66,58 @@ const DIFFICULTY_COLORS: Record<number, string> = {
 };
 
 /**
+ * Compute which biomes the player has access to based on progression.
+ * Forest is always unlocked. Each defeated boss unlocks the next biome in sequence.
+ */
+export function getUnlockedBiomeIds(defeatedBiomes: string[]): string[] {
+  const unlocked = new Set<string>([STARTER_BIOME]);
+
+  for (const biomeId of defeatedBiomes) {
+    unlocked.add(biomeId);
+    const nextBiome = BIOME_UNLOCK_ORDER[biomeId];
+    if (nextBiome) unlocked.add(nextBiome);
+  }
+
+  return [...unlocked];
+}
+
+/**
  * IslandSelectView — full-screen overlay shown between the hub dock departure
  * and the sailing transition. The player chooses which island biome to visit.
- * Displays a grid of biome cards with difficulty, description, and terrain preview.
+ *
+ * Biomes are locked by default. Forest is always available.
+ * Defeating a boss in a biome unlocks the next one in the progression chain.
+ *
+ * Set `VITE_UNLOCK_ALL_BIOMES=true` in `.env` to unlock everything for dev testing.
  */
-export function IslandSelectView({ onSelectBiome, onCancel, maxChoices }: Props) {
+export function IslandSelectView({ onSelectBiome, onCancel, maxChoices, unlockedBiomes = [] }: Props) {
   const [selectedBiome, setSelectedBiome] = useState<string | null>(null);
 
-  const biomes = useMemo(() => {
+  const { available, locked } = useMemo(() => {
     const registry = new ContentRegistry();
     const all = registry.getAllBiomes();
-    if (maxChoices !== undefined && maxChoices < all.length) {
-      // Shuffle deterministically based on current session and take maxChoices
-      const shuffled = [...all].sort((a, b) => a.id.localeCompare(b.id));
-      return shuffled.slice(0, maxChoices);
+
+    if (DEV_UNLOCK_ALL) {
+      // Dev mode: everything unlocked
+      const limited = maxChoices !== undefined && maxChoices < all.length
+        ? [...all].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
+        : all;
+      return { available: limited, locked: [] as BiomeConfig[] };
     }
-    return all;
-  }, [maxChoices]);
+
+    // Compute unlocked set from progression
+    const unlockedSet = new Set(getUnlockedBiomeIds(unlockedBiomes));
+
+    const availableBiomes = all.filter((b) => unlockedSet.has(b.id));
+    const lockedBiomes = all.filter((b) => !unlockedSet.has(b.id));
+
+    // Apply maxChoices limit to available biomes only
+    const limited = maxChoices !== undefined && maxChoices < availableBiomes.length
+      ? [...availableBiomes].sort((a, b) => a.id.localeCompare(b.id)).slice(0, maxChoices)
+      : availableBiomes;
+
+    return { available: limited, locked: lockedBiomes };
+  }, [maxChoices, unlockedBiomes]);
 
   const handleSetSail = () => {
     if (selectedBiome) onSelectBiome(selectedBiome);
@@ -105,9 +159,9 @@ export function IslandSelectView({ onSelectBiome, onCancel, maxChoices }: Props)
         </p>
       </motion.div>
 
-      {/* Biome grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 sm:px-8 pb-28 max-w-6xl w-full">
-        {biomes.map((biome, idx) => {
+      {/* Biome grid — unlocked */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 sm:px-8 max-w-6xl w-full">
+        {available.map((biome, idx) => {
           const difficulty = getBiomeDifficulty(biome);
           const isSelected = selectedBiome === biome.id;
           const previewColor = BIOME_PREVIEW_COLORS[biome.id] ?? biome.fogColor;
@@ -156,6 +210,43 @@ export function IslandSelectView({ onSelectBiome, onCancel, maxChoices }: Props)
             </motion.button>
           );
         })}
+
+        {/* Locked biomes — greyed out */}
+        {locked.map((biome, idx) => (
+          <motion.div
+            key={biome.id}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 0.4 }}
+            transition={{ delay: (available.length + idx) * 0.06, duration: 0.4 }}
+            className="card bg-base-100/30 border-2 border-secondary/20 text-left"
+            data-testid={`biome-card-${biome.id}-locked`}
+          >
+            <div
+              className="h-16 rounded-t-lg"
+              style={{
+                background: '#333',
+                filter: 'grayscale(1)',
+              }}
+            />
+            <div className="card-body p-4 gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <h3
+                  className="card-title text-base text-base-content/40"
+                  style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+                >
+                  ???
+                </h3>
+                <span className="badge badge-sm badge-ghost">Locked</span>
+              </div>
+              <p
+                className="text-xs leading-relaxed text-base-content/30 italic"
+                style={{ fontFamily: 'Crimson Text, Georgia, serif' }}
+              >
+                Defeat the previous island's boss to unlock
+              </p>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Bottom action bar */}
