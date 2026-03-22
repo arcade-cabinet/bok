@@ -236,6 +236,10 @@ export const PROP_MODELS = ENVIRONMENT_MODELS;
  * Load an enemy model, position it, and add to scene.
  * Falls back to a colored box if loading fails.
  */
+/**
+ * Load an enemy model, position it, and add to scene.
+ * Throws if the model doesn't exist or fails to load — NO silent fallbacks.
+ */
 export async function spawnEnemyModel(
   scene: THREE.Scene,
   enemyType: string,
@@ -244,41 +248,26 @@ export async function spawnEnemyModel(
 ): Promise<THREE.Object3D> {
   const modelPath = ENEMY_MODELS[enemyType];
   if (!modelPath) {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 1.4, 0.7),
-      new THREE.MeshLambertMaterial({ color: 0xcc2222 }),
-    );
-    mesh.position.set(position.x, position.y, position.z);
-    scene.add(mesh);
-    return mesh;
+    throw new Error(`[Bok] No model mapping for enemy type "${enemyType}". Add it to ENEMY_MODELS in models.ts`);
   }
 
-  try {
-    const model = await loadModel(modelPath);
-    model.scale.setScalar(scale);
-    model.position.set(position.x, position.y, position.z);
-    scene.add(model);
-    return model;
-  } catch {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.7, 1.4, 0.7),
-      new THREE.MeshLambertMaterial({ color: 0xcc2222 }),
-    );
-    mesh.position.set(position.x, position.y, position.z);
-    scene.add(mesh);
-    return mesh;
-  }
+  const model = await loadModel(modelPath);
+  model.scale.setScalar(scale);
+  model.position.set(position.x, position.y, position.z);
+  scene.add(model);
+  return model;
 }
 
 /**
  * Load a weapon model for center-mount display.
  */
-export async function loadWeaponModel(weaponId: string): Promise<THREE.Group | null> {
+/**
+ * Load a weapon model. Throws if not found — NO silent null returns.
+ */
+export async function loadWeaponModel(weaponId: string): Promise<THREE.Group> {
   const path = WEAPON_MODELS[weaponId];
-  if (!path) return null;
-  try {
-    return await loadModel(path);
-  } catch {
-    return null;
+  if (!path) {
+    throw new Error(`[Bok] No model mapping for weapon "${weaponId}". Add it to WEAPON_MODELS in models.ts`);
   }
+  return await loadModel(path);
 }
