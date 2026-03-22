@@ -51,7 +51,7 @@ function createMockContext(): GameLoopContext {
       _trigger: (event: string, ...args: any[]) => {
         for (const h of handlers[event] ?? []) h(...args);
       },
-    },
+    } as any,
     rapierWorld: { step: vi.fn() } as any,
     gameWorld: {
       get: vi.fn().mockReturnValue(null),

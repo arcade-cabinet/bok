@@ -40,7 +40,11 @@ export function Hotbar({ slots, activeIndex, onSelect }: Props) {
   }, [activeIndex, onSelect]);
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-auto">
+    <div
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-auto"
+      role="toolbar"
+      aria-label="Weapon hotbar"
+    >
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const isActive = i === activeIndex;
         const slot = slots[i];
@@ -50,16 +54,19 @@ export function Hotbar({ slots, activeIndex, onSelect }: Props) {
           <button
             key={i}
             type="button"
-            className={`btn btn-sm sm:btn-md relative w-10 h-10 sm:w-14 sm:h-14 p-0 ${
-              isActive
-                ? 'btn-primary border-primary-content'
-                : 'btn-ghost border-2 border-secondary bg-base-100/60'
+            aria-label={`Slot ${i + 1}${label ? `: ${label}` : ': empty'}${isActive ? ' (selected)' : ''}`}
+            aria-pressed={isActive}
+            className={`btn btn-sm sm:btn-md relative w-10 h-10 sm:w-14 sm:h-14 p-0 focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${
+              isActive ? 'btn-primary border-primary-content' : 'btn-ghost border-2 border-secondary bg-base-100/60'
             }`}
             onClick={() => onSelect(i)}
           >
-            <kbd className="kbd kbd-xs absolute top-0.5 right-1 opacity-50 bg-transparent border-none p-0 text-[9px] sm:text-[10px]">
+            <span
+              className="kbd kbd-xs absolute top-0.5 right-1 opacity-50 bg-transparent border-none p-0 text-[9px] sm:text-[10px]"
+              aria-hidden="true"
+            >
               {i + 1}
-            </kbd>
+            </span>
             <span className="text-[9px] sm:text-xs mt-1">{label}</span>
           </button>
         );

@@ -12,7 +12,7 @@ interface Props {
  */
 export function ContextIndicator({ context }: Props) {
   return (
-    <div className="fixed inset-0 pointer-events-none z-[5]">
+    <div className="fixed inset-0 pointer-events-none z-[5]" aria-hidden="true">
       <AnimatePresence>
         {context === 'combat' && (
           <motion.div

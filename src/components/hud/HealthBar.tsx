@@ -20,9 +20,19 @@ export function HealthBar({ current, max }: Props) {
         px-2 py-1 sm:px-3 sm:py-2${isLow ? ' animate-[health-pulse_600ms_ease-in-out_infinite]' : ''}`}
       style={{ fontFamily: 'Georgia, serif' }}
     >
-      <div className="text-[9px] sm:text-xs mb-1 text-base-content">Health</div>
-      <progress className="progress progress-error w-24 sm:w-36 h-2 sm:h-3" value={current} max={max} />
-      <div className="text-[8px] sm:text-[10px] mt-0.5 text-base-content">
+      <div className="text-[9px] sm:text-xs mb-1 text-base-content" id="health-label">
+        Health
+      </div>
+      <progress
+        className="progress progress-error w-24 sm:w-36 h-2 sm:h-3"
+        value={current}
+        max={max}
+        aria-labelledby="health-label"
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={max}
+      />
+      <div className="text-[8px] sm:text-[10px] mt-0.5 text-base-content" aria-hidden="true">
         {current} / {max}
       </div>
     </div>

@@ -67,8 +67,15 @@ export function Minimap({ playerX, playerZ, markers }: Props) {
     ctx.stroke();
   }, [playerX, playerZ, markers]);
 
+  const enemyCount = markers.filter((m) => m.type === 'enemy').length;
+  const chestCount = markers.filter((m) => m.type === 'chest').length;
+
   return (
-    <div className="absolute top-4 right-4 card bg-base-100/85 border-2 border-secondary rounded-md overflow-hidden">
+    <div
+      className="absolute top-4 right-4 card bg-base-100/85 border-2 border-secondary rounded-md overflow-hidden"
+      role="img"
+      aria-label={`Minimap: ${enemyCount} ${enemyCount === 1 ? 'enemy' : 'enemies'} and ${chestCount} ${chestCount === 1 ? 'chest' : 'chests'} nearby`}
+    >
       <canvas
         ref={canvasRef}
         width={SIZE}

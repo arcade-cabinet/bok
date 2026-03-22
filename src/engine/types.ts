@@ -2,8 +2,12 @@
  * @module engine/types
  * @role Shared types for engine modules
  */
+import type { Systems } from '@jolly-pixel/engine';
 import type * as THREE from 'three';
 import type { Vehicle } from 'yuka';
+
+/** JollyPixel World instance type (WebGL-backed) */
+export type JpWorld = Systems.World<THREE.WebGLRenderer>;
 
 /** Surface height lookup function */
 export type SurfaceHeightFn = (x: number, z: number) => number;

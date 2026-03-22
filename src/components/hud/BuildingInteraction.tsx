@@ -21,7 +21,10 @@ export function BuildingInteraction({ nearby, resources, onUpgrade }: Props) {
   const { building, currentLevel, currentEffect, nextLevel, isMaxLevel, canAfford } = nearby;
 
   return (
-    <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+    <section
+      className="fixed bottom-32 left-1/2 -translate-x-1/2 z-20 pointer-events-auto"
+      aria-label={`${building.name} building interaction`}
+    >
       <div className="card bg-base-100/95 border-2 border-secondary shadow-xl w-72 sm:w-80">
         <div className="card-body p-4 gap-2">
           {/* Header: name + level badge */}
@@ -74,9 +77,14 @@ export function BuildingInteraction({ nearby, resources, onUpgrade }: Props) {
               <div className="card-actions mt-1">
                 <button
                   type="button"
-                  className={`btn w-full ${canAfford ? 'btn-primary' : 'btn-disabled'}`}
+                  className={`btn w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${canAfford ? 'btn-primary' : 'btn-disabled'}`}
                   onClick={() => canAfford && onUpgrade(building.id)}
-                  tabIndex={canAfford ? 0 : -1}
+                  disabled={!canAfford}
+                  aria-label={
+                    canAfford
+                      ? `Upgrade ${building.name} to level ${(currentLevel ?? 0) + 1}`
+                      : `Cannot upgrade ${building.name}: not enough resources`
+                  }
                 >
                   {canAfford ? 'Upgrade' : 'Not Enough Resources'}
                 </button>
@@ -85,6 +93,6 @@ export function BuildingInteraction({ nearby, resources, onUpgrade }: Props) {
           ) : null}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

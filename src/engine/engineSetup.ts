@@ -5,6 +5,7 @@
  * @output EngineCore with all initialized systems
  */
 import RAPIER from '@dimforge/rapier3d';
+import type { Systems } from '@jolly-pixel/engine';
 import { Runtime } from '@jolly-pixel/runtime';
 import { createWorld } from 'koota';
 import * as THREE from 'three';
@@ -13,11 +14,12 @@ import { isMobileDevice } from '../input/MobileControls.ts';
 import { initPlatform } from '../platform/CapacitorBridge.ts';
 import { DayNightCycle } from '../rendering/index.ts';
 import { GamePhase, IslandState, LookIntent, MovementIntent, Time } from '../traits/index.ts';
+import type { JpWorld } from './types.ts';
 
 /** Core engine systems initialized from a canvas element */
 export interface EngineCore {
   runtime: Runtime;
-  jpWorld: any;
+  jpWorld: JpWorld;
   rapierWorld: RAPIER.World;
   gameWorld: ReturnType<typeof createWorld>;
   scene: THREE.Scene;
@@ -43,15 +45,15 @@ export async function createEngineCore(canvas: HTMLCanvasElement): Promise<Engin
   const runtime = new Runtime(canvas, {
     includePerformanceStats: import.meta.env.DEV,
   });
-  const jpWorld = (runtime as any).world;
+  const jpWorld = runtime.world;
 
   // Mobile detection
   const isMobile = isMobileDevice();
 
   // Performance scaling
   const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2);
-  const webGLRenderer = (jpWorld.renderer as any)?.webGLRenderer as THREE.WebGLRenderer | undefined;
-  if (webGLRenderer) webGLRenderer.setPixelRatio(pixelRatio);
+  const threeRenderer = jpWorld.renderer as unknown as Systems.ThreeRenderer;
+  if (threeRenderer.webGLRenderer) threeRenderer.webGLRenderer.setPixelRatio(pixelRatio);
 
   // Scene setup
   const scene = jpWorld.sceneManager.getSource() as THREE.Scene;

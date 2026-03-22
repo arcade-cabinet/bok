@@ -19,11 +19,11 @@ import type { CombatSystem } from './combat.ts';
 import type { DiegeticContext } from './diegetic.ts';
 import { detectContext, getHeadBob } from './diegetic.ts';
 import { updateEnemyAI } from './enemySetup.ts';
-import type { EnemyState, MobileInput, SurfaceHeightFn } from './types.ts';
+import type { EnemyState, JpWorld, MobileInput, SurfaceHeightFn } from './types.ts';
 
 /** Everything the game loop needs to run each frame */
 export interface GameLoopContext {
-  jpWorld: any;
+  jpWorld: JpWorld;
   rapierWorld: RAPIER.World;
   gameWorld: ReturnType<typeof createWorld>;
   scene: THREE.Scene;
@@ -79,12 +79,12 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
   let paused = false;
 
   // Physics step
-  (jpWorld as any).on('beforeFixedUpdate', () => {
+  jpWorld.on('beforeFixedUpdate', () => {
     rapierWorld.step();
   });
 
   // Frame loop
-  (jpWorld as any).on('beforeUpdate', (rawDt: number) => {
+  jpWorld.on('beforeUpdate', (rawDt: number) => {
     if (paused || combat.state.phase !== 'playing') return;
     const dt = Math.min(rawDt, MAX_DELTA);
 

@@ -24,6 +24,7 @@ const DEFAULT_ISLAND_SIZE = 64;
  * Orchestrates full island generation: terrain + structures + enemy placement + loot.
  * Pure function — deterministic from BiomeConfig + seed + difficulty.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for pure generation functions
 export class IslandGenerator {
   static generate(
     biome: BiomeConfig,

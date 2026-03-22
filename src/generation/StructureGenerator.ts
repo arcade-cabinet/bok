@@ -12,6 +12,7 @@ export interface Structure {
 /**
  * Generates mini-dungeon and ruin template placements on terrain.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for pure structure generation functions
 export class StructureGenerator {
   static readonly STRUCTURE_TYPES: Structure['type'][] = ['ruin', 'dungeon-entrance', 'shrine', 'tower'];
 

@@ -8,10 +8,10 @@ Voxel roguelike island-hopper. React 19 owns all UI. JollyPixel engine owns 3D c
 
 The game is PLAYABLE with React as the sole entry point (`index.html` → `src/app/index.tsx`). The old `src/scenes/` (SceneDirector) and `src/ui/` (imperative DOM HUD) are deleted. All UI is React+daisyUI. Engine is decomposed into focused modules under `src/engine/`.
 
-- **src/app/** — App.tsx state machine: menu → hub → sailing → game → death/victory
+- **src/app/** — App.tsx state machine: menu → hub → island-select → sailing → game → death/victory. ErrorBoundary wraps all views.
 - **src/engine/GameEngine.ts** — `initGame(canvas, config)` — thin orchestrator calling `engineSetup`, `terrainSetup`, `playerSetup`, `enemySetup`, `gameLoop`
-- **src/views/** — GameView (decomposed: `useGameLifecycle`, `useGameEvents`, `useGameHUD`), HubView (decomposed: `useHubEngine`, `useHubCamera`, `useHubBuildings`), MainMenuView
-- **src/components/** — `hud/` (HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction, ContextIndicator), `modals/` (PauseMenu, DeathScreen, VictoryScreen, TomePageBrowser), `transitions/` (SailingTransition)
+- **src/views/** — GameView, HubView (with NPCs), MainMenuView, IslandSelectView — GameView/HubView lazy-loaded via React.lazy
+- **src/components/** — `hud/` (HealthBar, Hotbar, Minimap, DamageIndicator, BuildingInteraction, ContextIndicator, NPCDialogue, LootNotification, ScreenReaderAnnouncer), `modals/` (PauseMenu, DeathScreen, VictoryScreen, TomePageBrowser, CraftingModal, InventoryModal), `transitions/` (SailingTransition), `ui/` (TouchControls, ActionButtons, LoadingScreen, VersionBadge), `ErrorBoundary`
 - **Planning docs** — `docs/superpowers/plans/*.md` checkboxes are not automatically synced with the repo; verify in code
 
 ## Production checklist
@@ -156,7 +156,7 @@ const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
 
 ## Testing
 
-- **Unit tests:** `pnpm test` — Vitest in Node, 186 tests passing
+- **Unit tests:** `pnpm test` — Vitest in Node, 235 tests passing (36 files)
 - **Browser tests:** `pnpm test:browser` — Vitest browser project configured (MainMenuView, GameView, ContextIndicator tests exist)
 - **No node mocks for Three.js/DOM** — use browser tests instead
 - **Content validation:** Zod schemas validate all JSON at import time

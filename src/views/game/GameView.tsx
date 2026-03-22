@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { Hotbar, type SlotData } from '../../components/hud/Hotbar';
 import { Minimap } from '../../components/hud/Minimap';
+import { ScreenReaderAnnouncer } from '../../components/hud/ScreenReaderAnnouncer';
 import { DeathScreen } from '../../components/modals/DeathScreen';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
@@ -12,6 +13,7 @@ import { VictoryScreen } from '../../components/modals/VictoryScreen';
 import { ActionButtons } from '../../components/ui/ActionButtons';
 import { TouchControls } from '../../components/ui/TouchControls';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
+import type { EngineEvent } from '../../engine/types';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import { useGameEvents } from '../../hooks/useGameEvents';
 import { useGameHUD } from '../../hooks/useGameHUD';
@@ -39,10 +41,18 @@ const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' 
 export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
+  // Screen reader event subscriber
+  const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
+  const handleSrSubscribe = useCallback((handler: (event: EngineEvent) => void) => {
+    srEventHandlerRef.current = handler;
+  }, []);
   // Lifecycle: canvas, engine init/cleanup, keyboard, resize
   const { canvasRef, gameRef, showTome, setShowTome, handleResume, handleTouchOutput } = useGameLifecycle(
     config,
-    (event) => events.handleEngineEvent(event),
+    (event) => {
+      events.handleEngineEvent(event);
+      srEventHandlerRef.current?.(event);
+    },
     screenWidth,
     screenHeight,
   );
@@ -66,14 +76,16 @@ export function GameView({ config, onReturnToMenu, onQuitToMenu, onBossDefeated,
   }, [gameRef]);
 
   return (
-    <div className="fixed inset-0">
+    <div className="fixed inset-0" role="application" aria-label="Game canvas - use keyboard or touch controls to play">
       <canvas
         ref={canvasRef}
         id="game-canvas"
         tabIndex={-1}
         className="w-full h-full block outline-none"
         style={{ touchAction: 'none' }}
+        aria-label="3D game world"
       />
+      <ScreenReaderAnnouncer engineState={engineState} onSubscribe={handleSrSubscribe} />
       <DamageIndicator ref={events.damageRef} canvasRef={canvasRef} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (

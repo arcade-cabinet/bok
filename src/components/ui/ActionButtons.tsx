@@ -18,34 +18,32 @@ interface Props {
 export function ActionButtons({ onAttack, onDodge }: Props) {
   return (
     <div className="fixed bottom-28 right-4 z-20 flex flex-col gap-3 pointer-events-auto sm:bottom-32 sm:right-6">
-      {/* Primary: Attack */}
+      {/* Primary: Attack — 64x64 meets 44px minimum touch target */}
       <button
         type="button"
         data-testid="attack-button"
-        className="btn btn-circle btn-lg btn-primary shadow-lg active:scale-90 transition-transform w-16 h-16 text-2xl"
+        aria-label="Attack"
+        className="btn btn-circle btn-lg btn-primary shadow-lg active:scale-90 transition-transform w-16 h-16 text-2xl focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
         onPointerDown={(e) => {
           e.preventDefault();
           onAttack();
         }}
       >
-        <span role="img" aria-label="Attack">
-          &#x2694;
-        </span>
+        <span aria-hidden="true">&#x2694;</span>
       </button>
 
-      {/* Secondary: Dodge */}
+      {/* Secondary: Dodge — min-w/min-h 44px for WCAG touch target compliance */}
       <button
         type="button"
         data-testid="dodge-button"
-        className="btn btn-circle btn-md btn-secondary shadow-lg active:scale-90 transition-transform w-12 h-12 text-lg"
+        aria-label="Dodge"
+        className="btn btn-circle btn-md btn-secondary shadow-lg active:scale-90 transition-transform min-w-[44px] min-h-[44px] w-12 h-12 text-lg focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
         onPointerDown={(e) => {
           e.preventDefault();
           onDodge();
         }}
       >
-        <span role="img" aria-label="Dodge">
-          &#x1F6E1;
-        </span>
+        <span aria-hidden="true">&#x1F6E1;</span>
       </button>
     </div>
   );

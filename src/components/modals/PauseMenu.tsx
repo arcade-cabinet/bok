@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 interface Props {
   onResume: () => void;
   onAbandonRun: () => void;
@@ -10,31 +12,109 @@ interface Props {
  * Uses daisyUI modal, card, and btn components with the parchment theme.
  */
 export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
+  const resumeRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Focus the Resume button on mount
+  useEffect(() => {
+    resumeRef.current?.focus();
+  }, []);
+
+  // Escape key to resume
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onResume();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onResume]);
+
+  // Focus trap within modal
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   return (
-    <div className="modal modal-open overlay-safe-area">
+    <div
+      className="modal modal-open overlay-safe-area"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pause-menu-title"
+      ref={modalRef}
+    >
       <div className="modal-backdrop bg-black/70 backdrop-blur-sm" />
       <div className="modal-box card bg-base-100 border-2 border-secondary max-w-xs sm:max-w-sm text-center">
-        <h2 className="text-2xl sm:text-3xl mb-6 text-base-content" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
+        <h2
+          id="pause-menu-title"
+          className="text-2xl sm:text-3xl mb-6 text-base-content"
+          style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+        >
           PAUSED
         </h2>
 
-        <div className="flex flex-col gap-2">
-          <button type="button" className="btn btn-neutral w-full" onClick={onResume}>
+        <nav aria-label="Pause menu actions" className="flex flex-col gap-2">
+          <button
+            ref={resumeRef}
+            type="button"
+            className="btn btn-neutral w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+            onClick={onResume}
+          >
             Resume
           </button>
 
-          <button type="button" className="btn btn-ghost btn-disabled w-full" tabIndex={-1}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-disabled w-full"
+            disabled
+            aria-disabled="true"
+            tabIndex={-1}
+          >
             Settings
           </button>
 
-          <button type="button" className="btn btn-warning btn-outline w-full" onClick={onAbandonRun}>
+          <button
+            type="button"
+            className="btn btn-warning btn-outline w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+            onClick={onAbandonRun}
+          >
             Abandon Run
           </button>
 
-          <button type="button" className="btn btn-ghost w-full" onClick={onQuitToMenu}>
+          <button
+            type="button"
+            className="btn btn-ghost w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+            onClick={onQuitToMenu}
+          >
             Quit to Menu
           </button>
-        </div>
+        </nav>
       </div>
     </div>
   );

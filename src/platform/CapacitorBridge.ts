@@ -163,3 +163,42 @@ export function installGlobalErrorHandler(): void {
     showErrorModal([`Unhandled Promise: ${event.reason}`]);
   });
 }
+
+// ---------------------------------------------------------------------------
+// PlatformBridge — structured interface for cross-platform capabilities
+// ---------------------------------------------------------------------------
+
+/** Structured interface for platform-specific capabilities. */
+export interface PlatformBridge {
+  isNative(): boolean;
+  isWeb(): boolean;
+  lockOrientation(orientation: 'landscape' | 'portrait'): Promise<void>;
+  triggerHaptic(style: 'light' | 'medium' | 'heavy'): Promise<void>;
+  hideStatusBar(): Promise<void>;
+}
+
+/** Lock screen to a given orientation on native */
+async function lockOrientation(orientation: 'landscape' | 'portrait'): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  if (!Capacitor.isPluginAvailable('ScreenOrientation')) {
+    recordError('ScreenOrientation', 'Plugin not available on this platform');
+    return;
+  }
+  try {
+    await ScreenOrientation.lock({ orientation });
+  } catch (e) {
+    recordError('ScreenOrientation.lock', e);
+  }
+}
+
+/**
+ * Concrete PlatformBridge backed by Capacitor plugins.
+ * Provides a unified object-oriented API alongside the existing function exports.
+ */
+export const platformBridge: PlatformBridge = {
+  isNative: () => Capacitor.isNativePlatform(),
+  isWeb: () => Capacitor.getPlatform() === 'web',
+  lockOrientation,
+  triggerHaptic: hapticImpact,
+  hideStatusBar,
+};

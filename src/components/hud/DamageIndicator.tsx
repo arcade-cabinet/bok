@@ -74,6 +74,7 @@ export const DamageIndicator = forwardRef<DamageIndicatorHandle, Props>(function
   return (
     <div
       className="fixed inset-0 pointer-events-none z-20"
+      aria-hidden="true"
       style={{
         opacity: visible ? 1 : 0,
         transition: visible ? 'none' : `opacity ${FADE_DURATION}ms ease-out`,

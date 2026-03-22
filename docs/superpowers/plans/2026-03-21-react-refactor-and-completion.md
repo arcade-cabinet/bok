@@ -135,10 +135,10 @@ Tests:
 
 - [x] Step 1: Write MainMenuView test
 - [x] Step 2: Write GameView test
-- [ ] Step 3: Write HealthBar test
-- [ ] Step 4: Write PauseMenu test
-- [ ] Step 5: Run all browser tests, verify pass
-- [ ] Step 6: Commit
+- [x] Step 3: Write HealthBar test
+- [x] Step 4: Write PauseMenu test
+- [x] Step 5: Run all browser tests, verify pass
+- [x] Step 6: Commit
 
 ## Phase 3: Remaining Game Features (parallel — independent tasks)
 
@@ -178,7 +178,7 @@ Copy game-appropriate GLBs from /Volumes/home/assets/3DLowPoly/ and /Volumes/hom
 
 REQUIRES: /Volumes/home mounted
 
-- [ ] Steps: Mount assets, search+copy GLBs, create model loader, replace box meshes
+- [x] Steps: Mount assets, search+copy GLBs, create model loader, replace box meshes
 
 ### Task 10: Yuka GOAP governor for player
 
@@ -188,7 +188,7 @@ REQUIRES: /Volumes/home mounted
 
 Player GOAP: auto-target nearest enemy, stamina management, threat assessment. Player still controls movement/camera, AI assists combat decisions.
 
-- [ ] Steps: Create goal evaluators, wire to combat, test with browser test
+- [x] Steps: Create goal evaluators, wire to combat, test with browser test
 
 ### Task 11: Tone.js spatial audio upgrade
 
@@ -198,7 +198,7 @@ Player GOAP: auto-target nearest enemy, stamina management, threat assessment. P
 
 Richer procedural audio: proper ambient loops, spatial audio positioned at enemy locations, reverb, filtering.
 
-- [ ] Steps: Install Tone.js, rewrite GameAudio, wire spatial to enemy positions
+- [x] Steps: Install Tone.js, rewrite GameAudio, wire spatial to enemy positions
 
 ### Task 12: Diegetic controls refinement
 
@@ -209,7 +209,7 @@ Richer procedural audio: proper ambient loops, spatial audio positioned at enemy
 
 Auto-jump with head bob, contact combat polish, center-mounted 3D tool model. No forced buttons — everything contextual and responsive.
 
-- [ ] Steps: Create diegetic module, refine contact combat, add context indicator
+- [x] Steps: Create diegetic module, refine contact combat, add context indicator
 
 ## Phase 4: Polish & Final Integration
 
@@ -220,7 +220,7 @@ Auto-jump with head bob, contact combat polish, center-mounted 3D tool model. No
 - Modify: `src/input/MobileControls.ts` — refine split-half touch
 - Create: `src/hooks/useDeviceType.ts` — React hook for device detection
 
-- [ ] Steps: Responsive canvas sizing, refined touch controls, device-aware HUD scaling
+- [x] Steps: Responsive canvas sizing, refined touch controls, device-aware HUD scaling
 
 ### Task 14: Full integration test + CI readiness
 
@@ -231,7 +231,7 @@ Auto-jump with head bob, contact combat polish, center-mounted 3D tool model. No
 
 Full flow: menu → select biome → start game → walk → fight enemy → kill boss → victory → return to menu. All in one browser test.
 
-- [ ] Steps: Write integration test, verify build, run all tests
+- [x] Steps: Write integration test, verify build, run all tests
 
 ---
 

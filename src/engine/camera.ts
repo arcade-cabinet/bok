@@ -7,7 +7,7 @@
 import { Camera3DControls } from '@jolly-pixel/engine';
 import * as THREE from 'three';
 
-import type { SurfaceHeightFn } from './types.ts';
+import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 const CAMERA_SENSITIVITY = 0.002;
 const PLAYER_SPEED = 6;
@@ -26,7 +26,7 @@ export interface CameraResult {
  * Spawns at highest terrain point near center.
  * Movement includes auto-platforming (step up/down terrain).
  */
-export function createCamera(jpWorld: any, getSurfaceY: SurfaceHeightFn, islandSize: number): CameraResult {
+export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, islandSize: number): CameraResult {
   const cameraActor = jpWorld.createActor('camera');
   const cameraCtrl = cameraActor.addComponentAndGet(Camera3DControls, {
     speed: PLAYER_SPEED,

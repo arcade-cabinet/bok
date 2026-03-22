@@ -1,8 +1,8 @@
 /**
  * @module hooks/useHubEngine
  * @role Canvas ref, JollyPixel Runtime lifecycle, terrain generation, camera + input setup, frame loop
- * @input Mobile input ref, building proximity callback ref
- * @output Canvas ref, runtime ref, camera result, hub result, mobile flag
+ * @input Mobile input ref, building proximity callback ref, NPC proximity callback ref
+ * @output Canvas ref, runtime ref, camera result, hub result, NPC entities, mobile flag
  */
 import RAPIER from '@dimforge/rapier3d';
 import { loadRuntime, Runtime } from '@jolly-pixel/runtime';
@@ -10,15 +10,22 @@ import { createWorld } from 'koota';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { TouchControlOutput } from '../components/ui/TouchControls';
+import hubNpcsData from '../content/hub/npcs.json';
+import type { NPCConfig } from '../content/types.ts';
+import { NPCConfigSchema } from '../content/types.ts';
 import type { CameraResult } from '../engine/camera';
 import { createCamera } from '../engine/camera';
 import type { HubResult } from '../engine/hub';
 import { createHub } from '../engine/hub';
+import { type NPCEntity, spawnHubNPCs } from '../engine/npcEntities';
 import { InputSystem } from '../input/index';
 import { isMobileDevice } from '../input/MobileControls';
 import { initPlatform } from '../platform/CapacitorBridge';
 import { MAX_DELTA } from '../shared/index';
 import { LookIntent, MovementIntent, Time } from '../traits/index';
+
+/** Validated NPC configs from content JSON. */
+const HUB_NPC_CONFIGS: NPCConfig[] = (hubNpcsData as unknown[]).map((raw) => NPCConfigSchema.parse(raw));
 
 export interface HubEngineResult {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -28,6 +35,8 @@ export interface HubEngineResult {
   camRef: React.RefObject<CameraResult | null>;
   /** Hub result for building data. Null until engine is initialized. */
   hubRef: React.RefObject<HubResult | null>;
+  /** Spawned NPC entities. Empty until engine is initialized. */
+  npcEntities: NPCEntity[];
 }
 
 /**
@@ -36,10 +45,12 @@ export interface HubEngineResult {
  * Frame loop callbacks are injected via refs to avoid stale closures:
  * - `onFrameRef` is called every frame with camera position for label projection / dock proximity
  * - `buildingProximityRef` is called every frame for the building interaction hook
+ * - `npcProximityRef` is called every frame for the NPC interaction hook
  */
 export function useHubEngine(
   onFrameRef: React.RefObject<((cam: CameraResult) => void) | null>,
   buildingProximityRef: React.RefObject<(px: number, pz: number) => void>,
+  npcProximityRef: React.RefObject<(px: number, pz: number) => void>,
 ): HubEngineResult {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runtimeRef = useRef<Runtime | null>(null);
@@ -54,6 +65,7 @@ export function useHubEngine(
     action: string | null;
   } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [npcEntities, setNpcEntities] = useState<NPCEntity[]>([]);
 
   useEffect(() => {
     if (!canvasRef.current || runtimeRef.current) return;
@@ -97,6 +109,10 @@ export function useHubEngine(
       // Hub terrain + buildings
       const hub = createHub(jpWorld, rapierWorld);
       hubRef.current = hub;
+
+      // Spawn NPC meshes on the terrain
+      const npcs = spawnHubNPCs(scene, HUB_NPC_CONFIGS, hub.getSurfaceY);
+      setNpcEntities(npcs);
 
       // Camera
       const cam = createCamera(jpWorld, hub.getSurfaceY, hub.hubSize);
@@ -156,6 +172,7 @@ export function useHubEngine(
         onFrameRef.current?.(cam);
         const pos = cam.getPosition();
         buildingProximityRef.current?.(pos.x, pos.z);
+        npcProximityRef.current?.(pos.x, pos.z);
       });
 
       await loadRuntime(runtime);
@@ -171,7 +188,7 @@ export function useHubEngine(
       gameWorldRef.current?.destroy();
       gameWorldRef.current = null;
     };
-  }, [onFrameRef, buildingProximityRef]);
+  }, [onFrameRef, buildingProximityRef, npcProximityRef]);
 
   const handleTouchOutput = useCallback((output: TouchControlOutput) => {
     const mi = mobileInputRef.current;
@@ -188,5 +205,6 @@ export function useHubEngine(
     handleTouchOutput,
     camRef,
     hubRef,
+    npcEntities,
   };
 }

@@ -1,12 +1,17 @@
 import { createRoot } from 'react-dom/client';
-import { installGlobalErrorHandler } from '../platform/CapacitorBridge';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { App } from './App';
+import { installGlobalErrorHandler } from './globalErrorHandler';
 import '../main.css';
 
-// Global error handling — no silent failures
+// Global error handling — catches uncaught errors and unhandled rejections
 installGlobalErrorHandler();
 
 const root = document.getElementById('app');
 if (!root) throw new Error('Root element #app not found');
 
-createRoot(root).render(<App />);
+createRoot(root).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>,
+);

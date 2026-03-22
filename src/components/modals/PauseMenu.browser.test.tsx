@@ -46,9 +46,7 @@ test('Quit to Menu button calls onQuitToMenu when clicked', async () => {
 });
 
 test('Settings button is disabled', async () => {
-  const { container } = await render(
-    <PauseMenu onResume={() => {}} onAbandonRun={() => {}} onQuitToMenu={() => {}} />,
-  );
+  const { container } = await render(<PauseMenu onResume={() => {}} onAbandonRun={() => {}} onQuitToMenu={() => {}} />);
 
   // daisyUI uses btn-disabled class + tabIndex={-1} rather than the HTML disabled attribute
   const settingsBtn = container.querySelector('button.btn-disabled') as HTMLElement;

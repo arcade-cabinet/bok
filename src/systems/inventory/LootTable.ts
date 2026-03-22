@@ -16,6 +16,7 @@ export interface DropResult {
  * Resolves weighted random drops from enemy/chest drop configs.
  * Each drop is rolled independently against its chance.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for loot table resolution functions
 export class LootTable {
   /**
    * @param drops - Array of drop configurations.

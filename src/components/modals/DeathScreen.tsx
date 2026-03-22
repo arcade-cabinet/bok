@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 interface DeathStats {
   enemiesDefeated: number;
   timeSurvived: number;
@@ -23,11 +25,27 @@ function formatTime(seconds: number): string {
  * Uses daisyUI modal, stat, and btn components with the parchment theme.
  */
 export function DeathScreen({ stats, onReturnToHub }: Props) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the primary action button on mount
+  useEffect(() => {
+    buttonRef.current?.focus();
+  }, []);
+
   return (
-    <div className="modal modal-open overlay-safe-area">
+    <div
+      className="modal modal-open overlay-safe-area"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="death-screen-title"
+    >
       <div className="modal-backdrop bg-black/90" />
       <div className="modal-box card bg-base-100 border-2 border-secondary max-w-xs sm:max-w-sm text-center">
-        <h2 className="text-2xl sm:text-3xl mb-1 text-base-content" style={{ fontFamily: 'Cinzel, Georgia, serif' }}>
+        <h2
+          id="death-screen-title"
+          className="text-2xl sm:text-3xl mb-1 text-base-content"
+          style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+        >
           THE CHAPTER ENDS
         </h2>
         <p className="text-sm italic mb-4 text-secondary" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
@@ -49,7 +67,13 @@ export function DeathScreen({ stats, onReturnToHub }: Props) {
           </div>
         </div>
 
-        <button type="button" className="btn btn-neutral w-full" onClick={onReturnToHub}>
+        <button
+          ref={buttonRef}
+          type="button"
+          className="btn btn-neutral w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+          onClick={onReturnToHub}
+          aria-label="Return to hub"
+        >
           TURN THE PAGE
         </button>
       </div>

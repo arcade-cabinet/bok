@@ -10,25 +10,25 @@
   color-scheme: light;
 
   /* Surfaces: warm parchment → aged paper → border-tan */
-  --color-base-100: oklch(96.5% 0.02 75);  /* #fdf6e3 parchment white */
-  --color-base-200: oklch(90% 0.03 70);     /* slightly darker parchment */
-  --color-base-300: oklch(82% 0.04 65);     /* aged paper edge */
+  --color-base-100: oklch(96.5% 0.02 75); /* #fdf6e3 parchment white */
+  --color-base-200: oklch(90% 0.03 70); /* slightly darker parchment */
+  --color-base-300: oklch(82% 0.04 65); /* aged paper edge */
   --color-base-content: oklch(22% 0.04 45); /* #2c1e16 ink-dark brown */
 
   /* Primary: warm gold for interactive elements */
-  --color-primary: oklch(72% 0.1 70);       /* #c4a572 gold accent */
+  --color-primary: oklch(72% 0.1 70); /* #c4a572 gold accent */
   --color-primary-content: oklch(22% 0.04 45);
 
   /* Secondary: deeper brown for secondary actions */
-  --color-secondary: oklch(50% 0.08 55);    /* #8b5a2b medium brown */
+  --color-secondary: oklch(50% 0.08 55); /* #8b5a2b medium brown */
   --color-secondary-content: oklch(96% 0.02 75);
 
   /* Accent: lighter gold highlight */
-  --color-accent: oklch(80% 0.08 75);       /* #d4c5a0 light gold */
+  --color-accent: oklch(80% 0.08 75); /* #d4c5a0 light gold */
   --color-accent-content: oklch(22% 0.04 45);
 
   /* Neutral: dark warm brown for structural elements */
-  --color-neutral: oklch(28% 0.04 45);      /* #3a2820 warm brown */
+  --color-neutral: oklch(28% 0.04 45); /* #3a2820 warm brown */
   --color-neutral-content: oklch(90% 0.03 75);
 
   /* Semantic colors */
@@ -38,7 +38,7 @@
   --color-success-content: oklch(98% 0.01 160);
   --color-warning: oklch(80% 0.15 80);
   --color-warning-content: oklch(25% 0.05 80);
-  --color-error: oklch(55% 0.22 25);        /* #c0392b deep red */
+  --color-error: oklch(55% 0.22 25); /* #c0392b deep red */
   --color-error-content: oklch(98% 0.01 25);
 
   --radius-selector: 0.5rem;
@@ -128,5 +128,17 @@ body {
   .hotbar-slot {
     width: 36px;
     height: 36px;
+  }
+}
+
+/* Reduced motion: disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

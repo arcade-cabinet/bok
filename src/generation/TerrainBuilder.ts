@@ -11,6 +11,7 @@ export interface TerrainData {
   blocks: number[][];
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for pure terrain generation functions
 export class TerrainBuilder {
   /**
    * Generate terrain from a biome config and seed.

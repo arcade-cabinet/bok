@@ -10,6 +10,7 @@ export interface ChestPlacement {
 /**
  * Places loot chests on valid terrain. Higher difficulty tiers get more/better chests.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for pure loot placement functions
 export class LootPlacer {
   static place(terrain: TerrainData, difficulty: number, seed: string): ChestPlacement[] {
     const rng = new PRNG(`loot:${seed}`);

@@ -80,6 +80,7 @@ export async function spawnEnemies(
     vehicle.position.set(ex + 0.5, ey + 0.7, ez + 0.5);
     vehicle.maxSpeed = 2;
     vehicle.mass = 1;
+    // biome-ignore lint/suspicious/noExplicitAny: Yuka's setRenderComponent lacks type declarations
     (vehicle as any).setRenderComponent(mesh, (renderObj: THREE.Object3D) => {
       renderObj.position.set(vehicle.position.x, vehicle.position.y, vehicle.position.z);
     });
@@ -114,6 +115,7 @@ export async function spawnEnemies(
   bossVehicle.position.set(bossPos.x, bossY + 1.5, bossPos.z);
   bossVehicle.maxSpeed = 1.5;
   bossVehicle.mass = 3;
+  // biome-ignore lint/suspicious/noExplicitAny: Yuka's setRenderComponent lacks type declarations
   (bossVehicle as any).setRenderComponent(bossMesh, (obj: THREE.Object3D) => {
     obj.position.set(bossVehicle.position.x, bossVehicle.position.y, bossVehicle.position.z);
   });

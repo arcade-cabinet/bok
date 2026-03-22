@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 
@@ -128,6 +128,18 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
   const [showNewGame, setShowNewGame] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
+  const prefersReducedMotion = useReducedMotion();
+  const newGameButtonRef = useRef<HTMLButtonElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus management: when new game panel opens, focus back button; when closed, focus new game button
+  useEffect(() => {
+    if (showNewGame) {
+      backButtonRef.current?.focus();
+    } else {
+      newGameButtonRef.current?.focus();
+    }
+  }, [showNewGame]);
 
   const handleStart = () => {
     onStartGame({ biome: selectedBiome, seed });
@@ -143,16 +155,20 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
   };
 
   const menuItem = (i: number) => ({
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: prefersReducedMotion ? 0 : 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      transition: {
+        delay: prefersReducedMotion ? 0 : i * 0.1,
+        duration: prefersReducedMotion ? 0 : 0.6,
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+      },
     },
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <section className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" aria-label="Main menu">
       <AnimatedBackground />
 
       {/* Corner decorations */}
@@ -175,9 +191,12 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4 max-w-lg mx-auto w-full">
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: prefersReducedMotion ? 0 : -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 1.2,
+            ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+          }}
           className="text-center mb-12"
         >
           <h1
@@ -209,14 +228,15 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
 
         {/* Menu buttons */}
         {!showNewGame ? (
-          <div className="w-full space-y-3">
+          <nav aria-label="Main menu" className="w-full space-y-3">
             <motion.button
+              ref={newGameButtonRef}
               type="button"
               variants={menuItem(0)}
               initial="hidden"
               animate="visible"
               onClick={() => setShowNewGame(true)}
-              className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.4)] cursor-pointer"
+              className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.4)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
               style={{
                 fontFamily: 'Crimson Text, Georgia, serif',
                 color: '#d4c5a0',
@@ -233,7 +253,8 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
               initial="hidden"
               animate="visible"
               onClick={() => hasRunHistory && onResumeGame?.()}
-              className={`w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer ${hasRunHistory ? 'hover:shadow-[0_0_20px_rgba(139,115,85,0.4)]' : 'opacity-40'}`}
+              aria-disabled={!hasRunHistory}
+              className={`w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${hasRunHistory ? 'hover:shadow-[0_0_20px_rgba(139,115,85,0.4)]' : 'opacity-40'}`}
               style={{
                 fontFamily: 'Crimson Text, Georgia, serif',
                 color: hasRunHistory ? '#d4c5a0' : '#a89574',
@@ -250,7 +271,7 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
               variants={menuItem(2)}
               initial="hidden"
               animate="visible"
-              className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer"
+              className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
               style={{
                 fontFamily: 'Crimson Text, Georgia, serif',
                 color: '#a89574',
@@ -261,13 +282,16 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
             >
               ⚙ Inscriptions
             </motion.button>
-          </div>
+          </nav>
         ) : (
           /* New Game panel */
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: prefersReducedMotion ? 0 : undefined }}
             className="w-full space-y-4"
+            role="region"
+            aria-label="New game configuration"
           >
             <h2
               className="text-2xl text-center mb-4"
@@ -277,19 +301,28 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
             </h2>
 
             {/* Biome grid */}
-            <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1">
+            <div
+              className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1"
+              role="radiogroup"
+              aria-label="Select biome"
+            >
               {BIOMES.map((b) => (
                 <button
                   type="button"
                   key={b.id}
+                  role="radio"
+                  aria-checked={selectedBiome === b.id}
+                  aria-label={`${b.name}: ${b.desc}`}
                   onClick={() => setSelectedBiome(b.id)}
-                  className={`p-3 rounded-lg border-2 text-left transition-all duration-200 cursor-pointer ${selectedBiome === b.id ? 'shadow-lg' : 'hover:bg-[#3a2820]/60'}`}
+                  className={`p-3 rounded-lg border-2 text-left transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${selectedBiome === b.id ? 'shadow-lg' : 'hover:bg-[#3a2820]/60'}`}
                   style={{
                     background: selectedBiome === b.id ? 'rgba(74,55,40,0.7)' : 'rgba(45,31,23,0.5)',
                     borderColor: selectedBiome === b.id ? '#c4a572' : 'rgba(107,84,68,0.5)',
                   }}
                 >
-                  <div className="text-2xl mb-1">{b.icon}</div>
+                  <div className="text-2xl mb-1" aria-hidden="true">
+                    {b.icon}
+                  </div>
                   <div className="text-sm font-bold" style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#d4c5a0' }}>
                     {b.name}
                   </div>
@@ -326,10 +359,11 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
                 <button
                   type="button"
                   onClick={randomSeed}
-                  className="px-3 py-2 rounded-md border cursor-pointer"
+                  aria-label="Randomize world seed"
+                  className="px-3 py-2 rounded-md border cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                   style={{ background: 'rgba(45,31,23,0.7)', borderColor: 'rgba(107,84,68,0.6)', color: '#c4a572' }}
                 >
-                  🎲
+                  <span aria-hidden="true">🎲</span>
                 </button>
               </div>
             </div>
@@ -339,7 +373,8 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
               <button
                 type="button"
                 onClick={handleStart}
-                className="flex-1 h-12 text-lg rounded-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.5)] cursor-pointer"
+                aria-label="Begin Writing - start the game"
+                className="flex-1 h-12 text-lg rounded-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.5)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                 style={{
                   fontFamily: 'Cinzel, Georgia, serif',
                   color: '#d4c5a0',
@@ -350,9 +385,11 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
                 ✒ Begin Writing
               </button>
               <button
+                ref={backButtonRef}
                 type="button"
                 onClick={() => setShowNewGame(false)}
-                className="h-12 px-4 rounded-lg border cursor-pointer"
+                aria-label="Back to main menu"
+                className="h-12 px-4 rounded-lg border cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                 style={{ background: 'transparent', borderColor: 'rgba(107,84,68,0.6)', color: '#a89574' }}
               >
                 ✕
@@ -365,13 +402,13 @@ export function MainMenuView({ onStartGame, onResumeGame, hasRunHistory = false 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: prefersReducedMotion ? 0 : 0.8 }}
           className="absolute bottom-6 text-center text-xs italic"
           style={{ color: '#6b5444' }}
         >
           Volume I · Edition 0.1.0
         </motion.div>
       </div>
-    </div>
+    </section>
   );
 }

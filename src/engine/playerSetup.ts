@@ -8,6 +8,7 @@ import { InputSystem } from '../input/index.ts';
 import { type CameraResult, createCamera } from './camera.ts';
 import { loadModel } from './models.ts';
 import type { TerrainResult } from './terrainSetup.ts';
+import type { JpWorld } from './types.ts';
 
 /** Player entity: camera + input */
 export interface PlayerResult {
@@ -20,7 +21,7 @@ export interface PlayerResult {
  * center-mounted weapon model, input system, and desktop pointer lock.
  */
 export async function createPlayer(
-  jpWorld: any,
+  jpWorld: JpWorld,
   canvas: HTMLCanvasElement,
   terrain: TerrainResult,
   isMobile: boolean,

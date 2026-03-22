@@ -22,3 +22,4 @@ export {
 } from './constants.ts';
 export { EventBus } from './EventBus.ts';
 export type { BiomeId, ConfigId, EntityId, GamePhaseName, Vec3 } from './types.ts';
+export { APP_NAME, APP_VERSION } from './version.ts';

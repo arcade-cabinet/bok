@@ -9,7 +9,7 @@ import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
 import { generateTileset, TILES } from '../rendering/TilesetGenerator.ts';
-import type { SurfaceHeightFn } from './types.ts';
+import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 // --- Block Definitions ---
 const BLOCK_DEFS: BlockDefinition[] = [
@@ -117,7 +117,7 @@ const NPCS: NPCDef[] = [
 ];
 
 export interface HubResult {
-  voxelMap: any;
+  voxelMap: VoxelRenderer;
   getSurfaceY: SurfaceHeightFn;
   buildings: BuildingDef[];
   npcs: NPCDef[];
@@ -128,8 +128,8 @@ export interface HubResult {
  * Create the hub island with buildings and NPC position markers.
  * Uses a fixed seed for deterministic layout.
  */
-export function createHub(jpWorld: any, rapierWorld: RAPIER.World): HubResult {
-  const voxelMap = (jpWorld.createActor('hub-terrain') as any).addComponentAndGet(VoxelRenderer, {
+export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResult {
+  const voxelMap = jpWorld.createActor('hub-terrain').addComponentAndGet(VoxelRenderer, {
     chunkSize: 16,
     layers: ['Ground'],
     blocks: BLOCK_DEFS,
@@ -147,9 +147,9 @@ export function createHub(jpWorld: any, rapierWorld: RAPIER.World): HubResult {
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
-  (voxelMap as any).tilesetManager.registerTexture(
+  voxelMap.tilesetManager.registerTexture(
     { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: 3, rows: 3 },
-    tilesetTexture as any,
+    tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 
   // Generate gentle terrain from seed

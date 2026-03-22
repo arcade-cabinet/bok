@@ -10,6 +10,7 @@ export interface Recipe {
 /**
  * Checks recipe requirements against inventory contents and produces output items.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for crafting functions
 export class CraftingSystem {
   static canCraft(recipe: Recipe, inventory: Inventory, holder: string): boolean {
     return recipe.ingredients.every((ing) => inventory.hasItem(holder, ing.itemId, ing.amount));

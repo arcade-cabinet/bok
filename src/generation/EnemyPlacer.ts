@@ -11,6 +11,7 @@ export interface EnemySpawn {
  * Places enemy spawn points on valid terrain, biased toward interior areas.
  * Difficulty scales the number of spawns.
  */
+// biome-ignore lint/complexity/noStaticOnlyClass: namespace for pure placement functions
 export class EnemyPlacer {
   static place(
     terrain: TerrainData,
