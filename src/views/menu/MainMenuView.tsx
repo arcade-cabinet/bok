@@ -1,6 +1,9 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
+import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
+import { TOME_PAGE_CATALOG } from '../../content/tomePages';
+import { APP_VERSION } from '../../shared/version';
 
 const BIOMES = [
   { id: 'forest', name: 'Whispering Woods', desc: 'Dense canopy of ancient trees', icon: '🌲', sky: '#87CEEB' },
@@ -128,6 +131,8 @@ interface Props {
   hasMidRunSave?: boolean;
   /** Biome IDs the player has unlocked. Forest is always available. */
   unlockedBiomes?: string[];
+  /** Tome page ability IDs the player has unlocked. */
+  unlockedPages?: string[];
 }
 
 /** Set to true during development to unlock all biomes without progression. */
@@ -140,8 +145,10 @@ export function MainMenuView({
   hasRunHistory = false,
   hasMidRunSave = false,
   unlockedBiomes = [],
+  unlockedPages = [],
 }: Props) {
   const [showNewGame, setShowNewGame] = useState(false);
+  const [showTome, setShowTome] = useState(false);
   const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
   const prefersReducedMotion = useReducedMotion();
@@ -306,6 +313,7 @@ export function MainMenuView({
               variants={menuItem(hasMidRunSave ? 3 : 2)}
               initial="hidden"
               animate="visible"
+              onClick={() => setShowTome(true)}
               className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
               style={{
                 fontFamily: 'Crimson Text, Georgia, serif',
@@ -476,9 +484,18 @@ export function MainMenuView({
           className="absolute bottom-6 text-center text-xs italic"
           style={{ color: '#6b5444' }}
         >
-          Volume I · Edition 0.1.0
+          Volume I · Edition {APP_VERSION}
         </motion.div>
       </div>
+      {showTome && (
+        <TomePageBrowser
+          pages={unlockedPages.map((id) => {
+            const cat = TOME_PAGE_CATALOG[id];
+            return { id, name: cat?.name ?? id, description: cat?.description ?? '', icon: cat?.icon ?? '', level: 1 };
+          })}
+          onClose={() => setShowTome(false)}
+        />
+      )}
     </section>
   );
 }
