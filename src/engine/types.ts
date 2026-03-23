@@ -161,7 +161,7 @@ export type EngineEvent =
   | { type: 'lootPickup'; itemType: string }
   | { type: 'parry' }
   | { type: 'block'; damage: number }
-  | { type: 'chestOpened'; tier: string; items: Array<{ name: string; amount: number }> }
+  | { type: 'chestOpened'; tier: string; items: Array<{ name: string; itemId: string; amount: number }> }
   | { type: 'bossTelegraph'; attackName: string; duration: number }
   | { type: 'bossSummon'; attackName: string }
   | { type: 'landmarkDiscovered'; position: { x: number; z: number } }

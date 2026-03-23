@@ -495,13 +495,12 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     },
     togglePause: () => loop.togglePause(),
     setEquippedWeapon: (weaponId: string) => {
-      combat.setWeapon(weaponId);
-      setWeaponModel(weaponId);
-      // Auto-derive tool tier from weapon: tier lookup via content registry
       try {
+        combat.setWeapon(weaponId);
+        setWeaponModel(weaponId);
+        // Auto-derive tool tier from weapon
         const weapons = content.getAllWeapons();
         const w = weapons.find((wp) => wp.id === weaponId);
-        // Map weapon power level to tool tier based on base damage thresholds
         if (w) {
           let tier = 'wood';
           if (w.baseDamage >= 18) tier = 'diamond';
@@ -509,8 +508,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           else if (w.baseDamage >= 10) tier = 'stone';
           loop.setToolTier(tier);
         }
-      } catch {
-        // Keep current tool tier on lookup failure
+      } catch (err) {
+        console.warn(`[Bok] Failed to equip weapon "${weaponId}":`, err);
       }
     },
     setToolTier: (tier: string) => loop.setToolTier(tier),

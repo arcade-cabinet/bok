@@ -96,7 +96,7 @@ describe('PlayerAI', () => {
 
   it('tracks chest opens from events', () => {
     const ai = new PlayerAI(mockGame() as unknown as GameInstance);
-    ai.handleEvent({ type: 'chestOpened', tier: 'common', items: [{ name: 'Wood', amount: 5 }] });
+    ai.handleEvent({ type: 'chestOpened', tier: 'common', items: [{ itemId: 'wood', name: 'Wood', amount: 5 }] });
     expect(ai.getReport().chestsOpened).toBe(1);
   });
 

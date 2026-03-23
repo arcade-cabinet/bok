@@ -567,6 +567,7 @@ export function createCombat(
       if (result) {
         openedChestIds.push(result.chest.id);
         const items = result.items.map((i) => ({
+          itemId: i.itemId,
           name: i.itemId
             .split('-')
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -631,8 +632,8 @@ export function createCombat(
       defeatedBoss: boss.defeated,
     }),
     setWeapon: (weaponId: string) => {
-      equippedWeapon = content.getWeapon(weaponId);
-      // Reset combo when switching weapons
+      const w = content.getWeapon(weaponId); // throws if invalid — caller should catch
+      equippedWeapon = w;
       comboStep = 0;
       comboTimer = 0;
     },

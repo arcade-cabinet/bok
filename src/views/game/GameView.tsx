@@ -125,6 +125,7 @@ export function GameView({
   const [bossPhaseText, setBossPhaseText] = useState<string | null>(null);
   const [showInventory, setShowInventory] = useState(false);
   const [bossTelegraph, setBossTelegraph] = useState<string | null>(null);
+  const telegraphTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Island persistence: load saved deltas + goal progress ---
   const [restoredDeltas, setRestoredDeltas] = useState<
@@ -248,10 +249,10 @@ export function GameView({
         for (const item of event.items) {
           setResourceCounts((prev) => ({
             ...prev,
-            [item.name]: (prev[item.name] ?? 0) + item.amount,
+            [item.itemId]: (prev[item.itemId] ?? 0) + item.amount,
           }));
           if (saveManager && config.saveId) {
-            saveManager.addResource(config.saveId, item.name, item.amount).catch(() => {});
+            saveManager.addResource(config.saveId, item.itemId, item.amount).catch(() => {});
           }
         }
       }
@@ -274,8 +275,9 @@ export function GameView({
 
       // Boss telegraph warning — brief flash when boss is about to attack
       if (event.type === 'bossTelegraph') {
+        if (telegraphTimerRef.current) clearTimeout(telegraphTimerRef.current);
         setBossTelegraph(event.attackName);
-        setTimeout(() => setBossTelegraph(null), event.duration * 1000);
+        telegraphTimerRef.current = setTimeout(() => setBossTelegraph(null), event.duration * 1000);
       }
 
       // Block placed/broken — sync resource counter from engine state
