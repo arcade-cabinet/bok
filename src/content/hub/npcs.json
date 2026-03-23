@@ -1,59 +1,41 @@
 [
   {
-    "id": "shopkeeper",
-    "name": "Shopkeeper",
-    "role": "merchant",
-    "description": "Sells consumables like health potions and buff elixirs.",
+    "id": "guide",
+    "name": "The Guide",
+    "role": "guide",
+    "description": "A friendly sage who gives contextual advice about which island to visit next.",
     "requiredBuilding": null,
     "dialogue": {
-      "greeting": "Welcome, traveler! What can I get for you?",
-      "farewell": "Safe travels out there!"
+      "greeting": "Welcome, Builder! The docks await. Head east to find the Whispering Woods pier — it's always open for a new adventure.",
+      "farewell": "May your Tome grow with every journey."
     },
-    "inventory": [
-      { "itemId": "health-potion", "basePrice": 25 },
-      { "itemId": "stamina-elixir", "basePrice": 30 },
-      { "itemId": "strength-potion", "basePrice": 40 },
-      { "itemId": "shield-potion", "basePrice": 35 }
-    ],
-    "position": { "x": -3, "y": 0, "z": -6 }
+    "inventory": [],
+    "position": { "x": 16, "y": 0, "z": 16 }
   },
   {
     "id": "blacksmith",
     "name": "Blacksmith",
     "role": "crafter",
-    "description": "Upgrades and repairs weapons. Requires the Forge building.",
+    "description": "Crafts and upgrades weapons at the Forge.",
     "requiredBuilding": "forge",
     "dialogue": {
-      "greeting": "Bring me something to hammer on!",
+      "greeting": "Bring me materials from the islands and I'll forge something worthy.",
       "farewell": "Keep that blade sharp."
     },
     "inventory": [],
-    "position": { "x": 14, "y": 0, "z": -5 }
+    "position": { "x": 27, "y": 0, "z": 27 }
   },
   {
     "id": "scholar",
     "name": "Scholar",
     "role": "lore",
-    "description": "Provides Tome page information and ability lore. Requires the Library building.",
+    "description": "Studies the Tome and shares knowledge about abilities.",
     "requiredBuilding": "library",
     "dialogue": {
-      "greeting": "Ah, another seeker of knowledge. Let me see your Tome.",
+      "greeting": "Each boss defeated adds a page to your Tome. Show me what you've collected.",
       "farewell": "May the pages guide your path."
     },
     "inventory": [],
-    "position": { "x": 7, "y": 0, "z": -10 }
-  },
-  {
-    "id": "navigator",
-    "name": "Navigator",
-    "role": "navigation",
-    "description": "Helps choose your next island destination. Requires the Docks building.",
-    "requiredBuilding": "docks",
-    "dialogue": {
-      "greeting": "The seas are calling. Where shall we chart a course?",
-      "farewell": "Fair winds and following seas!"
-    },
-    "inventory": [],
-    "position": { "x": -13, "y": 0, "z": 10 }
+    "position": { "x": 7, "y": 0, "z": 27 }
   }
 ]

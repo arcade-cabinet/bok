@@ -49,6 +49,10 @@ export function createCamera(jpWorld: JpWorld, getSurfaceY: SurfaceHeightFn, spa
   });
   const camera = cameraCtrl.camera;
 
+  // Wider FOV for less claustrophobic view
+  camera.fov = 75;
+  camera.updateProjectionMatrix();
+
   // Spawn position
   const spawnY = getSurfaceY(spawnX, spawnZ);
   camera.position.set(spawnX, spawnY + EYE_HEIGHT, spawnZ);
