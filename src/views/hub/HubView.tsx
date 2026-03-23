@@ -456,7 +456,10 @@ export function HubView({
 
       {showPause && <HubPauseModal onResume={() => setShowPause(false)} onQuit={() => onNavigate('menu')} />}
 
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)] z-10 pointer-events-none" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+        <div className="w-4 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+        <div className="w-0.5 h-4 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+      </div>
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile} />
     </div>
   );

@@ -3,30 +3,30 @@
   "goals": [
     {
       "id": "crystal-caves-explore",
-      "title": "Delve the Depths",
-      "description": "Discover 2 crystal formations",
+      "title": "Find the Resonance Chambers",
+      "description": "Find 2 Crystal Resonance Chambers",
       "type": "discover",
       "target": 2,
-      "icon": "\uD83D\uDDFA\uFE0F"
+      "icon": "\uD83D\uDD2E"
     },
     {
       "id": "crystal-caves-defeat",
-      "title": "Shatter the Sentinels",
-      "description": "Defeat 6 crystal guardians",
+      "title": "Shatter the Crystal Sentinels",
+      "description": "Shatter 8 Crystal Sentinels",
       "type": "kill",
-      "target": 6,
+      "target": 8,
       "icon": "\u2694\uFE0F"
     },
     {
       "id": "crystal-caves-gather-shards",
       "title": "Mine Crystal Shards",
-      "description": "Gather 8 Crystal Shards",
+      "description": "Mine 8 Crystal Shards from the geodes",
       "type": "gather",
       "target": 8,
       "resourceId": "crystal-shard",
       "icon": "\u2728"
     }
   ],
-  "bossGateMessage": "The crystals hum... The Hydra stirs.",
-  "completionMessage": "The cavern glows. The Crystal Hydra awaits."
+  "bossGateMessage": "Light refracts through infinite prisms...",
+  "completionMessage": "The Crystal Hydra coalesces from pure light."
 }

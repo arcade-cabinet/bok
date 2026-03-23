@@ -142,17 +142,17 @@ export interface NPCDef {
 }
 
 const BUILDINGS: BuildingDef[] = [
-  { name: 'Armory', x: 5, z: 5, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
-  { name: 'Library', x: 5, z: 25, width: 5, depth: 5, height: 6, wallBlock: 3, roofBlock: 2 },
-  { name: 'Market', x: 15, z: 25, width: 6, depth: 4, height: 4, wallBlock: 6, roofBlock: 7 },
-  { name: 'Forge', x: 25, z: 25, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
+  { name: 'Armory', x: 8, z: 8, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 8 },
+  { name: 'Library', x: 8, z: 20, width: 5, depth: 5, height: 6, wallBlock: 3, roofBlock: 6 },
+  { name: 'Market', x: 16, z: 20, width: 6, depth: 4, height: 4, wallBlock: 6, roofBlock: 7 },
+  { name: 'Forge', x: 20, z: 8, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 3 },
 ];
 
 const NPCS: NPCDef[] = [
-  { name: 'Blacksmith', x: 7, z: 7 },
-  { name: 'Librarian', x: 7, z: 27 },
-  { name: 'Merchant', x: 17, z: 27 },
-  { name: 'Navigator', x: 16, z: 10 },
+  { name: 'Blacksmith', x: 10, z: 10 },
+  { name: 'Librarian', x: 10, z: 22 },
+  { name: 'Merchant', x: 18, z: 22 },
+  { name: 'Navigator', x: 16, z: 14 },
 ];
 
 export interface HubResult {
@@ -205,61 +205,91 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
 
   const surfaceHeight = new Map<string, number>();
 
-  for (let x = 0; x < HUB_SIZE; x++) {
-    for (let z = 0; z < HUB_SIZE; z++) {
+  // Water fill radius extends beyond the island so the ocean is visible from the center
+  const WATER_RADIUS = 20;
+  const WATER_LEVEL = 2;
+
+  for (let x = -WATER_RADIUS; x < HUB_SIZE + WATER_RADIUS; x++) {
+    for (let z = -WATER_RADIUS; z < HUB_SIZE + WATER_RADIUS; z++) {
       const dx = (x - HUB_SIZE / 2) / (HUB_SIZE / 2);
       const dz = (z - HUB_SIZE / 2) / (HUB_SIZE / 2);
-      const falloff = 1 - Math.sqrt(dx * dx + dz * dz);
-      if (falloff <= 0) continue;
+      const dist = Math.sqrt(dx * dx + dz * dz);
 
-      const noiseVal = noise.noise2D(x * 0.08, z * 0.08);
-      const height = Math.floor(BASE_HEIGHT + noiseVal * NOISE_AMP * falloff);
+      // Tighter island radius (0.7) for a clearly circular island with visible water edges
+      const maxRadius = 0.7;
+      const falloff = Math.max(0, 1 - dist / maxRadius);
 
-      for (let y = 0; y <= height; y++) {
-        let blockId: number;
-        if (y === height) {
-          blockId = height <= 2 ? 5 : 1;
-        } else if (y >= height - 2) {
-          blockId = 2;
-        } else {
-          blockId = 3;
+      if (falloff > 0) {
+        // Island terrain
+        const noiseVal = noise.noise2D(x * 0.08, z * 0.08);
+        const height = Math.floor(BASE_HEIGHT + noiseVal * NOISE_AMP * falloff);
+
+        for (let y = 0; y <= height; y++) {
+          let blockId: number;
+          if (y === height) {
+            blockId = height <= WATER_LEVEL ? 5 : 1;
+          } else if (y >= height - 2) {
+            blockId = 2;
+          } else {
+            blockId = 3;
+          }
+          voxelMap.setVoxel('Ground', { position: { x, y, z }, blockId });
         }
-        voxelMap.setVoxel('Ground', { position: { x, y, z }, blockId });
-      }
 
-      // Water at edges
-      if (height < 2) {
-        for (let y = height + 1; y <= 2; y++) {
+        // Water on low-lying island edges
+        if (height < WATER_LEVEL) {
+          for (let y = height + 1; y <= WATER_LEVEL; y++) {
+            voxelMap.setVoxel('Ground', { position: { x, y, z }, blockId: 4 });
+          }
+        }
+
+        // Track surface
+        if (height >= WATER_LEVEL) {
+          surfaceHeight.set(`${x},${z}`, height + 1);
+        }
+      } else {
+        // Ocean surrounding the island — fill water blocks up to WATER_LEVEL
+        for (let y = 0; y <= WATER_LEVEL; y++) {
           voxelMap.setVoxel('Ground', { position: { x, y, z }, blockId: 4 });
         }
-      }
-
-      // Track surface
-      if (height >= 2) {
-        surfaceHeight.set(`${x},${z}`, height + 1);
       }
     }
   }
 
-  // Place buildings
+  // Place buildings with windows, doors, and accent details
   for (const bld of BUILDINGS) {
     const baseY = surfaceHeight.get(`${bld.x},${bld.z}`) ?? BASE_HEIGHT + 1;
     const floorY = baseY;
 
-    // Walls
+    // Accent block: stone brick (8) for Forge corners, wood (6) for Armory trim
+    const accentBlock = bld.name === 'Forge' ? 8 : bld.name === 'Armory' ? 6 : bld.wallBlock;
+
     for (let bx = 0; bx < bld.width; bx++) {
       for (let bz = 0; bz < bld.depth; bz++) {
         const wx = bld.x + bx;
         const wz = bld.z + bz;
         const isEdge = bx === 0 || bx === bld.width - 1 || bz === 0 || bz === bld.depth - 1;
+        const isCorner = (bx === 0 || bx === bld.width - 1) && (bz === 0 || bz === bld.depth - 1);
 
         for (let by = 0; by < bld.height; by++) {
           if (isEdge) {
-            // Leave a door opening on the front wall center
+            // Door opening on the front wall center (2 blocks wide, 2 blocks tall)
             const isFront = bz === 0;
             const isDoor = isFront && bx >= Math.floor(bld.width / 2) - 1 && bx <= Math.floor(bld.width / 2) && by < 2;
-            if (!isDoor) {
-              voxelMap.setVoxel('Ground', { position: { x: wx, y: floorY + by, z: wz }, blockId: bld.wallBlock });
+
+            // Window openings on side and back walls at eye height (by 2-3), centered
+            const isSideWall = bx === 0 || bx === bld.width - 1;
+            const isBackWall = bz === bld.depth - 1;
+            const isWindow =
+              !isCorner &&
+              (by === 2 || by === 3) &&
+              ((isSideWall && bz >= Math.floor(bld.depth / 2) - 1 && bz <= Math.floor(bld.depth / 2)) ||
+                (isBackWall && bx >= Math.floor(bld.width / 2) - 1 && bx <= Math.floor(bld.width / 2)));
+
+            if (!isDoor && !isWindow) {
+              // Use accent block on corners for visual interest
+              const blockId = isCorner ? accentBlock : bld.wallBlock;
+              voxelMap.setVoxel('Ground', { position: { x: wx, y: floorY + by, z: wz }, blockId });
             }
           }
         }

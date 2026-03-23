@@ -41,10 +41,11 @@ export function createPlayer(
     jpWorld,
     'player-weapon',
     '/assets/models/Tools/Sword_Wood.gltf',
-    { x: 0.3, y: -0.25, z: -0.5 },
-    0.4,
+    { x: 0.4, y: -0.3, z: -0.6 },
+    0.7,
   );
-  weaponActor.object3D.rotation.set(0, 0, -Math.PI / 6);
+  // Angle the sword naturally: tilt forward (-X), slight yaw, roll inward
+  weaponActor.object3D.rotation.set(-Math.PI / 8, Math.PI / 12, -Math.PI / 6);
   cam.camera.add(weaponActor.object3D);
 
   // Input system

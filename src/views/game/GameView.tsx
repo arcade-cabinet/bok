@@ -437,7 +437,10 @@ export function GameView({
             />
           )}
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="w-4 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+            <div className="w-0.5 h-4 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+          </div>
           {engineState.breakingProgress > 0 && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-3 w-16 h-1 bg-black/50 rounded overflow-hidden">
               <div

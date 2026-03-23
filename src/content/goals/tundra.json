@@ -3,16 +3,16 @@
   "goals": [
     {
       "id": "tundra-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Locate the Frozen Shrines",
+      "description": "Locate 2 Frozen Shrines",
       "type": "discover",
       "target": 2,
       "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "tundra-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Slay the Ice Beasts",
+      "description": "Slay 6 Ice Beasts",
       "type": "kill",
       "target": 6,
       "icon": "\u2694\uFE0F"
@@ -20,13 +20,13 @@
     {
       "id": "tundra-gather-shards",
       "title": "Gather Frost Shards",
-      "description": "Gather 10 Frost Shards",
+      "description": "Gather 10 Frost Shards from the glaciers",
       "type": "gather",
       "target": 10,
       "resourceId": "frost-shard",
       "icon": "\u2744\uFE0F"
     }
   ],
-  "bossGateMessage": "The ice cracks... The Frost Wyrm awakens.",
-  "completionMessage": "The frozen path is clear. The Frost Wyrm awaits."
+  "bossGateMessage": "A terrible cold gathers at the mountain peak...",
+  "completionMessage": "The Frost Wyrm descends from the blizzard."
 }
