@@ -33,6 +33,12 @@ const playingState: EngineState = {
   lookingAtBlock: false,
   placementPreview: null,
   breakingProgress: 0,
+  bossPosition: null,
+  bossDefeated: false,
+  playerYaw: 0,
+  enemyPositions: [],
+  bossName: 'Ancient Treant',
+  targetBlockPosition: null,
 };
 
 vi.mock('../../engine/GameEngine', () => ({

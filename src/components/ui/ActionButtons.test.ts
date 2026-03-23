@@ -22,6 +22,8 @@ describe('ActionButtons', () => {
         onJump: () => {},
         onPlaceBlock: () => {},
         onBreakBlock: () => {},
+        onCycleShape: () => {},
+        currentShapeName: 'Cube',
       }),
     ).not.toThrow();
   });

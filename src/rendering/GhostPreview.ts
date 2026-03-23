@@ -97,6 +97,8 @@ function getShapeGeometry(shape: PlaceableShape): THREE.BufferGeometry {
 export interface GhostPreviewSystem {
   /** Update the ghost position/shape. Pass null to hide. */
   update: (position: { x: number; y: number; z: number } | null, shape: PlaceableShape) => void;
+  /** Update the target block highlight (red wireframe on the block being looked at). Pass null to hide. */
+  updateTarget: (position: { x: number; y: number; z: number } | null) => void;
   /** Remove the ghost mesh from the scene and dispose resources */
   dispose: () => void;
 }
@@ -109,7 +111,7 @@ export interface GhostPreviewSystem {
 export function createGhostPreview(scene: THREE.Scene): GhostPreviewSystem {
   let currentShape: PlaceableShape = 'cube';
 
-  // Create initial wireframe mesh
+  // --- Placement ghost (white wireframe) ---
   const material = new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
@@ -126,6 +128,24 @@ export function createGhostPreview(scene: THREE.Scene): GhostPreviewSystem {
   mesh.visible = false;
   mesh.renderOrder = 999; // Render on top
   scene.add(mesh);
+
+  // --- Target block highlight (red wireframe on the block being looked at) ---
+  const targetMaterial = new THREE.LineBasicMaterial({
+    color: 0xff4444,
+    transparent: true,
+    opacity: 0.6,
+    depthTest: true,
+    depthWrite: false,
+  });
+
+  const targetGeometry: THREE.BufferGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.01, 1.01, 1.01));
+  const targetMesh: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> = new THREE.LineSegments(
+    targetGeometry,
+    targetMaterial,
+  );
+  targetMesh.visible = false;
+  targetMesh.renderOrder = 998;
+  scene.add(targetMesh);
 
   function update(position: { x: number; y: number; z: number } | null, shape: PlaceableShape): void {
     if (!position) {
@@ -159,11 +179,24 @@ export function createGhostPreview(scene: THREE.Scene): GhostPreviewSystem {
     mesh.visible = true;
   }
 
+  function updateTarget(position: { x: number; y: number; z: number } | null): void {
+    if (!position) {
+      targetMesh.visible = false;
+      return;
+    }
+    targetMesh.position.set(position.x, position.y, position.z);
+    targetMesh.visible = true;
+  }
+
   function dispose(): void {
     scene.remove(mesh);
     geometry.dispose();
     material.dispose();
+
+    scene.remove(targetMesh);
+    targetGeometry.dispose();
+    targetMaterial.dispose();
   }
 
-  return { update, dispose };
+  return { update, updateTarget, dispose };
 }

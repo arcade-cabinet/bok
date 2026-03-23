@@ -5,8 +5,18 @@
  * - Left column: Jump, Crouch, Interact
  * - Right column: Attack (large), Dodge, Block (hold)
  *
- * Plus a Place Block button on the left side near the joystick.
+ * Plus Place Block, Break Block, and Shape Cycle buttons on the left side.
  */
+
+/** Shape icon mapping for the cycle button */
+const SHAPE_ICONS: Record<string, string> = {
+  Cube: '\u25A0',
+  Slab: '\u25AD',
+  Ceiling: '\u2581',
+  Pole: '\u2502',
+  Ramp: '\u25E2',
+  Stair: '\u2587',
+};
 
 interface Props {
   onAttack: () => void;
@@ -17,6 +27,8 @@ interface Props {
   onJump?: () => void;
   onPlaceBlock?: () => void;
   onBreakBlock?: () => void;
+  onCycleShape?: () => void;
+  currentShapeName?: string;
 }
 
 export function ActionButtons({
@@ -28,7 +40,11 @@ export function ActionButtons({
   onJump,
   onPlaceBlock,
   onBreakBlock,
+  onCycleShape,
+  currentShapeName,
 }: Props) {
+  const shapeIcon = SHAPE_ICONS[currentShapeName ?? 'Cube'] ?? '\u25A0';
+
   return (
     <>
       {/* Right side — combat actions */}
@@ -147,6 +163,23 @@ export function ActionButtons({
           }}
         >
           <span aria-hidden="true">⛏</span>
+        </button>
+
+        {/* Shape cycle — cycles through cube/slab/ceiling/pole/ramp/stair */}
+        <button
+          type="button"
+          data-testid="cycle-shape-button"
+          aria-label={`Cycle Shape (current: ${currentShapeName ?? 'Cube'})`}
+          className="btn btn-circle btn-sm btn-ghost border border-white/30 shadow-md active:scale-90 w-11 h-11 flex flex-col items-center justify-center"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onCycleShape?.();
+          }}
+        >
+          <span aria-hidden="true" className="text-lg leading-none">
+            {shapeIcon}
+          </span>
+          <span className="text-[7px] leading-none opacity-70 mt-0.5">{currentShapeName ?? 'Cube'}</span>
         </button>
       </div>
     </>

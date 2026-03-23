@@ -73,7 +73,7 @@ export function ScreenReaderAnnouncer({ engineState, onSubscribe }: Props) {
           announce(`Picked up ${event.itemType}`, 'polite');
           break;
         case 'bossPhaseChange':
-          announce(`Boss entering phase ${event.phase}`, 'assertive');
+          announce(event.text || `Boss entering phase ${event.phase}`, 'assertive');
           break;
         case 'bossDefeated':
           announce('Boss defeated! Victory!', 'assertive');

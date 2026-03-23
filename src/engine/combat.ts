@@ -21,7 +21,17 @@ import { calculateDamage } from '../systems/combat/DamageCalculator.ts';
 import type { SnapshotSources } from './engineSnapshot.ts';
 import type { ChestState } from './lootSetup.ts';
 import { checkChestInteraction, getLootTables } from './lootSetup.ts';
+import { loadModel } from './models.ts';
 import type { BossPhaseConfig, BossState, EnemyState, EngineEventListener } from './types.ts';
+
+// ---------------------------------------------------------------------------
+// Loot drop model paths — maps loot types to Collectible glTF models
+// ---------------------------------------------------------------------------
+const LOOT_MODELS: Record<string, string> = {
+  'health-potion': '/assets/models/Collectibles/apple.gltf',
+  material: '/assets/models/Collectibles/corn.gltf',
+  'tome-page': '/assets/models/Environment/Key.gltf',
+};
 
 const CONTACT_RANGE = 1.8;
 const DEFAULT_ENEMY_DAMAGE = 10;
@@ -36,7 +46,7 @@ export interface DefensiveState {
 }
 
 interface LootDrop {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   type: string;
   origin: THREE.Vector3;
 }
@@ -81,10 +91,12 @@ export function createCombat(
   particles?: ParticleSystem | null,
   gameMode: 'creative' | 'survival' = 'survival',
 ): CombatSystem {
-  const lootGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  const lootMats: Record<string, THREE.MeshLambertMaterial> = {
+  // Fallback geometry for loot drops while glTF models load asynchronously
+  const lootFallbackGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+  const lootFallbackMats: Record<string, THREE.MeshLambertMaterial> = {
     'health-potion': new THREE.MeshLambertMaterial({ color: 0xff4444 }),
     'tome-page': new THREE.MeshLambertMaterial({ color: 0xffdd00 }),
+    material: new THREE.MeshLambertMaterial({ color: 0x44cc44 }),
   };
 
   // Load weapon config from content registry or use override
@@ -108,18 +120,80 @@ export function createCombat(
   let killCount = 0;
   let elapsedTime = 0;
 
+  /**
+   * Spawn a loot drop at the given position. Places a small fallback cube
+   * immediately, then asynchronously loads the proper collectible glTF model
+   * and swaps it in once ready.
+   */
   function spawnLoot(pos: THREE.Vector3, type: string): void {
-    const mat = lootMats[type] ?? lootMats['health-potion'];
-    const mesh = new THREE.Mesh(lootGeom, mat);
-    mesh.position.copy(pos);
-    scene.add(mesh);
-    state.lootDrops.push({ mesh, type, origin: pos.clone() });
+    // Immediate fallback mesh so there's always something visible
+    const mat = lootFallbackMats[type] ?? lootFallbackMats['health-potion'];
+    const placeholder = new THREE.Mesh(lootFallbackGeom, mat);
+    placeholder.position.copy(pos);
+    scene.add(placeholder);
+
+    const drop: LootDrop = { mesh: placeholder, type, origin: pos.clone() };
+    state.lootDrops.push(drop);
+
+    // Asynchronously load the proper collectible model
+    const modelPath = LOOT_MODELS[type] ?? LOOT_MODELS['health-potion'];
+    loadModel(modelPath)
+      .then((model) => {
+        // Only swap if the drop is still alive (hasn't been picked up)
+        if (!state.lootDrops.includes(drop)) return;
+
+        model.scale.setScalar(0.6);
+        model.position.copy(drop.mesh.position);
+        model.rotation.copy(drop.mesh.rotation);
+
+        // Tome page glow effect — bright emissive on all materials
+        if (type === 'tome-page') {
+          model.traverse((child) => {
+            if ('material' in child) {
+              const m = (child as THREE.Mesh).material;
+              if (m && !Array.isArray(m) && 'emissive' in m) {
+                (m as THREE.MeshLambertMaterial).emissive = new THREE.Color(0xffdd00);
+                (m as THREE.MeshLambertMaterial).emissiveIntensity = 0.8;
+              }
+            }
+          });
+        }
+
+        scene.remove(drop.mesh);
+        scene.add(model);
+        drop.mesh = model;
+      })
+      .catch(() => {
+        // Keep fallback cube on model load failure — already in scene
+      });
   }
 
   // --- Boss phase attack state ---
   const bossAttackCooldowns: Map<string, number> = new Map();
   let bossTelegraphTimer = 0;
   let bossTelegraphAttack: BossPhaseConfig['attacks'][0] | null = null;
+
+  /** Brief invulnerability window during boss phase transitions (seconds remaining) */
+  let bossPhaseInvulnTimer = 0;
+
+  // Resolve boss display name from content registry (used for phase transition text)
+  const PHASE_TEXT: Record<number, string> = {
+    2: 'grows stronger',
+    3: 'enrages',
+  };
+
+  function getBossDisplayName(): string {
+    try {
+      const bossConfig = content.getBoss(bossContentId);
+      return bossConfig.name;
+    } catch {
+      // Fallback: titleize the content ID
+      return bossContentId
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+  }
 
   /** Opened chest IDs for snapshot */
   const openedChestIds: string[] = [];
@@ -136,6 +210,11 @@ export function createCombat(
       stamina: 100,
       maxStamina: 100,
     };
+
+    // Tick boss phase invulnerability timer
+    if (bossPhaseInvulnTimer > 0) {
+      bossPhaseInvulnTimer -= dt;
+    }
 
     state.playerAttackCooldown = Math.max(0, state.playerAttackCooldown - dt);
 
@@ -197,57 +276,61 @@ export function createCombat(
       if (closestIdx >= 0) {
         const target = enemies[closestIdx];
 
-        // Calculate damage using the proper damage formula
-        const finalDamage = calculateDamage({
-          weaponBaseDamage: equippedWeapon.baseDamage,
-          comboMultiplier,
-          critMultiplier: 1.0, // Crit system deferred
-          armorReduction: 0, // Enemies have no armor yet
-        });
+        // Boss is invulnerable during phase transition
+        const isBossTarget = target.mesh === bossMesh;
+        if (!(isBossTarget && bossPhaseInvulnTimer > 0)) {
+          // Calculate damage using the proper damage formula
+          const finalDamage = calculateDamage({
+            weaponBaseDamage: equippedWeapon.baseDamage,
+            comboMultiplier,
+            critMultiplier: 1.0, // Crit system deferred
+            armorReduction: 0, // Enemies have no armor yet
+          });
 
-        target.health -= finalDamage;
-        playHitImpact();
-        hapticImpact('medium');
+          target.health -= finalDamage;
+          playHitImpact();
+          hapticImpact('medium');
 
-        const ex = target.mesh.position.x;
-        const ey = target.mesh.position.y;
-        const ez = target.mesh.position.z;
+          const ex = target.mesh.position.x;
+          const ey = target.mesh.position.y;
+          const ez = target.mesh.position.z;
 
-        // Emit hit particles at impact point
-        particles?.emit('hit', { x: ex, y: ey + 0.5, z: ez }, 8);
+          // Emit hit particles at impact point
+          particles?.emit('hit', { x: ex, y: ey + 0.5, z: ez }, 8);
 
-        // Emit attackHit event for React (damage numbers + lighter screen shake)
-        onEvent({ type: 'attackHit', damage: finalDamage, position: { x: ex, y: ey, z: ez } });
+          // Emit attackHit event for React (damage numbers + lighter screen shake)
+          onEvent({ type: 'attackHit', damage: finalDamage, position: { x: ex, y: ey, z: ez } });
 
-        // Hit flash — scale bounce (works with both box meshes and GLB models)
-        const origScale = target.mesh.scale.clone();
-        target.mesh.scale.multiplyScalar(1.3);
-        setTimeout(() => {
-          if (target.mesh.parent) target.mesh.scale.copy(origScale);
-        }, 100);
+          // Hit flash — scale bounce (works with both box meshes and GLB models)
+          const origScale = target.mesh.scale.clone();
+          target.mesh.scale.multiplyScalar(1.3);
+          setTimeout(() => {
+            if (target.mesh.parent) target.mesh.scale.copy(origScale);
+          }, 100);
 
-        if (target.health <= 0 && !target.dying) {
-          const isBoss = target.mesh === bossMesh;
-          const pos = target.mesh.position.clone();
-          pos.y += 0.3;
+          if (target.health <= 0 && !target.dying) {
+            const isBoss = target.mesh === bossMesh;
+            const pos = target.mesh.position.clone();
+            pos.y += 0.3;
 
-          // Death particles — larger red burst
-          particles?.emit('enemyDeath', { x: pos.x, y: pos.y, z: pos.z }, 20);
+            // Death particles — larger red burst
+            particles?.emit('enemyDeath', { x: pos.x, y: pos.y, z: pos.z }, 20);
 
-          // Start death animation instead of instant removal
-          target.dying = true;
-          target.deathTimer = 0.5;
+            // Start death animation instead of instant removal
+            target.dying = true;
+            target.deathTimer = 0.5;
 
-          killCount += 1;
-          playEnemyDeath();
-          spawnLoot(pos, isBoss ? 'tome-page' : 'health-potion');
-          onEvent({ type: 'enemyKilled', position: { x: pos.x, y: pos.y, z: pos.z } });
+            killCount += 1;
+            playEnemyDeath();
+            spawnLoot(pos, isBoss ? 'tome-page' : 'health-potion');
+            onEvent({ type: 'enemyKilled', position: { x: pos.x, y: pos.y, z: pos.z } });
 
-          if (isBoss && !boss.defeated) {
-            boss.defeated = true;
-            playVictory();
-            state.phase = 'victory';
-            onEvent({ type: 'bossDefeated', bossId: bossContentId, tomeAbility: bossTomeAbility });
+            if (isBoss && !boss.defeated) {
+              boss.defeated = true;
+              playVictory();
+              state.phase = 'victory';
+              onEvent({ type: 'bossDefeated', bossId: bossContentId, tomeAbility: bossTomeAbility });
+            }
           }
         }
       }
@@ -267,7 +350,11 @@ export function createCombat(
             if (pct <= phaseConfig.healthThreshold && boss.phase < phaseNum) {
               boss.phase = phaseNum;
               playBossPhase();
-              // Dramatic particle burst on phase change
+
+              // Brief invulnerability during phase transition (0.5s)
+              bossPhaseInvulnTimer = 0.5;
+
+              // Large dramatic particle burst on phase change
               particles?.emit(
                 'hit',
                 {
@@ -275,13 +362,28 @@ export function createCombat(
                   y: bossMesh.position.y + 1,
                   z: bossMesh.position.z,
                 },
-                30,
+                50,
               );
+              // Second burst — enemy death particles for extra drama
+              particles?.emit(
+                'enemyDeath',
+                {
+                  x: bossMesh.position.x,
+                  y: bossMesh.position.y + 0.5,
+                  z: bossMesh.position.z,
+                },
+                25,
+              );
+
               // Clear cooldowns and telegraph on phase change
               bossAttackCooldowns.clear();
               bossTelegraphTimer = 0;
               bossTelegraphAttack = null;
-              onEvent({ type: 'bossPhaseChange', phase: phaseNum });
+
+              const bossName = getBossDisplayName();
+              const phaseVerb = PHASE_TEXT[phaseNum] ?? 'transforms';
+              const text = `${bossName} ${phaseVerb}!`;
+              onEvent({ type: 'bossPhaseChange', phase: phaseNum, bossName, text });
             }
           }
         } else {
@@ -289,15 +391,19 @@ export function createCombat(
           if (pct <= 0.66 && boss.phase === 1) {
             boss.phase = 2;
             playBossPhase();
+            bossPhaseInvulnTimer = 0.5;
             boss.vehicle.maxSpeed = 2.5;
-            onEvent({ type: 'bossPhaseChange', phase: 2 });
+            const bossName = getBossDisplayName();
+            onEvent({ type: 'bossPhaseChange', phase: 2, bossName, text: `${bossName} grows stronger!` });
           }
           if (pct <= 0.33 && boss.phase === 2) {
             boss.phase = 3;
             playBossPhase();
+            bossPhaseInvulnTimer = 0.5;
             bossMesh.scale.multiplyScalar(1.2);
             boss.vehicle.maxSpeed = 3.5;
-            onEvent({ type: 'bossPhaseChange', phase: 3 });
+            const bossName = getBossDisplayName();
+            onEvent({ type: 'bossPhaseChange', phase: 3, bossName, text: `${bossName} enrages!` });
           }
         }
       }

@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
+import { BlockVignette } from '../../components/hud/BlockVignette';
+import { BossCompass } from '../../components/hud/BossCompass';
+import { BossHealthBar } from '../../components/hud/BossHealthBar';
+import { BossPhaseAnnouncement } from '../../components/hud/BossPhaseAnnouncement';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
 import { DamageNumbers } from '../../components/hud/DamageNumbers';
+import { EnemyHealthBars } from '../../components/hud/EnemyHealthBars';
 import { GoalTracker } from '../../components/hud/GoalTracker';
 import { HealthBar } from '../../components/hud/HealthBar';
 import { HintToast, type HintTrigger } from '../../components/hud/HintToast';
@@ -68,9 +73,24 @@ interface Props {
   ) => Promise<void>;
 }
 
-/** Build hotbar slots: slot 0 = weapon, slots 1-4 = block label from engine */
-function buildHotbarSlots(selectedBlockLabel: string): SlotData[] {
-  return [{ label: 'Sword' }, { label: selectedBlockLabel || 'Block' }, { label: '' }, { label: '' }, { label: '' }];
+/** Build hotbar slots: slot 0 = weapon, slots 1-4 = block label from engine.
+ *  Includes resource count on the block slot when available.
+ */
+function buildHotbarSlots(
+  selectedBlockLabel: string,
+  resourceCounts: Record<string, number>,
+  selectedBlockName: string,
+): SlotData[] {
+  // Look up count by lowercase block name (resource IDs are lowercase)
+  const blockResourceId = selectedBlockName.toLowerCase();
+  const blockCount = resourceCounts[blockResourceId] ?? undefined;
+  return [
+    { label: 'Sword' },
+    { label: selectedBlockLabel || 'Block', count: blockCount },
+    { label: '' },
+    { label: '' },
+    { label: '' },
+  ];
 }
 
 /**
@@ -91,6 +111,8 @@ export function GameView({
   const [showTutorial, setShowTutorial] = useState(() => config.mode !== 'creative' && !isTutorialCompleted());
   const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
+  const [resourceCounts, setResourceCounts] = useState<Record<string, number>>({});
+  const [bossPhaseText, setBossPhaseText] = useState<string | null>(null);
 
   // --- Island persistence: load saved deltas + goal progress ---
   const [restoredDeltas, setRestoredDeltas] = useState<
@@ -173,6 +195,19 @@ export function GameView({
       if (event.type === 'chestOpened') {
         goalSystem.onChestOpened();
         setGoalState({ ...goalSystem.state });
+      }
+
+      // Track resource counts for hotbar display
+      if (event.type === 'resourceGathered') {
+        setResourceCounts((prev) => ({
+          ...prev,
+          [event.resourceId]: (prev[event.resourceId] ?? 0) + event.amount,
+        }));
+      }
+
+      // Boss phase transition — dramatic announcement text
+      if (event.type === 'bossPhaseChange') {
+        setBossPhaseText(event.text);
       }
 
       // Show tome unlock banner on boss defeat
@@ -299,6 +334,10 @@ export function GameView({
     gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'interact' });
   }, [gameRef]);
 
+  const handleCycleShape = useCallback(() => {
+    gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'cycleShape' });
+  }, [gameRef]);
+
   const handleTutorialComplete = useCallback(() => {
     setShowTutorial(false);
   }, []);
@@ -320,6 +359,8 @@ export function GameView({
       <ScreenReaderAnnouncer engineState={engineState} onSubscribe={handleSrSubscribe} />
       <DamageIndicator ref={events.damageRef} canvasRef={canvasRef} />
       <DamageNumbers numbers={events.damageNumbers} />
+      <BlockVignette isBlocking={engineState?.isBlocking ?? false} />
+      <BossPhaseAnnouncement text={bossPhaseText} onDone={() => setBossPhaseText(null)} />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (
         <ActionButtons
@@ -335,6 +376,8 @@ export function GameView({
           onBreakBlock={() =>
             gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'breakBlock' })
           }
+          onCycleShape={handleCycleShape}
+          currentShapeName={engineState?.selectedShapeName ?? 'Cube'}
         />
       )}
       {engineState?.phase === 'playing' && <ContextIndicator context={engineState.context} />}
@@ -385,6 +428,14 @@ export function GameView({
             bossUnlocked={goalState.bossUnlocked}
             completionMessage={goalState.completionMessage}
           />
+          {goalState.bossUnlocked && !engineState.bossDefeated && engineState.bossPosition && (
+            <BossCompass
+              playerX={engineState.playerX}
+              playerZ={engineState.playerZ}
+              playerYaw={engineState.playerYaw}
+              bossPosition={engineState.bossPosition}
+            />
+          )}
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)]" />
           {engineState.breakingProgress > 0 && (
@@ -419,26 +470,32 @@ export function GameView({
               LOW STAMINA
             </div>
           )}
-          {engineState.bossNearby && (
-            <div className={`absolute ${isMobile ? 'bottom-24' : 'bottom-20'} left-1/2 -translate-x-1/2 text-center`}>
-              <div
-                className={`${isMobile ? 'text-xs' : 'text-sm'} mb-1`}
-                style={{ fontFamily: 'Georgia, serif', color: '#fdf6e3', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
-              >
-                Ancient Treant (Phase {engineState.bossPhase})
-              </div>
-              <div
-                className={`${isMobile ? 'w-52' : 'w-72'} h-2.5 bg-[#3a2a1a] rounded-sm overflow-hidden border border-[#8b5a2b]`}
-              >
-                <div
-                  className="h-full bg-purple-700 transition-all duration-300"
-                  style={{ width: `${engineState.bossHealthPct * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
+          <BossHealthBar
+            bossName={engineState.bossName}
+            healthPct={engineState.bossHealthPct}
+            phase={engineState.bossPhase}
+            visible={engineState.bossNearby}
+            isMobile={isMobile}
+          />
+          <EnemyHealthBars
+            enemies={engineState.enemyPositions}
+            camera={{
+              fov: 75,
+              aspect: screenWidth / screenHeight,
+              position: { x: engineState.playerX, y: 0, z: engineState.playerZ },
+            }}
+            canvasWidth={screenWidth}
+            canvasHeight={screenHeight}
+            playerX={engineState.playerX}
+            playerZ={engineState.playerZ}
+            playerYaw={engineState.playerYaw}
+          />
           <Hotbar
-            slots={buildHotbarSlots(engineState.selectedBlockLabel ?? engineState.selectedBlockName ?? '')}
+            slots={buildHotbarSlots(
+              engineState.selectedBlockLabel ?? engineState.selectedBlockName ?? '',
+              resourceCounts,
+              engineState.selectedBlockName ?? '',
+            )}
             activeIndex={activeSlot}
             onSelect={(idx) => {
               setActiveSlot(idx);

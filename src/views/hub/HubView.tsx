@@ -416,6 +416,7 @@ export function HubView({
           craftingRecipes={craftingRecipes}
           unlockedPages={[]}
           biomeDestinations={biomeDestinations}
+          unlockedBiomes={unlockedBiomes}
           playerInventory={playerInventory}
           onBuy={handleBuy}
           onCraft={handleCraft}

@@ -79,6 +79,10 @@ export function useGameEvents(
     if (event.type === 'playerDamaged') {
       damageRef.current?.flash();
     }
+    if (event.type === 'bossPhaseChange') {
+      // Heavy camera shake on boss phase transition
+      damageRef.current?.flash();
+    }
     if (event.type === 'attackHit') {
       // Floating damage number + lighter screen shake
       addDamageNumber(event.damage);

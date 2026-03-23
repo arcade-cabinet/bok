@@ -185,6 +185,15 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     );
     spawnStructureActors(engine.jpWorld, structurePlacements, chunkWorld.getSurfaceY.bind(chunkWorld));
     shrineLandmarks = getShrineLandmarks(structurePlacements).map((s) => ({ ...s, discovered: false }));
+
+    // --- Shrine glow: golden point lights visible from distance ---
+    for (const shrine of shrineLandmarks) {
+      const shrineY = chunkWorld.getSurfaceY(Math.round(shrine.x), Math.round(shrine.z));
+      const light = new THREE.PointLight(0xc4a572, 2, 25);
+      light.position.set(shrine.x, shrineY + 3, shrine.z);
+      light.name = `shrine-glow-${Math.round(shrine.x)}-${Math.round(shrine.z)}`;
+      engine.scene.add(light);
+    }
   } catch (err) {
     console.warn('[Bok] Structure spawning failed:', err);
   }
@@ -346,6 +355,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         const dz = cam.camera.position.z - shrine.z;
         if (dx * dx + dz * dz < SHRINE_DISCOVER_RADIUS * SHRINE_DISCOVER_RADIUS) {
           shrine.discovered = true;
+          // Remove shrine glow light
+          const glowName = `shrine-glow-${Math.round(shrine.x)}-${Math.round(shrine.z)}`;
+          const glowLight = engine.scene.getObjectByName(glowName);
+          if (glowLight) engine.scene.remove(glowLight);
           for (const listener of eventListeners) {
             listener({ type: 'landmarkDiscovered', position: { x: shrine.x, z: shrine.z } });
           }
@@ -410,6 +423,30 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           return { x: preview.position.x, y: preview.position.y, z: preview.position.z, shape: preview.shape };
         })(),
         breakingProgress: loop.getBreakingProgress(),
+        bossPosition: boss.defeated ? null : { x: bossMesh.position.x, y: bossMesh.position.y, z: bossMesh.position.z },
+        bossDefeated: boss.defeated,
+        playerYaw: cam.camera.rotation.y,
+        enemyPositions: enemies
+          .filter((e) => {
+            if (e.dying) return false;
+            const dx = cam.camera.position.x - e.mesh.position.x;
+            const dz = cam.camera.position.z - e.mesh.position.z;
+            return dx * dx + dz * dz < 20 * 20;
+          })
+          .map((e) => ({
+            x: e.mesh.position.x,
+            y: e.mesh.position.y,
+            z: e.mesh.position.z,
+            health: e.health,
+            maxHealth: e.maxHealth,
+            type: e.type,
+          })),
+        bossName: bossConfig.name,
+        targetBlockPosition: (() => {
+          const result = blockInteraction.query(cam.camera);
+          if (!result.targetBlock) return null;
+          return { x: result.targetBlock.x, y: result.targetBlock.y, z: result.targetBlock.z };
+        })(),
       };
     },
     onEvent: (listener) => {
