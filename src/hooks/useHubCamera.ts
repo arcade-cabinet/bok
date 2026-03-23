@@ -1,13 +1,20 @@
 /**
  * @module hooks/useHubCamera
- * @role Building label screen projection and dock proximity detection
+ * @role Building + dock label screen projection and per-dock proximity detection
  * @input Camera result ref, hub result ref (from useHubEngine), canvas ref, onFrame ref to write to
- * @output Building labels array, nearDocks flag
+ * @output Building labels array, dock labels array, nearby dock info
  */
 import { useCallback, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { CameraResult } from '../engine/camera';
-import type { BuildingDef, HubResult } from '../engine/hub';
+import {
+  type BuildingDef,
+  type DockDef,
+  type DockProximity,
+  findNearbyDock,
+  getDockEndPosition,
+  type HubResult,
+} from '../engine/hub';
 
 export interface BuildingLabel {
   name: string;
@@ -16,16 +23,26 @@ export interface BuildingLabel {
   visible: boolean;
 }
 
+export interface DockLabel {
+  biomeId: string;
+  name: string;
+  color: number;
+  screenX: number;
+  screenY: number;
+  visible: boolean;
+}
+
 export interface HubCameraResult {
   labels: BuildingLabel[];
-  nearDocks: boolean;
+  dockLabels: DockLabel[];
+  nearbyDock: DockProximity | null;
 }
 
 const LABEL_DISTANCE = 15;
-const DOCK_DISTANCE = 8;
+const DOCK_LABEL_DISTANCE = 18;
 
 /**
- * Manages per-frame building label projection and dock proximity detection.
+ * Manages per-frame building/dock label projection and dock proximity detection.
  *
  * Writes its per-frame callback into the provided `onFrameRef`, which `useHubEngine`
  * calls each frame. Precomputes building centers lazily on first invocation.
@@ -36,11 +53,14 @@ export function useHubCamera(
   onFrameRef: React.MutableRefObject<((cam: CameraResult) => void) | null>,
 ): HubCameraResult {
   const [labels, setLabels] = useState<BuildingLabel[]>([]);
-  const [nearDocks, setNearDocks] = useState(false);
+  const [dockLabels, setDockLabels] = useState<DockLabel[]>([]);
+  const [nearbyDock, setNearbyDock] = useState<DockProximity | null>(null);
 
   // Precomputed building centers (lazily initialized on first frame)
   const buildingCentersRef = useRef<{ name: string; pos: THREE.Vector3 }[] | null>(null);
-  const dockCenterRef = useRef<THREE.Vector3 | null>(null);
+  const dockSignpostPositionsRef = useRef<
+    { biomeId: string; name: string; color: number; pos: THREE.Vector3 }[] | null
+  >(null);
 
   const onFrame = useCallback(
     (cam: CameraResult) => {
@@ -53,15 +73,20 @@ export function useHubCamera(
           name: b.name,
           pos: new THREE.Vector3(b.x + b.width / 2, hub.getSurfaceY(b.x, b.z) + b.height + 1, b.z + b.depth / 2),
         }));
+      }
 
-        const dockBuilding = hub.buildings.find((b) => b.name === 'Docks');
-        if (dockBuilding) {
-          dockCenterRef.current = new THREE.Vector3(
-            dockBuilding.x + dockBuilding.width / 2,
-            0,
-            dockBuilding.z + dockBuilding.depth / 2,
-          );
-        }
+      // Lazily precompute dock signpost screen positions
+      if (!dockSignpostPositionsRef.current) {
+        dockSignpostPositionsRef.current = hub.docks.map((dock: DockDef) => {
+          const endPos = getDockEndPosition(dock);
+          return {
+            biomeId: dock.biomeId,
+            name: dock.name,
+            color: dock.color,
+            // Label floats above the signpost (dock surface Y + signpost height + offset)
+            pos: new THREE.Vector3(endPos.x, 8, endPos.z),
+          };
+        });
       }
 
       const camera = cam.camera;
@@ -71,6 +96,7 @@ export function useHubCamera(
       const hw = cw / 2;
       const hh = ch / 2;
 
+      // Project building labels
       const newLabels: BuildingLabel[] = buildingCentersRef.current.map((bc) => {
         const dist = playerPos.distanceTo(bc.pos);
         if (dist > LABEL_DISTANCE) return { name: bc.name, screenX: 0, screenY: 0, visible: false };
@@ -85,12 +111,26 @@ export function useHubCamera(
       });
       setLabels(newLabels);
 
+      // Project dock signpost labels
+      const newDockLabels: DockLabel[] = dockSignpostPositionsRef.current.map((dp) => {
+        const dist = playerPos.distanceTo(dp.pos);
+        if (dist > DOCK_LABEL_DISTANCE)
+          return { biomeId: dp.biomeId, name: dp.name, color: dp.color, screenX: 0, screenY: 0, visible: false };
+
+        const projected = dp.pos.clone().project(camera);
+        return {
+          biomeId: dp.biomeId,
+          name: dp.name,
+          color: dp.color,
+          screenX: projected.x * hw + hw,
+          screenY: -projected.y * hh + hh,
+          visible: projected.z < 1,
+        };
+      });
+      setDockLabels(newDockLabels);
+
       // Check proximity to docks
-      const dc = dockCenterRef.current;
-      if (dc) {
-        const dockDist = Math.sqrt((playerPos.x - dc.x) ** 2 + (playerPos.z - dc.z) ** 2);
-        setNearDocks(dockDist < DOCK_DISTANCE);
-      }
+      setNearbyDock(findNearbyDock(playerPos.x, playerPos.z, hub.docks));
     },
     [canvasRef, hubRef],
   );
@@ -98,5 +138,5 @@ export function useHubCamera(
   // Write callback into the shared ref each render — useHubEngine reads this ref each frame
   onFrameRef.current = onFrame;
 
-  return { labels, nearDocks };
+  return { labels, dockLabels, nearbyDock };
 }

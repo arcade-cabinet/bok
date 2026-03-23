@@ -36,6 +36,10 @@ vi.mock('../content/index.ts', () => ({
     getBoss: () => ({ id: 'test-boss', tomePageDrop: 'dash' }),
   })),
 }));
+vi.mock('../audio/GameAudio.ts', () => ({
+  playBlockPlace: vi.fn(),
+  playBlockBreak: vi.fn(),
+}));
 
 import { createGameLoop, type GameLoopContext } from './gameLoop';
 
@@ -99,6 +103,9 @@ function createMockContext(): GameLoopContext & { jpWorld: MockJpWorld } {
     getSurfaceY: () => 5,
     weatherSystem: null,
     particles: null,
+    blockInteraction: null,
+    ghostPreview: null,
+    onEngineEvent: null,
   };
 }
 

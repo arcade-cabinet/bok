@@ -27,7 +27,7 @@ describe('CraftingModal — recipe data', () => {
   it('canAfford logic — returns false when resources are insufficient', () => {
     const registry = new ContentRegistry();
     const recipe = registry.getCraftingRecipe('iron-sword-recipe');
-    const resources: Record<string, number> = { 'iron-ore': 2, wood: 1 };
+    const resources: Record<string, number> = { stone: 2, wood: 1 };
 
     const affordable = recipe.ingredients.every((ing) => (resources[ing.itemId] ?? 0) >= ing.amount);
     expect(affordable).toBe(false);
@@ -41,8 +41,8 @@ describe('CraftingModal — recipe data', () => {
       grouped.set(recipe.category, (grouped.get(recipe.category) ?? 0) + 1);
     }
 
-    expect(grouped.get('basic')).toBe(3); // planks, bricks, torches
-    expect(grouped.get('weapon')).toBe(2); // iron sword, fire staff
-    expect(grouped.get('consumable')).toBe(2); // health potion, stamina elixir
+    expect(grouped.get('basic')).toBe(5); // planks, bricks, torches, sandstone-bricks, ice-bricks
+    expect(grouped.get('weapon')).toBe(8); // iron sword, fire staff, ice wand, crystal blade, volcanic edge, frost cleaver, trident, lightning rod
+    expect(grouped.get('consumable')).toBe(4); // health potion, stamina elixir, frost tonic, fire bomb
   });
 });

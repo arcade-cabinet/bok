@@ -22,7 +22,11 @@ export function HealthBar({ current, max, stamina, maxStamina }: Props) {
     <div
       className={`absolute top-4 left-4 bg-base-100/85 border-2 border-secondary rounded-md
         px-2 py-1 sm:px-3 sm:py-2${isLow ? ' animate-[health-pulse_600ms_ease-in-out_infinite]' : ''}`}
-      style={{ fontFamily: 'Georgia, serif' }}
+      style={{
+        fontFamily: 'Georgia, serif',
+        marginTop: 'env(safe-area-inset-top)',
+        marginLeft: 'env(safe-area-inset-left)',
+      }}
     >
       <div className="text-[9px] sm:text-xs mb-1 text-base-content" id="health-label">
         Health

@@ -9,19 +9,35 @@ import { loadRuntime } from '@jolly-pixel/runtime';
 import { VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 
+import { actions } from '../actions';
 import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX.ts';
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
-import { generateTileset, ParticleSystem, TILESET_COLS, TILESET_ROWS, WeatherSystem } from '../rendering/index';
+import { createGhostPreview } from '../rendering/GhostPreview.ts';
+import {
+  CW_TILESET_COLS,
+  CW_TILESET_ROWS,
+  generateCubeWorldTileset,
+  generateTileset,
+  ParticleSystem,
+  TILESET_COLS,
+  TILESET_ROWS,
+  WeatherSystem,
+} from '../rendering/index';
+import { createBlockInteraction, SHAPE_DISPLAY_NAMES } from '../systems/block-interaction.ts';
+import { GameModeState } from '../traits';
+import { world as kootaWorld } from '../world';
 import { getBiomeBlockDefs } from './biomeBlocks.ts';
 import { ChunkWorld } from './chunkWorld.ts';
 import { createCombat } from './combat.ts';
-import { spawnEnemies } from './enemySetup.ts';
+import { applyTintsAfterLoad, spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
 import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
+import { deriveIslandSeed } from './islandSeed.ts';
 import { spawnChests } from './lootSetup.ts';
+import { spawnModelActor } from './models.ts';
 import { createPlayer } from './playerSetup.ts';
 import type { EngineEventListener, EngineState, GameStartConfig, MobileInput } from './types.ts';
 
@@ -34,6 +50,16 @@ export interface GameInstance {
   setMobileInput: (input: MobileInput) => void;
   togglePause: () => void;
   captureSnapshot: () => import('../persistence/GameStateSerializer.ts').SerializedGameState;
+  /** Block interaction: cycle selected block (+1 or -1) */
+  cycleBlock: (direction: 1 | -1) => void;
+  /** Block interaction: cycle selected shape, returns new shape display name */
+  cycleShape: () => string;
+  /** Block interaction: get the name of the selected block */
+  getSelectedBlockName: () => string;
+  /** Get all accumulated block deltas (for island persistence on exit) */
+  getBlockDeltas: () => ReadonlyArray<{ x: number; y: number; z: number; blockId: number }>;
+  /** Flush accumulated block deltas (call after persisting) */
+  flushBlockDeltas: () => void;
   destroy: () => void;
 }
 
@@ -47,12 +73,23 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   const biomeConfig = content.getBiome(config.biome);
   const bossConfig = content.getBoss(biomeConfig.bossId);
 
+  // --- Island-specific seed: ensures different biomes produce different terrain ---
+  const islandSeed = deriveIslandSeed(config.seed, config.biome);
+
   // --- Core engine with biome atmosphere ---
   const engine = await createEngineCore(canvas, {
     skyColor: biomeConfig.skyColor,
     fogColor: biomeConfig.fogColor,
     fogDensity: biomeConfig.fogDensity,
   });
+
+  // --- Initialize Koota ECS world (runs alongside old engine systems) ---
+  try {
+    kootaWorld.set(GameModeState, { mode: config.mode });
+    console.log('[Bok] Koota ECS world initialized with mode:', config.mode);
+  } catch (err) {
+    console.warn('[Bok] Failed to initialize Koota ECS world:', err);
+  }
 
   // --- Chunk-based infinite terrain ---
   const blockDefs = getBiomeBlockDefs(config.biome);
@@ -65,21 +102,40 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     rapier: { api: RAPIER as never, world: engine.rapierWorld as never },
   });
 
-  // Register tileset
-  const tileset = generateTileset();
+  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
+  const tileset = (() => {
+    try {
+      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
+    } catch {
+      const fallback = generateTileset();
+      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
+    }
+  })();
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
   voxelMap.tilesetManager.registerTexture(
-    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: tileset.cols, rows: tileset.rows },
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 
-  // Create ChunkWorld — infinite terrain from seed
-  const chunkWorld = new ChunkWorld(voxelMap, { seed: config.seed, biome: biomeConfig });
+  // Create ChunkWorld — infinite terrain from island-specific seed
+  const chunkWorld = new ChunkWorld(voxelMap, { seed: islandSeed, biome: biomeConfig });
   // Generate initial chunks around spawn (0,0)
   chunkWorld.updateAroundPlayer(0, 0);
+
+  // --- Restore block deltas from persistence (if returning to a previously visited island) ---
+  if (config.restoredDeltas && config.restoredDeltas.length > 0) {
+    chunkWorld.applyWorldDeltas(config.restoredDeltas);
+    console.log(`[Bok] Restored ${config.restoredDeltas.length} block deltas for ${config.biome}`);
+  }
+
+  // --- Block interaction system ---
+  const blockInteraction = createBlockInteraction(RAPIER, engine.rapierWorld, voxelMap, chunkWorld);
+
+  // --- Ghost preview wireframe ---
+  const ghostPreview = createGhostPreview(engine.scene);
 
   // --- Weather + Particles ---
   const weatherSystem = new WeatherSystem();
@@ -92,10 +148,11 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   engine.dayNight.setBiomeTint(new THREE.Color(biomeConfig.skyColor));
 
   // --- Environment props (3D models: trees, rocks, crystals, etc.) ---
+  // Props use JollyPixel actors with ModelRenderer — models batch-load during awake().
   try {
-    const { generatePropPlacements, spawnPropsInScene } = await import('../systems/spawn-props');
+    const { generatePropPlacements, spawnPropActors } = await import('../systems/spawn-props');
     const propPlacements = generatePropPlacements(
-      config.seed,
+      islandSeed,
       config.biome,
       -32,
       -32,
@@ -103,23 +160,60 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       32,
       chunkWorld.getSurfaceY.bind(chunkWorld),
     );
-    spawnPropsInScene(engine.scene, propPlacements);
+    spawnPropActors(engine.jpWorld, propPlacements);
   } catch (err) {
     console.warn('[Bok] Prop spawning failed:', err);
   }
 
+  // --- Structures (ruins, dungeons, shrines, markets, towers, houses) ---
+  // Structures are multi-piece glTF placements driven by StructureTemplates.
+  // Each piece gets a JollyPixel actor with ModelRenderer — batch-loads during awake().
+  let shrineLandmarks: Array<{ x: number; z: number; discovered: boolean }> = [];
+  try {
+    const { generateStructurePlacements, spawnStructureActors, getShrineLandmarks } = await import(
+      '../systems/spawn-structures'
+    );
+    const structurePlacements = generateStructurePlacements(
+      islandSeed,
+      config.biome,
+      -30,
+      -30,
+      30,
+      30,
+      chunkWorld.getSurfaceY.bind(chunkWorld),
+      4,
+    );
+    spawnStructureActors(engine.jpWorld, structurePlacements, chunkWorld.getSurfaceY.bind(chunkWorld));
+    shrineLandmarks = getShrineLandmarks(structurePlacements).map((s) => ({ ...s, discovered: false }));
+  } catch (err) {
+    console.warn('[Bok] Structure spawning failed:', err);
+  }
+
   // --- Enemies + Boss (spawn around origin for now) ---
+  // Enemies are now JollyPixel actors with ModelRenderer — models load during awake().
   const worldSize = 64; // effective area for initial enemy placement
   const {
     enemies,
     boss,
     bossMesh,
     yukaManager,
+    actors: enemyActors,
+    kootaEntities: _kootaEntities,
+    kootaBossEntity: _kootaBossEntity,
     cleanup: cleanupEnemies,
-  } = await spawnEnemies(engine.scene, chunkWorld.getSurfaceY.bind(chunkWorld), worldSize, config.seed, config.biome);
+  } = spawnEnemies(
+    engine.jpWorld,
+    engine.scene,
+    chunkWorld.getSurfaceY.bind(chunkWorld),
+    worldSize,
+    islandSeed,
+    config.biome,
+    kootaWorld,
+  );
 
   // --- Player at world origin ---
-  const { cam, inputSystem } = await createPlayer(
+  // Weapon model is a JollyPixel actor — loads during awake().
+  const { cam, inputSystem } = createPlayer(
     engine.jpWorld,
     canvas,
     chunkWorld.getSurfaceY.bind(chunkWorld),
@@ -128,12 +222,21 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     0,
   );
 
+  // --- Spawn Koota player entity for ECS systems ---
+  try {
+    const { spawnPlayer } = actions(kootaWorld);
+    spawnPlayer(0, 0);
+    console.log('[Bok] Koota player entity spawned');
+  } catch (err) {
+    console.warn('[Bok] Failed to spawn Koota player entity:', err);
+  }
+
   // --- Passive animals (spawn near player, wander) ---
+  // Animals use JollyPixel actors with ModelRenderer — models load during awake().
   try {
     const { generateAnimalSpawns } = await import('../systems/spawn-animals');
-    const { loadGLTF } = await import('../systems/load-model');
     const animalSpawns = generateAnimalSpawns(
-      config.seed,
+      islandSeed,
       config.biome,
       0,
       0,
@@ -142,10 +245,13 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       0,
     );
     for (const spawn of animalSpawns) {
-      const model = await loadGLTF(`/assets/models/Animals/${spawn.modelFile}.gltf`);
-      model.scale.setScalar(0.6);
-      model.position.set(spawn.x, spawn.y, spawn.z);
-      engine.scene.add(model);
+      spawnModelActor(
+        engine.jpWorld,
+        `animal-${spawn.type}`,
+        `/assets/models/Animals/${spawn.modelFile}.gltf`,
+        { x: spawn.x, y: spawn.y, z: spawn.z },
+        0.6,
+      );
     }
   } catch (err) {
     console.warn('[Bok] Animal spawning failed:', err);
@@ -160,7 +266,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     engine.scene,
     chunkWorld.getSurfaceY.bind(chunkWorld),
     worldSize,
-    config.seed,
+    islandSeed,
     chestCount,
   );
 
@@ -179,7 +285,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     bossConfig.phases,
     weaponConfig,
     chests,
-    config.seed,
+    islandSeed,
     particles,
     config.mode,
   );
@@ -192,6 +298,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     jpWorld: engine.jpWorld,
     rapierWorld: engine.rapierWorld,
     gameWorld: engine.gameWorld,
+    kootaWorld,
     scene: engine.scene,
     dayNight: engine.dayNight,
     cam,
@@ -204,6 +311,11 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     getSurfaceY: chunkWorld.getSurfaceY.bind(chunkWorld),
     weatherSystem,
     particles,
+    blockInteraction,
+    ghostPreview,
+    onEngineEvent: (event) => {
+      for (const listener of eventListeners) listener(event);
+    },
   });
 
   // --- Audio ---
@@ -212,19 +324,39 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   startAtmosphericSFX();
 
   // --- Boot ---
+  // loadRuntime() batch-loads all enqueued assets, then runtime.start() triggers
+  // awake() on all actors. After this, ModelRenderer children are in the scene graph.
   await loadRuntime(engine.runtime);
-  console.log('[Bok] Engine initialized — infinite ChunkWorld');
+
+  // Apply biome tinting now that model meshes are loaded and available.
+  applyTintsAfterLoad(enemyActors, config.biome);
+
+  console.log('[Bok] Engine initialized — infinite ChunkWorld (JollyPixel ModelRenderer)');
 
   return {
     getState: (): EngineState => {
       // Update chunks based on player position
       chunkWorld.updateAroundPlayer(cam.camera.position.x, cam.camera.position.z);
 
+      // Check shrine proximity for landmark discovery (radius 6 world units)
+      const SHRINE_DISCOVER_RADIUS = 6;
+      for (const shrine of shrineLandmarks) {
+        if (shrine.discovered) continue;
+        const dx = cam.camera.position.x - shrine.x;
+        const dz = cam.camera.position.z - shrine.z;
+        if (dx * dx + dz * dz < SHRINE_DISCOVER_RADIUS * SHRINE_DISCOVER_RADIUS) {
+          shrine.discovered = true;
+          for (const listener of eventListeners) {
+            listener({ type: 'landmarkDiscovered', position: { x: shrine.x, z: shrine.z } });
+          }
+        }
+      }
+
       return {
         playerHealth: combat.state.playerHealth,
         maxHealth: combat.state.maxHealth,
         enemyCount: enemies.length,
-        biomeName: config.biome,
+        biomeName: biomeConfig.name,
         bossNearby:
           !boss.defeated &&
           (() => {
@@ -263,7 +395,21 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
             z: d.mesh.position.z,
             type: 'chest' as const,
           })),
+          ...shrineLandmarks.filter((s) => !s.discovered).map((s) => ({ x: s.x, z: s.z, type: 'shrine' as const })),
         ],
+        selectedBlockName: blockInteraction.getSelectedBlockName(),
+        selectedShapeName: SHAPE_DISPLAY_NAMES[blockInteraction.getSelectedShape()] ?? 'Cube',
+        selectedBlockLabel: blockInteraction.getSelectedBlockLabel(),
+        lookingAtBlock: (() => {
+          const result = blockInteraction.query(cam.camera);
+          return result.targetBlock !== null;
+        })(),
+        placementPreview: (() => {
+          const preview = blockInteraction.getPlacementPreview(cam.camera);
+          if (!preview) return null;
+          return { x: preview.position.x, y: preview.position.y, z: preview.position.z, shape: preview.shape };
+        })(),
+        breakingProgress: loop.getBreakingProgress(),
       };
     },
     onEvent: (listener) => {
@@ -289,6 +435,11 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       return captureSnapshot(sources);
     },
     triggerAttack: () => combat.triggerAttack(),
+    cycleBlock: (direction: 1 | -1) => blockInteraction.cycleBlock(direction),
+    cycleShape: () => blockInteraction.cycleShape(),
+    getSelectedBlockName: () => blockInteraction.getSelectedBlockName(),
+    getBlockDeltas: () => blockInteraction.getDeltas(),
+    flushBlockDeltas: () => blockInteraction.flushDeltas(),
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;
       mobileInput.moveZ = input.moveZ;
@@ -301,12 +452,19 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       combat.cleanup();
       cleanupChests();
       cleanupEnemies();
+      ghostPreview.dispose();
       weatherSystem.dispose();
       engine.scene.remove(particles.mesh);
       stopMusic();
       stopAtmosphericSFX();
       engine.runtime.stop();
       engine.gameWorld.destroy();
+      // Koota ECS world is a singleton — reset it rather than destroy
+      try {
+        kootaWorld.reset();
+      } catch (err) {
+        console.warn('[Bok] Failed to reset Koota world:', err);
+      }
     },
   };
 }

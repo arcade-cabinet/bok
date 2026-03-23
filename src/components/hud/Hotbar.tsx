@@ -45,6 +45,7 @@ export function Hotbar({ slots, activeIndex, onSelect }: Props) {
       className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 pointer-events-auto"
       role="toolbar"
       aria-label="Weapon hotbar"
+      style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const isActive = i === activeIndex;

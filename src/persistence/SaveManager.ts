@@ -1,5 +1,6 @@
 import type { DatabaseAdapter } from './Database.ts';
 import { InMemoryDatabase } from './Database.ts';
+import type { GameSave, IslandState } from './GameSave.ts';
 import type { SerializedGameState } from './GameStateSerializer.ts';
 import { parseGameState, stringifyGameState, validateGameState } from './GameStateSerializer.ts';
 import { runMigrations } from './migrations.ts';
@@ -167,5 +168,196 @@ export class SaveManager {
     } catch {
       return false;
     }
+  }
+
+  // --- Game saves (seed + mode, immutable) ---
+
+  /**
+   * Create a new game save. Seed and mode are locked for the life of this save.
+   * Returns the created GameSave with its auto-incremented id.
+   */
+  async createGame(seed: string, mode: 'creative' | 'survival'): Promise<GameSave> {
+    const now = Date.now();
+    await this.#db.execute('INSERT INTO games (seed, mode, created_at, last_played_at) VALUES (?, ?, ?, ?)', [
+      seed,
+      mode,
+      now,
+      now,
+    ]);
+    // Retrieve the last inserted row — it will be the last row in the table
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM games ORDER BY id DESC');
+    const r = rows[0];
+    return {
+      id: r[0] as number,
+      seed: r[1] as string,
+      mode: r[2] as 'creative' | 'survival',
+      createdAt: r[3] as number,
+      lastPlayedAt: r[4] as number,
+    };
+  }
+
+  /**
+   * Load a single game save by id. Returns null if not found.
+   */
+  async loadGame(id: number): Promise<GameSave | null> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM games WHERE id = ?', [id]);
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return {
+      id: r[0] as number,
+      seed: r[1] as string,
+      mode: r[2] as 'creative' | 'survival',
+      createdAt: r[3] as number,
+      lastPlayedAt: r[4] as number,
+    };
+  }
+
+  /**
+   * List all game saves, newest first.
+   */
+  async listGames(): Promise<GameSave[]> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM games ORDER BY last_played_at DESC');
+    return rows.map((r) => ({
+      id: r[0] as number,
+      seed: r[1] as string,
+      mode: r[2] as 'creative' | 'survival',
+      createdAt: r[3] as number,
+      lastPlayedAt: r[4] as number,
+    }));
+  }
+
+  /**
+   * Delete a game save and all its associated island states and inventory.
+   */
+  async deleteGame(id: number): Promise<void> {
+    await this.#db.execute('DELETE FROM chunk_deltas WHERE save_id = ?', [id]);
+    await this.#db.execute('DELETE FROM inventory WHERE save_id = ?', [id]);
+    await this.#db.execute('DELETE FROM island_states WHERE save_id = ?', [id]);
+    await this.#db.execute('DELETE FROM games WHERE id = ?', [id]);
+  }
+
+  /**
+   * Update the last_played_at timestamp for a game save.
+   */
+  async touchGame(id: number): Promise<void> {
+    await this.#db.execute('UPDATE games SET last_played_at = ? WHERE id = ?', [Date.now(), id]);
+  }
+
+  // --- Per-island state ---
+
+  /**
+   * Get the state of a specific island within a game save.
+   * Returns null if the player has never visited this island.
+   */
+  async getIslandState(saveId: number, biomeId: string): Promise<IslandState | null> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM island_states WHERE save_id = ? AND biome_id = ?', [
+      saveId,
+      biomeId,
+    ]);
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    let goalsCompleted: string[] = [];
+    try {
+      goalsCompleted = JSON.parse(r[2] as string);
+    } catch {
+      // Corrupted — return empty
+    }
+    return {
+      saveId: r[0] as number,
+      biomeId: r[1] as string,
+      goalsCompleted,
+      bossDefeated: (r[3] as number) === 1,
+    };
+  }
+
+  /**
+   * Create or update the state of an island within a game save.
+   */
+  async updateIslandState(state: IslandState): Promise<void> {
+    await this.#db.execute(
+      'INSERT OR REPLACE INTO island_states (save_id, biome_id, goals_completed, boss_defeated) VALUES (?, ?, ?, ?)',
+      [state.saveId, state.biomeId, JSON.stringify(state.goalsCompleted), state.bossDefeated ? 1 : 0],
+    );
+  }
+
+  // --- Inventory persistence ---
+
+  /**
+   * Get the full inventory for a game save. Returns a map of resource_id → amount.
+   * Resources with amount 0 are excluded.
+   */
+  async getInventory(saveId: number): Promise<Record<string, number>> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM inventory WHERE save_id = ?', [saveId]);
+    const result: Record<string, number> = {};
+    for (const r of rows) {
+      const resourceId = r[1] as string;
+      const amount = r[2] as number;
+      if (amount > 0) {
+        result[resourceId] = amount;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Set a resource to an exact amount. Creates the row if it doesn't exist.
+   */
+  async setResource(saveId: number, resourceId: string, amount: number): Promise<void> {
+    await this.#db.execute('INSERT OR REPLACE INTO inventory (save_id, resource_id, amount) VALUES (?, ?, ?)', [
+      saveId,
+      resourceId,
+      amount,
+    ]);
+  }
+
+  /**
+   * Add to (or subtract from) a resource amount. If the resource doesn't exist,
+   * it is created with the given amount. The resulting amount is clamped to >= 0.
+   */
+  async addResource(saveId: number, resourceId: string, amount: number): Promise<void> {
+    const inventory = await this.getInventory(saveId);
+    const current = inventory[resourceId] ?? 0;
+    const newAmount = Math.max(0, current + amount);
+    await this.setResource(saveId, resourceId, newAmount);
+  }
+
+  // --- Per-island chunk deltas (block modifications) ---
+
+  /**
+   * Save block modification deltas for a specific island.
+   * Replaces any existing deltas at the same coordinates (INSERT OR REPLACE).
+   * Each delta records a placed (blockId > 0) or removed (blockId = 0) block.
+   */
+  async saveChunkDeltas(
+    saveId: number,
+    biomeId: string,
+    deltas: Array<{ x: number; y: number; z: number; blockId: number }>,
+  ): Promise<void> {
+    for (const d of deltas) {
+      await this.#db.execute(
+        'INSERT OR REPLACE INTO chunk_deltas (save_id, biome_id, x, y, z, block_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [saveId, biomeId, d.x, d.y, d.z, d.blockId],
+      );
+    }
+  }
+
+  /**
+   * Load all block modification deltas for a specific island.
+   * Returns an empty array if the player has never modified this island.
+   */
+  async loadChunkDeltas(
+    saveId: number,
+    biomeId: string,
+  ): Promise<Array<{ x: number; y: number; z: number; blockId: number }>> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM chunk_deltas WHERE save_id = ? AND biome_id = ?', [
+      saveId,
+      biomeId,
+    ]);
+    return rows.map((r) => ({
+      x: r[2] as number,
+      y: r[3] as number,
+      z: r[4] as number,
+      blockId: r[5] as number,
+    }));
   }
 }

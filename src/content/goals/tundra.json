@@ -7,7 +7,7 @@
       "description": "Discover 2 landmarks",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "tundra-defeat",
@@ -15,17 +15,18 @@
       "description": "Defeat 6 enemies",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "tundra-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "📦"
+      "id": "tundra-gather-shards",
+      "title": "Gather Frost Shards",
+      "description": "Gather 10 Frost Shards",
+      "type": "gather",
+      "target": 10,
+      "resourceId": "frost-shard",
+      "icon": "\u2744\uFE0F"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "The ice cracks... The Frost Wyrm awakens.",
+  "completionMessage": "The frozen path is clear. The Frost Wyrm awaits."
 }

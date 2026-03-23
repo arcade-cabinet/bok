@@ -3,29 +3,30 @@
   "goals": [
     {
       "id": "volcanic-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Map the Caldera",
+      "description": "Discover 2 volcanic landmarks",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "volcanic-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Quell the Flames",
+      "description": "Defeat 6 fire enemies",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "volcanic-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "📦"
+      "id": "volcanic-gather-crystals",
+      "title": "Harvest Magma Crystals",
+      "description": "Gather 5 Magma Crystals",
+      "type": "gather",
+      "target": 5,
+      "resourceId": "magma-crystal",
+      "icon": "\uD83D\uDD25"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "The volcano trembles... The Magma King rises.",
+  "completionMessage": "Lava flows part. The Magma King awaits."
 }

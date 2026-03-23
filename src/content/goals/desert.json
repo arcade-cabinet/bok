@@ -7,7 +7,7 @@
       "description": "Discover 2 oases in the endless dunes",
       "type": "discover",
       "target": 2,
-      "icon": "🏝️"
+      "icon": "\uD83C\uDFDD\uFE0F"
     },
     {
       "id": "desert-defeat-wraiths",
@@ -15,15 +15,16 @@
       "description": "Defeat 6 desert warriors",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "desert-gather-relics",
-      "title": "Unearth Ancient Relics",
-      "description": "Open 3 buried treasure chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "🏺"
+      "id": "desert-gather-bones",
+      "title": "Unearth Ancient Bones",
+      "description": "Harvest 5 Ancient Bones",
+      "type": "gather",
+      "target": 5,
+      "resourceId": "ancient-bone",
+      "icon": "\uD83E\uDDB4"
     }
   ],
   "bossGateMessage": "The sands shift... The Pharaoh stirs.",

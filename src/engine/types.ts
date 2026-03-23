@@ -46,6 +46,12 @@ export interface GameStartConfig {
   biome: string;
   seed: string;
   mode: GameMode;
+  /** Save ID for island persistence (optional — 0 or omitted skips persistence) */
+  saveId?: number;
+  /** Pre-loaded block deltas to apply on island enter */
+  restoredDeltas?: Array<{ x: number; y: number; z: number; blockId: number }>;
+  /** Pre-loaded completed goal IDs to restore on island enter */
+  restoredGoalIds?: string[];
 }
 
 /** Threat level from the player governor */
@@ -55,7 +61,7 @@ export type ThreatLevel = 'none' | 'low' | 'medium' | 'high';
 export interface MinimapMarker {
   x: number;
   z: number;
-  type: 'enemy' | 'chest';
+  type: 'enemy' | 'chest' | 'shrine';
 }
 
 /** Engine state exposed to React via polling */
@@ -89,6 +95,18 @@ export interface EngineState {
   playerZ: number;
   /** Minimap markers: enemies and loot drops */
   minimapMarkers: MinimapMarker[];
+  /** Name of the currently selected block for placement */
+  selectedBlockName: string;
+  /** Display name of the currently selected block shape (e.g. "Cube", "Slab") */
+  selectedShapeName: string;
+  /** Combined block label: type + shape (e.g. "Stone [Slab]") */
+  selectedBlockLabel: string;
+  /** Whether the player is looking at a breakable block within reach */
+  lookingAtBlock: boolean;
+  /** Ghost preview position and shape for the placement wireframe */
+  placementPreview: { x: number; y: number; z: number; shape: string } | null;
+  /** Block breaking progress: 0 = not breaking, 0-1 = in progress */
+  breakingProgress: number;
 }
 
 /** Boss attack configuration for a single phase */
@@ -122,7 +140,11 @@ export type EngineEvent =
   | { type: 'block'; damage: number }
   | { type: 'chestOpened'; tier: string; items: Array<{ name: string; amount: number }> }
   | { type: 'bossTelegraph'; attackName: string; duration: number }
-  | { type: 'bossSummon'; attackName: string };
+  | { type: 'bossSummon'; attackName: string }
+  | { type: 'landmarkDiscovered'; position: { x: number; z: number } }
+  | { type: 'blockPlaced'; position: { x: number; y: number; z: number }; blockId: number }
+  | { type: 'blockBroken'; position: { x: number; y: number; z: number }; blockId: number }
+  | { type: 'resourceGathered'; resourceId: string; resourceName: string; resourceIcon: string; amount: number };
 
 export type EngineEventListener = (event: EngineEvent) => void;
 
@@ -132,5 +154,5 @@ export interface MobileInput {
   moveZ: number; // -1 to 1 absolute
   lookX: number; // -1 to 1 absolute — continuous rotation rate
   lookY: number; // -1 to 1 absolute — continuous rotation rate
-  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | null;
+  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | 'interact' | 'placeBlock' | 'breakBlock' | null;
 }

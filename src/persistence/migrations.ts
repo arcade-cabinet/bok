@@ -49,4 +49,48 @@ export async function runMigrations(db: DatabaseAdapter): Promise<void> {
       timestamp INTEGER NOT NULL
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS games (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      seed TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      last_played_at INTEGER NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS island_states (
+      save_id INTEGER NOT NULL,
+      biome_id TEXT NOT NULL,
+      goals_completed TEXT DEFAULT '[]',
+      boss_defeated INTEGER DEFAULT 0,
+      PRIMARY KEY (save_id, biome_id),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      save_id INTEGER NOT NULL,
+      resource_id TEXT NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (save_id, resource_id),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS chunk_deltas (
+      save_id INTEGER NOT NULL,
+      biome_id TEXT NOT NULL,
+      x INTEGER NOT NULL,
+      y INTEGER NOT NULL,
+      z INTEGER NOT NULL,
+      block_id INTEGER NOT NULL,
+      PRIMARY KEY (save_id, biome_id, x, y, z),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
 }
