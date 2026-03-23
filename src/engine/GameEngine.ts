@@ -432,7 +432,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         breakingProgress: loop.getBreakingProgress(),
         bossPosition: boss.defeated ? null : { x: bossMesh.position.x, y: bossMesh.position.y, z: bossMesh.position.z },
         bossDefeated: boss.defeated,
-        playerYaw: cam.camera.rotation.y,
+        playerYaw: cam.euler.y,
         enemyPositions: enemies
           .filter((e) => {
             if (e.dying) return false;

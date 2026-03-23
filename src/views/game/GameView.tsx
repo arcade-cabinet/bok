@@ -570,8 +570,6 @@ export function GameView({
             }}
             canvasWidth={screenWidth}
             canvasHeight={screenHeight}
-            playerX={engineState.playerX}
-            playerZ={engineState.playerZ}
             playerYaw={engineState.playerYaw}
           />
           <Hotbar

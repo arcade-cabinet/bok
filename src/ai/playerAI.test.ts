@@ -172,6 +172,7 @@ describe('PlayerAI', () => {
     const input = game.setMobileInput.mock.calls[0][0];
     // Should be moving toward the enemy (positive x and negative z or positive z depending on direction)
     expect(input.moveX).toBeGreaterThan(0); // enemy is at +x
+    expect(input.moveZ).toBeGreaterThan(0); // enemy is at +z
   });
 
   it('attacks when enemy is in melee range', () => {
