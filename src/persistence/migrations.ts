@@ -80,4 +80,17 @@ export async function runMigrations(db: DatabaseAdapter): Promise<void> {
       FOREIGN KEY (save_id) REFERENCES games(id)
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS chunk_deltas (
+      save_id INTEGER NOT NULL,
+      biome_id TEXT NOT NULL,
+      x INTEGER NOT NULL,
+      y INTEGER NOT NULL,
+      z INTEGER NOT NULL,
+      block_id INTEGER NOT NULL,
+      PRIMARY KEY (save_id, biome_id, x, y, z),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
 }

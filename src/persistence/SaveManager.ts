@@ -230,6 +230,7 @@ export class SaveManager {
    * Delete a game save and all its associated island states and inventory.
    */
   async deleteGame(id: number): Promise<void> {
+    await this.#db.execute('DELETE FROM chunk_deltas WHERE save_id = ?', [id]);
     await this.#db.execute('DELETE FROM inventory WHERE save_id = ?', [id]);
     await this.#db.execute('DELETE FROM island_states WHERE save_id = ?', [id]);
     await this.#db.execute('DELETE FROM games WHERE id = ?', [id]);
@@ -318,5 +319,45 @@ export class SaveManager {
     const current = inventory[resourceId] ?? 0;
     const newAmount = Math.max(0, current + amount);
     await this.setResource(saveId, resourceId, newAmount);
+  }
+
+  // --- Per-island chunk deltas (block modifications) ---
+
+  /**
+   * Save block modification deltas for a specific island.
+   * Replaces any existing deltas at the same coordinates (INSERT OR REPLACE).
+   * Each delta records a placed (blockId > 0) or removed (blockId = 0) block.
+   */
+  async saveChunkDeltas(
+    saveId: number,
+    biomeId: string,
+    deltas: Array<{ x: number; y: number; z: number; blockId: number }>,
+  ): Promise<void> {
+    for (const d of deltas) {
+      await this.#db.execute(
+        'INSERT OR REPLACE INTO chunk_deltas (save_id, biome_id, x, y, z, block_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [saveId, biomeId, d.x, d.y, d.z, d.blockId],
+      );
+    }
+  }
+
+  /**
+   * Load all block modification deltas for a specific island.
+   * Returns an empty array if the player has never modified this island.
+   */
+  async loadChunkDeltas(
+    saveId: number,
+    biomeId: string,
+  ): Promise<Array<{ x: number; y: number; z: number; blockId: number }>> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM chunk_deltas WHERE save_id = ? AND biome_id = ?', [
+      saveId,
+      biomeId,
+    ]);
+    return rows.map((r) => ({
+      x: r[2] as number,
+      y: r[3] as number,
+      z: r[4] as number,
+      blockId: r[5] as number,
+    }));
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameConfig } from '../../app/App';
 import { ContextIndicator } from '../../components/hud/ContextIndicator';
 import { DamageIndicator } from '../../components/hud/DamageIndicator';
@@ -50,10 +50,12 @@ import { useGameEvents } from '../../hooks/useGameEvents';
 import { useGameHUD } from '../../hooks/useGameHUD';
 import { useGameLifecycle } from '../../hooks/useGameLifecycle';
 import type { SerializedGameState } from '../../persistence/GameStateSerializer';
+import type { SaveManager } from '../../persistence/SaveManager';
 
 interface Props {
   config: GameConfig;
   savedState?: SerializedGameState | null;
+  saveManager?: SaveManager | null;
   onReturnToMenu: () => void;
   onContinueVoyage?: () => void;
   onQuitToMenu: () => void;
@@ -75,19 +77,69 @@ function buildHotbarSlots(selectedBlockLabel: string): SlotData[] {
  * GameView — mounts the JollyPixel canvas, initializes the engine,
  * and renders React HUD overlays on top.
  */
-export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMenu, onBossDefeated, onRunEnd }: Props) {
+export function GameView({
+  config,
+  saveManager,
+  onReturnToMenu,
+  onContinueVoyage,
+  onQuitToMenu,
+  onBossDefeated,
+  onRunEnd,
+}: Props) {
   const { isMobile, isTouch, screenWidth, screenHeight } = useDeviceType();
   const [activeSlot, setActiveSlot] = useState(0);
   const [showTutorial, setShowTutorial] = useState(() => config.mode !== 'creative' && !isTutorialCompleted());
   const [tomeUnlock, setTomeUnlock] = useState<{ name: string; icon: string } | null>(null);
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
 
+  // --- Island persistence: load saved deltas + goal progress ---
+  const [restoredDeltas, setRestoredDeltas] = useState<
+    Array<{ x: number; y: number; z: number; blockId: number }> | undefined
+  >(undefined);
+  const [restoredGoalIds, setRestoredGoalIds] = useState<string[] | undefined>(undefined);
+  const [persistenceReady, setPersistenceReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadIslandPersistence() {
+      if (!saveManager || !config.saveId) {
+        // No persistence — proceed immediately
+        if (!cancelled) setPersistenceReady(true);
+        return;
+      }
+      try {
+        const [deltas, islandState] = await Promise.all([
+          saveManager.loadChunkDeltas(config.saveId, config.biome),
+          saveManager.getIslandState(config.saveId, config.biome),
+        ]);
+        if (!cancelled) {
+          setRestoredDeltas(deltas.length > 0 ? deltas : undefined);
+          setRestoredGoalIds(islandState?.goalsCompleted ?? undefined);
+          setPersistenceReady(true);
+        }
+      } catch (err) {
+        console.warn('[Bok] Failed to load island persistence:', err);
+        if (!cancelled) setPersistenceReady(true);
+      }
+    }
+    loadIslandPersistence();
+    return () => {
+      cancelled = true;
+    };
+  }, [saveManager, config.saveId, config.biome]);
+
   // Goal system — loaded from biome content, null in Creative mode
+  // Restored goal IDs are passed to pre-fill completed goals
   const goalSystem = useMemo(() => {
     if (config.mode === 'creative') return createGoalSystem(null);
-    return createGoalSystem(GOAL_FILES[config.biome] ?? null);
-  }, [config.biome, config.mode]);
+    return createGoalSystem(GOAL_FILES[config.biome] ?? null, restoredGoalIds);
+  }, [config.biome, config.mode, restoredGoalIds]);
   const [goalState, setGoalState] = useState(goalSystem.state);
+
+  // Sync goal state when the goal system is recreated (e.g. after persistence data loads)
+  useEffect(() => {
+    setGoalState({ ...goalSystem.state });
+  }, [goalSystem]);
 
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
@@ -95,9 +147,20 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
     srEventHandlerRef.current = handler;
   }, []);
 
+  // Build engine config with restored persistence data
+  const engineConfig = useMemo(
+    () => ({
+      ...config,
+      restoredDeltas,
+      restoredGoalIds,
+      persistenceReady,
+    }),
+    [config, restoredDeltas, restoredGoalIds, persistenceReady],
+  );
+
   // Lifecycle: canvas, engine init/cleanup, keyboard, resize
   const { canvasRef, gameRef, showTome, setShowTome, handleResume, handleTouchOutput } = useGameLifecycle(
-    config,
+    engineConfig,
     (event) => {
       events.handleEngineEvent(event);
       srEventHandlerRef.current?.(event);
@@ -165,11 +228,55 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
     return hintTriggers;
   }, [hintTriggers, events.damageRef, events.killCountRef]);
 
-  const handleAbandonRun = useCallback(() => {
+  // --- Island persistence: save block deltas + goal progress on exit ---
+  const saveIslandState = useCallback(async () => {
+    if (!saveManager || !config.saveId) return;
+    const game = gameRef.current;
+    try {
+      // Save block deltas
+      if (game) {
+        const deltas = game.getBlockDeltas();
+        if (deltas.length > 0) {
+          await saveManager.saveChunkDeltas(config.saveId, config.biome, [...deltas]);
+          game.flushBlockDeltas();
+        }
+      }
+      // Save goal progress + boss status
+      const completedGoals = goalSystem.getCompletedGoalIds();
+      const bossDefeated = goalSystem.state.bossUnlocked && goalSystem.state.allCompleted;
+      await saveManager.updateIslandState({
+        saveId: config.saveId,
+        biomeId: config.biome,
+        goalsCompleted: completedGoals,
+        bossDefeated,
+      });
+    } catch (err) {
+      console.warn('[Bok] Failed to save island state:', err);
+    }
+  }, [saveManager, config.saveId, config.biome, goalSystem, gameRef]);
+
+  // Wrapped exit callbacks that save island state before navigating away
+  const handleReturnToMenu = useCallback(async () => {
+    await saveIslandState();
+    onReturnToMenu();
+  }, [onReturnToMenu, saveIslandState]);
+
+  const handleContinueVoyage = useCallback(async () => {
+    await saveIslandState();
+    (onContinueVoyage ?? onReturnToMenu)();
+  }, [onContinueVoyage, onReturnToMenu, saveIslandState]);
+
+  const handleQuitToMenu = useCallback(async () => {
+    await saveIslandState();
+    onQuitToMenu();
+  }, [onQuitToMenu, saveIslandState]);
+
+  const handleAbandonRun = useCallback(async () => {
+    await saveIslandState();
     const duration = Math.round((Date.now() - events.startTimeRef.current) / 1000);
     onRunEnd?.(config.seed, config.biome, 'abandoned', duration);
     onReturnToMenu();
-  }, [config, onRunEnd, onReturnToMenu, events.startTimeRef]);
+  }, [config, onRunEnd, onReturnToMenu, events.startTimeRef, saveIslandState]);
 
   const handleAttack = useCallback(() => {
     gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'attack' });
@@ -349,16 +456,16 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
         />
       )}
       {engineState?.phase === 'paused' && (
-        <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={onQuitToMenu} />
+        <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={handleQuitToMenu} />
       )}
       {engineState?.phase === 'dead' && events.deathStats && (
-        <DeathScreen stats={events.deathStats} onReturnToHub={onReturnToMenu} onTryAgain={onReturnToMenu} />
+        <DeathScreen stats={events.deathStats} onReturnToHub={handleReturnToMenu} onTryAgain={handleReturnToMenu} />
       )}
       {engineState?.phase === 'victory' && events.victoryStats && (
         <VictoryScreen
           stats={events.victoryStats}
-          onContinueVoyage={onContinueVoyage ?? onReturnToMenu}
-          onReturnToHub={onReturnToMenu}
+          onContinueVoyage={handleContinueVoyage}
+          onReturnToHub={handleReturnToMenu}
         />
       )}
     </div>

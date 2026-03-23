@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+
+import { type BiomeGoals, createGoalSystem } from '../engine/goalSystem';
 import type { SerializedGameState } from './GameStateSerializer.ts';
 import { SaveManager } from './index';
 
@@ -413,5 +415,179 @@ describe('SaveManager inventory', () => {
     const loaded = await mgr.getInventory(game.id);
     expect(loaded.wood).toBe(150);
     expect(loaded.stone).toBe(70);
+  });
+});
+
+describe('SaveManager chunk deltas', () => {
+  it('save and load deltas round-trip', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    const deltas = [
+      { x: 5, y: 10, z: 3, blockId: 7 },
+      { x: 12, y: 4, z: -1, blockId: 0 },
+      { x: 0, y: 0, z: 0, blockId: 3 },
+    ];
+    await mgr.saveChunkDeltas(game.id, 'forest', deltas);
+    const loaded = await mgr.loadChunkDeltas(game.id, 'forest');
+    expect(loaded).toHaveLength(3);
+    expect(loaded).toEqual(expect.arrayContaining(deltas));
+  });
+
+  it('loadChunkDeltas returns empty array for unvisited island', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    const loaded = await mgr.loadChunkDeltas(game.id, 'desert');
+    expect(loaded).toEqual([]);
+  });
+
+  it('deltas are isolated between biomes', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.saveChunkDeltas(game.id, 'forest', [{ x: 1, y: 2, z: 3, blockId: 7 }]);
+    await mgr.saveChunkDeltas(game.id, 'desert', [{ x: 10, y: 20, z: 30, blockId: 14 }]);
+    const forestDeltas = await mgr.loadChunkDeltas(game.id, 'forest');
+    const desertDeltas = await mgr.loadChunkDeltas(game.id, 'desert');
+    expect(forestDeltas).toHaveLength(1);
+    expect(forestDeltas[0].blockId).toBe(7);
+    expect(desertDeltas).toHaveLength(1);
+    expect(desertDeltas[0].blockId).toBe(14);
+  });
+
+  it('deltas are isolated between saves', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const g1 = await mgr.createGame('world-a', 'survival');
+    const g2 = await mgr.createGame('world-b', 'survival');
+    await mgr.saveChunkDeltas(g1.id, 'forest', [{ x: 1, y: 2, z: 3, blockId: 7 }]);
+    await mgr.saveChunkDeltas(g2.id, 'forest', [{ x: 1, y: 2, z: 3, blockId: 99 }]);
+    const d1 = await mgr.loadChunkDeltas(g1.id, 'forest');
+    const d2 = await mgr.loadChunkDeltas(g2.id, 'forest');
+    expect(d1[0].blockId).toBe(7);
+    expect(d2[0].blockId).toBe(99);
+  });
+
+  it('deltas at same position are overwritten (OR REPLACE)', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.saveChunkDeltas(game.id, 'forest', [{ x: 5, y: 10, z: 3, blockId: 7 }]);
+    // Place a different block at the same position
+    await mgr.saveChunkDeltas(game.id, 'forest', [{ x: 5, y: 10, z: 3, blockId: 14 }]);
+    const loaded = await mgr.loadChunkDeltas(game.id, 'forest');
+    expect(loaded).toHaveLength(1);
+    expect(loaded[0].blockId).toBe(14);
+  });
+
+  it('deleteGame removes associated chunk deltas', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('doomed', 'survival');
+    await mgr.saveChunkDeltas(game.id, 'forest', [
+      { x: 1, y: 2, z: 3, blockId: 7 },
+      { x: 4, y: 5, z: 6, blockId: 3 },
+    ]);
+    await mgr.deleteGame(game.id);
+    const loaded = await mgr.loadChunkDeltas(game.id, 'forest');
+    expect(loaded).toEqual([]);
+  });
+});
+
+describe('Goal progress persistence via createGoalSystem', () => {
+  const testGoals: BiomeGoals = {
+    biomeId: 'forest',
+    goals: [
+      {
+        id: 'kill_enemies',
+        title: 'Kill 5 Enemies',
+        description: 'Defeat enemies',
+        type: 'kill',
+        target: 5,
+        icon: 'sword',
+      },
+      {
+        id: 'discover_shrine',
+        title: 'Find the Shrine',
+        description: 'Discover the shrine',
+        type: 'discover',
+        target: 1,
+        icon: 'map',
+      },
+      { id: 'loot_chests', title: 'Open 3 Chests', description: 'Loot chests', type: 'loot', target: 3, icon: 'chest' },
+    ],
+    bossGateMessage: 'Complete all goals to summon the boss.',
+    completionMessage: 'The boss has awakened!',
+  };
+
+  it('getCompletedGoalIds returns empty array when no goals completed', () => {
+    const system = createGoalSystem(testGoals);
+    expect(system.getCompletedGoalIds()).toEqual([]);
+  });
+
+  it('getCompletedGoalIds tracks completed goals', () => {
+    const system = createGoalSystem(testGoals);
+    // Complete the discover goal (target = 1)
+    system.onLandmarkDiscovered();
+    expect(system.getCompletedGoalIds()).toEqual(['discover_shrine']);
+  });
+
+  it('createGoalSystem restores completed goals from saved IDs', () => {
+    const system = createGoalSystem(testGoals, ['discover_shrine', 'kill_enemies']);
+    const completed = system.getCompletedGoalIds();
+    expect(completed).toContain('discover_shrine');
+    expect(completed).toContain('kill_enemies');
+    expect(completed).not.toContain('loot_chests');
+    // Verify the restored goals have their progress set to target
+    const discoverGoal = system.state.goals.find((g) => g.definition.id === 'discover_shrine');
+    expect(discoverGoal?.current).toBe(1);
+    expect(discoverGoal?.completed).toBe(true);
+    const killGoal = system.state.goals.find((g) => g.definition.id === 'kill_enemies');
+    expect(killGoal?.current).toBe(5);
+    expect(killGoal?.completed).toBe(true);
+  });
+
+  it('boss unlocks when all goals are restored as completed', () => {
+    const system = createGoalSystem(testGoals, ['kill_enemies', 'discover_shrine', 'loot_chests']);
+    expect(system.state.allCompleted).toBe(true);
+    expect(system.state.bossUnlocked).toBe(true);
+  });
+
+  it('boss stays locked when only some goals are restored', () => {
+    const system = createGoalSystem(testGoals, ['discover_shrine']);
+    expect(system.state.allCompleted).toBe(false);
+    expect(system.state.bossUnlocked).toBe(false);
+  });
+
+  it('goal progress persists across island visits (full round-trip)', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+
+    // First visit: complete some goals
+    const system1 = createGoalSystem(testGoals);
+    system1.onLandmarkDiscovered(); // completes discover_shrine
+    for (let i = 0; i < 5; i++) system1.onEnemyKilled(); // completes kill_enemies
+
+    // Save island state
+    const completedIds = system1.getCompletedGoalIds();
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: completedIds,
+      bossDefeated: false,
+    });
+
+    // Second visit: load and restore
+    const islandState = await mgr.getIslandState(game.id, 'forest');
+    const system2 = createGoalSystem(testGoals, islandState?.goalsCompleted);
+
+    // Verify restored state matches
+    expect(system2.getCompletedGoalIds()).toEqual(expect.arrayContaining(['discover_shrine', 'kill_enemies']));
+    expect(system2.state.goals.find((g) => g.definition.id === 'loot_chests')?.completed).toBe(false);
+
+    // Can still complete remaining goals
+    for (let i = 0; i < 3; i++) system2.onChestOpened();
+    expect(system2.state.allCompleted).toBe(true);
+    expect(system2.state.bossUnlocked).toBe(true);
+  });
+
+  it('null biomeGoals returns empty completed list', () => {
+    const system = createGoalSystem(null);
+    expect(system.getCompletedGoalIds()).toEqual([]);
   });
 });

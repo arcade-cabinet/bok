@@ -46,6 +46,12 @@ export interface GameStartConfig {
   biome: string;
   seed: string;
   mode: GameMode;
+  /** Save ID for island persistence (optional — 0 or omitted skips persistence) */
+  saveId?: number;
+  /** Pre-loaded block deltas to apply on island enter */
+  restoredDeltas?: Array<{ x: number; y: number; z: number; blockId: number }>;
+  /** Pre-loaded completed goal IDs to restore on island enter */
+  restoredGoalIds?: string[];
 }
 
 /** Threat level from the player governor */

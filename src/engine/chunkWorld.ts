@@ -165,6 +165,32 @@ export class ChunkWorld {
     }
   }
 
+  /**
+   * Apply a flat list of world-coordinate deltas (from persistence).
+   * Groups them by chunk and stores/applies via the per-chunk applyDeltas.
+   */
+  applyWorldDeltas(deltas: ChunkDelta[]): void {
+    // Group deltas by chunk coordinate
+    const grouped = new Map<string, ChunkDelta[]>();
+    for (const d of deltas) {
+      const cx = Math.floor(d.x / CHUNK_SIZE);
+      const cz = Math.floor(d.z / CHUNK_SIZE);
+      const key = ChunkWorld.chunkKey(cx, cz);
+      let list = grouped.get(key);
+      if (!list) {
+        list = [];
+        grouped.set(key, list);
+      }
+      list.push(d);
+    }
+    // Apply each group — merges with any existing deltas
+    for (const [key, chunkDeltas] of grouped) {
+      const [cx, cz] = key.split(',').map(Number);
+      const existing = this.#deltas.get(key) ?? [];
+      this.applyDeltas(cx, cz, [...existing, ...chunkDeltas]);
+    }
+  }
+
   /** Get the number of loaded chunks (for debugging/metrics). */
   get loadedChunkCount(): number {
     return this.#loadedChunks.size;

@@ -56,6 +56,10 @@ export interface GameInstance {
   cycleShape: () => string;
   /** Block interaction: get the name of the selected block */
   getSelectedBlockName: () => string;
+  /** Get all accumulated block deltas (for island persistence on exit) */
+  getBlockDeltas: () => ReadonlyArray<{ x: number; y: number; z: number; blockId: number }>;
+  /** Flush accumulated block deltas (call after persisting) */
+  flushBlockDeltas: () => void;
   destroy: () => void;
 }
 
@@ -120,6 +124,12 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   const chunkWorld = new ChunkWorld(voxelMap, { seed: islandSeed, biome: biomeConfig });
   // Generate initial chunks around spawn (0,0)
   chunkWorld.updateAroundPlayer(0, 0);
+
+  // --- Restore block deltas from persistence (if returning to a previously visited island) ---
+  if (config.restoredDeltas && config.restoredDeltas.length > 0) {
+    chunkWorld.applyWorldDeltas(config.restoredDeltas);
+    console.log(`[Bok] Restored ${config.restoredDeltas.length} block deltas for ${config.biome}`);
+  }
 
   // --- Block interaction system ---
   const blockInteraction = createBlockInteraction(RAPIER, engine.rapierWorld, voxelMap, chunkWorld);
@@ -428,6 +438,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     cycleBlock: (direction: 1 | -1) => blockInteraction.cycleBlock(direction),
     cycleShape: () => blockInteraction.cycleShape(),
     getSelectedBlockName: () => blockInteraction.getSelectedBlockName(),
+    getBlockDeltas: () => blockInteraction.getDeltas(),
+    flushBlockDeltas: () => blockInteraction.flushDeltas(),
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;
       mobileInput.moveZ = input.moveZ;

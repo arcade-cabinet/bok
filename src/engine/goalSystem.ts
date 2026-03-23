@@ -43,13 +43,21 @@ export interface BiomeGoals {
 /**
  * Creates a goal tracking system for a biome.
  * Returns methods to advance goal progress and query state.
+ *
+ * @param biomeGoals - Goal definitions for the biome (null = Creative mode / no goals)
+ * @param restoredGoalIds - Previously completed goal IDs to restore (from persistence)
  */
-export function createGoalSystem(biomeGoals: BiomeGoals | null): {
+export function createGoalSystem(
+  biomeGoals: BiomeGoals | null,
+  restoredGoalIds?: string[],
+): {
   state: GoalSystemState;
   onEnemyKilled: () => void;
   onChestOpened: () => void;
   onLandmarkDiscovered: () => void;
   onResourceGathered: (resourceId: string) => void;
+  /** Get the IDs of all completed goals (for persistence). */
+  getCompletedGoalIds: () => string[];
 } {
   // No goals in Creative mode or if biome has no goals defined
   if (!biomeGoals) {
@@ -65,14 +73,20 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
       onChestOpened: () => {},
       onLandmarkDiscovered: () => {},
       onResourceGathered: () => {},
+      getCompletedGoalIds: () => [],
     };
   }
 
-  const goals: GoalProgress[] = biomeGoals.goals.map((g) => ({
-    definition: g,
-    current: 0,
-    completed: false,
-  }));
+  const restoredSet = new Set(restoredGoalIds ?? []);
+
+  const goals: GoalProgress[] = biomeGoals.goals.map((g) => {
+    const wasCompleted = restoredSet.has(g.id);
+    return {
+      definition: g,
+      current: wasCompleted ? g.target : 0,
+      completed: wasCompleted,
+    };
+  });
 
   const state: GoalSystemState = {
     goals,
@@ -106,11 +120,15 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
     checkCompletion();
   }
 
+  // Check if restored goals already satisfy completion
+  checkCompletion();
+
   return {
     state,
     onEnemyKilled: () => advanceGoal('kill'),
     onChestOpened: () => advanceGoal('loot'),
     onLandmarkDiscovered: () => advanceGoal('discover'),
     onResourceGathered: (resourceId: string) => advanceGoal('gather', resourceId),
+    getCompletedGoalIds: () => goals.filter((g) => g.completed).map((g) => g.definition.id),
   };
 }

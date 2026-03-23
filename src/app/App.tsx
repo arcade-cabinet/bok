@@ -156,6 +156,7 @@ export function App() {
           <Suspense fallback={<LoadingScreen />}>
             <GameView
               config={gameConfig}
+              saveManager={saveManagerRef.current}
               onReturnToMenu={() => setView('hub')}
               onContinueVoyage={() => setView('island-select')}
               onQuitToMenu={() => setView('menu')}
