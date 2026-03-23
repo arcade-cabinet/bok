@@ -305,3 +305,113 @@ describe('SaveManager island state', () => {
     expect(desert?.bossDefeated).toBe(false);
   });
 });
+
+describe('SaveManager inventory', () => {
+  it('getInventory returns empty object for new save', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    const inv = await mgr.getInventory(game.id);
+    expect(inv).toEqual({});
+  });
+
+  it('setResource stores and retrieves a resource', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'wood', 50);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv.wood).toBe(50);
+  });
+
+  it('setResource overwrites existing amount', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'wood', 50);
+    await mgr.setResource(game.id, 'wood', 200);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv.wood).toBe(200);
+  });
+
+  it('addResource increments existing amount', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'stone', 100);
+    await mgr.addResource(game.id, 'stone', 25);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv.stone).toBe(125);
+  });
+
+  it('addResource creates resource if it does not exist', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.addResource(game.id, 'iron-ore', 10);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv['iron-ore']).toBe(10);
+  });
+
+  it('addResource clamps to zero on negative result', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'wood', 5);
+    await mgr.addResource(game.id, 'wood', -100);
+    const inv = await mgr.getInventory(game.id);
+    // amount 0 is excluded by getInventory
+    expect(inv.wood).toBeUndefined();
+  });
+
+  it('getInventory excludes resources with amount 0', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'wood', 0);
+    await mgr.setResource(game.id, 'stone', 50);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv.wood).toBeUndefined();
+    expect(inv.stone).toBe(50);
+  });
+
+  it('multiple resources persist independently', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.setResource(game.id, 'wood', 100);
+    await mgr.setResource(game.id, 'stone', 75);
+    await mgr.setResource(game.id, 'iron-ore', 12);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv).toEqual({ wood: 100, stone: 75, 'iron-ore': 12 });
+  });
+
+  it('inventories are isolated between saves', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const g1 = await mgr.createGame('world-a', 'survival');
+    const g2 = await mgr.createGame('world-b', 'creative');
+    await mgr.setResource(g1.id, 'wood', 999);
+    await mgr.setResource(g2.id, 'wood', 1);
+    const inv1 = await mgr.getInventory(g1.id);
+    const inv2 = await mgr.getInventory(g2.id);
+    expect(inv1.wood).toBe(999);
+    expect(inv2.wood).toBe(1);
+  });
+
+  it('deleteGame removes associated inventory', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('doomed', 'survival');
+    await mgr.setResource(game.id, 'wood', 100);
+    await mgr.setResource(game.id, 'stone', 50);
+    await mgr.deleteGame(game.id);
+    const inv = await mgr.getInventory(game.id);
+    expect(inv).toEqual({});
+  });
+
+  it('save and load inventory round-trip', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('round-trip', 'survival');
+    // Simulate what usePlayerInventory does: set defaults then mutate
+    await mgr.setResource(game.id, 'wood', 100);
+    await mgr.setResource(game.id, 'stone', 100);
+    await mgr.addResource(game.id, 'wood', 50);
+    await mgr.addResource(game.id, 'stone', -30);
+
+    // Simulate re-mount: fresh getInventory call
+    const loaded = await mgr.getInventory(game.id);
+    expect(loaded.wood).toBe(150);
+    expect(loaded.stone).toBe(70);
+  });
+});

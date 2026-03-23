@@ -17,7 +17,8 @@ export type GameAction =
   | 'jump'
   | 'sprint'
   | 'look'
-  | 'cycleBlock';
+  | 'cycleBlock'
+  | 'cycleShape';
 
 export class ActionMap {
   readonly #keyToAction = new Map<string, GameAction>();
@@ -68,6 +69,7 @@ export class ActionMap {
     map.bindKey('Digit4', 'hotbar4');
     map.bindKey('Digit5', 'hotbar5');
     map.bindKey('KeyR', 'cycleBlock');
+    map.bindKey('KeyT', 'cycleShape');
     return map;
   }
 }

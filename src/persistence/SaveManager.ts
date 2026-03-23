@@ -227,9 +227,10 @@ export class SaveManager {
   }
 
   /**
-   * Delete a game save and all its associated island states.
+   * Delete a game save and all its associated island states and inventory.
    */
   async deleteGame(id: number): Promise<void> {
+    await this.#db.execute('DELETE FROM inventory WHERE save_id = ?', [id]);
     await this.#db.execute('DELETE FROM island_states WHERE save_id = ?', [id]);
     await this.#db.execute('DELETE FROM games WHERE id = ?', [id]);
   }
@@ -276,5 +277,46 @@ export class SaveManager {
       'INSERT OR REPLACE INTO island_states (save_id, biome_id, goals_completed, boss_defeated) VALUES (?, ?, ?, ?)',
       [state.saveId, state.biomeId, JSON.stringify(state.goalsCompleted), state.bossDefeated ? 1 : 0],
     );
+  }
+
+  // --- Inventory persistence ---
+
+  /**
+   * Get the full inventory for a game save. Returns a map of resource_id → amount.
+   * Resources with amount 0 are excluded.
+   */
+  async getInventory(saveId: number): Promise<Record<string, number>> {
+    const rows = await this.#db.query<unknown[]>('SELECT * FROM inventory WHERE save_id = ?', [saveId]);
+    const result: Record<string, number> = {};
+    for (const r of rows) {
+      const resourceId = r[1] as string;
+      const amount = r[2] as number;
+      if (amount > 0) {
+        result[resourceId] = amount;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Set a resource to an exact amount. Creates the row if it doesn't exist.
+   */
+  async setResource(saveId: number, resourceId: string, amount: number): Promise<void> {
+    await this.#db.execute('INSERT OR REPLACE INTO inventory (save_id, resource_id, amount) VALUES (?, ?, ?)', [
+      saveId,
+      resourceId,
+      amount,
+    ]);
+  }
+
+  /**
+   * Add to (or subtract from) a resource amount. If the resource doesn't exist,
+   * it is created with the given amount. The resulting amount is clamped to >= 0.
+   */
+  async addResource(saveId: number, resourceId: string, amount: number): Promise<void> {
+    const inventory = await this.getInventory(saveId);
+    const current = inventory[resourceId] ?? 0;
+    const newAmount = Math.max(0, current + amount);
+    await this.setResource(saveId, resourceId, newAmount);
   }
 }

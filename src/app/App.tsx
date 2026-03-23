@@ -1,6 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SailingTransition } from '../components/transitions/SailingTransition';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
+import { ContentRegistry } from '../content/index';
 import type { BuildingEffects } from '../hooks/useBuildingEffects';
 import { useProgression } from '../hooks/useProgression';
 import type { GameSave } from '../persistence/GameSave';
@@ -42,6 +43,7 @@ export function App() {
   const [saves, setSaves] = useState<GameSave[]>([]);
   const progression = useProgression();
   const saveManagerRef = useRef<SaveManager | null>(null);
+  const contentRegistry = useMemo(() => new ContentRegistry(), []);
 
   // Initialize SaveManager and load existing saves
   useEffect(() => {
@@ -131,6 +133,8 @@ export function App() {
                 new Set(progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes))
               }
               gameMode={gameConfig.mode}
+              saveId={gameConfig.saveId}
+              saveManager={saveManagerRef.current}
             />
           </Suspense>
         )}
@@ -142,7 +146,12 @@ export function App() {
             unlockedBiomes={progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes)}
           />
         )}
-        {view === 'sailing' && <SailingTransition biomeName={gameConfig.biome} onComplete={() => setView('game')} />}
+        {view === 'sailing' && (
+          <SailingTransition
+            biomeName={contentRegistry.getBiome(gameConfig.biome).name}
+            onComplete={() => setView('game')}
+          />
+        )}
         {view === 'game' && (
           <Suspense fallback={<LoadingScreen />}>
             <GameView

@@ -66,9 +66,9 @@ interface Props {
   ) => Promise<void>;
 }
 
-/** Build hotbar slots: slot 0 = weapon, slots 1-4 = block name from engine */
-function buildHotbarSlots(selectedBlockName: string): SlotData[] {
-  return [{ label: 'Sword' }, { label: selectedBlockName || 'Block' }, { label: '' }, { label: '' }, { label: '' }];
+/** Build hotbar slots: slot 0 = weapon, slots 1-4 = block label from engine */
+function buildHotbarSlots(selectedBlockLabel: string): SlotData[] {
+  return [{ label: 'Sword' }, { label: selectedBlockLabel || 'Block' }, { label: '' }, { label: '' }, { label: '' }];
 }
 
 /**
@@ -273,6 +273,14 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
           />
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />
+          {engineState.breakingProgress > 0 && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-3 w-16 h-1 bg-black/50 rounded overflow-hidden">
+              <div
+                className="h-full bg-white rounded transition-[width] duration-75"
+                style={{ width: `${engineState.breakingProgress * 100}%` }}
+              />
+            </div>
+          )}
           {engineState.threatLevel !== 'none' && (
             <div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-500"
@@ -316,7 +324,7 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
             </div>
           )}
           <Hotbar
-            slots={buildHotbarSlots(engineState.selectedBlockName ?? '')}
+            slots={buildHotbarSlots(engineState.selectedBlockLabel ?? engineState.selectedBlockName ?? '')}
             activeIndex={activeSlot}
             onSelect={(idx) => {
               setActiveSlot(idx);

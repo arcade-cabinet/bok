@@ -15,9 +15,17 @@ import { getResourceForBlock } from '../content/resources.ts';
 import { runFrame } from '../frameloop';
 import type { InputSystem } from '../input/index.ts';
 import { hapticImpact } from '../platform/CapacitorBridge.ts';
+import type { GhostPreviewSystem } from '../rendering/GhostPreview.ts';
 import type { DayNightCycle, ParticleSystem, WeatherSystem } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';
-import type { BlockInteractionSystem } from '../systems/block-interaction.ts';
+import {
+  advanceBreaking,
+  type BlockInteractionSystem,
+  type BreakingState,
+  breakingTargetChanged,
+  canToolBreakBlock,
+  createBreakingState,
+} from '../systems/block-interaction.ts';
 import { IsPlayer, Transform } from '../traits';
 import { LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import type { CameraResult } from './camera.ts';
@@ -61,6 +69,7 @@ export interface GameLoopContext {
   weatherSystem: WeatherSystem | null;
   particles: ParticleSystem | null;
   blockInteraction: BlockInteractionSystem | null;
+  ghostPreview: GhostPreviewSystem | null;
   onEngineEvent: ((event: import('./types.ts').EngineEvent) => void) | null;
 }
 
@@ -73,6 +82,8 @@ export interface GameLoopResult {
   getStamina: () => number;
   getMaxStamina: () => number;
   isBlocking: () => boolean;
+  /** Current block breaking progress (0 = not breaking, 0-1 = in progress) */
+  getBreakingProgress: () => number;
 }
 
 /**
@@ -121,8 +132,13 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
 
   // Block interaction cooldowns (prevent continuous fire while mouse held)
   let blockPlaceCooldown = false;
-  let blockBreakCooldown = false;
   let blockCycleCooldown = false;
+  let shapeCycleCooldown = false;
+
+  // Block breaking progress state
+  let breakingState: BreakingState | null = null;
+  /** Player's current tool tier — defaults to hand, will be driven by inventory later */
+  const currentToolTier = 'hand';
 
   // Physics step
   jpWorld.on('beforeFixedUpdate', () => {
@@ -245,6 +261,14 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       }
       if (!cyclePressed) blockCycleCooldown = false;
 
+      // T key: cycle selected block shape
+      const shapeCyclePressed = inputSystem.actionMap.isActive('cycleShape');
+      if (shapeCyclePressed && !shapeCycleCooldown) {
+        shapeCycleCooldown = true;
+        bi.cycleShape();
+      }
+      if (!shapeCyclePressed) shapeCycleCooldown = false;
+
       // Check if any enemy is within melee range — if so, combat takes priority
       let enemyInRange = false;
       for (const e of enemies) {
@@ -277,40 +301,74 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
         }
         if (!rightDown) blockPlaceCooldown = false;
 
-        // Left-click: break block (fires once per click when not attacking)
+        // Left-click held: progressive block breaking
         const leftDown = !isMobile ? inputSystem.keyboard.attackDown : mobileInput.action === 'breakBlock';
 
-        if (leftDown && !blockBreakCooldown) {
-          blockBreakCooldown = true;
-          // Query before breaking to capture the original blockId for resource drops
+        if (leftDown) {
           const target = bi.query(cam.camera).targetBlock;
-          const delta = bi.breakBlock(cam.camera);
-          if (delta) {
-            const brokenBlockId = target?.blockId ?? 0;
-            playBlockBreak();
-            hapticImpact('light');
-            ctx.onEngineEvent?.({
-              type: 'blockBroken',
-              position: { x: delta.x, y: delta.y, z: delta.z },
-              blockId: brokenBlockId,
-            });
 
-            // Resource drop from broken block
-            const resource = getResourceForBlock(brokenBlockId);
-            if (resource) {
-              ctx.onEngineEvent?.({
-                type: 'resourceGathered',
-                resourceId: resource.id,
-                resourceName: resource.name,
-                resourceIcon: resource.icon,
-                amount: 1,
-              });
+          if (target) {
+            // Check if tool can break this block at all
+            if (!canToolBreakBlock(currentToolTier, target.blockId)) {
+              // Tool too weak — reset breaking state
+              breakingState = null;
+            } else if (breakingTargetChanged(breakingState, target)) {
+              // Target changed — start fresh breaking progress
+              breakingState = createBreakingState(target.x, target.y, target.z, target.blockId, currentToolTier);
             }
+
+            // Advance breaking progress
+            if (breakingState) {
+              const progress = advanceBreaking(breakingState, dt);
+
+              if (progress >= 1.0) {
+                // Block fully broken
+                const brokenBlockId = target.blockId;
+                const delta = bi.breakBlock(cam.camera);
+                if (delta) {
+                  playBlockBreak();
+                  hapticImpact('light');
+                  ctx.onEngineEvent?.({
+                    type: 'blockBroken',
+                    position: { x: delta.x, y: delta.y, z: delta.z },
+                    blockId: brokenBlockId,
+                  });
+
+                  // Resource drop from broken block
+                  const resource = getResourceForBlock(brokenBlockId);
+                  if (resource) {
+                    ctx.onEngineEvent?.({
+                      type: 'resourceGathered',
+                      resourceId: resource.id,
+                      resourceName: resource.name,
+                      resourceIcon: resource.icon,
+                      amount: 1,
+                    });
+                  }
+                }
+                breakingState = null;
+              }
+            }
+          } else {
+            // Not looking at any block — reset
+            breakingState = null;
           }
+
           if (isMobile && mobileInput.action === 'breakBlock') mobileInput.action = null;
+        } else {
+          // Left-click released — reset breaking progress
+          breakingState = null;
         }
-        if (!leftDown) blockBreakCooldown = false;
+      } else {
+        // Enemy in range — combat takes priority, reset breaking
+        breakingState = null;
       }
+    }
+
+    // --- Ghost preview wireframe ---
+    if (ctx.ghostPreview && ctx.blockInteraction) {
+      const preview = ctx.blockInteraction.getPlacementPreview(cam.camera);
+      ctx.ghostPreview.update(preview ? preview.position : null, preview ? preview.shape : 'cube');
     }
 
     // Day/night
@@ -383,5 +441,6 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     getStamina: () => stamina,
     getMaxStamina: () => MAX_STAMINA,
     isBlocking: () => blockActive,
+    getBreakingProgress: () => breakingState?.progress ?? 0,
   };
 }

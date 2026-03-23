@@ -28,7 +28,11 @@ const playingState: EngineState = {
     { x: 42, z: 60, type: 'chest' },
   ],
   selectedBlockName: 'Grass',
+  selectedShapeName: 'Cube',
+  selectedBlockLabel: 'Grass',
   lookingAtBlock: false,
+  placementPreview: null,
+  breakingProgress: 0,
 };
 
 vi.mock('../../engine/GameEngine', () => ({

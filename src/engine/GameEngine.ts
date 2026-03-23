@@ -14,6 +14,7 @@ import { startAtmosphericSFX, stopAtmosphericSFX } from '../audio/AtmosphericSFX
 import { startAmbient } from '../audio/GameAudio.ts';
 import { playBiomeMusic, stopMusic } from '../audio/MusicManager.ts';
 import { ContentRegistry } from '../content/index.ts';
+import { createGhostPreview } from '../rendering/GhostPreview.ts';
 import {
   CW_TILESET_COLS,
   CW_TILESET_ROWS,
@@ -24,7 +25,7 @@ import {
   TILESET_ROWS,
   WeatherSystem,
 } from '../rendering/index';
-import { createBlockInteraction } from '../systems/block-interaction.ts';
+import { createBlockInteraction, SHAPE_DISPLAY_NAMES } from '../systems/block-interaction.ts';
 import { GameModeState } from '../traits';
 import { world as kootaWorld } from '../world';
 import { getBiomeBlockDefs } from './biomeBlocks.ts';
@@ -34,6 +35,7 @@ import { applyTintsAfterLoad, spawnEnemies } from './enemySetup.ts';
 import { createEngineCore } from './engineSetup.ts';
 import { captureSnapshot, type SnapshotSources } from './engineSnapshot.ts';
 import { createGameLoop } from './gameLoop.ts';
+import { deriveIslandSeed } from './islandSeed.ts';
 import { spawnChests } from './lootSetup.ts';
 import { spawnModelActor } from './models.ts';
 import { createPlayer } from './playerSetup.ts';
@@ -50,6 +52,8 @@ export interface GameInstance {
   captureSnapshot: () => import('../persistence/GameStateSerializer.ts').SerializedGameState;
   /** Block interaction: cycle selected block (+1 or -1) */
   cycleBlock: (direction: 1 | -1) => void;
+  /** Block interaction: cycle selected shape, returns new shape display name */
+  cycleShape: () => string;
   /** Block interaction: get the name of the selected block */
   getSelectedBlockName: () => string;
   destroy: () => void;
@@ -64,6 +68,9 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   const content = new ContentRegistry();
   const biomeConfig = content.getBiome(config.biome);
   const bossConfig = content.getBoss(biomeConfig.bossId);
+
+  // --- Island-specific seed: ensures different biomes produce different terrain ---
+  const islandSeed = deriveIslandSeed(config.seed, config.biome);
 
   // --- Core engine with biome atmosphere ---
   const engine = await createEngineCore(canvas, {
@@ -109,13 +116,16 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 
-  // Create ChunkWorld — infinite terrain from seed
-  const chunkWorld = new ChunkWorld(voxelMap, { seed: config.seed, biome: biomeConfig });
+  // Create ChunkWorld — infinite terrain from island-specific seed
+  const chunkWorld = new ChunkWorld(voxelMap, { seed: islandSeed, biome: biomeConfig });
   // Generate initial chunks around spawn (0,0)
   chunkWorld.updateAroundPlayer(0, 0);
 
   // --- Block interaction system ---
   const blockInteraction = createBlockInteraction(RAPIER, engine.rapierWorld, voxelMap, chunkWorld);
+
+  // --- Ghost preview wireframe ---
+  const ghostPreview = createGhostPreview(engine.scene);
 
   // --- Weather + Particles ---
   const weatherSystem = new WeatherSystem();
@@ -132,7 +142,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   try {
     const { generatePropPlacements, spawnPropActors } = await import('../systems/spawn-props');
     const propPlacements = generatePropPlacements(
-      config.seed,
+      islandSeed,
       config.biome,
       -32,
       -32,
@@ -154,7 +164,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       '../systems/spawn-structures'
     );
     const structurePlacements = generateStructurePlacements(
-      config.seed,
+      islandSeed,
       config.biome,
       -30,
       -30,
@@ -186,7 +196,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     engine.scene,
     chunkWorld.getSurfaceY.bind(chunkWorld),
     worldSize,
-    config.seed,
+    islandSeed,
     config.biome,
     kootaWorld,
   );
@@ -216,7 +226,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   try {
     const { generateAnimalSpawns } = await import('../systems/spawn-animals');
     const animalSpawns = generateAnimalSpawns(
-      config.seed,
+      islandSeed,
       config.biome,
       0,
       0,
@@ -246,7 +256,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     engine.scene,
     chunkWorld.getSurfaceY.bind(chunkWorld),
     worldSize,
-    config.seed,
+    islandSeed,
     chestCount,
   );
 
@@ -265,7 +275,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     bossConfig.phases,
     weaponConfig,
     chests,
-    config.seed,
+    islandSeed,
     particles,
     config.mode,
   );
@@ -292,6 +302,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     weatherSystem,
     particles,
     blockInteraction,
+    ghostPreview,
     onEngineEvent: (event) => {
       for (const listener of eventListeners) listener(event);
     },
@@ -335,7 +346,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         playerHealth: combat.state.playerHealth,
         maxHealth: combat.state.maxHealth,
         enemyCount: enemies.length,
-        biomeName: config.biome,
+        biomeName: biomeConfig.name,
         bossNearby:
           !boss.defeated &&
           (() => {
@@ -377,10 +388,18 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           ...shrineLandmarks.filter((s) => !s.discovered).map((s) => ({ x: s.x, z: s.z, type: 'shrine' as const })),
         ],
         selectedBlockName: blockInteraction.getSelectedBlockName(),
+        selectedShapeName: SHAPE_DISPLAY_NAMES[blockInteraction.getSelectedShape()] ?? 'Cube',
+        selectedBlockLabel: blockInteraction.getSelectedBlockLabel(),
         lookingAtBlock: (() => {
           const result = blockInteraction.query(cam.camera);
           return result.targetBlock !== null;
         })(),
+        placementPreview: (() => {
+          const preview = blockInteraction.getPlacementPreview(cam.camera);
+          if (!preview) return null;
+          return { x: preview.position.x, y: preview.position.y, z: preview.position.z, shape: preview.shape };
+        })(),
+        breakingProgress: loop.getBreakingProgress(),
       };
     },
     onEvent: (listener) => {
@@ -407,6 +426,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     },
     triggerAttack: () => combat.triggerAttack(),
     cycleBlock: (direction: 1 | -1) => blockInteraction.cycleBlock(direction),
+    cycleShape: () => blockInteraction.cycleShape(),
     getSelectedBlockName: () => blockInteraction.getSelectedBlockName(),
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;
@@ -420,6 +440,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       combat.cleanup();
       cleanupChests();
       cleanupEnemies();
+      ghostPreview.dispose();
       weatherSystem.dispose();
       engine.scene.remove(particles.mesh);
       stopMusic();

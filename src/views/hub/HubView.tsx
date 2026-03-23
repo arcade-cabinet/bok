@@ -11,6 +11,7 @@ import { useHubCamera } from '../../hooks/useHubCamera';
 import { useHubEngine } from '../../hooks/useHubEngine';
 import { useNPCProximity } from '../../hooks/useNPCProximity';
 import { usePlayerInventory } from '../../hooks/usePlayerInventory';
+import type { SaveManager } from '../../persistence/index';
 
 interface Props {
   onNavigate: (view: 'menu' | 'game') => void;
@@ -21,6 +22,10 @@ interface Props {
   unlockedBiomes?: Set<string>;
   /** Game mode — in creative mode all docks are accessible. */
   gameMode?: 'creative' | 'survival';
+  /** Save ID for inventory persistence */
+  saveId?: number;
+  /** SaveManager instance for inventory persistence */
+  saveManager?: SaveManager | null;
 }
 
 /** Accessible hub pause modal with focus trap and Escape key support. */
@@ -89,7 +94,15 @@ const NPC_LABEL_DISTANCE = 12;
 const ALWAYS_UNLOCKED_BIOMES = new Set(['forest']);
 
 /** Hub island: walk between buildings, upgrade, interact with NPCs, set sail from docks. */
-export function HubView({ onNavigate, onSetSail, onBuildingEffectsChange, unlockedBiomes, gameMode }: Props) {
+export function HubView({
+  onNavigate,
+  onSetSail,
+  onBuildingEffectsChange,
+  unlockedBiomes,
+  gameMode,
+  saveId,
+  saveManager,
+}: Props) {
   const [showPause, setShowPause] = useState(false);
   const [npcDialogueOpen, setNpcDialogueOpen] = useState(false);
   const [upgradeFeedback, setUpgradeFeedback] = useState<{ message: string; success: boolean } | null>(null);
@@ -98,7 +111,7 @@ export function HubView({ onNavigate, onSetSail, onBuildingEffectsChange, unlock
   const onFrameRef = useRef<((cam: CameraResult) => void) | null>(null);
 
   // Player inventory (shared resource pool for NPC transactions and building upgrades)
-  const playerInventory = usePlayerInventory();
+  const playerInventory = usePlayerInventory(saveManager, saveId);
 
   // Building upgrade system — uses player inventory for resource management
   const hubBuildings = useHubBuildings(undefined, playerInventory);

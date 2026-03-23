@@ -104,6 +104,7 @@ function createMockContext(): GameLoopContext & { jpWorld: MockJpWorld } {
     weatherSystem: null,
     particles: null,
     blockInteraction: null,
+    ghostPreview: null,
     onEngineEvent: null,
   };
 }

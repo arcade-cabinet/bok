@@ -70,4 +70,14 @@ export async function runMigrations(db: DatabaseAdapter): Promise<void> {
       FOREIGN KEY (save_id) REFERENCES games(id)
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS inventory (
+      save_id INTEGER NOT NULL,
+      resource_id TEXT NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (save_id, resource_id),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
 }

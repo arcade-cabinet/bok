@@ -91,8 +91,16 @@ export interface EngineState {
   minimapMarkers: MinimapMarker[];
   /** Name of the currently selected block for placement */
   selectedBlockName: string;
+  /** Display name of the currently selected block shape (e.g. "Cube", "Slab") */
+  selectedShapeName: string;
+  /** Combined block label: type + shape (e.g. "Stone [Slab]") */
+  selectedBlockLabel: string;
   /** Whether the player is looking at a breakable block within reach */
   lookingAtBlock: boolean;
+  /** Ghost preview position and shape for the placement wireframe */
+  placementPreview: { x: number; y: number; z: number; shape: string } | null;
+  /** Block breaking progress: 0 = not breaking, 0-1 = in progress */
+  breakingProgress: number;
 }
 
 /** Boss attack configuration for a single phase */
