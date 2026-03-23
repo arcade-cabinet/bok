@@ -142,13 +142,18 @@ export function GameView({
         return;
       }
       try {
-        const [deltas, islandState] = await Promise.all([
+        const [deltas, islandState, inventory] = await Promise.all([
           saveManager.loadChunkDeltas(config.saveId, config.biome),
           saveManager.getIslandState(config.saveId, config.biome),
+          saveManager.getInventory(config.saveId),
         ]);
         if (!cancelled) {
           setRestoredDeltas(deltas.length > 0 ? deltas : undefined);
           setRestoredGoalIds(islandState?.goalsCompleted ?? undefined);
+          // Load saved inventory so previously gathered resources + crafted weapons are available
+          if (Object.keys(inventory).length > 0) {
+            setResourceCounts(inventory);
+          }
           setPersistenceReady(true);
         }
       } catch (err) {
