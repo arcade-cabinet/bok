@@ -89,6 +89,10 @@ export interface EngineState {
   playerZ: number;
   /** Minimap markers: enemies and loot drops */
   minimapMarkers: MinimapMarker[];
+  /** Name of the currently selected block for placement */
+  selectedBlockName: string;
+  /** Whether the player is looking at a breakable block within reach */
+  lookingAtBlock: boolean;
 }
 
 /** Boss attack configuration for a single phase */
@@ -123,7 +127,10 @@ export type EngineEvent =
   | { type: 'chestOpened'; tier: string; items: Array<{ name: string; amount: number }> }
   | { type: 'bossTelegraph'; attackName: string; duration: number }
   | { type: 'bossSummon'; attackName: string }
-  | { type: 'landmarkDiscovered'; position: { x: number; z: number } };
+  | { type: 'landmarkDiscovered'; position: { x: number; z: number } }
+  | { type: 'blockPlaced'; position: { x: number; y: number; z: number }; blockId: number }
+  | { type: 'blockBroken'; position: { x: number; y: number; z: number }; blockId: number }
+  | { type: 'resourceGathered'; resourceId: string; resourceName: string; resourceIcon: string; amount: number };
 
 export type EngineEventListener = (event: EngineEvent) => void;
 
@@ -133,5 +140,5 @@ export interface MobileInput {
   moveZ: number; // -1 to 1 absolute
   lookX: number; // -1 to 1 absolute — continuous rotation rate
   lookY: number; // -1 to 1 absolute — continuous rotation rate
-  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | 'interact' | null;
+  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | 'interact' | 'placeBlock' | 'breakBlock' | null;
 }

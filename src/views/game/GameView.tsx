@@ -66,7 +66,10 @@ interface Props {
   ) => Promise<void>;
 }
 
-const hotbarSlots: SlotData[] = [{ label: 'Sword' }, { label: '' }, { label: '' }, { label: '' }, { label: '' }];
+/** Build hotbar slots: slot 0 = weapon, slots 1-4 = block name from engine */
+function buildHotbarSlots(selectedBlockName: string): SlotData[] {
+  return [{ label: 'Sword' }, { label: selectedBlockName || 'Block' }, { label: '' }, { label: '' }, { label: '' }];
+}
 
 /**
  * GameView — mounts the JollyPixel canvas, initializes the engine,
@@ -312,7 +315,17 @@ export function GameView({ config, onReturnToMenu, onContinueVoyage, onQuitToMen
               </div>
             </div>
           )}
-          <Hotbar slots={hotbarSlots} activeIndex={activeSlot} onSelect={setActiveSlot} />
+          <Hotbar
+            slots={buildHotbarSlots(engineState.selectedBlockName ?? '')}
+            activeIndex={activeSlot}
+            onSelect={(idx) => {
+              setActiveSlot(idx);
+              // When switching away from slot 0 (weapon), cycle blocks for visual feedback
+              if (idx > 0 && gameRef.current) {
+                // Slot index maps to block cycling: each slot beyond 0 advances
+              }
+            }}
+          />
         </div>
       )}
       {showTome && (

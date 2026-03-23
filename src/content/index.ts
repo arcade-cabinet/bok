@@ -8,6 +8,13 @@
  */
 export { ContentRegistry } from './registry.ts';
 export {
+  getResourceForBlock,
+  getResourcesForBiome,
+  getUniversalResources,
+  RESOURCES,
+  type ResourceDef,
+} from './resources.ts';
+export {
   type AttackPattern,
   type BiomeConfig,
   BiomeConfigSchema,

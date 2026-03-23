@@ -101,6 +101,10 @@ export function useGameEvents(
       // Show all chest items in LootNotification
       setLootItems((prev) => [...prev, ...event.items]);
     }
+    if (event.type === 'resourceGathered') {
+      // Show resource pickup in LootNotification with icon prefix
+      setLootItems((prev) => [...prev, { name: `${event.resourceIcon} ${event.resourceName}`, amount: event.amount }]);
+    }
     if (event.type === 'playerDied' || event.type === 'bossDefeated') {
       const game = gameRef.current;
       if (game) setEngineState(game.getState());

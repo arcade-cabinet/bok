@@ -152,8 +152,9 @@ export class ChunkWorld {
     if (this.#loadedChunks.has(key)) {
       for (const d of deltas) {
         if (d.blockId === 0) {
-          // Remove block — VoxelRenderer doesn't have removeVoxel in our wrapper,
-          // so we skip for now
+          this.#voxelMap.removeVoxel('Ground', {
+            position: { x: d.x, y: d.y, z: d.z },
+          });
         } else {
           this.#voxelMap.setVoxel('Ground', {
             position: { x: d.x, y: d.y, z: d.z },

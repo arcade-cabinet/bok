@@ -127,3 +127,181 @@ describe('SaveManager mid-run save', () => {
     expect(loaded?.player.health.current).toBe(90);
   });
 });
+
+describe('SaveManager game saves', () => {
+  it('createGame stores seed and mode', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('Brave Dark Fox', 'survival');
+    expect(game.seed).toBe('Brave Dark Fox');
+    expect(game.mode).toBe('survival');
+    expect(game.id).toBeGreaterThan(0);
+    expect(game.createdAt).toBeGreaterThan(0);
+    expect(game.lastPlayedAt).toBe(game.createdAt);
+  });
+
+  it('loadGame retrieves a saved game by id', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const created = await mgr.createGame('test-seed', 'creative');
+    const loaded = await mgr.loadGame(created.id);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.seed).toBe('test-seed');
+    expect(loaded?.mode).toBe('creative');
+    expect(loaded?.id).toBe(created.id);
+  });
+
+  it('loadGame returns null for non-existent id', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const loaded = await mgr.loadGame(999);
+    expect(loaded).toBeNull();
+  });
+
+  it('listGames returns all saves newest-first', async () => {
+    const mgr = await SaveManager.createInMemory();
+    await mgr.createGame('first', 'survival');
+    await new Promise((r) => setTimeout(r, 2));
+    await mgr.createGame('second', 'creative');
+    const games = await mgr.listGames();
+    expect(games).toHaveLength(2);
+    expect(games[0].seed).toBe('second');
+    expect(games[1].seed).toBe('first');
+  });
+
+  it('listGames returns empty array when no saves exist', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const games = await mgr.listGames();
+    expect(games).toHaveLength(0);
+  });
+
+  it('deleteGame removes the save', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('doomed', 'survival');
+    await mgr.deleteGame(game.id);
+    const loaded = await mgr.loadGame(game.id);
+    expect(loaded).toBeNull();
+    const games = await mgr.listGames();
+    expect(games).toHaveLength(0);
+  });
+
+  it('deleteGame also removes associated island states', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('doomed', 'survival');
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['goal1'],
+      bossDefeated: false,
+    });
+    await mgr.deleteGame(game.id);
+    const island = await mgr.getIslandState(game.id, 'forest');
+    expect(island).toBeNull();
+  });
+
+  it('createGame assigns unique ids to multiple saves', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const g1 = await mgr.createGame('one', 'survival');
+    const g2 = await mgr.createGame('two', 'creative');
+    expect(g1.id).not.toBe(g2.id);
+  });
+});
+
+describe('SaveManager island state', () => {
+  it('getIslandState returns null for unvisited island', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    const state = await mgr.getIslandState(game.id, 'desert');
+    expect(state).toBeNull();
+  });
+
+  it('updateIslandState persists goal progress', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['discover_shrine', 'defeat_enemies'],
+      bossDefeated: false,
+    });
+    const state = await mgr.getIslandState(game.id, 'forest');
+    expect(state).not.toBeNull();
+    expect(state?.goalsCompleted).toEqual(['discover_shrine', 'defeat_enemies']);
+    expect(state?.bossDefeated).toBe(false);
+  });
+
+  it('updateIslandState tracks boss defeat', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['discover_shrine', 'defeat_enemies', 'collect_treasures'],
+      bossDefeated: true,
+    });
+    const state = await mgr.getIslandState(game.id, 'forest');
+    expect(state?.bossDefeated).toBe(true);
+  });
+
+  it('updateIslandState overwrites previous state', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['goal1'],
+      bossDefeated: false,
+    });
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['goal1', 'goal2'],
+      bossDefeated: true,
+    });
+    const state = await mgr.getIslandState(game.id, 'forest');
+    expect(state?.goalsCompleted).toEqual(['goal1', 'goal2']);
+    expect(state?.bossDefeated).toBe(true);
+  });
+
+  it('island states are isolated between saves', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const g1 = await mgr.createGame('world-a', 'survival');
+    const g2 = await mgr.createGame('world-b', 'survival');
+    await mgr.updateIslandState({
+      saveId: g1.id,
+      biomeId: 'forest',
+      goalsCompleted: ['goal-a'],
+      bossDefeated: true,
+    });
+    await mgr.updateIslandState({
+      saveId: g2.id,
+      biomeId: 'forest',
+      goalsCompleted: [],
+      bossDefeated: false,
+    });
+    const s1 = await mgr.getIslandState(g1.id, 'forest');
+    const s2 = await mgr.getIslandState(g2.id, 'forest');
+    expect(s1?.goalsCompleted).toEqual(['goal-a']);
+    expect(s1?.bossDefeated).toBe(true);
+    expect(s2?.goalsCompleted).toEqual([]);
+    expect(s2?.bossDefeated).toBe(false);
+  });
+
+  it('island states are isolated between biomes', async () => {
+    const mgr = await SaveManager.createInMemory();
+    const game = await mgr.createGame('test', 'survival');
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'forest',
+      goalsCompleted: ['goal1'],
+      bossDefeated: true,
+    });
+    await mgr.updateIslandState({
+      saveId: game.id,
+      biomeId: 'desert',
+      goalsCompleted: [],
+      bossDefeated: false,
+    });
+    const forest = await mgr.getIslandState(game.id, 'forest');
+    const desert = await mgr.getIslandState(game.id, 'desert');
+    expect(forest?.bossDefeated).toBe(true);
+    expect(desert?.bossDefeated).toBe(false);
+  });
+});

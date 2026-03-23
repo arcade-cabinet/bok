@@ -12,9 +12,11 @@ export interface GoalDefinition {
   id: string;
   title: string;
   description: string;
-  type: 'discover' | 'kill' | 'loot';
+  type: 'discover' | 'kill' | 'loot' | 'gather';
   target: number;
   icon: string;
+  /** For 'gather' type: which resource ID to track */
+  resourceId?: string;
 }
 
 export interface GoalProgress {
@@ -47,6 +49,7 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
   onEnemyKilled: () => void;
   onChestOpened: () => void;
   onLandmarkDiscovered: () => void;
+  onResourceGathered: (resourceId: string) => void;
 } {
   // No goals in Creative mode or if biome has no goals defined
   if (!biomeGoals) {
@@ -61,6 +64,7 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
       onEnemyKilled: () => {},
       onChestOpened: () => {},
       onLandmarkDiscovered: () => {},
+      onResourceGathered: () => {},
     };
   }
 
@@ -85,9 +89,13 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
     }
   }
 
-  function advanceGoal(type: GoalDefinition['type']) {
+  function advanceGoal(type: GoalDefinition['type'], resourceId?: string) {
     for (const goal of goals) {
       if (goal.definition.type === type && !goal.completed) {
+        // For gather goals, only advance if the resourceId matches
+        if (type === 'gather' && goal.definition.resourceId && goal.definition.resourceId !== resourceId) {
+          continue;
+        }
         goal.current = Math.min(goal.current + 1, goal.definition.target);
         if (goal.current >= goal.definition.target) {
           goal.completed = true;
@@ -103,5 +111,6 @@ export function createGoalSystem(biomeGoals: BiomeGoals | null): {
     onEnemyKilled: () => advanceGoal('kill'),
     onChestOpened: () => advanceGoal('loot'),
     onLandmarkDiscovered: () => advanceGoal('discover'),
+    onResourceGathered: (resourceId: string) => advanceGoal('gather', resourceId),
   };
 }

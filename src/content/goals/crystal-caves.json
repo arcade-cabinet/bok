@@ -3,29 +3,30 @@
   "goals": [
     {
       "id": "crystal-caves-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Delve the Depths",
+      "description": "Discover 2 crystal formations",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "crystal-caves-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Shatter the Sentinels",
+      "description": "Defeat 6 crystal guardians",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "crystal-caves-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "📦"
+      "id": "crystal-caves-gather-shards",
+      "title": "Mine Crystal Shards",
+      "description": "Gather 8 Crystal Shards",
+      "type": "gather",
+      "target": 8,
+      "resourceId": "crystal-shard",
+      "icon": "\u2728"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "The crystals hum... The Hydra stirs.",
+  "completionMessage": "The cavern glows. The Crystal Hydra awaits."
 }

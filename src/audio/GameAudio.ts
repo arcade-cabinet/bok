@@ -155,6 +155,52 @@ export function playVictory(): void {
   }, 1200);
 }
 
+/** Block place — short percussive thud at medium pitch */
+export function playBlockPlace(): void {
+  const synth = new Tone.MembraneSynth({
+    pitchDecay: 0.03,
+    octaves: 3,
+    envelope: {
+      attack: 0.001,
+      decay: 0.08,
+      sustain: 0,
+      release: 0.03,
+    },
+  }).connect(masterVolume);
+
+  synth.triggerAttackRelease('G2', '0.08');
+
+  setTimeout(() => {
+    synth.dispose();
+  }, 250);
+}
+
+/** Block break — noise crunch with rapid decay */
+export function playBlockBreak(): void {
+  const filter = new Tone.Filter({
+    type: 'bandpass',
+    frequency: 1200,
+    Q: 1.5,
+  }).connect(masterVolume);
+
+  const synth = new Tone.NoiseSynth({
+    noise: { type: 'brown' },
+    envelope: {
+      attack: 0.001,
+      decay: 0.12,
+      sustain: 0,
+      release: 0.02,
+    },
+  }).connect(filter);
+
+  synth.triggerAttackRelease('0.12');
+
+  setTimeout(() => {
+    synth.dispose();
+    filter.dispose();
+  }, 300);
+}
+
 /** Ambient wind — noise through auto-filter, looped */
 let ambientNoise: Tone.Noise | null = null;
 let ambientFilter: Tone.AutoFilter | null = null;

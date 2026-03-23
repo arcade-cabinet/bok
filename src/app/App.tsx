@@ -1,8 +1,10 @@
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { SailingTransition } from '../components/transitions/SailingTransition';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import type { BuildingEffects } from '../hooks/useBuildingEffects';
 import { useProgression } from '../hooks/useProgression';
+import type { GameSave } from '../persistence/GameSave';
+import { SaveManager } from '../persistence/SaveManager';
 import { IslandSelectView } from '../views/island-select/IslandSelectView';
 import { MainMenuView } from '../views/menu/MainMenuView';
 
@@ -14,6 +16,9 @@ export type AppView = 'menu' | 'game' | 'hub' | 'sailing' | 'island-select';
 export type GameMode = 'creative' | 'survival';
 
 export interface GameConfig {
+  /** Save ID — links to the persistent game save */
+  saveId: number;
+  /** Current island biome (set when sailing to an island, used by engine) */
   biome: string;
   seed: string;
   mode: GameMode;
@@ -22,6 +27,7 @@ export interface GameConfig {
 export function App() {
   const [view, setView] = useState<AppView>('menu');
   const [gameConfig, setGameConfig] = useState<GameConfig>({
+    saveId: 0,
     biome: 'forest',
     seed: 'Brave Dark Fox',
     mode: 'survival',
@@ -33,19 +39,45 @@ export function App() {
     shopTier: 0,
     maxCraftingTier: 0,
   });
+  const [saves, setSaves] = useState<GameSave[]>([]);
   const progression = useProgression();
+  const saveManagerRef = useRef<SaveManager | null>(null);
 
-  const handleStartGame = (config: GameConfig) => {
-    setGameConfig(config);
+  // Initialize SaveManager and load existing saves
+  useEffect(() => {
+    let cancelled = false;
+    SaveManager.createInMemory().then(async (mgr) => {
+      if (cancelled) return;
+      saveManagerRef.current = mgr;
+      const games = await mgr.listGames();
+      if (!cancelled) setSaves(games);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleStartGame = async (seed: string, mode: GameMode) => {
+    const mgr = saveManagerRef.current;
+    if (!mgr) return;
+    const save = await mgr.createGame(seed, mode);
+    setSaves(await mgr.listGames());
+    setGameConfig({ saveId: save.id, biome: 'forest', seed: save.seed, mode: save.mode });
     setView('hub');
   };
 
-  const handleResumeGame = () => {
-    const last = progression.runHistory[0];
-    if (!last) return;
-    const biome = last.biomes[0] ?? 'forest';
-    setGameConfig({ biome, seed: last.seed, mode: 'survival' });
+  const handleContinueGame = async (save: GameSave) => {
+    const mgr = saveManagerRef.current;
+    if (mgr) await mgr.touchGame(save.id);
+    setGameConfig({ saveId: save.id, biome: 'forest', seed: save.seed, mode: save.mode });
     setView('hub');
+  };
+
+  const handleDeleteGame = async (id: number) => {
+    const mgr = saveManagerRef.current;
+    if (!mgr) return;
+    await mgr.deleteGame(id);
+    setSaves(await mgr.listGames());
   };
 
   const handleHubNavigate = (target: 'menu' | 'game') => {
@@ -55,6 +87,12 @@ export function App() {
       setView(target);
     }
   };
+
+  /** Called when the player sets sail from a specific dock on the hub island. */
+  const handleSetSail = useCallback((biomeId: string) => {
+    setGameConfig((prev) => ({ ...prev, biome: biomeId }));
+    setView('sailing');
+  }, []);
 
   const handleSelectBiome = (biomeId: string) => {
     setGameConfig((prev) => ({ ...prev, biome: biomeId }));
@@ -77,15 +115,23 @@ export function App() {
         {view === 'menu' && (
           <MainMenuView
             onStartGame={handleStartGame}
-            onResumeGame={handleResumeGame}
-            hasRunHistory={progression.runHistory.length > 0}
-            unlockedBiomes={progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes)}
+            onContinueGame={handleContinueGame}
+            onDeleteGame={handleDeleteGame}
+            saves={saves}
             unlockedPages={progression.unlockedPages}
           />
         )}
         {view === 'hub' && (
           <Suspense fallback={<LoadingScreen />}>
-            <HubView onNavigate={handleHubNavigate} onBuildingEffectsChange={handleBuildingEffectsChange} />
+            <HubView
+              onNavigate={handleHubNavigate}
+              onSetSail={handleSetSail}
+              onBuildingEffectsChange={handleBuildingEffectsChange}
+              unlockedBiomes={
+                new Set(progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes))
+              }
+              gameMode={gameConfig.mode}
+            />
           </Suspense>
         )}
         {view === 'island-select' && (

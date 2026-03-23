@@ -49,4 +49,25 @@ export async function runMigrations(db: DatabaseAdapter): Promise<void> {
       timestamp INTEGER NOT NULL
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS games (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      seed TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      last_played_at INTEGER NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS island_states (
+      save_id INTEGER NOT NULL,
+      biome_id TEXT NOT NULL,
+      goals_completed TEXT DEFAULT '[]',
+      boss_defeated INTEGER DEFAULT 0,
+      PRIMARY KEY (save_id, biome_id),
+      FOREIGN KEY (save_id) REFERENCES games(id)
+    )
+  `);
 }

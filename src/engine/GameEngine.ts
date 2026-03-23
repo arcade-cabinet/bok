@@ -24,6 +24,7 @@ import {
   TILESET_ROWS,
   WeatherSystem,
 } from '../rendering/index';
+import { createBlockInteraction } from '../systems/block-interaction.ts';
 import { GameModeState } from '../traits';
 import { world as kootaWorld } from '../world';
 import { getBiomeBlockDefs } from './biomeBlocks.ts';
@@ -47,6 +48,10 @@ export interface GameInstance {
   setMobileInput: (input: MobileInput) => void;
   togglePause: () => void;
   captureSnapshot: () => import('../persistence/GameStateSerializer.ts').SerializedGameState;
+  /** Block interaction: cycle selected block (+1 or -1) */
+  cycleBlock: (direction: 1 | -1) => void;
+  /** Block interaction: get the name of the selected block */
+  getSelectedBlockName: () => string;
   destroy: () => void;
 }
 
@@ -108,6 +113,9 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
   const chunkWorld = new ChunkWorld(voxelMap, { seed: config.seed, biome: biomeConfig });
   // Generate initial chunks around spawn (0,0)
   chunkWorld.updateAroundPlayer(0, 0);
+
+  // --- Block interaction system ---
+  const blockInteraction = createBlockInteraction(RAPIER, engine.rapierWorld, voxelMap, chunkWorld);
 
   // --- Weather + Particles ---
   const weatherSystem = new WeatherSystem();
@@ -283,6 +291,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     getSurfaceY: chunkWorld.getSurfaceY.bind(chunkWorld),
     weatherSystem,
     particles,
+    blockInteraction,
+    onEngineEvent: (event) => {
+      for (const listener of eventListeners) listener(event);
+    },
   });
 
   // --- Audio ---
@@ -364,6 +376,11 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           })),
           ...shrineLandmarks.filter((s) => !s.discovered).map((s) => ({ x: s.x, z: s.z, type: 'shrine' as const })),
         ],
+        selectedBlockName: blockInteraction.getSelectedBlockName(),
+        lookingAtBlock: (() => {
+          const result = blockInteraction.query(cam.camera);
+          return result.targetBlock !== null;
+        })(),
       };
     },
     onEvent: (listener) => {
@@ -389,6 +406,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       return captureSnapshot(sources);
     },
     triggerAttack: () => combat.triggerAttack(),
+    cycleBlock: (direction: 1 | -1) => blockInteraction.cycleBlock(direction),
+    getSelectedBlockName: () => blockInteraction.getSelectedBlockName(),
     setMobileInput: (input: MobileInput) => {
       mobileInput.moveX = input.moveX;
       mobileInput.moveZ = input.moveZ;

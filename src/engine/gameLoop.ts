@@ -10,11 +10,14 @@ import * as THREE from 'three';
 import type { EntityManager as YukaEntityManager } from 'yuka';
 
 import { createPlayerGovernor, type GovernorOutput } from '../ai/index';
+import { playBlockBreak, playBlockPlace } from '../audio/GameAudio.ts';
+import { getResourceForBlock } from '../content/resources.ts';
 import { runFrame } from '../frameloop';
 import type { InputSystem } from '../input/index.ts';
 import { hapticImpact } from '../platform/CapacitorBridge.ts';
 import type { DayNightCycle, ParticleSystem, WeatherSystem } from '../rendering/index.ts';
 import { MAX_DELTA } from '../shared/index.ts';
+import type { BlockInteractionSystem } from '../systems/block-interaction.ts';
 import { IsPlayer, Transform } from '../traits';
 import { LookIntent, MovementIntent, Time } from '../traits/index.ts';
 import type { CameraResult } from './camera.ts';
@@ -57,6 +60,8 @@ export interface GameLoopContext {
   getSurfaceY: SurfaceHeightFn;
   weatherSystem: WeatherSystem | null;
   particles: ParticleSystem | null;
+  blockInteraction: BlockInteractionSystem | null;
+  onEngineEvent: ((event: import('./types.ts').EngineEvent) => void) | null;
 }
 
 /** Controls and state accessors returned from the game loop */
@@ -113,6 +118,11 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
   let blockActive = false;
   let wasBlocking = false;
   let parryWindow = 0;
+
+  // Block interaction cooldowns (prevent continuous fire while mouse held)
+  let blockPlaceCooldown = false;
+  let blockBreakCooldown = false;
+  let blockCycleCooldown = false;
 
   // Physics step
   jpWorld.on('beforeFixedUpdate', () => {
@@ -220,6 +230,86 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
         // The interact button serves as a visual affordance for mobile players.
         // Clear action so it doesn't persist.
         mobileInput.action = null;
+      }
+    }
+
+    // --- Block interaction (place/break/cycle) ---
+    if (ctx.blockInteraction) {
+      const bi = ctx.blockInteraction;
+
+      // R key: cycle selected block type
+      const cyclePressed = inputSystem.actionMap.isActive('cycleBlock');
+      if (cyclePressed && !blockCycleCooldown) {
+        blockCycleCooldown = true;
+        bi.cycleBlock(1);
+      }
+      if (!cyclePressed) blockCycleCooldown = false;
+
+      // Check if any enemy is within melee range — if so, combat takes priority
+      let enemyInRange = false;
+      for (const e of enemies) {
+        if (e.dying) continue;
+        const edx = cam.camera.position.x - e.mesh.position.x;
+        const edz = cam.camera.position.z - e.mesh.position.z;
+        if (Math.sqrt(edx * edx + edz * edz) < 3.0) {
+          enemyInRange = true;
+          break;
+        }
+      }
+
+      if (!enemyInRange) {
+        // Right-click: place block (fires once per click, not per frame)
+        const rightDown = !isMobile ? inputSystem.keyboard.parryDown : mobileInput.action === 'placeBlock';
+
+        if (rightDown && !blockPlaceCooldown) {
+          blockPlaceCooldown = true;
+          const delta = bi.placeBlock(cam.camera);
+          if (delta) {
+            playBlockPlace();
+            hapticImpact('light');
+            ctx.onEngineEvent?.({
+              type: 'blockPlaced',
+              position: { x: delta.x, y: delta.y, z: delta.z },
+              blockId: delta.blockId,
+            });
+          }
+          if (isMobile && mobileInput.action === 'placeBlock') mobileInput.action = null;
+        }
+        if (!rightDown) blockPlaceCooldown = false;
+
+        // Left-click: break block (fires once per click when not attacking)
+        const leftDown = !isMobile ? inputSystem.keyboard.attackDown : mobileInput.action === 'breakBlock';
+
+        if (leftDown && !blockBreakCooldown) {
+          blockBreakCooldown = true;
+          // Query before breaking to capture the original blockId for resource drops
+          const target = bi.query(cam.camera).targetBlock;
+          const delta = bi.breakBlock(cam.camera);
+          if (delta) {
+            const brokenBlockId = target?.blockId ?? 0;
+            playBlockBreak();
+            hapticImpact('light');
+            ctx.onEngineEvent?.({
+              type: 'blockBroken',
+              position: { x: delta.x, y: delta.y, z: delta.z },
+              blockId: brokenBlockId,
+            });
+
+            // Resource drop from broken block
+            const resource = getResourceForBlock(brokenBlockId);
+            if (resource) {
+              ctx.onEngineEvent?.({
+                type: 'resourceGathered',
+                resourceId: resource.id,
+                resourceName: resource.name,
+                resourceIcon: resource.icon,
+                amount: 1,
+              });
+            }
+          }
+          if (isMobile && mobileInput.action === 'breakBlock') mobileInput.action = null;
+        }
+        if (!leftDown) blockBreakCooldown = false;
       }
     }
 

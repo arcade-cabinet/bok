@@ -27,6 +27,8 @@ const playingState: EngineState = {
     { x: 55, z: 48, type: 'enemy' },
     { x: 42, z: 60, type: 'chest' },
   ],
+  selectedBlockName: 'Grass',
+  lookingAtBlock: false,
 };
 
 vi.mock('../../engine/GameEngine', () => ({
@@ -46,7 +48,7 @@ test('renders canvas and HUD elements', async () => {
 
   const { container } = await render(
     <GameView
-      config={{ biome: 'forest', seed: 'test', mode: 'survival' }}
+      config={{ saveId: 1, biome: 'forest', seed: 'test', mode: 'survival' }}
       onReturnToMenu={() => {}}
       onQuitToMenu={() => {}}
     />,
