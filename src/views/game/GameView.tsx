@@ -18,6 +18,7 @@ import { ScreenReaderAnnouncer } from '../../components/hud/ScreenReaderAnnounce
 import { TomeUnlockBanner } from '../../components/hud/TomeUnlockBanner';
 import { isTutorialCompleted, TutorialOverlay } from '../../components/hud/TutorialOverlay';
 import { DeathScreen } from '../../components/modals/DeathScreen';
+import { InventoryModal } from '../../components/modals/InventoryModal';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen } from '../../components/modals/VictoryScreen';
@@ -73,6 +74,14 @@ interface Props {
   ) => Promise<void>;
 }
 
+/** Format a weapon ID to a short display name for the hotbar. */
+function formatWeaponLabel(weaponId: string): string {
+  return weaponId
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /** Build hotbar slots: slot 0 = weapon, slots 1-4 = block label from engine.
  *  Includes resource count on the block slot when available.
  */
@@ -80,12 +89,13 @@ function buildHotbarSlots(
   selectedBlockLabel: string,
   resourceCounts: Record<string, number>,
   selectedBlockName: string,
+  equippedWeaponId = 'wooden-sword',
 ): SlotData[] {
   // Look up count by lowercase block name (resource IDs are lowercase)
   const blockResourceId = selectedBlockName.toLowerCase();
   const blockCount = resourceCounts[blockResourceId] ?? undefined;
   return [
-    { label: 'Sword' },
+    { label: formatWeaponLabel(equippedWeaponId) },
     { label: selectedBlockLabel || 'Block', count: blockCount },
     { label: '' },
     { label: '' },
@@ -113,6 +123,7 @@ export function GameView({
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
   const [resourceCounts, setResourceCounts] = useState<Record<string, number>>({});
   const [bossPhaseText, setBossPhaseText] = useState<string | null>(null);
+  const [showInventory, setShowInventory] = useState(false);
 
   // --- Island persistence: load saved deltas + goal progress ---
   const [restoredDeltas, setRestoredDeltas] = useState<
@@ -162,6 +173,17 @@ export function GameView({
   useEffect(() => {
     setGoalState({ ...goalSystem.state });
   }, [goalSystem]);
+
+  // 'I' key opens inventory during gameplay
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'i' || e.key === 'I') {
+        if (!showInventory) setShowInventory(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showInventory]);
 
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
@@ -504,6 +526,7 @@ export function GameView({
               engineState.selectedBlockLabel ?? engineState.selectedBlockName ?? '',
               resourceCounts,
               engineState.selectedBlockName ?? '',
+              engineState.equippedWeaponId,
             )}
             activeIndex={activeSlot}
             onSelect={(idx) => {
@@ -528,8 +551,23 @@ export function GameView({
           newlyUnlockedId={newlyUnlockedTomeId}
         />
       )}
-      {engineState?.phase === 'paused' && (
-        <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={handleQuitToMenu} />
+      {showInventory && (
+        <InventoryModal
+          inventory={resourceCounts}
+          onClose={() => setShowInventory(false)}
+          equippedWeaponId={engineState?.equippedWeaponId}
+          onEquipWeapon={(weaponId) => {
+            gameRef.current?.setEquippedWeapon(weaponId);
+          }}
+        />
+      )}
+      {engineState?.phase === 'paused' && !showInventory && (
+        <PauseMenu
+          onResume={handleResume}
+          onAbandonRun={handleAbandonRun}
+          onQuitToMenu={handleQuitToMenu}
+          onOpenInventory={() => setShowInventory(true)}
+        />
       )}
       {engineState?.phase === 'dead' && events.deathStats && (
         <DeathScreen stats={events.deathStats} onReturnToHub={handleReturnToMenu} onTryAgain={handleReturnToMenu} />

@@ -68,6 +68,10 @@ export interface CombatSystem {
   getComboStep: () => number;
   /** Return current combat-related data for mid-run snapshot capture */
   getSnapshotSources: () => Partial<SnapshotSources>;
+  /** Change equipped weapon mid-game — updates damage, speed, range, combo */
+  setWeapon: (weaponId: string) => void;
+  /** Get currently equipped weapon ID */
+  getWeaponId: () => string;
 }
 
 /**
@@ -101,7 +105,7 @@ export function createCombat(
 
   // Load weapon config from content registry or use override
   const content = new ContentRegistry();
-  const equippedWeapon: WeaponConfig = weaponConfigOverride ?? content.getWeapon('wooden-sword');
+  let equippedWeapon: WeaponConfig = weaponConfigOverride ?? content.getWeapon('wooden-sword');
 
   // Combo state — managed inline to account for attack cooldown
   // The combo window starts *after* the attack cooldown expires, not from the hit moment.
@@ -626,5 +630,12 @@ export function createCombat(
       openedChests: openedChestIds,
       defeatedBoss: boss.defeated,
     }),
+    setWeapon: (weaponId: string) => {
+      equippedWeapon = content.getWeapon(weaponId);
+      // Reset combo when switching weapons
+      comboStep = 0;
+      comboTimer = 0;
+    },
+    getWeaponId: () => equippedWeapon.id,
   };
 }

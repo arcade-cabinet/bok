@@ -71,6 +71,8 @@ export interface GameLoopContext {
   blockInteraction: BlockInteractionSystem | null;
   ghostPreview: GhostPreviewSystem | null;
   onEngineEvent: ((event: import('./types.ts').EngineEvent) => void) | null;
+  /** Initial tool tier — 'hand' for survival, 'diamond' for creative */
+  initialToolTier?: string;
 }
 
 /** Controls and state accessors returned from the game loop */
@@ -84,6 +86,10 @@ export interface GameLoopResult {
   isBlocking: () => boolean;
   /** Current block breaking progress (0 = not breaking, 0-1 = in progress) */
   getBreakingProgress: () => number;
+  /** Change tool tier for block breaking speed */
+  setToolTier: (tier: string) => void;
+  /** Get current tool tier */
+  getToolTier: () => string;
 }
 
 /**
@@ -139,7 +145,7 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
   // Block breaking progress state
   let breakingState: BreakingState | null = null;
   /** Player's current tool tier — defaults to hand, will be driven by inventory later */
-  const currentToolTier = 'hand';
+  let currentToolTier = ctx.initialToolTier ?? 'hand';
 
   // Physics step
   jpWorld.on('beforeFixedUpdate', () => {
@@ -465,5 +471,11 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     getMaxStamina: () => MAX_STAMINA,
     isBlocking: () => blockActive,
     getBreakingProgress: () => breakingState?.progress ?? 0,
+    setToolTier: (tier: string) => {
+      currentToolTier = tier;
+      // Reset any in-progress breaking since speed changed
+      breakingState = null;
+    },
+    getToolTier: () => currentToolTier,
   };
 }

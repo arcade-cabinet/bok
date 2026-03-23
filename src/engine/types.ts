@@ -126,6 +126,10 @@ export interface EngineState {
   bossName: string;
   /** Position of the block the player is looking at (for target highlight in HUD) */
   targetBlockPosition: { x: number; y: number; z: number } | null;
+  /** Currently equipped weapon ID (from content registry) */
+  equippedWeaponId: string;
+  /** Currently equipped tool tier for block breaking */
+  equippedToolTier: string;
 }
 
 /** Boss attack configuration for a single phase */

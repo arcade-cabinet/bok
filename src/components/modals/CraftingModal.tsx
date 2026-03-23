@@ -6,6 +6,8 @@ interface Props {
   resources: Record<string, number>;
   onCraft: (recipeId: string) => void;
   onClose: () => void;
+  /** Maximum tier the player has unlocked (1 = starter, 2 = first boss, 3 = three bosses) */
+  unlockedTier?: number;
 }
 
 /** Category labels for display. */
@@ -37,7 +39,20 @@ function canAffordRecipe(recipe: CraftingRecipeConfig, resources: Record<string,
  * and a Craft button that is disabled when the player lacks materials.
  * Uses daisyUI modal/card components with the parchment theme.
  */
-export function CraftingModal({ recipes, resources, onCraft, onClose }: Props) {
+/** Unlock tier requirements: tier 1 = always, tier 2 = 1 boss defeated, tier 3 = 3 bosses. */
+export function getUnlockedTier(defeatedBossCount: number): number {
+  if (defeatedBossCount >= 3) return 3;
+  if (defeatedBossCount >= 1) return 2;
+  return 1;
+}
+
+/** Description of what's needed to unlock a tier. */
+const TIER_UNLOCK_TEXT: Record<number, string> = {
+  2: 'Defeat your first boss to unlock',
+  3: 'Defeat 3 bosses to unlock',
+};
+
+export function CraftingModal({ recipes, resources, onCraft, onClose, unlockedTier = 3 }: Props) {
   const grouped = useMemo(() => {
     const groups = new Map<string, CraftingRecipeConfig[]>();
     for (const recipe of recipes) {
@@ -93,9 +108,13 @@ export function CraftingModal({ recipes, resources, onCraft, onClose }: Props) {
 
                   <div className="flex flex-col gap-2">
                     {categoryRecipes.map((recipe) => {
-                      const affordable = canAffordRecipe(recipe, resources);
+                      const locked = recipe.tier > unlockedTier;
+                      const affordable = !locked && canAffordRecipe(recipe, resources);
                       return (
-                        <div key={recipe.id} className="card bg-base-200/60 border border-secondary/40 p-3">
+                        <div
+                          key={recipe.id}
+                          className={`card border p-3 ${locked ? 'bg-base-300/40 border-base-content/10 opacity-60' : 'bg-base-200/60 border-secondary/40'}`}
+                        >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div
@@ -103,41 +122,55 @@ export function CraftingModal({ recipes, resources, onCraft, onClose }: Props) {
                                 style={{ fontFamily: 'Cinzel, Georgia, serif' }}
                               >
                                 {recipe.name}
+                                {recipe.tier > 1 && (
+                                  <span className="badge badge-xs badge-outline ml-2">T{recipe.tier}</span>
+                                )}
                               </div>
 
-                              {/* Ingredients */}
-                              <div className="flex flex-wrap gap-1.5 mb-2">
-                                {recipe.ingredients.map((ing) => {
-                                  const have = resources[ing.itemId] ?? 0;
-                                  const enough = have >= ing.amount;
-                                  return (
-                                    <span
-                                      key={ing.itemId}
-                                      className={`badge badge-sm badge-outline gap-1 ${enough ? 'badge-success' : 'badge-error'}`}
-                                    >
-                                      {formatItemName(ing.itemId)}: {have}/{ing.amount}
-                                    </span>
-                                  );
-                                })}
-                              </div>
+                              {locked ? (
+                                <div
+                                  className="text-xs text-base-content/50 italic"
+                                  style={{ fontFamily: 'Crimson Text, Georgia, serif' }}
+                                >
+                                  {TIER_UNLOCK_TEXT[recipe.tier] ?? 'Locked'}
+                                </div>
+                              ) : (
+                                <>
+                                  {/* Ingredients */}
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {recipe.ingredients.map((ing) => {
+                                      const have = resources[ing.itemId] ?? 0;
+                                      const enough = have >= ing.amount;
+                                      return (
+                                        <span
+                                          key={ing.itemId}
+                                          className={`badge badge-sm badge-outline gap-1 ${enough ? 'badge-success' : 'badge-error'}`}
+                                        >
+                                          {formatItemName(ing.itemId)}: {have}/{ing.amount}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
 
-                              {/* Output */}
-                              <div
-                                className="text-xs text-base-content/70"
-                                style={{ fontFamily: 'Crimson Text, Georgia, serif' }}
-                              >
-                                Produces: {recipe.output.amount}x {formatItemName(recipe.output.itemId)}
-                              </div>
+                                  {/* Output */}
+                                  <div
+                                    className="text-xs text-base-content/70"
+                                    style={{ fontFamily: 'Crimson Text, Georgia, serif' }}
+                                  >
+                                    Produces: {recipe.output.amount}x {formatItemName(recipe.output.itemId)}
+                                  </div>
+                                </>
+                              )}
                             </div>
 
                             <button
                               type="button"
-                              className={`btn btn-sm ${affordable ? 'btn-primary' : 'btn-disabled'}`}
+                              className={`btn btn-sm ${locked ? 'btn-disabled' : affordable ? 'btn-primary' : 'btn-disabled'}`}
                               onClick={() => affordable && onCraft(recipe.id)}
                               tabIndex={affordable ? 0 : -1}
                               data-testid={`craft-${recipe.id}`}
                             >
-                              Craft
+                              {locked ? 'Locked' : 'Craft'}
                             </button>
                           </div>
                         </div>

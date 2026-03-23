@@ -60,6 +60,10 @@ export interface GameInstance {
   getBlockDeltas: () => ReadonlyArray<{ x: number; y: number; z: number; blockId: number }>;
   /** Flush accumulated block deltas (call after persisting) */
   flushBlockDeltas: () => void;
+  /** Change equipped weapon mid-game (updates combat damage) */
+  setEquippedWeapon: (weaponId: string) => void;
+  /** Change equipped tool tier mid-game (updates block breaking speed) */
+  setToolTier: (tier: string) => void;
   destroy: () => void;
 }
 
@@ -266,8 +270,10 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     console.warn('[Bok] Animal spawning failed:', err);
   }
 
-  // --- Weapon ---
+  // --- Weapon + Tool Tier ---
   const weaponConfig = content.getWeapon('wooden-sword');
+  // Creative mode starts with diamond tools for instant block breaking
+  const initialToolTier = config.mode === 'creative' ? 'diamond' : 'hand';
 
   // --- Loot chests ---
   const chestCount = 4 + Math.floor(Math.random() * 4);
@@ -325,6 +331,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     onEngineEvent: (event) => {
       for (const listener of eventListeners) listener(event);
     },
+    initialToolTier,
   });
 
   // --- Audio ---
@@ -447,6 +454,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
           if (!result.targetBlock) return null;
           return { x: result.targetBlock.x, y: result.targetBlock.y, z: result.targetBlock.z };
         })(),
+        equippedWeaponId: combat.getWeaponId(),
+        equippedToolTier: loop.getToolTier(),
       };
     },
     onEvent: (listener) => {
@@ -465,7 +474,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
         },
         enemies: combatSources.enemies ?? [],
         inventory: {},
-        equippedWeapon: 'sword',
+        equippedWeapon: combat.getWeaponId(),
         openedChests: [],
         defeatedBoss: combatSources.defeatedBoss ?? boss.defeated,
       };
@@ -485,6 +494,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       if (input.action) mobileInput.action = input.action;
     },
     togglePause: () => loop.togglePause(),
+    setEquippedWeapon: (weaponId: string) => combat.setWeapon(weaponId),
+    setToolTier: (tier: string) => loop.setToolTier(tier),
     destroy: () => {
       combat.cleanup();
       cleanupChests();

@@ -23,6 +23,8 @@ function mockGame() {
     getSelectedBlockName: vi.fn(),
     getBlockDeltas: vi.fn(),
     flushBlockDeltas: vi.fn(),
+    setEquippedWeapon: vi.fn(),
+    setToolTier: vi.fn(),
     destroy: vi.fn(),
   } satisfies Record<keyof GameInstance, unknown>;
 }
@@ -62,6 +64,8 @@ function baseState(overrides: Partial<EngineState> = {}): EngineState {
     enemyPositions: [],
     bossName: 'Forest Guardian',
     targetBlockPosition: null,
+    equippedWeaponId: 'wooden-sword',
+    equippedToolTier: 'hand',
     ...overrides,
   };
 }

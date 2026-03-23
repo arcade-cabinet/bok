@@ -5,6 +5,7 @@ interface Props {
   onResume: () => void;
   onAbandonRun: () => void;
   onQuitToMenu: () => void;
+  onOpenInventory?: () => void;
 }
 
 /**
@@ -12,7 +13,7 @@ interface Props {
  * Provides Resume, Settings (placeholder), Abandon Run, and Quit to Menu actions.
  * Uses daisyUI modal, card, and btn components with the parchment theme.
  */
-export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
+export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu, onOpenInventory }: Props) {
   const resumeRef = useRef<HTMLButtonElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -94,6 +95,16 @@ export function PauseMenu({ onResume, onAbandonRun, onQuitToMenu }: Props) {
           >
             Resume
           </button>
+
+          {onOpenInventory && (
+            <button
+              type="button"
+              className="btn btn-ghost w-full focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+              onClick={onOpenInventory}
+            >
+              Inventory
+            </button>
+          )}
 
           <button
             type="button"
