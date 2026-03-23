@@ -6,7 +6,7 @@ import type { BuildingEffects } from '../hooks/useBuildingEffects';
 import { useProgression } from '../hooks/useProgression';
 import type { GameSave } from '../persistence/GameSave';
 import { SaveManager } from '../persistence/SaveManager';
-import { IslandSelectView } from '../views/island-select/IslandSelectView';
+import { getUnlockedBiomeIds, IslandSelectView } from '../views/island-select/IslandSelectView';
 import { MainMenuView } from '../views/menu/MainMenuView';
 
 const GameView = lazy(() => import('../views/game/GameView').then((m) => ({ default: m.GameView })));
@@ -134,7 +134,11 @@ export function App() {
               onSetSail={handleSetSail}
               onBuildingEffectsChange={handleBuildingEffectsChange}
               unlockedBiomes={
-                new Set(progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes))
+                new Set(
+                  getUnlockedBiomeIds(
+                    progression.runHistory.filter((r) => r.result === 'victory').flatMap((r) => r.biomes),
+                  ),
+                )
               }
               gameMode={gameConfig.mode}
               saveId={gameConfig.saveId}

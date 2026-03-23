@@ -18,6 +18,7 @@ import { ScreenReaderAnnouncer } from '../../components/hud/ScreenReaderAnnounce
 import { TomeUnlockBanner } from '../../components/hud/TomeUnlockBanner';
 import { isTutorialCompleted, TutorialOverlay } from '../../components/hud/TutorialOverlay';
 import { DeathScreen } from '../../components/modals/DeathScreen';
+import { InventoryModal } from '../../components/modals/InventoryModal';
 import { PauseMenu } from '../../components/modals/PauseMenu';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { VictoryScreen } from '../../components/modals/VictoryScreen';
@@ -73,6 +74,14 @@ interface Props {
   ) => Promise<void>;
 }
 
+/** Format a weapon ID to a short display name for the hotbar. */
+function formatWeaponLabel(weaponId: string): string {
+  return weaponId
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /** Build hotbar slots: slot 0 = weapon, slots 1-4 = block label from engine.
  *  Includes resource count on the block slot when available.
  */
@@ -80,12 +89,13 @@ function buildHotbarSlots(
   selectedBlockLabel: string,
   resourceCounts: Record<string, number>,
   selectedBlockName: string,
+  equippedWeaponId = 'wooden-sword',
 ): SlotData[] {
   // Look up count by lowercase block name (resource IDs are lowercase)
   const blockResourceId = selectedBlockName.toLowerCase();
   const blockCount = resourceCounts[blockResourceId] ?? undefined;
   return [
-    { label: 'Sword' },
+    { label: formatWeaponLabel(equippedWeaponId) },
     { label: selectedBlockLabel || 'Block', count: blockCount },
     { label: '' },
     { label: '' },
@@ -113,6 +123,9 @@ export function GameView({
   const [newlyUnlockedTomeId, setNewlyUnlockedTomeId] = useState<string | null>(null);
   const [resourceCounts, setResourceCounts] = useState<Record<string, number>>({});
   const [bossPhaseText, setBossPhaseText] = useState<string | null>(null);
+  const [showInventory, setShowInventory] = useState(false);
+  const [bossTelegraph, setBossTelegraph] = useState<string | null>(null);
+  const telegraphTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Island persistence: load saved deltas + goal progress ---
   const [restoredDeltas, setRestoredDeltas] = useState<
@@ -130,13 +143,18 @@ export function GameView({
         return;
       }
       try {
-        const [deltas, islandState] = await Promise.all([
+        const [deltas, islandState, inventory] = await Promise.all([
           saveManager.loadChunkDeltas(config.saveId, config.biome),
           saveManager.getIslandState(config.saveId, config.biome),
+          saveManager.getInventory(config.saveId),
         ]);
         if (!cancelled) {
           setRestoredDeltas(deltas.length > 0 ? deltas : undefined);
           setRestoredGoalIds(islandState?.goalsCompleted ?? undefined);
+          // Load saved inventory so previously gathered resources + crafted weapons are available
+          if (Object.keys(inventory).length > 0) {
+            setResourceCounts(inventory);
+          }
           setPersistenceReady(true);
         }
       } catch (err) {
@@ -162,6 +180,17 @@ export function GameView({
   useEffect(() => {
     setGoalState({ ...goalSystem.state });
   }, [goalSystem]);
+
+  // 'I' key opens inventory during gameplay
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'i' || e.key === 'I') {
+        if (!showInventory) setShowInventory(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showInventory]);
 
   // Screen reader event subscriber
   const srEventHandlerRef = useRef<((event: EngineEvent) => void) | null>(null);
@@ -196,18 +225,64 @@ export function GameView({
         goalSystem.onChestOpened();
         setGoalState({ ...goalSystem.state });
       }
+      if (event.type === 'landmarkDiscovered') {
+        goalSystem.onLandmarkDiscovered();
+        setGoalState({ ...goalSystem.state });
+      }
 
-      // Track resource counts for hotbar display
+      // Track resource counts for hotbar display + advance gather goals + persist
       if (event.type === 'resourceGathered') {
         setResourceCounts((prev) => ({
           ...prev,
           [event.resourceId]: (prev[event.resourceId] ?? 0) + event.amount,
         }));
+        goalSystem.onResourceGathered(event.resourceId);
+        setGoalState({ ...goalSystem.state });
+        // Persist to SaveManager
+        if (saveManager && config.saveId) {
+          saveManager.addResource(config.saveId, event.resourceId, event.amount).catch(() => {});
+        }
+      }
+
+      // Chest loot → inventory persistence
+      if (event.type === 'chestOpened' && event.items) {
+        for (const item of event.items) {
+          setResourceCounts((prev) => ({
+            ...prev,
+            [item.itemId]: (prev[item.itemId] ?? 0) + item.amount,
+          }));
+          if (saveManager && config.saveId) {
+            saveManager.addResource(config.saveId, item.itemId, item.amount).catch(() => {});
+          }
+        }
+      }
+
+      // Loot pickup → update resource display
+      if (event.type === 'lootPickup') {
+        setResourceCounts((prev) => ({
+          ...prev,
+          [event.itemType]: (prev[event.itemType] ?? 0) + 1,
+        }));
+        if (saveManager && config.saveId) {
+          saveManager.addResource(config.saveId, event.itemType, 1).catch(() => {});
+        }
       }
 
       // Boss phase transition — dramatic announcement text
       if (event.type === 'bossPhaseChange') {
         setBossPhaseText(event.text);
+      }
+
+      // Boss telegraph warning — brief flash when boss is about to attack
+      if (event.type === 'bossTelegraph') {
+        if (telegraphTimerRef.current) clearTimeout(telegraphTimerRef.current);
+        setBossTelegraph(event.attackName);
+        telegraphTimerRef.current = setTimeout(() => setBossTelegraph(null), event.duration * 1000);
+      }
+
+      // Block placed/broken — sync resource counter from engine state
+      if (event.type === 'blockBroken' && saveManager && config.saveId) {
+        // Resource gathered event handles the inventory update; blockBroken is just for tracking
       }
 
       // Show tome unlock banner on boss defeat
@@ -361,6 +436,14 @@ export function GameView({
       <DamageNumbers numbers={events.damageNumbers} />
       <BlockVignette isBlocking={engineState?.isBlocking ?? false} />
       <BossPhaseAnnouncement text={bossPhaseText} onDone={() => setBossPhaseText(null)} />
+      {bossTelegraph && (
+        <div
+          className="fixed top-1/3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 bg-red-900/80 border border-red-500/60 rounded text-red-200 text-sm animate-pulse pointer-events-none"
+          style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+        >
+          {bossTelegraph.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}!
+        </div>
+      )}
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (
         <ActionButtons
@@ -437,7 +520,10 @@ export function GameView({
             />
           )}
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <div className="w-4 h-0.5 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+            <div className="w-0.5 h-4 bg-white/80 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+          </div>
           {engineState.breakingProgress > 0 && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-3 w-16 h-1 bg-black/50 rounded overflow-hidden">
               <div
@@ -486,8 +572,6 @@ export function GameView({
             }}
             canvasWidth={screenWidth}
             canvasHeight={screenHeight}
-            playerX={engineState.playerX}
-            playerZ={engineState.playerZ}
             playerYaw={engineState.playerYaw}
           />
           <Hotbar
@@ -495,6 +579,7 @@ export function GameView({
               engineState.selectedBlockLabel ?? engineState.selectedBlockName ?? '',
               resourceCounts,
               engineState.selectedBlockName ?? '',
+              engineState.equippedWeaponId,
             )}
             activeIndex={activeSlot}
             onSelect={(idx) => {
@@ -519,8 +604,23 @@ export function GameView({
           newlyUnlockedId={newlyUnlockedTomeId}
         />
       )}
-      {engineState?.phase === 'paused' && (
-        <PauseMenu onResume={handleResume} onAbandonRun={handleAbandonRun} onQuitToMenu={handleQuitToMenu} />
+      {showInventory && (
+        <InventoryModal
+          inventory={resourceCounts}
+          onClose={() => setShowInventory(false)}
+          equippedWeaponId={engineState?.equippedWeaponId}
+          onEquipWeapon={(weaponId) => {
+            gameRef.current?.setEquippedWeapon(weaponId);
+          }}
+        />
+      )}
+      {engineState?.phase === 'paused' && !showInventory && (
+        <PauseMenu
+          onResume={handleResume}
+          onAbandonRun={handleAbandonRun}
+          onQuitToMenu={handleQuitToMenu}
+          onOpenInventory={() => setShowInventory(true)}
+        />
       )}
       {engineState?.phase === 'dead' && events.deathStats && (
         <DeathScreen stats={events.deathStats} onReturnToHub={handleReturnToMenu} onTryAgain={handleReturnToMenu} />

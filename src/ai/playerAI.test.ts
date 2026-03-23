@@ -23,6 +23,8 @@ function mockGame() {
     getSelectedBlockName: vi.fn(),
     getBlockDeltas: vi.fn(),
     flushBlockDeltas: vi.fn(),
+    setEquippedWeapon: vi.fn(),
+    setToolTier: vi.fn(),
     destroy: vi.fn(),
   } satisfies Record<keyof GameInstance, unknown>;
 }
@@ -62,6 +64,8 @@ function baseState(overrides: Partial<EngineState> = {}): EngineState {
     enemyPositions: [],
     bossName: 'Forest Guardian',
     targetBlockPosition: null,
+    equippedWeaponId: 'wooden-sword',
+    equippedToolTier: 'hand',
     ...overrides,
   };
 }
@@ -92,7 +96,7 @@ describe('PlayerAI', () => {
 
   it('tracks chest opens from events', () => {
     const ai = new PlayerAI(mockGame() as unknown as GameInstance);
-    ai.handleEvent({ type: 'chestOpened', tier: 'common', items: [{ name: 'Wood', amount: 5 }] });
+    ai.handleEvent({ type: 'chestOpened', tier: 'common', items: [{ itemId: 'wood', name: 'Wood', amount: 5 }] });
     expect(ai.getReport().chestsOpened).toBe(1);
   });
 
@@ -168,6 +172,7 @@ describe('PlayerAI', () => {
     const input = game.setMobileInput.mock.calls[0][0];
     // Should be moving toward the enemy (positive x and negative z or positive z depending on direction)
     expect(input.moveX).toBeGreaterThan(0); // enemy is at +x
+    expect(input.moveZ).toBeGreaterThan(0); // enemy is at +z
   });
 
   it('attacks when enemy is in melee range', () => {

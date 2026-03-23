@@ -3,30 +3,30 @@
   "goals": [
     {
       "id": "volcanic-explore",
-      "title": "Map the Caldera",
-      "description": "Discover 2 volcanic landmarks",
+      "title": "Find the Magma Vents",
+      "description": "Find 2 Magma Vents",
       "type": "discover",
       "target": 2,
-      "icon": "\uD83D\uDDFA\uFE0F"
+      "icon": "\uD83C\uDF0B"
     },
     {
       "id": "volcanic-defeat",
-      "title": "Quell the Flames",
-      "description": "Defeat 6 fire enemies",
+      "title": "Extinguish the Fire Demons",
+      "description": "Extinguish 8 Fire Demons",
       "type": "kill",
-      "target": 6,
+      "target": 8,
       "icon": "\u2694\uFE0F"
     },
     {
       "id": "volcanic-gather-crystals",
       "title": "Harvest Magma Crystals",
-      "description": "Gather 5 Magma Crystals",
+      "description": "Harvest 5 Magma Crystals from the obsidian",
       "type": "gather",
       "target": 5,
       "resourceId": "magma-crystal",
       "icon": "\uD83D\uDD25"
     }
   ],
-  "bossGateMessage": "The volcano trembles... The Magma King rises.",
-  "completionMessage": "Lava flows part. The Magma King awaits."
+  "bossGateMessage": "The caldera trembles...",
+  "completionMessage": "The Magma King erupts from his throne of lava."
 }

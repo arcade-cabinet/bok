@@ -126,6 +126,10 @@ export interface EngineState {
   bossName: string;
   /** Position of the block the player is looking at (for target highlight in HUD) */
   targetBlockPosition: { x: number; y: number; z: number } | null;
+  /** Currently equipped weapon ID (from content registry) */
+  equippedWeaponId: string;
+  /** Currently equipped tool tier for block breaking */
+  equippedToolTier: string;
 }
 
 /** Boss attack configuration for a single phase */
@@ -157,7 +161,7 @@ export type EngineEvent =
   | { type: 'lootPickup'; itemType: string }
   | { type: 'parry' }
   | { type: 'block'; damage: number }
-  | { type: 'chestOpened'; tier: string; items: Array<{ name: string; amount: number }> }
+  | { type: 'chestOpened'; tier: string; items: Array<{ name: string; itemId: string; amount: number }> }
   | { type: 'bossTelegraph'; attackName: string; duration: number }
   | { type: 'bossSummon'; attackName: string }
   | { type: 'landmarkDiscovered'; position: { x: number; z: number } }

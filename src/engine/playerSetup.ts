@@ -10,13 +10,15 @@
  */
 import { InputSystem } from '../input/index.ts';
 import { type CameraResult, createCamera } from './camera.ts';
-import { spawnModelActor } from './models.ts';
+import { loadModel, spawnModelActor, WEAPON_MODELS } from './models.ts';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 /** Player entity: camera + input */
 export interface PlayerResult {
   cam: CameraResult;
   inputSystem: InputSystem;
+  /** Swap the center-mounted weapon model to a different weapon */
+  setWeaponModel: (weaponId: string) => void;
 }
 
 /**
@@ -41,10 +43,11 @@ export function createPlayer(
     jpWorld,
     'player-weapon',
     '/assets/models/Tools/Sword_Wood.gltf',
-    { x: 0.3, y: -0.25, z: -0.5 },
-    0.4,
+    { x: 0.4, y: -0.3, z: -0.6 },
+    0.7,
   );
-  weaponActor.object3D.rotation.set(0, 0, -Math.PI / 6);
+  // Angle the sword naturally: tilt forward (-X), slight yaw, roll inward
+  weaponActor.object3D.rotation.set(-Math.PI / 8, Math.PI / 12, -Math.PI / 6);
   cam.camera.add(weaponActor.object3D);
 
   // Input system
@@ -55,5 +58,25 @@ export function createPlayer(
     });
   }
 
-  return { cam, inputSystem };
+  // Weapon model swapping: loads the new model and replaces children in the weapon actor
+  function setWeaponModel(weaponId: string): void {
+    const modelPath = WEAPON_MODELS[weaponId];
+    if (!modelPath) return;
+
+    loadModel(modelPath)
+      .then((model) => {
+        // Remove old children from the weapon actor's object3D
+        const obj = weaponActor.object3D;
+        while (obj.children.length > 0) {
+          obj.remove(obj.children[0]);
+        }
+        model.scale.setScalar(0.7);
+        obj.add(model);
+      })
+      .catch(() => {
+        // Keep current weapon model on load failure
+      });
+  }
+
+  return { cam, inputSystem, setWeaponModel };
 }

@@ -87,7 +87,7 @@ describe('goalSystem', () => {
     const sys = createGoalSystem(forestGoalsJson as BiomeGoals);
     expect(sys.state.goals.length).toBeGreaterThan(0);
     expect(sys.state.bossUnlocked).toBe(false);
-    expect(sys.state.bossGateMessage).toBe('The Ancient Treant awakens...');
+    expect(sys.state.bossGateMessage).toBe('The Ancient Treant stirs in the deepest grove...');
 
     // Each goal has proper structure
     for (const goal of sys.state.goals) {
@@ -108,6 +108,6 @@ describe('goalSystem', () => {
     for (let i = 0; i < 2; i++) sys.onLandmarkDiscovered();
     expect(sys.state.allCompleted).toBe(true);
     expect(sys.state.bossUnlocked).toBe(true);
-    expect(sys.state.completionMessage).toBe('The grove trembles. The path to the Treant is open.');
+    expect(sys.state.completionMessage).toBe('The forest parts before you. The Treant awaits.');
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ContentRegistry } from '../../content/index.ts';
+import { getUnlockedTier } from './CraftingModal.tsx';
 
 describe('CraftingModal — recipe data', () => {
   it('all crafting recipes load and have valid categories', () => {
@@ -44,5 +45,53 @@ describe('CraftingModal — recipe data', () => {
     expect(grouped.get('basic')).toBe(5); // planks, bricks, torches, sandstone-bricks, ice-bricks
     expect(grouped.get('weapon')).toBe(8); // iron sword, fire staff, ice wand, crystal blade, volcanic edge, frost cleaver, trident, lightning rod
     expect(grouped.get('consumable')).toBe(4); // health potion, stamina elixir, frost tonic, fire bomb
+  });
+});
+
+describe('getUnlockedTier', () => {
+  it('returns tier 1 when no bosses defeated', () => {
+    expect(getUnlockedTier(0)).toBe(1);
+  });
+
+  it('returns tier 2 when 1 boss defeated', () => {
+    expect(getUnlockedTier(1)).toBe(2);
+  });
+
+  it('returns tier 2 when 2 bosses defeated', () => {
+    expect(getUnlockedTier(2)).toBe(2);
+  });
+
+  it('returns tier 3 when 3+ bosses defeated', () => {
+    expect(getUnlockedTier(3)).toBe(3);
+    expect(getUnlockedTier(5)).toBe(3);
+    expect(getUnlockedTier(8)).toBe(3);
+  });
+
+  it('tier 1 recipes are always available, higher tiers locked by progression', () => {
+    const registry = new ContentRegistry();
+    const recipes = registry.getAllCraftingRecipes();
+
+    const tier1 = recipes.filter((r) => r.tier === 1);
+    const tier2 = recipes.filter((r) => r.tier === 2);
+    const tier3 = recipes.filter((r) => r.tier === 3);
+
+    // Tier 1 always available
+    expect(tier1.length).toBeGreaterThan(0);
+
+    // At tier unlock 1, only tier 1 should be unlocked
+    const unlocked1 = getUnlockedTier(0);
+    for (const r of tier1) expect(r.tier).toBeLessThanOrEqual(unlocked1);
+    for (const r of tier2) expect(r.tier).toBeGreaterThan(unlocked1);
+    for (const r of tier3) expect(r.tier).toBeGreaterThan(unlocked1);
+
+    // At tier unlock 2 (1 boss), tier 1 and 2 should be unlocked
+    const unlocked2 = getUnlockedTier(1);
+    for (const r of tier1) expect(r.tier).toBeLessThanOrEqual(unlocked2);
+    for (const r of tier2) expect(r.tier).toBeLessThanOrEqual(unlocked2);
+    for (const r of tier3) expect(r.tier).toBeGreaterThan(unlocked2);
+
+    // At tier unlock 3 (3+ bosses), all tiers unlocked
+    const unlocked3 = getUnlockedTier(3);
+    for (const r of recipes) expect(r.tier).toBeLessThanOrEqual(unlocked3);
   });
 });

@@ -3,16 +3,16 @@
   "goals": [
     {
       "id": "sky-ruins-explore",
-      "title": "Scale the Heights",
-      "description": "Discover 2 sky landmarks",
+      "title": "Reach the Floating Sanctuaries",
+      "description": "Reach 2 Floating Sanctuaries",
       "type": "discover",
       "target": 2,
-      "icon": "\uD83D\uDDFA\uFE0F"
+      "icon": "\uD83C\uDFDB\uFE0F"
     },
     {
       "id": "sky-ruins-defeat",
-      "title": "Silence the Winds",
-      "description": "Defeat 6 sky enemies",
+      "title": "Ground the Sky Terrors",
+      "description": "Ground 6 Sky Terrors",
       "type": "kill",
       "target": 6,
       "icon": "\u2694\uFE0F"
@@ -20,13 +20,13 @@
     {
       "id": "sky-ruins-gather-essence",
       "title": "Capture Wind Essence",
-      "description": "Gather 5 Wind Essence",
+      "description": "Capture 5 Wind Essence from the storms",
       "type": "gather",
       "target": 5,
       "resourceId": "wind-essence",
       "icon": "\uD83D\uDCA8"
     }
   ],
-  "bossGateMessage": "Thunder cracks... The Storm Titan descends.",
-  "completionMessage": "The skies part. The Storm Titan awaits."
+  "bossGateMessage": "Thunder echoes between the floating stones...",
+  "completionMessage": "The Storm Titan descends from the clouds."
 }

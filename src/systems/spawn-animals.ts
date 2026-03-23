@@ -23,14 +23,14 @@ import { PRNG } from '../generation/index';
 
 /** Animals available per biome. Empty array = no animals spawn. */
 export const BIOME_ANIMALS: Record<string, string[]> = {
-  forest: ['raccoon', 'chicken', 'sheep'],
-  desert: ['horse'],
-  tundra: ['wolf'],
-  volcanic: [],
-  swamp: ['raccoon'],
-  'crystal-caves': ['cat'],
-  'sky-ruins': ['chicken', 'chick'],
-  'deep-ocean': [],
+  forest: ['fox', 'bunny', 'raccoon', 'chicken'],
+  desert: ['horse', 'mole', 'mouse'],
+  tundra: ['wolf', 'penguin', 'bear'],
+  volcanic: ['crocodile'],
+  swamp: ['frog', 'turtle', 'raccoon'],
+  'crystal-caves': ['axolotl', 'cat', 'mouse'],
+  'sky-ruins': ['parrot', 'chicken', 'chick'],
+  'deep-ocean': ['turtle', 'axolotl'],
 };
 
 /** All biome IDs that must be present in BIOME_ANIMALS. */
@@ -45,8 +45,9 @@ export const ALL_BIOME_IDS = [
   'deep-ocean',
 ] as const;
 
-/** Model filename mapping (lowercase type -> PascalCase filename). */
+/** Model filename mapping (lowercase type -> filename as it appears on disk). */
 const ANIMAL_MODEL_NAMES: Record<string, string> = {
+  // CubeWorld core (PascalCase filenames)
   cat: 'Cat',
   dog: 'Dog',
   horse: 'Horse',
@@ -56,6 +57,25 @@ const ANIMAL_MODEL_NAMES: Record<string, string> = {
   chicken: 'Chicken',
   chick: 'Chick',
   raccoon: 'Raccoon',
+
+  // Voxel-converted (lowercase filenames)
+  axolotl: 'axolotl',
+  bear: 'bear',
+  bunny: 'bunny',
+  cow: 'cow',
+  crocodile: 'crocodile',
+  elephant: 'elephant',
+  fox: 'fox',
+  frog: 'frog',
+  mole: 'mole',
+  monkey: 'monkey',
+  mouse: 'mouse',
+  panda: 'panda',
+  parrot: 'parrot',
+  penguin: 'penguin',
+  piglet: 'piglet',
+  turtle: 'turtle',
+  unicorn: 'unicorn',
 };
 
 // ---------------------------------------------------------------------------

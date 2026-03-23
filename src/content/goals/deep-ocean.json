@@ -3,30 +3,30 @@
   "goals": [
     {
       "id": "deep-ocean-explore",
-      "title": "Chart the Depths",
-      "description": "Discover 2 underwater landmarks",
+      "title": "Locate the Abyssal Trenches",
+      "description": "Locate 2 Abyssal Trenches",
       "type": "discover",
       "target": 2,
-      "icon": "\uD83D\uDDFA\uFE0F"
+      "icon": "\uD83C\uDF0A"
     },
     {
       "id": "deep-ocean-defeat",
-      "title": "Repel the Abyss",
-      "description": "Defeat 6 deep-sea creatures",
+      "title": "Repel the Deep Sea Horrors",
+      "description": "Repel 8 Deep Sea Horrors",
       "type": "kill",
-      "target": 6,
+      "target": 8,
       "icon": "\u2694\uFE0F"
     },
     {
       "id": "deep-ocean-gather-pearls",
       "title": "Collect Abyssal Pearls",
-      "description": "Collect 3 Pearls",
+      "description": "Collect 3 Pearls from the depths",
       "type": "gather",
       "target": 3,
       "resourceId": "pearl",
       "icon": "\uD83E\uDD0D"
     }
   ],
-  "bossGateMessage": "The depths rumble... Something stirs below.",
-  "completionMessage": "The abyss opens. The Leviathan awaits."
+  "bossGateMessage": "The water grows impossibly dark...",
+  "completionMessage": "The Abyssal Leviathan emerges from the void."
 }

@@ -39,9 +39,10 @@ describe('BIOME_ANIMALS', () => {
     }
   });
 
-  it('volcanic and deep-ocean have no animals', () => {
-    expect(BIOME_ANIMALS.volcanic).toHaveLength(0);
-    expect(BIOME_ANIMALS['deep-ocean']).toHaveLength(0);
+  it('all biomes have at least one animal type', () => {
+    for (const biomeId of ALL_BIOME_IDS) {
+      expect(BIOME_ANIMALS[biomeId].length, `${biomeId} should have animals`).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -49,11 +50,6 @@ describe('generateAnimalSpawns', () => {
   it('returns spawns for biomes with animals', () => {
     const result = generateAnimalSpawns('test-seed', 'forest', 0, 0, 0, flatSurface, 1);
     expect(result.length).toBeGreaterThan(0);
-  });
-
-  it('returns empty array for biomes with no animals', () => {
-    const result = generateAnimalSpawns('test-seed', 'volcanic', 0, 0, 0, flatSurface, 1);
-    expect(result).toEqual([]);
   });
 
   it('returns empty array for unknown biome', () => {

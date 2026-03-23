@@ -164,23 +164,23 @@ Mark issues with ❌ and what needs fixing.
 ## Summary of Critical UX Issues
 
 ### MUST FIX (Player can't play without these):
-1. ❌ NPC models — invisible, need CubeWorld Character GLTFs
-2. ❌ Jump mechanic — can't navigate terrain
-3. ❌ Enemy health bars — can't gauge fight difficulty
-4. ❌ Boss location indicator — lost in infinite world
-5. ❌ Tool switching on mobile — can't change tools
+1. ✅ NPC models — Character GLTFs loaded via npcEntities.ts
+2. ✅ Jump mechanic — Space key + mobile button, JUMP_VELOCITY=8
+3. ✅ Enemy health bars — EnemyHealthBars.tsx with 3D projection
+4. ✅ Boss location indicator — BossCompass.tsx directional arrow
+5. ✅ Tool switching on mobile — Hotbar with tappable slots
 
 ### SHOULD FIX (Game feels amateur without these):
-6. ❌ Sprint visual feedback (FOV change)
-7. ❌ Dodge movement burst
-8. ❌ Block stance visual
-9. ❌ Loot drop models (not cubes)
-10. ❌ Target block highlight (not just placement ghost)
-11. ❌ Block inventory count in HUD
-12. ❌ Shape selector on mobile
-13. ❌ Shrine glow/particle effect
-14. ❌ Boss health bar at top of screen
-15. ❌ Phase transition dramatic moment
-16. ❌ Guide NPC contextual dialogue
-17. ❌ Dock visual indicators from distance
-18. ❌ Spawn orientation (face toward Guide)
+6. ✅ Sprint visual feedback — FOV 75→85 with smooth lerp
+7. ✅ Dodge movement burst — DODGE_SPEED=12 forward lunge
+8. ✅ Block stance visual — BlockVignette.tsx blue radial overlay
+9. ✅ Loot drop models — Collectible GLTFs with emissive glow
+10. ✅ Target block highlight — Red wireframe in GhostPreview.ts
+11. ✅ Block inventory count in HUD — Hotbar shows "x42" format
+12. ✅ Shape selector on mobile — ActionButtons shape cycle button
+13. ✅ Shrine glow/particle effect — Golden PointLight above shrines
+14. ✅ Boss health bar at top of screen — BossHealthBar.tsx top-center
+15. ✅ Phase transition dramatic moment — BossPhaseAnnouncement + invulnerability
+16. ✅ Guide NPC contextual dialogue — GuidePanel in NPCDialogue.tsx
+17. ✅ Dock visual indicators from distance — Colored banner poles
+18. ✅ Spawn orientation (face toward Guide) — spawnFacingX/Z in camera

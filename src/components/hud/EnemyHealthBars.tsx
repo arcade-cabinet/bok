@@ -21,8 +21,6 @@ interface Props {
   camera: { fov: number; aspect: number; position: { x: number; y: number; z: number } };
   canvasWidth: number;
   canvasHeight: number;
-  playerX: number;
-  playerZ: number;
   playerYaw: number;
 }
 
@@ -79,15 +77,7 @@ function formatEnemyType(type: string): string {
     .join(' ');
 }
 
-export function EnemyHealthBars({
-  enemies,
-  camera,
-  canvasWidth,
-  canvasHeight,
-  playerX: _px,
-  playerZ: _pz,
-  playerYaw,
-}: Props) {
+export function EnemyHealthBars({ enemies, camera, canvasWidth, canvasHeight, playerYaw }: Props) {
   const bars = useMemo(() => {
     const result: Array<{ key: string; x: number; y: number; ratio: number; color: string; label: string }> = [];
 

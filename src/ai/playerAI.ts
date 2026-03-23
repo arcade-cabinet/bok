@@ -115,7 +115,7 @@ export class PlayerAI {
 
   #decideMode(state: EngineState): void {
     // If enemies are nearby, fight
-    if (this.#nearestEnemyDist(state) < COMBAT_ENGAGE_RADIUS) {
+    if ((this.#findNearestEnemy(state)?.dist ?? Number.POSITIVE_INFINITY) < COMBAT_ENGAGE_RADIUS) {
       this.#mode = 'combat';
       return;
     }
@@ -130,7 +130,7 @@ export class PlayerAI {
     }
 
     // If there are undiscovered shrines, head toward the nearest one
-    const shrine = state.minimapMarkers.find((m) => m.type === 'shrine');
+    const shrine = this.#findNearestShrine(state);
     if (shrine) {
       this.#mode = 'seek-shrine';
       return;
@@ -162,15 +162,15 @@ export class PlayerAI {
   }
 
   #combat(state: EngineState): void {
-    const nearest = this.#findNearestEnemy(state);
-    if (!nearest) {
+    const result = this.#findNearestEnemy(state);
+    if (!result) {
       this.#mode = 'explore';
       return;
     }
 
+    const { enemy: nearest, dist } = result;
     const dx = nearest.x - state.playerX;
     const dz = nearest.z - state.playerZ;
-    const dist = Math.sqrt(dx * dx + dz * dz);
 
     if (dist > MELEE_RANGE) {
       // Seek toward enemy
@@ -195,7 +195,7 @@ export class PlayerAI {
   }
 
   #seekShrine(state: EngineState): void {
-    const shrine = state.minimapMarkers.find((m) => m.type === 'shrine');
+    const shrine = this.#findNearestShrine(state);
     if (!shrine) {
       this.#mode = 'explore';
       return;
@@ -252,30 +252,38 @@ export class PlayerAI {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  #findNearestEnemy(state: EngineState): (typeof state.enemyPositions)[number] | null {
+  /** Find nearest enemy and its distance. Single pass — avoids duplicate iteration. */
+  #findNearestEnemy(state: EngineState): { enemy: (typeof state.enemyPositions)[number]; dist: number } | null {
     let best: (typeof state.enemyPositions)[number] | null = null;
-    let bestDist = Number.POSITIVE_INFINITY;
+    let bestDistSq = Number.POSITIVE_INFINITY;
 
     for (const e of state.enemyPositions) {
       const dx = e.x - state.playerX;
       const dz = e.z - state.playerZ;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < bestDist) {
-        bestDist = dist;
+      const distSq = dx * dx + dz * dz;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
         best = e;
       }
     }
-    return best;
+    if (!best) return null;
+    return { enemy: best, dist: Math.sqrt(bestDistSq) };
   }
 
-  #nearestEnemyDist(state: EngineState): number {
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const e of state.enemyPositions) {
-      const dx = e.x - state.playerX;
-      const dz = e.z - state.playerZ;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < bestDist) bestDist = dist;
+  /** Find nearest undiscovered shrine by squared distance. */
+  #findNearestShrine(state: EngineState): { x: number; z: number } | null {
+    let best: { x: number; z: number } | null = null;
+    let bestDistSq = Number.POSITIVE_INFINITY;
+    for (const m of state.minimapMarkers) {
+      if (m.type !== 'shrine') continue;
+      const dx = m.x - state.playerX;
+      const dz = m.z - state.playerZ;
+      const distSq = dx * dx + dz * dz;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        best = m;
+      }
     }
-    return bestDist;
+    return best;
   }
 }

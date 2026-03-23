@@ -39,6 +39,8 @@ const playingState: EngineState = {
   enemyPositions: [],
   bossName: 'Ancient Treant',
   targetBlockPosition: null,
+  equippedWeaponId: 'wooden-sword',
+  equippedToolTier: 'hand',
 };
 
 vi.mock('../../engine/GameEngine', () => ({

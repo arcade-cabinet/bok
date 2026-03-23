@@ -10,7 +10,7 @@
       "farewell": "May your Tome grow with every journey."
     },
     "inventory": [],
-    "position": { "x": 16, "y": 0, "z": 16 }
+    "position": { "x": 0, "y": 0, "z": 2 }
   },
   {
     "id": "blacksmith",
@@ -19,11 +19,11 @@
     "description": "Crafts and upgrades weapons at the Forge.",
     "requiredBuilding": "forge",
     "dialogue": {
-      "greeting": "Bring me materials from the islands and I'll forge something worthy.",
+      "greeting": "Bring me materials from your island expeditions and I'll forge something worthy. I can work with resources from any biome.",
       "farewell": "Keep that blade sharp."
     },
     "inventory": [],
-    "position": { "x": 27, "y": 0, "z": 27 }
+    "position": { "x": -2, "y": 0, "z": -4 }
   },
   {
     "id": "scholar",
@@ -36,6 +36,6 @@
       "farewell": "May the pages guide your path."
     },
     "inventory": [],
-    "position": { "x": 7, "y": 0, "z": 27 }
+    "position": { "x": 5, "y": 0, "z": 6 }
   }
 ]

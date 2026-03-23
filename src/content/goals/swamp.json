@@ -3,30 +3,30 @@
   "goals": [
     {
       "id": "swamp-explore",
-      "title": "Navigate the Mire",
-      "description": "Discover 2 swamp landmarks",
+      "title": "Reveal the Witch's Cauldrons",
+      "description": "Reveal 2 Witch's Cauldrons hidden in the fog",
       "type": "discover",
       "target": 2,
-      "icon": "\uD83D\uDDFA\uFE0F"
+      "icon": "\uD83E\uDDEB"
     },
     {
       "id": "swamp-defeat",
-      "title": "Cleanse the Bog",
-      "description": "Defeat 6 swamp creatures",
+      "title": "Purge the Swamp Horrors",
+      "description": "Purge 6 Swamp Horrors",
       "type": "kill",
       "target": 6,
       "icon": "\u2694\uFE0F"
     },
     {
       "id": "swamp-gather-mushrooms",
-      "title": "Forage Mushrooms",
-      "description": "Gather 8 Mushrooms",
+      "title": "Forage Rare Mushrooms",
+      "description": "Gather 8 Rare Mushrooms from the mire",
       "type": "gather",
       "target": 8,
       "resourceId": "mushroom",
       "icon": "\uD83C\uDF44"
     }
   ],
-  "bossGateMessage": "The bog bubbles... The Mire Hag awakens.",
-  "completionMessage": "The swamp clears. The Mire Hag awaits."
+  "bossGateMessage": "Something ancient moves beneath the murk...",
+  "completionMessage": "The Mire Hag rises, vines coiling around her."
 }

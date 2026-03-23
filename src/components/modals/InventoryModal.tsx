@@ -3,6 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 interface Props {
   inventory: Record<string, number>;
   onClose: () => void;
+  /** Currently equipped weapon ID (highlighted in weapons tab) */
+  equippedWeaponId?: string;
+  /** Callback when player equips a weapon */
+  onEquipWeapon?: (weaponId: string) => void;
 }
 
 type ItemCategory = 'materials' | 'weapons' | 'consumables';
@@ -88,7 +92,7 @@ function categorize(itemId: string): ItemCategory {
  * Each item shows an emoji icon and count in a responsive grid.
  * Uses daisyUI modal, card, tabs, and badge components with the parchment theme.
  */
-export function InventoryModal({ inventory, onClose }: Props) {
+export function InventoryModal({ inventory, onClose, equippedWeaponId, onEquipWeapon }: Props) {
   const [activeTab, setActiveTab] = useState<ItemCategory>('materials');
 
   const categorized = useMemo(() => {
@@ -158,22 +162,36 @@ export function InventoryModal({ inventory, onClose }: Props) {
           </p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
-            {currentItems.map((item) => (
-              <div
-                key={item.id}
-                className="card bg-base-200/60 border border-secondary/30 p-3 text-center"
-                data-testid={`item-${item.id}`}
-              >
-                <div className="text-2xl mb-1">{ITEM_ICONS[item.id] ?? '📦'}</div>
+            {currentItems.map((item) => {
+              const isWeapon = activeTab === 'weapons';
+              const isEquipped = isWeapon && equippedWeaponId === item.id;
+              return (
                 <div
-                  className="text-xs font-bold text-base-content mb-0.5 truncate"
-                  style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+                  key={item.id}
+                  className={`card bg-base-200/60 border p-3 text-center ${isEquipped ? 'border-accent ring-1 ring-accent/40' : 'border-secondary/30'}`}
+                  data-testid={`item-${item.id}`}
                 >
-                  {formatItemName(item.id)}
+                  <div className="text-2xl mb-1">{ITEM_ICONS[item.id] ?? '📦'}</div>
+                  <div
+                    className="text-xs font-bold text-base-content mb-0.5 truncate"
+                    style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+                  >
+                    {formatItemName(item.id)}
+                  </div>
+                  <div className="badge badge-sm badge-outline badge-secondary">x{item.amount}</div>
+                  {isWeapon && onEquipWeapon && (
+                    <button
+                      type="button"
+                      className={`btn btn-xs mt-1 ${isEquipped ? 'btn-accent btn-disabled' : 'btn-primary'}`}
+                      onClick={() => !isEquipped && onEquipWeapon(item.id)}
+                      data-testid={`equip-${item.id}`}
+                    >
+                      {isEquipped ? 'Equipped' : 'Equip'}
+                    </button>
+                  )}
                 </div>
-                <div className="badge badge-sm badge-outline badge-secondary">x{item.amount}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
