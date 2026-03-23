@@ -4,8 +4,13 @@ import {
   ANIMAL_MODELS,
   BLOCK_MODELS,
   CHARACTER_MODELS,
+  COLLECTIBLE_MODELS,
   ENEMY_MODELS,
   ENVIRONMENT_MODELS,
+  OBJECT_MODELS,
+  PIXEL_BLOCK_MODELS,
+  STONE_MODELS,
+  VILLAGE_MODELS,
   WEAPON_MODELS,
 } from './models.ts';
 
@@ -78,10 +83,36 @@ describe('model registries', () => {
     expect(ENVIRONMENT_MODELS.deadTree1).toBeDefined();
   });
 
-  it('ANIMAL_MODELS has all animal types', () => {
-    const animalTypes = ['cat', 'chick', 'chicken', 'dog', 'horse', 'pig', 'raccoon', 'sheep', 'wolf'];
-    for (const type of animalTypes) {
+  it('ANIMAL_MODELS has all CubeWorld animal types', () => {
+    const coreTypes = ['cat', 'chick', 'chicken', 'dog', 'horse', 'pig', 'raccoon', 'sheep', 'wolf'];
+    for (const type of coreTypes) {
       expect(ANIMAL_MODELS[type as keyof typeof ANIMAL_MODELS]).toBeDefined();
+    }
+  });
+
+  it('ANIMAL_MODELS has all voxel-converted animal types', () => {
+    const voxelTypes = [
+      'axolotl',
+      'bear',
+      'bunny',
+      'cow',
+      'crocodile',
+      'elephant',
+      'fox',
+      'frog',
+      'mole',
+      'monkey',
+      'mouse',
+      'panda',
+      'parrot',
+      'penguin',
+      'piglet',
+      'turtle',
+      'unicorn',
+    ];
+    for (const type of voxelTypes) {
+      expect(ANIMAL_MODELS[type as keyof typeof ANIMAL_MODELS]).toBeDefined();
+      expect(ANIMAL_MODELS[type as keyof typeof ANIMAL_MODELS]).toMatch(/\.gltf$/);
     }
   });
 
@@ -99,6 +130,49 @@ describe('model registries', () => {
     }
   });
 
+  it('STONE_MODELS has floor, wall, pillar, and moss variants', () => {
+    expect(STONE_MODELS.floor).toBeDefined();
+    expect(STONE_MODELS.floorDark).toBeDefined();
+    expect(STONE_MODELS.wall).toBeDefined();
+    expect(STONE_MODELS.wallRubble).toBeDefined();
+    expect(STONE_MODELS.pillar).toBeDefined();
+    expect(STONE_MODELS.pillarDark).toBeDefined();
+    expect(STONE_MODELS.moss3D).toBeDefined();
+    expect(STONE_MODELS.floorG).toBeDefined();
+    expect(STONE_MODELS.floorG12).toBeDefined();
+    expect(STONE_MODELS.forestGrassSand).toBeDefined();
+  });
+
+  it('VILLAGE_MODELS has all village pieces', () => {
+    expect(VILLAGE_MODELS.chimney).toBeDefined();
+    expect(VILLAGE_MODELS.wall).toBeDefined();
+    expect(VILLAGE_MODELS.wallPlain).toBeDefined();
+    expect(VILLAGE_MODELS.wallV2Inv).toBeDefined();
+    expect(Object.keys(VILLAGE_MODELS).length).toBeGreaterThanOrEqual(19);
+  });
+
+  it('OBJECT_MODELS has decorative objects', () => {
+    expect(OBJECT_MODELS.barrel).toBeDefined();
+    expect(OBJECT_MODELS.crate).toBeDefined();
+    expect(OBJECT_MODELS.torchLong).toBeDefined();
+    expect(OBJECT_MODELS.door).toBeDefined();
+  });
+
+  it('COLLECTIBLE_MODELS has food items', () => {
+    expect(COLLECTIBLE_MODELS.apple).toBeDefined();
+    expect(COLLECTIBLE_MODELS.fish).toBeDefined();
+    expect(COLLECTIBLE_MODELS.honey).toBeDefined();
+  });
+
+  it('PIXEL_BLOCK_MODELS has all 18 pixel block types', () => {
+    expect(Object.keys(PIXEL_BLOCK_MODELS)).toHaveLength(18);
+    expect(PIXEL_BLOCK_MODELS.pixelGrass).toBeDefined();
+    expect(PIXEL_BLOCK_MODELS.pixelDirt).toBeDefined();
+    expect(PIXEL_BLOCK_MODELS.pixelStone).toBeDefined();
+    expect(PIXEL_BLOCK_MODELS.pixelBricksRed).toBeDefined();
+    expect(PIXEL_BLOCK_MODELS.pixelDiamond).toBeDefined();
+  });
+
   it('all model paths start with /assets/models/', () => {
     const allModels = [
       ...Object.values(ENEMY_MODELS),
@@ -107,6 +181,11 @@ describe('model registries', () => {
       ...Object.values(ANIMAL_MODELS),
       ...Object.values(CHARACTER_MODELS),
       ...Object.values(BLOCK_MODELS),
+      ...Object.values(STONE_MODELS),
+      ...Object.values(VILLAGE_MODELS),
+      ...Object.values(OBJECT_MODELS),
+      ...Object.values(COLLECTIBLE_MODELS),
+      ...Object.values(PIXEL_BLOCK_MODELS),
     ];
     for (const path of allModels) {
       expect(path).toMatch(/^\/assets\/models\//);
@@ -121,6 +200,11 @@ describe('model registries', () => {
       ...Object.values(ANIMAL_MODELS),
       ...Object.values(CHARACTER_MODELS),
       ...Object.values(BLOCK_MODELS),
+      ...Object.values(STONE_MODELS),
+      ...Object.values(VILLAGE_MODELS),
+      ...Object.values(OBJECT_MODELS),
+      ...Object.values(COLLECTIBLE_MODELS),
+      ...Object.values(PIXEL_BLOCK_MODELS),
     ];
     for (const path of allModels) {
       expect(path).not.toMatch(/\/\//);

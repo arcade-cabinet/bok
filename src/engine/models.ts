@@ -303,12 +303,28 @@ export const ENVIRONMENT_MODELS = {
   railStraight: '/assets/models/Environment/Rail_Straight.gltf',
   railCorner: '/assets/models/Environment/Rail_Corner.gltf',
   railIncline: '/assets/models/Environment/Rail_Incline.gltf',
+
+  // --- Voxel-converted environment pieces ---
+  voxGrass1: '/assets/models/Environment/grass1.gltf',
+  voxGrass2: '/assets/models/Environment/grass2.gltf',
+  voxGrass3: '/assets/models/Environment/grass3.gltf',
+  voxGrassFlower1: '/assets/models/Environment/grassflower1.gltf',
+  voxGrassFlower2: '/assets/models/Environment/grassflower2.gltf',
+  voxGrassMushroom: '/assets/models/Environment/grassmushroom.gltf',
+  voxTree: '/assets/models/Environment/tree.gltf',
+  voxTree1: '/assets/models/Environment/tree1.gltf',
+  voxTree2: '/assets/models/Environment/tree2.gltf',
+  voxBox1: '/assets/models/Environment/box1.gltf',
+  voxBox2: '/assets/models/Environment/box2.gltf',
+  voxWalkTile: '/assets/models/Environment/walktile.gltf',
+  voxNoGrass: '/assets/models/Environment/nograss.gltf',
 } as const;
 
 // =============================================================================
 // CubeWorld Animal Models (passive mobs, NPCs, hub decoration)
 // =============================================================================
 export const ANIMAL_MODELS = {
+  // --- CubeWorld core animals ---
   cat: '/assets/models/Animals/Cat.gltf',
   chick: '/assets/models/Animals/Chick.gltf',
   chicken: '/assets/models/Animals/Chicken.gltf',
@@ -318,6 +334,25 @@ export const ANIMAL_MODELS = {
   raccoon: '/assets/models/Animals/Raccoon.gltf',
   sheep: '/assets/models/Animals/Sheep.gltf',
   wolf: '/assets/models/Animals/Wolf.gltf',
+
+  // --- Voxel-converted animals ---
+  axolotl: '/assets/models/Animals/axolotl.gltf',
+  bear: '/assets/models/Animals/bear.gltf',
+  bunny: '/assets/models/Animals/bunny.gltf',
+  cow: '/assets/models/Animals/cow.gltf',
+  crocodile: '/assets/models/Animals/crocodile.gltf',
+  elephant: '/assets/models/Animals/elephant.gltf',
+  fox: '/assets/models/Animals/fox.gltf',
+  frog: '/assets/models/Animals/frog.gltf',
+  mole: '/assets/models/Animals/mole.gltf',
+  monkey: '/assets/models/Animals/monkey.gltf',
+  mouse: '/assets/models/Animals/mouse.gltf',
+  panda: '/assets/models/Animals/panda.gltf',
+  parrot: '/assets/models/Animals/parrot.gltf',
+  penguin: '/assets/models/Animals/penguin.gltf',
+  piglet: '/assets/models/Animals/piglet.gltf',
+  turtle: '/assets/models/Animals/turtle.gltf',
+  unicorn: '/assets/models/Animals/unicorn.gltf',
 } as const;
 
 // =============================================================================
@@ -353,6 +388,30 @@ export const BLOCK_MODELS = {
 
 // Legacy alias
 export const PROP_MODELS = ENVIRONMENT_MODELS;
+
+// =============================================================================
+// Pixel Block Models (styled voxel block variants — different art style from CubeWorld Blocks)
+// =============================================================================
+export const PIXEL_BLOCK_MODELS = {
+  pixelBlank: '/assets/models/Pixel Blocks/Block_Blank.gltf',
+  pixelSquare: '/assets/models/Pixel Blocks/Block_Square.gltf',
+  pixelBricksDark: '/assets/models/Pixel Blocks/Bricks_Dark.gltf',
+  pixelBricksGrey: '/assets/models/Pixel Blocks/Bricks_Grey.gltf',
+  pixelBricksRed: '/assets/models/Pixel Blocks/Bricks_Red.gltf',
+  pixelBricksYellow: '/assets/models/Pixel Blocks/Bricks_Yellow.gltf',
+  pixelCoal: '/assets/models/Pixel Blocks/Coal.gltf',
+  pixelDiamond: '/assets/models/Pixel Blocks/Diamond.gltf',
+  pixelDirt: '/assets/models/Pixel Blocks/Dirt.gltf',
+  pixelExclamation: '/assets/models/Pixel Blocks/Exclamation.gltf',
+  pixelGrass: '/assets/models/Pixel Blocks/Grass.gltf',
+  pixelIce: '/assets/models/Pixel Blocks/Ice.gltf',
+  pixelLeaves: '/assets/models/Pixel Blocks/Leaves.gltf',
+  pixelQuestionMark: '/assets/models/Pixel Blocks/QuestionMark.gltf',
+  pixelSnow: '/assets/models/Pixel Blocks/Snow.gltf',
+  pixelStone: '/assets/models/Pixel Blocks/Stone.gltf',
+  pixelWood: '/assets/models/Pixel Blocks/Wood.gltf',
+  pixelWoodPlanks: '/assets/models/Pixel Blocks/WoodPlanks.gltf',
+} as const;
 
 // =============================================================================
 // Voxel Object Models (from itch pack — barrels, torches, doors, etc.)
@@ -412,25 +471,73 @@ export const VILLAGE_MODELS = {
   wallSBeam: '/assets/models/Village/VILL_H_W_SBEAM.gltf',
   wallV1: '/assets/models/Village/VILL_H_W_V1.gltf',
   wallV2: '/assets/models/Village/VILL_H_W_V2.gltf',
+  wallV2Inv: '/assets/models/Village/VILL_H_W_V2_INV.gltf',
   wallV3: '/assets/models/Village/VILL_H_W_V3.gltf',
   wallV4: '/assets/models/Village/VILL_H_W_V4.gltf',
   wallV45: '/assets/models/Village/VILL_H_W_V4.5.gltf',
+  wallPlain: '/assets/models/Village/VILL_H_W_PLN.gltf',
+  wall: '/assets/models/Village/VILL_H_W.gltf',
 } as const;
 
 // =============================================================================
 // Stone/Dungeon Building Pieces (walls, pillars, ground tiles)
 // =============================================================================
 export const STONE_MODELS = {
+  // --- Stone corners ---
   corner: '/assets/models/Stone/STN_CNR.gltf',
+  cornerDark: '/assets/models/Stone/STN_CNR_DARK.gltf',
+
+  // --- Stone floors ---
+  floor: '/assets/models/Stone/STN_FLR.gltf',
+  floorDark: '/assets/models/Stone/STN_FLR_DRK.gltf',
+  floorGrass: '/assets/models/Stone/STN_FLR_GRSS.gltf',
+
+  // --- Moss variants ---
+  moss: '/assets/models/Stone/Moss.gltf',
+  moss2D: '/assets/models/Stone/STN_MOSS_2D.gltf',
+  moss3D: '/assets/models/Stone/STN_MOSS_3D.gltf',
+  moss3DTop: '/assets/models/Stone/STN_MOSS_3D_TOP.gltf',
   mossHalf: '/assets/models/Stone/STN_MOSS_HALF_3D.gltf',
+  mossHalfTop: '/assets/models/Stone/STN_MOSS_HALF_3D_TOP.gltf',
+
+  // --- Pillars ---
   pillar: '/assets/models/Stone/STN_PLR.gltf',
+  pillarDark: '/assets/models/Stone/STN_PLR_DARK.gltf',
+  pillarLonger: '/assets/models/Stone/STN_PLR_LNGER.gltf',
   pillarLong: '/assets/models/Stone/STN_PLR_LNGR_DARK.gltf',
+
+  // --- Stone walls ---
+  wall: '/assets/models/Stone/STN_WALL.gltf',
+  wallInv: '/assets/models/Stone/Stone_Wall_INV.gltf',
   wallBroken: '/assets/models/Stone/STN_WALL_BRKN.gltf',
   wallBrokenInv: '/assets/models/Stone/STN_WALL_BRKN_INV.gltf',
+  wallDarkBroken: '/assets/models/Stone/STN_WALL_DARK_BRKN.gltf',
+  wallDarkSmallBroken: '/assets/models/Stone/STN_WALL_DARK_sBRKN.gltf',
   wallDarkMid: '/assets/models/Stone/STN_WALL_DARK_MID.gltf',
+  wallDarkRubble: '/assets/models/Stone/STN_WALL_DARK_RBL.gltf',
   wallDarkTop: '/assets/models/Stone/STN_WALL_DRK_TOP.gltf',
-  moss: '/assets/models/Stone/Moss.gltf',
+  wallRubble: '/assets/models/Stone/STN_WALL_RBL.gltf',
+
+  // --- Forest ground tiles ---
   forestGrass: '/assets/models/Stone/FRST_GRASS.gltf',
+  forestGrassSand: '/assets/models/Stone/FRST_GRASS_SAND.gltf',
+  forestGrassSandCorner: '/assets/models/Stone/FRST_GRASS_SAND_CNR.gltf',
+  treeGround: '/assets/models/Stone/STN_TREE_GRND.gltf',
+
+  // --- Floor/ground pieces (F_G series) ---
+  floorG: '/assets/models/Stone/F_G.gltf',
+  floorG2: '/assets/models/Stone/F_G2.gltf',
+  floorG2_5: '/assets/models/Stone/F_G2.5.gltf',
+  floorG3: '/assets/models/Stone/F_G3.gltf',
+  floorG4: '/assets/models/Stone/F_G4.gltf',
+  floorG5: '/assets/models/Stone/F_G5.gltf',
+  floorG6: '/assets/models/Stone/F_G6.gltf',
+  floorG7: '/assets/models/Stone/F_G7.gltf',
+  floorG8: '/assets/models/Stone/F_G8.gltf',
+  floorG9: '/assets/models/Stone/F_G9.gltf',
+  floorG10: '/assets/models/Stone/F_G10.gltf',
+  floorG11: '/assets/models/Stone/F_G11.gltf',
+  floorG12: '/assets/models/Stone/F_G12.gltf',
 } as const;
 
 // =============================================================================
