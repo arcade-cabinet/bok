@@ -107,6 +107,25 @@ export interface EngineState {
   placementPreview: { x: number; y: number; z: number; shape: string } | null;
   /** Block breaking progress: 0 = not breaking, 0-1 = in progress */
   breakingProgress: number;
+  /** Boss world position — used for directional compass when boss is unlocked */
+  bossPosition: { x: number; y: number; z: number } | null;
+  /** Whether the boss has been defeated */
+  bossDefeated: boolean;
+  /** Player camera Y rotation in radians — used for compass direction */
+  playerYaw: number;
+  /** Enemy positions + health for floating health bars (within 20 units of player) */
+  enemyPositions: Array<{
+    x: number;
+    y: number;
+    z: number;
+    health: number;
+    maxHealth: number;
+    type: string;
+  }>;
+  /** Boss display name (from content registry) */
+  bossName: string;
+  /** Position of the block the player is looking at (for target highlight in HUD) */
+  targetBlockPosition: { x: number; y: number; z: number } | null;
 }
 
 /** Boss attack configuration for a single phase */
@@ -132,7 +151,7 @@ export type EngineEvent =
   | { type: 'playerDamaged'; amount: number }
   | { type: 'enemyKilled'; position: { x: number; y: number; z: number } }
   | { type: 'attackHit'; damage: number; position: { x: number; y: number; z: number } }
-  | { type: 'bossPhaseChange'; phase: number }
+  | { type: 'bossPhaseChange'; phase: number; bossName: string; text: string }
   | { type: 'bossDefeated'; bossId: string; tomeAbility: string }
   | { type: 'playerDied' }
   | { type: 'lootPickup'; itemType: string }
@@ -154,5 +173,15 @@ export interface MobileInput {
   moveZ: number; // -1 to 1 absolute
   lookX: number; // -1 to 1 absolute — continuous rotation rate
   lookY: number; // -1 to 1 absolute — continuous rotation rate
-  action: 'attack' | 'defend' | 'dodge' | 'jump' | 'crouch' | 'interact' | 'placeBlock' | 'breakBlock' | null;
+  action:
+    | 'attack'
+    | 'defend'
+    | 'dodge'
+    | 'jump'
+    | 'crouch'
+    | 'interact'
+    | 'placeBlock'
+    | 'breakBlock'
+    | 'cycleShape'
+    | null;
 }

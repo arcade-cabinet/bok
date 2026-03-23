@@ -416,6 +416,7 @@ export function HubView({
           craftingRecipes={craftingRecipes}
           unlockedPages={[]}
           biomeDestinations={biomeDestinations}
+          unlockedBiomes={unlockedBiomes}
           playerInventory={playerInventory}
           onBuy={handleBuy}
           onCraft={handleCraft}
@@ -455,7 +456,7 @@ export function HubView({
 
       {showPause && <HubPauseModal onResume={() => setShowPause(false)} onQuit={() => onNavigate('menu')} />}
 
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)] z-10 pointer-events-none" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)] z-10 pointer-events-none" />
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile} />
     </div>
   );

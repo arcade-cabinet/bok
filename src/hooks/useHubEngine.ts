@@ -118,8 +118,18 @@ export function useHubEngine(
       const npcs = spawnHubNPCs(scene, HUB_NPC_CONFIGS, hub.getSurfaceY);
       setNpcEntities(npcs);
 
-      // Camera
-      const cam = createCamera(jpWorld, hub.getSurfaceY, Math.round(hub.hubSize / 2), Math.round(hub.hubSize / 2));
+      // Camera — face toward the Guide NPC on spawn
+      const guideNpc = npcs.find((n) => n.id === 'guide');
+      const spawnCenterX = Math.round(hub.hubSize / 2);
+      const spawnCenterZ = Math.round(hub.hubSize / 2);
+      const cam = createCamera(
+        jpWorld,
+        hub.getSurfaceY,
+        spawnCenterX,
+        spawnCenterZ,
+        guideNpc?.worldPos.x,
+        guideNpc?.worldPos.z,
+      );
       camRef.current = cam;
 
       // Input

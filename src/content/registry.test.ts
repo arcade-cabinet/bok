@@ -157,17 +157,17 @@ describe('ContentRegistry', () => {
 
   // --- NPCs ---
 
-  it('loads all 4 NPCs', () => {
+  it('loads all 3 NPCs', () => {
     const registry = new ContentRegistry();
     const npcs = registry.getAllNPCs();
-    expect(npcs).toHaveLength(4);
+    expect(npcs).toHaveLength(3);
   });
 
   it('all NPC IDs are unique', () => {
     const registry = new ContentRegistry();
     const npcs = registry.getAllNPCs();
     const ids = npcs.map((n) => n.id);
-    expect(new Set(ids).size).toBe(4);
+    expect(new Set(ids).size).toBe(3);
   });
 
   it('getNPC returns valid NPC with role and dialogue', () => {
@@ -176,7 +176,7 @@ describe('ContentRegistry', () => {
     const npc = npcs[0];
     expect(npc.id).toBeTruthy();
     expect(npc.name).toBeTruthy();
-    expect(['merchant', 'crafter', 'lore', 'navigation']).toContain(npc.role);
+    expect(['merchant', 'crafter', 'lore', 'navigation', 'guide']).toContain(npc.role);
     expect(npc.dialogue.greeting).toBeTruthy();
     expect(npc.dialogue.farewell).toBeTruthy();
   });

@@ -306,6 +306,24 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
     }
     // Stone slab on top as sign board
     voxelMap.setVoxel('Ground', { position: { x: signX, y: DOCK_SURFACE_Y + 4, z: signZ }, blockId: 8 });
+
+    // Banner pole at dock start — tall wood pole with colored banner top
+    // Visible from the hub center so players can spot docks from afar
+    const bannerX = dock.x;
+    const bannerZ = dock.z;
+    const bannerBaseY = surfaceHeight.get(`${bannerX},${bannerZ}`) ?? DOCK_SURFACE_Y + 1;
+    // Wood pole shaft: 4 blocks tall above ground
+    for (let by = 0; by < 4; by++) {
+      voxelMap.setVoxel('Ground', { position: { x: bannerX, y: bannerBaseY + by, z: bannerZ }, blockId: 111 });
+    }
+    // Colored banner block at top — Three.js mesh with the dock's biome color
+    const bannerGeo = new THREE.BoxGeometry(0.6, 0.8, 0.6);
+    const bannerMat = new THREE.MeshLambertMaterial({ color: dock.color });
+    const bannerMesh = new THREE.Mesh(bannerGeo, bannerMat);
+    bannerMesh.position.set(bannerX + 0.5, bannerBaseY + 4 + 0.4, bannerZ + 0.5);
+    bannerMesh.name = `dock-banner-${dock.biomeId}`;
+    const scene = jpWorld.sceneManager.getSource() as THREE.Scene;
+    scene.add(bannerMesh);
   }
 
   function getSurfaceY(x: number, z: number): number {

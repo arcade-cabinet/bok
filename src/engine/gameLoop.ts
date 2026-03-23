@@ -124,6 +124,7 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
   // Dodge state
   let dodgeCooldown = 0;
   let dodgeIFrames = 0;
+  let dodgeTimer = 0;
 
   // Block/parry state
   let blockActive = false;
@@ -189,6 +190,15 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       }
     }
 
+    // --- Jump mechanic ---
+    const jumpPressed = !isMobile ? inputSystem.actionMap.isActive('jump') : mobileInput.action === 'jump';
+    if (jumpPressed) {
+      cam.jump();
+      if (isMobile && mobileInput.action === 'jump') {
+        mobileInput.action = null;
+      }
+    }
+
     // --- Stamina regen ---
     stamina = Math.min(MAX_STAMINA, stamina + STAMINA_REGEN_RATE * dt);
 
@@ -201,14 +211,19 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
     if (dodgePressed && dodgeCooldown <= 0 && stamina >= DODGE_STAMINA_COST) {
       dodgeCooldown = DODGE_COOLDOWN;
       dodgeIFrames = DODGE_DURATION;
+      dodgeTimer = DODGE_DURATION;
       stamina -= DODGE_STAMINA_COST;
-      // Dodge movement burst in current facing direction
-      cam.applyMovement(0, -1, false, (DODGE_DURATION * DODGE_SPEED) / PLAYER_SPEED);
       hapticImpact('light');
       // Clear mobile dodge action
       if (isMobile && mobileInput.action === 'dodge') {
         mobileInput.action = null;
       }
+    }
+
+    // --- Dodge movement burst: apply forward lunge over the dodge duration ---
+    if (dodgeTimer > 0) {
+      dodgeTimer -= dt;
+      cam.applyMovement(0, -1, false, dt * (DODGE_SPEED / PLAYER_SPEED));
     }
 
     // --- Block / Parry mechanic ---
@@ -245,6 +260,10 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
         // Chest interaction is proximity-based and runs every frame in combat.update.
         // The interact button serves as a visual affordance for mobile players.
         // Clear action so it doesn't persist.
+        mobileInput.action = null;
+      }
+      if (mobileInput.action === 'cycleShape' && ctx.blockInteraction) {
+        ctx.blockInteraction.cycleShape();
         mobileInput.action = null;
       }
     }
@@ -365,10 +384,14 @@ export function createGameLoop(ctx: GameLoopContext): GameLoopResult {
       }
     }
 
-    // --- Ghost preview wireframe ---
+    // --- Ghost preview wireframe + target block highlight ---
     if (ctx.ghostPreview && ctx.blockInteraction) {
       const preview = ctx.blockInteraction.getPlacementPreview(cam.camera);
       ctx.ghostPreview.update(preview ? preview.position : null, preview ? preview.shape : 'cube');
+
+      // Red wireframe on the block being looked at (break target)
+      const queryResult = ctx.blockInteraction.query(cam.camera);
+      ctx.ghostPreview.updateTarget(queryResult.targetBlock);
     }
 
     // Day/night

@@ -125,7 +125,7 @@ export const NPCInventoryItemSchema = z.object({
 export const NPCConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
-  role: z.enum(['merchant', 'crafter', 'lore', 'navigation']),
+  role: z.enum(['merchant', 'crafter', 'lore', 'navigation', 'guide']),
   description: z.string(),
   requiredBuilding: z.string().nullable(),
   dialogue: z.object({

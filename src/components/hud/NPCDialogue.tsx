@@ -32,6 +32,11 @@ interface NavigatorPanelProps {
   onSelect: (biomeId: string) => void;
 }
 
+interface GuidePanelProps {
+  unlockedBiomes: Set<string>;
+  biomeDestinations: { id: string; name: string }[];
+}
+
 // --- Sub-panels ---
 
 function MerchantPanel({ inventory, playerInventory, onBuy }: MerchantPanelProps) {
@@ -255,6 +260,72 @@ function LorePanel({ unlockedPages }: LorePanelProps) {
   );
 }
 
+/** The forest biome ID — always the starter island. */
+const FOREST_BIOME_ID = 'forest';
+
+/**
+ * Ordered list of biome IDs for next-island suggestion.
+ * After forest, the Guide suggests biomes in this progression order.
+ */
+const BIOME_PROGRESSION_ORDER = [
+  'forest',
+  'desert',
+  'tundra',
+  'volcanic',
+  'swamp',
+  'crystal-caves',
+  'sky-ruins',
+  'deep-ocean',
+];
+
+function GuidePanel({ unlockedBiomes, biomeDestinations }: GuidePanelProps) {
+  // Count completed islands (biomes the player has beaten a boss on)
+  const completedCount = unlockedBiomes.size;
+  const hasCompletedForest = unlockedBiomes.has(FOREST_BIOME_ID);
+
+  // Find the next uncompleted biome in progression order
+  const nextBiomeId = BIOME_PROGRESSION_ORDER.find((id) => !unlockedBiomes.has(id));
+  const nextBiomeName = nextBiomeId ? (biomeDestinations.find((b) => b.id === nextBiomeId)?.name ?? nextBiomeId) : null;
+
+  let advice: string;
+
+  if (completedCount === 0) {
+    advice = 'Welcome! Head east to the Whispering Woods dock to begin.';
+  } else if (completedCount === 1 && hasCompletedForest) {
+    advice = 'Well done! The Sunscorched Dunes dock is now open. Head west!';
+  } else if (nextBiomeName) {
+    advice = `You've conquered ${completedCount} island${completedCount > 1 ? 's' : ''}. ${nextBiomeName} awaits.`;
+  } else {
+    advice = `You've conquered all ${completedCount} islands. A true Builder! Return anytime to strengthen your gear.`;
+  }
+
+  return (
+    <div className="space-y-2">
+      <h4
+        className="text-sm font-bold text-base-content/80 uppercase tracking-wide"
+        style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+      >
+        Guidance
+      </h4>
+      <p className="text-sm" style={{ fontFamily: 'Crimson Text, Georgia, serif', color: '#2c1e16' }}>
+        {advice}
+      </p>
+      {completedCount > 0 && (
+        <div className="flex gap-1 flex-wrap mt-1">
+          {[...unlockedBiomes].map((biomeId) => {
+            const name = biomeDestinations.find((b) => b.id === biomeId)?.name ?? biomeId;
+            return (
+              <span key={biomeId} className="badge badge-xs badge-success badge-outline">
+                {name}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NavigatorPanel({ destinations, onSelect }: NavigatorPanelProps) {
   if (destinations.length === 0) {
     return (
@@ -295,6 +366,8 @@ interface Props {
   craftingRecipes: CraftingRecipeConfig[];
   unlockedPages: string[];
   biomeDestinations: { id: string; name: string }[];
+  /** Set of biome IDs the player has completed (for Guide contextual dialogue). */
+  unlockedBiomes?: Set<string>;
   playerInventory?: PlayerInventory | null;
   onBuy: (itemId: string) => void;
   onCraft: (recipeId: string) => void;
@@ -319,6 +392,7 @@ export function NPCDialogue({
   craftingRecipes,
   unlockedPages,
   biomeDestinations,
+  unlockedBiomes,
   playerInventory,
   onBuy,
   onCraft,
@@ -403,6 +477,9 @@ export function NPCDialogue({
           {npc.role === 'lore' && <LorePanel unlockedPages={unlockedPages} />}
           {npc.role === 'navigation' && (
             <NavigatorPanel destinations={biomeDestinations} onSelect={onSelectDestination} />
+          )}
+          {npc.role === 'guide' && (
+            <GuidePanel unlockedBiomes={unlockedBiomes ?? new Set()} biomeDestinations={biomeDestinations} />
           )}
         </div>
       </div>
