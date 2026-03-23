@@ -328,6 +328,13 @@ export function GameView({
           onBlock={handleBlock}
           onBlockRelease={handleBlockRelease}
           onInteract={handleInteract}
+          onJump={() => gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'jump' })}
+          onPlaceBlock={() =>
+            gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'placeBlock' })
+          }
+          onBreakBlock={() =>
+            gameRef.current?.setMobileInput({ moveX: 0, moveZ: 0, lookX: 0, lookY: 0, action: 'breakBlock' })
+          }
         />
       )}
       {engineState?.phase === 'playing' && <ContextIndicator context={engineState.context} />}
@@ -379,7 +386,7 @@ export function GameView({
             completionMessage={goalState.completionMessage}
           />
           <Minimap playerX={engineState.playerX} playerZ={engineState.playerZ} markers={engineState.minimapMarkers} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_rgba(0,0,0,0.5)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full border border-black/40 shadow-[0_0_6px_rgba(0,0,0,0.6)]" />
           {engineState.breakingProgress > 0 && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-3 w-16 h-1 bg-black/50 rounded overflow-hidden">
               <div
