@@ -494,7 +494,24 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
       if (input.action) mobileInput.action = input.action;
     },
     togglePause: () => loop.togglePause(),
-    setEquippedWeapon: (weaponId: string) => combat.setWeapon(weaponId),
+    setEquippedWeapon: (weaponId: string) => {
+      combat.setWeapon(weaponId);
+      // Auto-derive tool tier from weapon: tier lookup via content registry
+      try {
+        const weapons = content.getAllWeapons();
+        const w = weapons.find((wp) => wp.id === weaponId);
+        // Map weapon power level to tool tier based on base damage thresholds
+        if (w) {
+          let tier = 'wood';
+          if (w.baseDamage >= 18) tier = 'diamond';
+          else if (w.baseDamage >= 14) tier = 'gold';
+          else if (w.baseDamage >= 10) tier = 'stone';
+          loop.setToolTier(tier);
+        }
+      } catch {
+        // Keep current tool tier on lookup failure
+      }
+    },
     setToolTier: (tier: string) => loop.setToolTier(tier),
     destroy: () => {
       combat.cleanup();

@@ -27,7 +27,7 @@ This document is the **single checklist for shipping a production-quality game**
 |------|--------|----------------|
 | **Biomes** | **DONE** — All 8 biomes balanced with distinct terrain params, 171 balance tests | — |
 | **Enemies / bosses / weapons** | **DONE** — 16 enemies + 8 bosses + 15 weapons balanced, all verified with tests | — |
-| **Loot / crafting** | **DONE** — CraftingModal, InventoryModal, LootNotification, NPC shop transactions | — |
+| **Loot / crafting** | **DONE** — CraftingModal (tier-gated recipes), InventoryModal (weapon equip), LootNotification, NPC shop | — |
 | **Hub content** | **DONE** — 5 buildings with upgrade effects, 4 NPCs with role-specific panels, forge-gated recipes | — |
 
 ---
@@ -83,7 +83,7 @@ This document is the **single checklist for shipping a production-quality game**
 |------|--------|----------------|
 | **Enemy AI** | **DONE** — Yuka FSM + steering, balanced per biome | — |
 | **Player governor** | **DONE** — GOAP + settings toggle | — |
-| **Combat feel** | **DONE** — Balanced damage, boss phases tuned | — |
+| **Combat feel** | **DONE** — Balanced damage, boss phases tuned, dynamic weapon equipping, tool tier progression | — |
 
 ---
 
@@ -91,7 +91,7 @@ This document is the **single checklist for shipping a production-quality game**
 
 | Area | Status | Remaining work |
 |------|--------|----------------|
-| **Unit tests** | **DONE** — 626 passing (52 files) | — |
+| **Unit tests** | **DONE** — 1069 passing (88 files) | — |
 | **Browser tests** | **DONE** — Menu journey, island select, crafting modal + component tests | — |
 | **Content validation** | **DONE** — 171 balance tests covering all biomes, enemies, bosses, weapons | — |
 | **CI** | **DONE** — ci.yml: typecheck, lint, test, build, browser-tests | — |
@@ -116,7 +116,7 @@ This document is the **single checklist for shipping a production-quality game**
 pnpm install
 pnpm run typecheck     # 0 errors
 pnpm run lint          # 0 errors, 0 warnings
-pnpm test              # 626 tests passing
+pnpm test              # 1069 tests passing
 pnpm run test:browser  # headless Playwright
 pnpm run build         # well-split chunks, no warnings
 ```
@@ -137,4 +137,4 @@ Only items requiring real hardware or external services:
 
 ## Revision
 
-Update this file when major features land or scope changes. **Last updated:** 2026-03-21.
+Update this file when major features land or scope changes. **Last updated:** 2026-03-23.
