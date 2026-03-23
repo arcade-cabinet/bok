@@ -196,13 +196,19 @@ export function GameView({
         goalSystem.onChestOpened();
         setGoalState({ ...goalSystem.state });
       }
+      if (event.type === 'landmarkDiscovered') {
+        goalSystem.onLandmarkDiscovered();
+        setGoalState({ ...goalSystem.state });
+      }
 
-      // Track resource counts for hotbar display
+      // Track resource counts for hotbar display + advance gather goals
       if (event.type === 'resourceGathered') {
         setResourceCounts((prev) => ({
           ...prev,
           [event.resourceId]: (prev[event.resourceId] ?? 0) + event.amount,
         }));
+        goalSystem.onResourceGathered(event.resourceId);
+        setGoalState({ ...goalSystem.state });
       }
 
       // Boss phase transition — dramatic announcement text
