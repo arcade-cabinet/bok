@@ -7,7 +7,6 @@
  * @tested Database.test.ts, GameStateSerializer.test.ts, CapacitorDatabase.test.ts
  */
 
-export { CapacitorDatabase } from './CapacitorDatabase.ts';
 export { createDatabase } from './createDatabase.ts';
 export { type DatabaseAdapter, InMemoryDatabase } from './Database.ts';
 export type { GameSave, IslandState } from './GameSave.ts';

@@ -10,13 +10,15 @@
  */
 import { InputSystem } from '../input/index.ts';
 import { type CameraResult, createCamera } from './camera.ts';
-import { spawnModelActor } from './models.ts';
+import { loadModel, spawnModelActor, WEAPON_MODELS } from './models.ts';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
 /** Player entity: camera + input */
 export interface PlayerResult {
   cam: CameraResult;
   inputSystem: InputSystem;
+  /** Swap the center-mounted weapon model to a different weapon */
+  setWeaponModel: (weaponId: string) => void;
 }
 
 /**
@@ -56,5 +58,25 @@ export function createPlayer(
     });
   }
 
-  return { cam, inputSystem };
+  // Weapon model swapping: loads the new model and replaces children in the weapon actor
+  function setWeaponModel(weaponId: string): void {
+    const modelPath = WEAPON_MODELS[weaponId];
+    if (!modelPath) return;
+
+    loadModel(modelPath)
+      .then((model) => {
+        // Remove old children from the weapon actor's object3D
+        const obj = weaponActor.object3D;
+        while (obj.children.length > 0) {
+          obj.remove(obj.children[0]);
+        }
+        model.scale.setScalar(0.7);
+        obj.add(model);
+      })
+      .catch(() => {
+        // Keep current weapon model on load failure
+      });
+  }
+
+  return { cam, inputSystem, setWeaponModel };
 }

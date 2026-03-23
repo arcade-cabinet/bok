@@ -124,6 +124,7 @@ export function GameView({
   const [resourceCounts, setResourceCounts] = useState<Record<string, number>>({});
   const [bossPhaseText, setBossPhaseText] = useState<string | null>(null);
   const [showInventory, setShowInventory] = useState(false);
+  const [bossTelegraph, setBossTelegraph] = useState<string | null>(null);
 
   // --- Island persistence: load saved deltas + goal progress ---
   const [restoredDeltas, setRestoredDeltas] = useState<
@@ -223,7 +224,7 @@ export function GameView({
         setGoalState({ ...goalSystem.state });
       }
 
-      // Track resource counts for hotbar display + advance gather goals
+      // Track resource counts for hotbar display + advance gather goals + persist
       if (event.type === 'resourceGathered') {
         setResourceCounts((prev) => ({
           ...prev,
@@ -231,11 +232,50 @@ export function GameView({
         }));
         goalSystem.onResourceGathered(event.resourceId);
         setGoalState({ ...goalSystem.state });
+        // Persist to SaveManager
+        if (saveManager && config.saveId) {
+          saveManager.addResource(config.saveId, event.resourceId, event.amount).catch(() => {});
+        }
+      }
+
+      // Chest loot → inventory persistence
+      if (event.type === 'chestOpened' && event.items) {
+        for (const item of event.items) {
+          setResourceCounts((prev) => ({
+            ...prev,
+            [item.name]: (prev[item.name] ?? 0) + item.amount,
+          }));
+          if (saveManager && config.saveId) {
+            saveManager.addResource(config.saveId, item.name, item.amount).catch(() => {});
+          }
+        }
+      }
+
+      // Loot pickup → update resource display
+      if (event.type === 'lootPickup') {
+        setResourceCounts((prev) => ({
+          ...prev,
+          [event.itemType]: (prev[event.itemType] ?? 0) + 1,
+        }));
+        if (saveManager && config.saveId) {
+          saveManager.addResource(config.saveId, event.itemType, 1).catch(() => {});
+        }
       }
 
       // Boss phase transition — dramatic announcement text
       if (event.type === 'bossPhaseChange') {
         setBossPhaseText(event.text);
+      }
+
+      // Boss telegraph warning — brief flash when boss is about to attack
+      if (event.type === 'bossTelegraph') {
+        setBossTelegraph(event.attackName);
+        setTimeout(() => setBossTelegraph(null), event.duration * 1000);
+      }
+
+      // Block placed/broken — sync resource counter from engine state
+      if (event.type === 'blockBroken' && saveManager && config.saveId) {
+        // Resource gathered event handles the inventory update; blockBroken is just for tracking
       }
 
       // Show tome unlock banner on boss defeat
@@ -389,6 +429,14 @@ export function GameView({
       <DamageNumbers numbers={events.damageNumbers} />
       <BlockVignette isBlocking={engineState?.isBlocking ?? false} />
       <BossPhaseAnnouncement text={bossPhaseText} onDone={() => setBossPhaseText(null)} />
+      {bossTelegraph && (
+        <div
+          className="fixed top-1/3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 bg-red-900/80 border border-red-500/60 rounded text-red-200 text-sm animate-pulse pointer-events-none"
+          style={{ fontFamily: 'Cinzel, Georgia, serif' }}
+        >
+          {bossTelegraph.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}!
+        </div>
+      )}
       <TouchControls onOutput={handleTouchOutput} enabled={isMobile && engineState?.phase === 'playing'} />
       {(isMobile || isTouch) && engineState?.phase === 'playing' && (
         <ActionButtons

@@ -226,7 +226,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
 
   // --- Player at world origin ---
   // Weapon model is a JollyPixel actor — loads during awake().
-  const { cam, inputSystem } = createPlayer(
+  const { cam, inputSystem, setWeaponModel } = createPlayer(
     engine.jpWorld,
     canvas,
     chunkWorld.getSurfaceY.bind(chunkWorld),
@@ -496,6 +496,7 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     togglePause: () => loop.togglePause(),
     setEquippedWeapon: (weaponId: string) => {
       combat.setWeapon(weaponId);
+      setWeaponModel(weaponId);
       // Auto-derive tool tier from weapon: tier lookup via content registry
       try {
         const weapons = content.getAllWeapons();
