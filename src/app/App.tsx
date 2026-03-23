@@ -60,8 +60,12 @@ export function App() {
   }, []);
 
   const handleStartGame = async (seed: string, mode: GameMode) => {
-    const mgr = saveManagerRef.current;
-    if (!mgr) return;
+    let mgr = saveManagerRef.current;
+    if (!mgr) {
+      // SaveManager not ready yet — initialize it now
+      mgr = await SaveManager.createInMemory();
+      saveManagerRef.current = mgr;
+    }
     const save = await mgr.createGame(seed, mode);
     setSaves(await mgr.listGames());
     setGameConfig({ saveId: save.id, biome: 'forest', seed: save.seed, mode: save.mode });
