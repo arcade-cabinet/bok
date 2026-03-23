@@ -3,29 +3,30 @@
   "goals": [
     {
       "id": "deep-ocean-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Chart the Depths",
+      "description": "Discover 2 underwater landmarks",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "deep-ocean-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Repel the Abyss",
+      "description": "Defeat 6 deep-sea creatures",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "deep-ocean-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
+      "id": "deep-ocean-gather-pearls",
+      "title": "Collect Abyssal Pearls",
+      "description": "Collect 3 Pearls",
+      "type": "gather",
       "target": 3,
-      "icon": "📦"
+      "resourceId": "pearl",
+      "icon": "\uD83E\uDD0D"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "The depths rumble... Something stirs below.",
+  "completionMessage": "The abyss opens. The Leviathan awaits."
 }

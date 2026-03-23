@@ -11,10 +11,21 @@ import { useHubCamera } from '../../hooks/useHubCamera';
 import { useHubEngine } from '../../hooks/useHubEngine';
 import { useNPCProximity } from '../../hooks/useNPCProximity';
 import { usePlayerInventory } from '../../hooks/usePlayerInventory';
+import type { SaveManager } from '../../persistence/index';
 
 interface Props {
   onNavigate: (view: 'menu' | 'game') => void;
+  /** Called when the player sets sail from a specific dock. Passes the biome ID. */
+  onSetSail?: (biomeId: string) => void;
   onBuildingEffectsChange?: (effects: BuildingEffects) => void;
+  /** Set of unlocked biome IDs (survival progression). If undefined, all are unlocked. */
+  unlockedBiomes?: Set<string>;
+  /** Game mode — in creative mode all docks are accessible. */
+  gameMode?: 'creative' | 'survival';
+  /** Save ID for inventory persistence */
+  saveId?: number;
+  /** SaveManager instance for inventory persistence */
+  saveManager?: SaveManager | null;
 }
 
 /** Accessible hub pause modal with focus trap and Escape key support. */
@@ -79,8 +90,19 @@ function getRegistry(): ContentRegistry {
 /** NPC floating label projection config. */
 const NPC_LABEL_DISTANCE = 12;
 
-/** Hub island: walk between buildings, upgrade, interact with NPCs, set sail. */
-export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
+/** The forest dock is always unlocked as the starter island. */
+const ALWAYS_UNLOCKED_BIOMES = new Set(['forest']);
+
+/** Hub island: walk between buildings, upgrade, interact with NPCs, set sail from docks. */
+export function HubView({
+  onNavigate,
+  onSetSail,
+  onBuildingEffectsChange,
+  unlockedBiomes,
+  gameMode,
+  saveId,
+  saveManager,
+}: Props) {
   const [showPause, setShowPause] = useState(false);
   const [npcDialogueOpen, setNpcDialogueOpen] = useState(false);
   const [upgradeFeedback, setUpgradeFeedback] = useState<{ message: string; success: boolean } | null>(null);
@@ -89,7 +111,7 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
   const onFrameRef = useRef<((cam: CameraResult) => void) | null>(null);
 
   // Player inventory (shared resource pool for NPC transactions and building upgrades)
-  const playerInventory = usePlayerInventory();
+  const playerInventory = usePlayerInventory(saveManager, saveId);
 
   // Building upgrade system — uses player inventory for resource management
   const hubBuildings = useHubBuildings(undefined, playerInventory);
@@ -122,7 +144,15 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
   const npcProximity = useNPCProximity(npcEntities);
   npcProximityRef.current = npcProximity.updatePlayerPosition;
 
-  const { labels, nearDocks } = useHubCamera(canvasRef, hubRef, onFrameRef);
+  const { labels, dockLabels, nearbyDock } = useHubCamera(canvasRef, hubRef, onFrameRef);
+
+  // Determine if the nearby dock is unlocked
+  const isDockUnlocked = useMemo(() => {
+    if (!nearbyDock) return false;
+    if (gameMode === 'creative') return true;
+    if (ALWAYS_UNLOCKED_BIOMES.has(nearbyDock.biomeId)) return true;
+    return unlockedBiomes?.has(nearbyDock.biomeId) ?? false;
+  }, [nearbyDock, gameMode, unlockedBiomes]);
 
   // NPC floating labels
   const [npcLabels, setNpcLabels] = useState<{ name: string; screenX: number; screenY: number; visible: boolean }[]>(
@@ -161,7 +191,15 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
     setNpcLabels(projected);
   };
 
-  const handleSetSail = useCallback(() => onNavigate('game'), [onNavigate]);
+  const handleSetSailFromDock = useCallback(() => {
+    if (!nearbyDock) return;
+    if (onSetSail) {
+      onSetSail(nearbyDock.biomeId);
+    } else {
+      // Fallback: use onNavigate for backward compatibility
+      onNavigate('game');
+    }
+  }, [nearbyDock, onSetSail, onNavigate]);
 
   // Content data for NPC panels — filter crafting recipes by forge tier
   const { craftingRecipes, biomeDestinations } = useMemo(() => {
@@ -186,9 +224,13 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
   const handleSelectDestination = useCallback(
     (biomeId: string) => {
       console.log('[Hub] Navigate to:', biomeId);
-      onNavigate('game');
+      if (onSetSail) {
+        onSetSail(biomeId);
+      } else {
+        onNavigate('game');
+      }
     },
-    [onNavigate],
+    [onSetSail, onNavigate],
   );
 
   const handleCloseDialogue = useCallback(() => {
@@ -253,6 +295,36 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
           ))}
       </div>
 
+      {/* Floating dock signpost labels with biome-colored backgrounds */}
+      <div className="fixed inset-0 pointer-events-none z-10">
+        {dockLabels
+          .filter((l) => l.visible)
+          .map((l) => {
+            const r = (l.color >> 16) & 0xff;
+            const g = (l.color >> 8) & 0xff;
+            const b = l.color & 0xff;
+            return (
+              <div
+                key={l.biomeId}
+                className="absolute text-center -translate-x-1/2 px-2 py-0.5 rounded"
+                style={{
+                  left: l.screenX,
+                  top: l.screenY,
+                  fontFamily: 'Cinzel, Georgia, serif',
+                  color: '#fdf6e3',
+                  background: `rgba(${r},${g},${b},0.75)`,
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  fontSize: '12px',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {l.name}
+              </div>
+            );
+          })}
+      </div>
+
       {/* Floating NPC name labels */}
       <div className="fixed inset-0 pointer-events-none z-10">
         {npcLabels
@@ -276,13 +348,13 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
           ))}
       </div>
 
-      {/* Set Sail prompt near docks */}
-      {nearDocks && (
+      {/* Dock interaction prompt — unlocked: "Set Sail to {name}", locked: parchment "Come Back Later" */}
+      {nearbyDock && isDockUnlocked && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-20">
           <button
             type="button"
-            onClick={handleSetSail}
-            aria-label="Set sail to explore a new island"
+            onClick={handleSetSailFromDock}
+            aria-label={`Set sail to ${nearbyDock.name}`}
             className="px-8 py-3 rounded-lg border-2 cursor-pointer transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.5)] focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
             style={{
               fontFamily: 'Cinzel, Georgia, serif',
@@ -293,8 +365,30 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
               letterSpacing: '0.05em',
             }}
           >
-            Set Sail
+            Set Sail to {nearbyDock.name}
           </button>
+        </div>
+      )}
+
+      {nearbyDock && !isDockUnlocked && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-20">
+          <div
+            className="px-6 py-4 rounded border-2 shadow-lg"
+            role="status"
+            aria-label={`${nearbyDock.name} is locked`}
+            style={{
+              fontFamily: 'Cinzel, Georgia, serif',
+              color: '#5c3d2e',
+              background: '#fdf6e3',
+              borderColor: '#8b5a2b',
+              boxShadow: '2px 2px 8px rgba(0,0,0,0.3), inset 0 0 20px rgba(139,90,43,0.1)',
+            }}
+          >
+            <div className="text-sm font-bold text-center mb-1">{nearbyDock.name}</div>
+            <div className="text-xs italic text-center" style={{ color: '#8b5a2b' }}>
+              Come Back Later
+            </div>
+          </div>
         </div>
       )}
 
@@ -339,7 +433,7 @@ export function HubView({ onNavigate, onBuildingEffectsChange }: Props) {
       >
         <div className="text-sm font-bold">Hub Island</div>
         <div className="text-xs italic" style={{ color: '#8b5a2b' }}>
-          Visit the Docks to set sail
+          Walk to a dock to set sail
         </div>
         <div className="flex gap-2 mt-1 text-xs">
           <span>Wood: {playerInventory.resources.wood ?? 0}</span>

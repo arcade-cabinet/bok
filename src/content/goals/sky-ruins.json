@@ -3,29 +3,30 @@
   "goals": [
     {
       "id": "sky-ruins-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Scale the Heights",
+      "description": "Discover 2 sky landmarks",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "sky-ruins-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Silence the Winds",
+      "description": "Defeat 6 sky enemies",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "sky-ruins-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "📦"
+      "id": "sky-ruins-gather-essence",
+      "title": "Capture Wind Essence",
+      "description": "Gather 5 Wind Essence",
+      "type": "gather",
+      "target": 5,
+      "resourceId": "wind-essence",
+      "icon": "\uD83D\uDCA8"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "Thunder cracks... The Storm Titan descends.",
+  "completionMessage": "The skies part. The Storm Titan awaits."
 }

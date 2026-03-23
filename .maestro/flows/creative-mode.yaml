@@ -1,0 +1,25 @@
+appId: browser
+---
+# Creative Mode — verify all biomes unlocked
+- openLink: ${LOCAL_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 15000
+
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 5000
+
+# Switch to Creative mode
+- tapOn: "Creative"
+
+# All 8 biomes should now be visible (no ???)
+- assertVisible: "Whispering Woods"
+- assertVisible: "Sunscorched Dunes"
+- assertVisible: "Frostbite Expanse"
+- assertVisible: "Cinderpeak Caldera"
+- assertVisible: "Rothollow Marsh"
+- assertVisible: "Prismatic Depths"
+- assertVisible: "Stormspire Remnants"
+- assertVisible: "Abyssal Trench"

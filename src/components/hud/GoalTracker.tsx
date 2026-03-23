@@ -16,7 +16,14 @@ export function GoalTracker({ goals, bossUnlocked, completionMessage }: Props) {
   if (goals.length === 0) return null;
 
   return (
-    <div className="fixed top-16 right-4 z-10 w-56" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
+    <div
+      className="fixed top-16 right-4 z-10 w-56"
+      style={{
+        fontFamily: 'Crimson Text, Georgia, serif',
+        marginTop: 'env(safe-area-inset-top)',
+        marginRight: 'env(safe-area-inset-right)',
+      }}
+    >
       <div className="bg-[#fdf6e3]/80 border-2 border-[#8b5a2b] rounded-lg p-3 space-y-2">
         <h3
           className="text-xs font-bold tracking-wider uppercase"

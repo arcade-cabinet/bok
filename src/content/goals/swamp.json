@@ -3,29 +3,30 @@
   "goals": [
     {
       "id": "swamp-explore",
-      "title": "Explore the Unknown",
-      "description": "Discover 2 landmarks",
+      "title": "Navigate the Mire",
+      "description": "Discover 2 swamp landmarks",
       "type": "discover",
       "target": 2,
-      "icon": "🗺️"
+      "icon": "\uD83D\uDDFA\uFE0F"
     },
     {
       "id": "swamp-defeat",
-      "title": "Prove Your Strength",
-      "description": "Defeat 6 enemies",
+      "title": "Cleanse the Bog",
+      "description": "Defeat 6 swamp creatures",
       "type": "kill",
       "target": 6,
-      "icon": "⚔️"
+      "icon": "\u2694\uFE0F"
     },
     {
-      "id": "swamp-collect",
-      "title": "Gather Resources",
-      "description": "Open 3 chests",
-      "type": "loot",
-      "target": 3,
-      "icon": "📦"
+      "id": "swamp-gather-mushrooms",
+      "title": "Forage Mushrooms",
+      "description": "Gather 8 Mushrooms",
+      "type": "gather",
+      "target": 8,
+      "resourceId": "mushroom",
+      "icon": "\uD83C\uDF44"
     }
   ],
-  "bossGateMessage": "Something awakens...",
-  "completionMessage": "The path to the boss is open."
+  "bossGateMessage": "The bog bubbles... The Mire Hag awakens.",
+  "completionMessage": "The swamp clears. The Mire Hag awaits."
 }

@@ -1,0 +1,15 @@
+# Maestro E2E Test Configuration for Bok: The Builder's Tome
+# https://maestro.mobile.dev/
+
+# Flow directories
+flows:
+  - flows/
+
+# Default environment
+env:
+  # Local dev server (start with: pnpm dev)
+  LOCAL_URL: http://localhost:5174
+  # Network-accessible for simulators (start with: npx vite --host 0.0.0.0)
+  NETWORK_URL: http://192.168.1.38:5174
+  # Deployed production site
+  DEPLOYED_URL: https://arcade-cabinet.github.io/bok/

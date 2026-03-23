@@ -463,6 +463,7 @@ export function createCombat(
             .join(' '),
           amount: i.amount,
         }));
+        hapticImpact('light');
         onEvent({ type: 'chestOpened', tier: result.chest.tier, items });
       }
     }

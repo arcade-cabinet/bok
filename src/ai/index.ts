@@ -6,6 +6,18 @@
  * @depends traits, content, yuka
  * @tested bridge.test.ts
  */
+
+export type { BossBehavior, BossEntity, BossId } from './bossBrain';
+export {
+  AggressiveChaseEvaluator,
+  BOSS_IDS,
+  BossBrain,
+  CircleStrafeEvaluator,
+  createBossBrain,
+  EnrageEvaluator,
+  RangedBarrageEvaluator,
+  RetreatAndSummonEvaluator,
+} from './bossBrain';
 export { AIBridge } from './bridge';
 export { createEnemyVehicle } from './EnemyVehicleFactory';
 export type { GovernorOutput, PlayerGovernor, ThreatLevel } from './PlayerGovernor';

@@ -1,0 +1,31 @@
+appId: com.apple.mobilesafari
+---
+# iOS Full Journey — menu → hub → verify 3D renders
+# Requires: iOS simulator running, dev server with --host 0.0.0.0
+
+- openLink: ${NETWORK_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 20000
+
+# Verify main menu
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+
+# Open biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 10000
+
+# Select forest and start game
+- tapOn: "Begin Writing"
+
+# Wait for hub to load (WebGL)
+- extendedWaitUntil:
+    visible: "Hub Island"
+    timeout: 30000
+
+# Verify hub elements
+- assertVisible: "Hub Island"
+- assertVisible: "Menu"

@@ -1,0 +1,34 @@
+appId: com.apple.mobilesafari
+---
+# iOS Touch Controls — verifies mobile touch UI renders and is interactive
+# Requires: iOS simulator running, dev server with --host 0.0.0.0
+
+- openLink: ${NETWORK_URL}
+- extendedWaitUntil:
+    visible: "BOK"
+    timeout: 20000
+
+# Verify main menu
+- assertVisible: "BOK"
+- assertVisible: "Pen New Tale"
+
+# Navigate to biome selection
+- tapOn: "Pen New Tale"
+- extendedWaitUntil:
+    visible: "Choose Your Chapter"
+    timeout: 10000
+
+# Start game (forest is always available)
+- tapOn: "Begin Writing"
+- extendedWaitUntil:
+    visible: "Hub Island"
+    timeout: 30000
+
+# Verify touch HUD controls render on mobile
+- assertVisible: "Menu"
+
+# Verify action buttons are present (accessible labels)
+- assertVisible: "Attack"
+- assertVisible: "Dodge"
+- assertVisible: "Block"
+- assertVisible: "Interact"

@@ -152,8 +152,9 @@ export class ChunkWorld {
     if (this.#loadedChunks.has(key)) {
       for (const d of deltas) {
         if (d.blockId === 0) {
-          // Remove block — VoxelRenderer doesn't have removeVoxel in our wrapper,
-          // so we skip for now
+          this.#voxelMap.removeVoxel('Ground', {
+            position: { x: d.x, y: d.y, z: d.z },
+          });
         } else {
           this.#voxelMap.setVoxel('Ground', {
             position: { x: d.x, y: d.y, z: d.z },
@@ -161,6 +162,32 @@ export class ChunkWorld {
           });
         }
       }
+    }
+  }
+
+  /**
+   * Apply a flat list of world-coordinate deltas (from persistence).
+   * Groups them by chunk and stores/applies via the per-chunk applyDeltas.
+   */
+  applyWorldDeltas(deltas: ChunkDelta[]): void {
+    // Group deltas by chunk coordinate
+    const grouped = new Map<string, ChunkDelta[]>();
+    for (const d of deltas) {
+      const cx = Math.floor(d.x / CHUNK_SIZE);
+      const cz = Math.floor(d.z / CHUNK_SIZE);
+      const key = ChunkWorld.chunkKey(cx, cz);
+      let list = grouped.get(key);
+      if (!list) {
+        list = [];
+        grouped.set(key, list);
+      }
+      list.push(d);
+    }
+    // Apply each group — merges with any existing deltas
+    for (const [key, chunkDeltas] of grouped) {
+      const [cx, cz] = key.split(',').map(Number);
+      const existing = this.#deltas.get(key) ?? [];
+      this.applyDeltas(cx, cz, [...existing, ...chunkDeltas]);
     }
   }
 
@@ -225,6 +252,12 @@ export class ChunkWorld {
         // Cache surface height
         const surfaceY = Math.max(height, this.#waterLevel) + 1;
         this.#surfaceCache.set(`${wx},${wz}`, surfaceY);
+
+        // Terrain edge decoration — place slabs at water edges, poles near cliffs
+        if (height === this.#waterLevel + 1) {
+          // Beach/shore: place a slab on top for transition
+          this.#voxelMap.setVoxel('Ground', { position: { x: wx, y: height + 1, z: wz }, blockId: 102 }); // Sand Slab
+        }
 
         // Biome-specific features (trees, cacti, crystals, etc.)
         this.#placeFeature(wx, wz, height);

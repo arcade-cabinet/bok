@@ -1,7 +1,7 @@
 /**
  * @module hooks/usePlayerInventory
  * @role Manage player resource inventory: add/remove items, afford checks, persistence
- * @input SaveManager for persistence, optional initial resources
+ * @input SaveManager for persistence, saveId for inventory table binding
  * @output PlayerInventory interface with resource management methods
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,9 +29,12 @@ interface InventoryState {
  *
  * Manages resource counts and equipped weapon. Players start with
  * wood=100, stone=100 — enough for first building upgrades.
- * State is persisted via SaveManager when provided.
+ *
+ * When saveId and saveManager are provided, inventory is persisted to
+ * the SQLite `inventory` table per-resource. On mount it loads existing
+ * rows; on every add/remove it writes back immediately.
  */
-export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInventory {
+export function usePlayerInventory(saveManager?: SaveManager | null, saveId?: number): PlayerInventory {
   const [resources, setResources] = useState<Record<string, number>>({ ...DEFAULT_RESOURCES });
   const [equippedWeapon, setEquippedWeaponState] = useState<string | null>(null);
   const stateRef = useRef<InventoryState>({
@@ -39,22 +42,30 @@ export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInve
     equippedWeapon: null,
   });
 
-  // Load persisted state
+  // Load persisted inventory from the dedicated inventory table
   useEffect(() => {
     let cancelled = false;
 
-    if (!saveManager) return;
+    if (!saveManager || !saveId) return;
 
     saveManager
-      .loadState()
-      .then((state) => {
+      .getInventory(saveId)
+      .then((saved) => {
         if (cancelled) return;
-        if (state?.koota && typeof state.koota === 'object') {
-          const saved = state.koota as { inventoryState?: InventoryState };
-          if (saved.inventoryState) {
-            stateRef.current = saved.inventoryState;
-            setResources(saved.inventoryState.resources);
-            setEquippedWeaponState(saved.inventoryState.equippedWeapon);
+        // If the inventory table has data, use it. Otherwise keep defaults
+        // (first session — defaults will be written on first mutation).
+        if (Object.keys(saved).length > 0) {
+          stateRef.current = { ...stateRef.current, resources: saved };
+          setResources(saved);
+        } else {
+          // First session: seed the inventory table with default resources
+          const defaults = { ...DEFAULT_RESOURCES };
+          stateRef.current = { ...stateRef.current, resources: defaults };
+          setResources(defaults);
+          for (const [resourceId, amount] of Object.entries(defaults)) {
+            saveManager.setResource(saveId, resourceId, amount).catch(() => {
+              // Best-effort seeding
+            });
           }
         }
       })
@@ -65,20 +76,17 @@ export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInve
     return () => {
       cancelled = true;
     };
-  }, [saveManager]);
+  }, [saveManager, saveId]);
 
-  const persist = useCallback(() => {
-    if (!saveManager) return;
-    saveManager
-      .saveState({
-        koota: { inventoryState: stateRef.current },
-        yuka: null,
-        scene: 'hub',
-      })
-      .catch((err) => {
-        console.warn('[usePlayerInventory] Failed to save inventory:', err);
+  const persistResource = useCallback(
+    (resourceId: string, amount: number) => {
+      if (!saveManager || !saveId) return;
+      saveManager.setResource(saveId, resourceId, amount).catch((err) => {
+        console.warn('[usePlayerInventory] Failed to persist resource:', err);
       });
-  }, [saveManager]);
+    },
+    [saveManager, saveId],
+  );
 
   const addResource = useCallback(
     (itemId: string, amount: number) => {
@@ -86,9 +94,9 @@ export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInve
       newResources[itemId] = (newResources[itemId] ?? 0) + amount;
       stateRef.current = { ...stateRef.current, resources: newResources };
       setResources(newResources);
-      persist();
+      persistResource(itemId, newResources[itemId]);
     },
-    [persist],
+    [persistResource],
   );
 
   const removeResource = useCallback(
@@ -99,10 +107,10 @@ export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInve
       newResources[itemId] = current - amount;
       stateRef.current = { ...stateRef.current, resources: newResources };
       setResources(newResources);
-      persist();
+      persistResource(itemId, newResources[itemId]);
       return true;
     },
-    [persist],
+    [persistResource],
   );
 
   const canAfford = useCallback((costs: Record<string, number>): boolean => {
@@ -113,14 +121,11 @@ export function usePlayerInventory(saveManager?: SaveManager | null): PlayerInve
     return stateRef.current.resources[itemId] ?? 0;
   }, []);
 
-  const setEquippedWeapon = useCallback(
-    (weaponId: string | null) => {
-      stateRef.current = { ...stateRef.current, equippedWeapon: weaponId };
-      setEquippedWeaponState(weaponId);
-      persist();
-    },
-    [persist],
-  );
+  const setEquippedWeapon = useCallback((weaponId: string | null) => {
+    stateRef.current = { ...stateRef.current, equippedWeapon: weaponId };
+    setEquippedWeaponState(weaponId);
+    // Equipped weapon is not stored in inventory table — it's a UI concern
+  }, []);
 
   return {
     resources,

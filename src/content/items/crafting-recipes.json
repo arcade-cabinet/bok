@@ -24,11 +24,27 @@
     "output": { "itemId": "torch", "amount": 4 }
   },
   {
+    "id": "sandstone-bricks",
+    "name": "Sandstone Bricks",
+    "category": "basic",
+    "tier": 1,
+    "ingredients": [{ "itemId": "sandstone", "amount": 5 }],
+    "output": { "itemId": "sandstone-bricks", "amount": 4 }
+  },
+  {
+    "id": "ice-bricks",
+    "name": "Ice Bricks",
+    "category": "basic",
+    "tier": 1,
+    "ingredients": [{ "itemId": "ice", "amount": 5 }],
+    "output": { "itemId": "ice-bricks", "amount": 4 }
+  },
+  {
     "id": "iron-sword-recipe",
     "name": "Iron Sword",
     "category": "weapon",
     "tier": 2,
-    "ingredients": [{ "itemId": "iron-ore", "amount": 10 }, { "itemId": "wood", "amount": 5 }],
+    "ingredients": [{ "itemId": "stone", "amount": 10 }, { "itemId": "wood", "amount": 5 }],
     "output": { "itemId": "iron-sword", "amount": 1 }
   },
   {
@@ -40,11 +56,79 @@
     "output": { "itemId": "fire-staff", "amount": 1 }
   },
   {
+    "id": "ice-wand-recipe",
+    "name": "Ice Wand",
+    "category": "weapon",
+    "tier": 2,
+    "ingredients": [{ "itemId": "frost-shard", "amount": 5 }, { "itemId": "crystal-shard", "amount": 3 }],
+    "output": { "itemId": "ice-wand", "amount": 1 }
+  },
+  {
+    "id": "crystal-blade-recipe",
+    "name": "Crystal Blade",
+    "category": "weapon",
+    "tier": 3,
+    "ingredients": [
+      { "itemId": "amethyst", "amount": 5 },
+      { "itemId": "quartz", "amount": 3 },
+      { "itemId": "stone", "amount": 5 }
+    ],
+    "output": { "itemId": "crystal-blade", "amount": 1 }
+  },
+  {
+    "id": "volcanic-edge-recipe",
+    "name": "Volcanic Edge",
+    "category": "weapon",
+    "tier": 3,
+    "ingredients": [
+      { "itemId": "obsidian", "amount": 8 },
+      { "itemId": "magma-crystal", "amount": 3 },
+      { "itemId": "ash", "amount": 5 }
+    ],
+    "output": { "itemId": "volcanic-edge", "amount": 1 }
+  },
+  {
+    "id": "frost-cleaver-recipe",
+    "name": "Frost Cleaver",
+    "category": "weapon",
+    "tier": 3,
+    "ingredients": [
+      { "itemId": "frost-shard", "amount": 8 },
+      { "itemId": "ice", "amount": 5 },
+      { "itemId": "wood", "amount": 3 }
+    ],
+    "output": { "itemId": "frost-cleaver", "amount": 1 }
+  },
+  {
+    "id": "trident-recipe",
+    "name": "Trident",
+    "category": "weapon",
+    "tier": 3,
+    "ingredients": [
+      { "itemId": "coral", "amount": 5 },
+      { "itemId": "pearl", "amount": 3 },
+      { "itemId": "stone", "amount": 5 }
+    ],
+    "output": { "itemId": "trident", "amount": 1 }
+  },
+  {
+    "id": "lightning-rod-recipe",
+    "name": "Lightning Rod",
+    "category": "weapon",
+    "tier": 3,
+    "ingredients": [
+      { "itemId": "sky-stone", "amount": 5 },
+      { "itemId": "wind-essence", "amount": 3 },
+      { "itemId": "quartz", "amount": 3 }
+    ],
+    "output": { "itemId": "lightning-rod", "amount": 1 }
+  },
+  {
     "id": "health-potion-recipe",
     "name": "Health Potion",
     "category": "consumable",
     "tier": 1,
-    "ingredients": [{ "itemId": "herbs", "amount": 3 }, { "itemId": "water", "amount": 1 }],
+    "ingredients": [{ "itemId": "herbs", "amount": 3 }, { "itemId": "mushroom", "amount": 1 }],
     "output": { "itemId": "health-potion", "amount": 1 }
   },
   {
@@ -52,7 +136,23 @@
     "name": "Stamina Elixir",
     "category": "consumable",
     "tier": 1,
-    "ingredients": [{ "itemId": "mushroom", "amount": 2 }, { "itemId": "honey", "amount": 1 }],
+    "ingredients": [{ "itemId": "mushroom", "amount": 2 }, { "itemId": "herbs", "amount": 1 }],
     "output": { "itemId": "stamina-elixir", "amount": 1 }
+  },
+  {
+    "id": "frost-tonic-recipe",
+    "name": "Frost Tonic",
+    "category": "consumable",
+    "tier": 2,
+    "ingredients": [{ "itemId": "frost-shard", "amount": 2 }, { "itemId": "snow", "amount": 3 }],
+    "output": { "itemId": "frost-tonic", "amount": 1 }
+  },
+  {
+    "id": "fire-bomb-recipe",
+    "name": "Fire Bomb",
+    "category": "consumable",
+    "tier": 2,
+    "ingredients": [{ "itemId": "ash", "amount": 3 }, { "itemId": "coal", "amount": 2 }],
+    "output": { "itemId": "fire-bomb", "amount": 2 }
   }
 ]

@@ -1,32 +1,10 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import type { GameConfig } from '../../app/App';
+import type { GameMode } from '../../app/App';
 import { TomePageBrowser } from '../../components/modals/TomePageBrowser';
 import { TOME_PAGE_CATALOG } from '../../content/tomePages';
+import type { GameSave } from '../../persistence/GameSave';
 import { APP_VERSION } from '../../shared/version';
-
-const BIOMES = [
-  { id: 'forest', name: 'Whispering Woods', desc: 'Dense canopy of ancient trees', icon: '🌲', sky: '#87CEEB' },
-  { id: 'desert', name: 'Sunscorched Dunes', desc: 'Endless sands hiding forgotten ruins', icon: '🏜️', sky: '#F4D03F' },
-  { id: 'tundra', name: 'Frostbite Expanse', desc: 'Treacherous heights of ice and stone', icon: '❄️', sky: '#B3CDE0' },
-  {
-    id: 'volcanic',
-    name: 'Cinderpeak Caldera',
-    desc: 'Rivers of lava through obsidian fields',
-    icon: '🌋',
-    sky: '#CC4125',
-  },
-  { id: 'swamp', name: 'Rothollow Marsh', desc: 'Murky waters and poisonous fog', icon: '🌿', sky: '#6B8E5E' },
-  {
-    id: 'crystal',
-    name: 'Prismatic Depths',
-    desc: 'Crystalline caverns of refracted light',
-    icon: '💎',
-    sky: '#9B59B6',
-  },
-  { id: 'sky', name: 'Stormspire Remnants', desc: 'Floating platforms above the clouds', icon: '⛅', sky: '#AED6F1' },
-  { id: 'ocean', name: 'Abyssal Trench', desc: 'Coral kingdoms in eternal dark', icon: '🌊', sky: '#1A5276' },
-];
 
 function AnimatedBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -120,53 +98,51 @@ function AnimatedBackground() {
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full" />;
 }
 
+/** Format a timestamp as a short relative or absolute date */
+function formatDate(ts: number): string {
+  const now = Date.now();
+  const diffMs = now - ts;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+type Panel = 'main' | 'new-game' | 'saves';
+
 interface Props {
-  onStartGame: (config: GameConfig) => void;
-  /** Most recent run — used by Resume Chapter */
-  onResumeGame?: () => void;
-  /** Mid-run save resume — skip hub, go straight to game */
-  onContinueAdventure?: () => void;
-  hasRunHistory?: boolean;
-  /** Whether a mid-run save exists for "Continue Adventure" */
-  hasMidRunSave?: boolean;
-  /** Biome IDs the player has unlocked. Forest is always available. */
-  unlockedBiomes?: string[];
+  onStartGame: (seed: string, mode: GameMode) => void;
+  onContinueGame: (save: GameSave) => void;
+  onDeleteGame: (id: number) => void;
+  saves: GameSave[];
   /** Tome page ability IDs the player has unlocked. */
   unlockedPages?: string[];
 }
 
-/** Set to true during development to unlock all biomes without progression. */
-const DEV_UNLOCK_ALL = import.meta.env.DEV && import.meta.env.VITE_UNLOCK_ALL_BIOMES === 'true';
-
-export function MainMenuView({
-  onStartGame,
-  onResumeGame,
-  onContinueAdventure,
-  hasRunHistory = false,
-  hasMidRunSave = false,
-  unlockedBiomes = [],
-  unlockedPages = [],
-}: Props) {
-  const [showNewGame, setShowNewGame] = useState(false);
+export function MainMenuView({ onStartGame, onContinueGame, onDeleteGame, saves, unlockedPages = [] }: Props) {
+  const [panel, setPanel] = useState<Panel>('main');
   const [showTome, setShowTome] = useState(false);
-  const [selectedBiome, setSelectedBiome] = useState('forest');
   const [seed, setSeed] = useState('Brave Dark Fox');
   const [selectedMode, setSelectedMode] = useState<'creative' | 'survival'>('survival');
   const prefersReducedMotion = useReducedMotion();
   const newGameButtonRef = useRef<HTMLButtonElement>(null);
   const backButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Focus management: when new game panel opens, focus back button; when closed, focus new game button
+  // Focus management
   useEffect(() => {
-    if (showNewGame) {
+    if (panel === 'new-game' || panel === 'saves') {
       backButtonRef.current?.focus();
     } else {
       newGameButtonRef.current?.focus();
     }
-  }, [showNewGame]);
+  }, [panel]);
 
-  const handleStart = () => {
-    onStartGame({ biome: selectedBiome, seed, mode: selectedMode });
+  const handleBegin = () => {
+    onStartGame(seed, selectedMode);
   };
 
   const randomSeed = () => {
@@ -190,6 +166,8 @@ export function MainMenuView({
       },
     },
   });
+
+  const hasSaves = saves.length > 0;
 
   return (
     <section className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden" aria-label="Main menu">
@@ -236,7 +214,7 @@ export function MainMenuView({
           </h1>
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-[#8b7355]" />
-            <span style={{ color: '#8b7355' }}>✦</span>
+            <span style={{ color: '#8b7355' }}>&#10022;</span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-[#8b7355]" />
           </div>
           <p
@@ -250,16 +228,22 @@ export function MainMenuView({
           </p>
         </motion.div>
 
-        {/* Menu buttons */}
-        {!showNewGame ? (
+        {/* --- Main menu buttons --- */}
+        {panel === 'main' && (
           <nav aria-label="Main menu" className="w-full space-y-3">
-            {hasMidRunSave && (
+            {hasSaves && (
               <motion.button
                 type="button"
                 variants={menuItem(0)}
                 initial="hidden"
                 animate="visible"
-                onClick={() => onContinueAdventure?.()}
+                onClick={() => {
+                  if (saves.length === 1) {
+                    onContinueGame(saves[0]);
+                  } else {
+                    setPanel('saves');
+                  }
+                }}
                 className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(196,165,114,0.5)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                 style={{
                   fontFamily: 'Crimson Text, Georgia, serif',
@@ -269,16 +253,16 @@ export function MainMenuView({
                   letterSpacing: '0.05em',
                 }}
               >
-                Continue Adventure
+                Continue
               </motion.button>
             )}
             <motion.button
               ref={newGameButtonRef}
               type="button"
-              variants={menuItem(hasMidRunSave ? 1 : 0)}
+              variants={menuItem(hasSaves ? 1 : 0)}
               initial="hidden"
               animate="visible"
-              onClick={() => setShowNewGame(true)}
+              onClick={() => setPanel('new-game')}
               className="w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.4)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
               style={{
                 fontFamily: 'Crimson Text, Georgia, serif',
@@ -288,30 +272,11 @@ export function MainMenuView({
                 letterSpacing: '0.05em',
               }}
             >
-              Pen New Tale
+              New Game
             </motion.button>
             <motion.button
               type="button"
-              variants={menuItem(hasMidRunSave ? 2 : 1)}
-              initial="hidden"
-              animate="visible"
-              onClick={() => hasRunHistory && onResumeGame?.()}
-              aria-disabled={!hasRunHistory}
-              className={`w-full h-14 text-lg rounded-lg border-2 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${hasRunHistory ? 'hover:shadow-[0_0_20px_rgba(139,115,85,0.4)]' : 'opacity-40'}`}
-              style={{
-                fontFamily: 'Crimson Text, Georgia, serif',
-                color: hasRunHistory ? '#d4c5a0' : '#a89574',
-                background: hasRunHistory ? 'rgba(58,40,32,0.8)' : 'rgba(45,31,23,0.6)',
-                borderColor: hasRunHistory ? 'rgba(139,115,85,0.6)' : 'rgba(139,115,85,0.3)',
-                letterSpacing: '0.05em',
-              }}
-              disabled={!hasRunHistory}
-            >
-              Resume Chapter
-            </motion.button>
-            <motion.button
-              type="button"
-              variants={menuItem(hasMidRunSave ? 3 : 2)}
+              variants={menuItem(hasSaves ? 2 : 1)}
               initial="hidden"
               animate="visible"
               onClick={() => setShowTome(true)}
@@ -327,8 +292,10 @@ export function MainMenuView({
               Inscriptions
             </motion.button>
           </nav>
-        ) : (
-          /* New Game panel */
+        )}
+
+        {/* --- New Game panel (seed + mode only) --- */}
+        {panel === 'new-game' && (
           <motion.div
             initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -341,113 +308,8 @@ export function MainMenuView({
               className="text-2xl text-center mb-4"
               style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#c4a572' }}
             >
-              Choose Your Chapter
+              Begin a New Tale
             </h2>
-
-            {/* Biome grid */}
-            <div
-              className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto pr-1"
-              role="radiogroup"
-              aria-label="Select biome"
-            >
-              {BIOMES.map((b) => {
-                const isUnlocked =
-                  DEV_UNLOCK_ALL || selectedMode === 'creative' || b.id === 'forest' || unlockedBiomes.includes(b.id);
-                const isSelected = selectedBiome === b.id;
-
-                if (!isUnlocked) {
-                  return (
-                    <div
-                      key={b.id}
-                      className="p-3 rounded-lg border-2 text-left opacity-40"
-                      style={{
-                        background: 'rgba(30,20,15,0.5)',
-                        borderColor: 'rgba(60,40,30,0.3)',
-                      }}
-                    >
-                      <div className="text-2xl mb-1 grayscale" aria-hidden="true">
-                        🔒
-                      </div>
-                      <div
-                        className="text-sm font-bold"
-                        style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#6b5a4a' }}
-                      >
-                        ???
-                      </div>
-                      <div className="text-xs italic" style={{ color: '#5a4a3a' }}>
-                        Defeat the previous boss to unlock
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  // biome-ignore lint/a11y/useSemanticElements: button with role="radio" is valid ARIA for custom radio group
-                  <button
-                    type="button"
-                    key={b.id}
-                    role="radio"
-                    aria-checked={isSelected}
-                    aria-label={`${b.name}: ${b.desc}`}
-                    onClick={() => setSelectedBiome(b.id)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none ${isSelected ? 'shadow-lg' : 'hover:bg-[#3a2820]/60'}`}
-                    style={{
-                      background: isSelected ? 'rgba(74,55,40,0.7)' : 'rgba(45,31,23,0.5)',
-                      borderColor: isSelected ? '#c4a572' : 'rgba(107,84,68,0.5)',
-                    }}
-                  >
-                    <div className="text-2xl mb-1" aria-hidden="true">
-                      {b.icon}
-                    </div>
-                    <div
-                      className="text-sm font-bold"
-                      style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#d4c5a0' }}
-                    >
-                      {b.name}
-                    </div>
-                    <div className="text-xs italic" style={{ color: '#8b7355' }}>
-                      {b.desc}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Game mode toggle */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedMode('survival')}
-                className={`flex-1 py-2 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
-                  selectedMode === 'survival' ? 'shadow-lg' : 'opacity-60'
-                }`}
-                style={{
-                  fontFamily: 'Cinzel, Georgia, serif',
-                  color: selectedMode === 'survival' ? '#fdf6e3' : '#a89574',
-                  background: selectedMode === 'survival' ? 'rgba(139,26,26,0.7)' : 'rgba(45,31,23,0.5)',
-                  borderColor: selectedMode === 'survival' ? '#c44a4a' : 'rgba(107,84,68,0.4)',
-                }}
-              >
-                Survival
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedMode('creative')}
-                className={`flex-1 py-2 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
-                  selectedMode === 'creative' ? 'shadow-lg' : 'opacity-60'
-                }`}
-                style={{
-                  fontFamily: 'Cinzel, Georgia, serif',
-                  color: selectedMode === 'creative' ? '#fdf6e3' : '#a89574',
-                  background: selectedMode === 'creative' ? 'rgba(39,100,57,0.7)' : 'rgba(45,31,23,0.5)',
-                  borderColor: selectedMode === 'creative' ? '#4a9c60' : 'rgba(107,84,68,0.4)',
-                }}
-              >
-                Creative
-              </button>
-            </div>
-
-            {/* In creative mode, all biomes are unlocked */}
 
             {/* Seed input */}
             <div>
@@ -479,7 +341,67 @@ export function MainMenuView({
                   className="px-3 py-2 rounded-md border cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                   style={{ background: 'rgba(45,31,23,0.7)', borderColor: 'rgba(107,84,68,0.6)', color: '#c4a572' }}
                 >
-                  <span aria-hidden="true">🎲</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M19.3 5.7l-1.4-1.4-5.3 5.3-5.3-5.3-1.4 1.4 5.3 5.3-5.3 5.3 1.4 1.4 5.3-5.3 5.3 5.3 1.4-1.4-5.3-5.3z"
+                      opacity="0"
+                    />
+                    <rect x="2" y="2" width="8" height="8" rx="1.5" />
+                    <circle cx="4.5" cy="4.5" r="1" fill="#1a120c" />
+                    <circle cx="7.5" cy="7.5" r="1" fill="#1a120c" />
+                    <rect x="14" y="14" width="8" height="8" rx="1.5" />
+                    <circle cx="16" cy="16" r="1" fill="#1a120c" />
+                    <circle cx="20" cy="20" r="1" fill="#1a120c" />
+                    <circle cx="18" cy="18" r="1" fill="#1a120c" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-xs mt-1 italic" style={{ color: '#6b5444' }}>
+                The seed shapes every island in your world
+              </p>
+            </div>
+
+            {/* Game mode toggle */}
+            <div>
+              <p className="text-sm block mb-1" style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#c4a572' }}>
+                Mode
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMode('survival')}
+                  className={`flex-1 py-3 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
+                    selectedMode === 'survival' ? 'shadow-lg' : 'opacity-60'
+                  }`}
+                  style={{
+                    fontFamily: 'Cinzel, Georgia, serif',
+                    color: selectedMode === 'survival' ? '#fdf6e3' : '#a89574',
+                    background: selectedMode === 'survival' ? 'rgba(139,26,26,0.7)' : 'rgba(45,31,23,0.5)',
+                    borderColor: selectedMode === 'survival' ? '#c44a4a' : 'rgba(107,84,68,0.4)',
+                  }}
+                >
+                  <div className="font-bold">Survival</div>
+                  <div className="text-xs mt-0.5 opacity-70" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
+                    Goals, combat, progression
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMode('creative')}
+                  className={`flex-1 py-3 rounded-lg border-2 text-sm transition-all duration-200 cursor-pointer ${
+                    selectedMode === 'creative' ? 'shadow-lg' : 'opacity-60'
+                  }`}
+                  style={{
+                    fontFamily: 'Cinzel, Georgia, serif',
+                    color: selectedMode === 'creative' ? '#fdf6e3' : '#a89574',
+                    background: selectedMode === 'creative' ? 'rgba(39,100,57,0.7)' : 'rgba(45,31,23,0.5)',
+                    borderColor: selectedMode === 'creative' ? '#4a9c60' : 'rgba(107,84,68,0.4)',
+                  }}
+                >
+                  <div className="font-bold">Creative</div>
+                  <div className="text-xs mt-0.5 opacity-70" style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
+                    Build freely, all islands
+                  </div>
                 </button>
               </div>
             </div>
@@ -488,8 +410,8 @@ export function MainMenuView({
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
-                onClick={handleStart}
-                aria-label="Begin Writing - start the game"
+                onClick={handleBegin}
+                aria-label="Begin - create the game and enter the hub"
                 className="flex-1 h-12 text-lg rounded-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,115,85,0.5)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                 style={{
                   fontFamily: 'Cinzel, Georgia, serif',
@@ -498,17 +420,103 @@ export function MainMenuView({
                   letterSpacing: '0.05em',
                 }}
               >
-                ✒ Begin Writing
+                Begin
               </button>
               <button
                 ref={backButtonRef}
                 type="button"
-                onClick={() => setShowNewGame(false)}
+                onClick={() => setPanel('main')}
                 aria-label="Back to main menu"
                 className="h-12 px-4 rounded-lg border cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
                 style={{ background: 'transparent', borderColor: 'rgba(107,84,68,0.6)', color: '#a89574' }}
               >
-                ✕
+                &#10005;
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- Saved games list --- */}
+        {panel === 'saves' && (
+          <motion.div
+            initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: prefersReducedMotion ? 0 : undefined }}
+            className="w-full space-y-3"
+            role="region"
+            aria-label="Saved games"
+          >
+            <h2
+              className="text-2xl text-center mb-4"
+              style={{ fontFamily: 'Cinzel, Georgia, serif', color: '#c4a572' }}
+            >
+              Your Tales
+            </h2>
+
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {saves.map((save) => (
+                <div
+                  key={save.id}
+                  className="flex items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200"
+                  style={{
+                    background: 'rgba(45,31,23,0.6)',
+                    borderColor: 'rgba(107,84,68,0.5)',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onContinueGame(save)}
+                    className="flex-1 text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none rounded p-1"
+                  >
+                    <div
+                      className="text-sm font-bold"
+                      style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace', color: '#d4c5a0' }}
+                    >
+                      {save.seed}
+                    </div>
+                    <div className="flex gap-3 text-xs mt-1" style={{ color: '#8b7355' }}>
+                      <span
+                        className="uppercase tracking-wider"
+                        style={{
+                          fontFamily: 'Cinzel, Georgia, serif',
+                          color: save.mode === 'survival' ? '#c44a4a' : '#4a9c60',
+                        }}
+                      >
+                        {save.mode}
+                      </span>
+                      <span style={{ fontFamily: 'Crimson Text, Georgia, serif' }}>
+                        {formatDate(save.lastPlayedAt)}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteGame(save.id)}
+                    aria-label={`Delete save: ${save.seed}`}
+                    className="px-2 py-1 rounded text-xs cursor-pointer opacity-40 hover:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+                    style={{ color: '#c44a4a' }}
+                  >
+                    &#10005;
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <button
+                ref={backButtonRef}
+                type="button"
+                onClick={() => setPanel('main')}
+                aria-label="Back to main menu"
+                className="w-full h-10 rounded-lg border cursor-pointer focus-visible:ring-2 focus-visible:ring-[#c4a572] focus-visible:outline-none"
+                style={{
+                  fontFamily: 'Cinzel, Georgia, serif',
+                  background: 'transparent',
+                  borderColor: 'rgba(107,84,68,0.6)',
+                  color: '#a89574',
+                }}
+              >
+                Back
               </button>
             </div>
           </motion.div>
@@ -522,7 +530,7 @@ export function MainMenuView({
           className="absolute bottom-6 text-center text-xs italic"
           style={{ color: '#6b5444' }}
         >
-          Volume I · Edition {APP_VERSION}
+          Volume I &middot; Edition {APP_VERSION}
         </motion.div>
       </div>
       {showTome && (

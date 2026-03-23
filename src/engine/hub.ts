@@ -1,15 +1,28 @@
 /**
  * @module engine/hub
- * @role Generate and render a fixed 32x32 hub island with buildings and NPC markers
+ * @role Generate and render a fixed 32x32 hub island with buildings, docks, and NPC markers
  * @input JollyPixel World, Rapier World
- * @output VoxelRenderer instance, surface height lookup, building positions, NPC positions
+ * @output VoxelRenderer instance, surface height lookup, building positions, dock positions, NPC positions
  */
 import RAPIER from '@dimforge/rapier3d';
 import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
-import { generateTileset, TILES, TILESET_COLS, TILESET_ROWS } from '../rendering/index';
+import {
+  CW_TILESET_COLS,
+  CW_TILESET_ROWS,
+  generateCubeWorldTileset,
+  generateTileset,
+  TILES,
+  TILESET_COLS,
+  TILESET_ROWS,
+} from '../rendering/index';
+import { DOCK_SURFACE_Y, DOCKS, PIER_LENGTH, PIER_WIDTH } from './hubDocks.ts';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
+
+// Re-export dock types and functions so existing consumers don't need to change imports
+export type { DockDef, DockProximity } from './hubDocks.ts';
+export { DOCK_PROXIMITY_RADIUS, DOCKS, findNearbyDock, getDockEndPosition } from './hubDocks.ts';
 
 // --- Block Definitions ---
 const BLOCK_DEFS: BlockDefinition[] = [
@@ -77,6 +90,33 @@ const BLOCK_DEFS: BlockDefinition[] = [
     faceTextures: {},
     defaultTexture: TILES.STONE_BRICK as TileRef,
   },
+  // Wood Pole — support posts for docks
+  {
+    id: 111,
+    name: 'Wood Pole',
+    shapeId: 'poleY',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
+  },
+  // Stone Pole — signpost poles at dock ends
+  {
+    id: 110,
+    name: 'Stone Pole',
+    shapeId: 'poleY',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.STONE as TileRef,
+  },
+  // Wood Slab — dock planking surface
+  {
+    id: 101,
+    name: 'Wood Slab',
+    shapeId: 'slabBottom',
+    collidable: true,
+    faceTextures: {},
+    defaultTexture: TILES.WOOD_SIDE as TileRef,
+  },
 ];
 
 const HUB_SIZE = 32;
@@ -103,7 +143,6 @@ export interface NPCDef {
 
 const BUILDINGS: BuildingDef[] = [
   { name: 'Armory', x: 5, z: 5, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
-  { name: 'Docks', x: 25, z: 5, width: 5, depth: 4, height: 4, wallBlock: 6, roofBlock: 6 },
   { name: 'Library', x: 5, z: 25, width: 5, depth: 5, height: 6, wallBlock: 3, roofBlock: 2 },
   { name: 'Market', x: 15, z: 25, width: 6, depth: 4, height: 4, wallBlock: 6, roofBlock: 7 },
   { name: 'Forge', x: 25, z: 25, width: 5, depth: 5, height: 5, wallBlock: 3, roofBlock: 5 },
@@ -113,7 +152,7 @@ const NPCS: NPCDef[] = [
   { name: 'Blacksmith', x: 7, z: 7 },
   { name: 'Librarian', x: 7, z: 27 },
   { name: 'Merchant', x: 17, z: 27 },
-  { name: 'Dockmaster', x: 27, z: 7 },
+  { name: 'Navigator', x: 16, z: 10 },
 ];
 
 export interface HubResult {
@@ -121,11 +160,12 @@ export interface HubResult {
   getSurfaceY: SurfaceHeightFn;
   buildings: BuildingDef[];
   npcs: NPCDef[];
+  docks: typeof DOCKS;
   hubSize: number;
 }
 
 /**
- * Create the hub island with buildings and NPC position markers.
+ * Create the hub island with buildings, docks, and NPC position markers.
  * Uses a fixed seed for deterministic layout.
  */
 export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResult {
@@ -141,14 +181,21 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
     },
   });
 
-  // Generate and register programmatic tileset
-  const tileset = generateTileset();
+  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
+  const tileset = (() => {
+    try {
+      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
+    } catch {
+      const fallback = generateTileset();
+      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
+    }
+  })();
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
   tilesetTexture.needsUpdate = true;
   voxelMap.tilesetManager.registerTexture(
-    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: TILESET_COLS, rows: TILESET_ROWS },
+    { id: 'game', src: tileset.dataUrl, tileSize: 32, cols: tileset.cols, rows: tileset.rows },
     tilesetTexture as unknown as THREE.Texture<HTMLImageElement>,
   );
 
@@ -226,9 +273,44 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
     }
   }
 
+  // Place docks — wooden piers extending from the shoreline into the water
+  for (const dock of DOCKS) {
+    const ddx = dock.direction === 'east' ? 1 : dock.direction === 'west' ? -1 : 0;
+    const ddz = dock.direction === 'south' ? 1 : dock.direction === 'north' ? -1 : 0;
+
+    for (let step = 0; step < PIER_LENGTH; step++) {
+      for (let w = 0; w < PIER_WIDTH; w++) {
+        // Pier extends along the direction axis; width perpendicular to it
+        const px = dock.x + ddx * step + (ddz !== 0 ? w - 1 : 0);
+        const pz = dock.z + ddz * step + (ddx !== 0 ? w - 1 : 0);
+
+        // Wood plank deck surface
+        voxelMap.setVoxel('Ground', { position: { x: px, y: DOCK_SURFACE_Y, z: pz }, blockId: 6 });
+        surfaceHeight.set(`${px},${pz}`, DOCK_SURFACE_Y + 1);
+
+        // Support posts every 3 blocks along the pier, on the outer edges
+        if (step % 3 === 0 && (w === 0 || w === PIER_WIDTH - 1)) {
+          for (let py = 0; py < DOCK_SURFACE_Y; py++) {
+            voxelMap.setVoxel('Ground', { position: { x: px, y: py, z: pz }, blockId: 111 });
+          }
+        }
+      }
+    }
+
+    // Signpost at the end of the pier (center of pier width)
+    const signX = dock.x + ddx * PIER_LENGTH;
+    const signZ = dock.z + ddz * PIER_LENGTH;
+    // Stone pole — 3 blocks tall from the deck surface
+    for (let sy = DOCK_SURFACE_Y + 1; sy <= DOCK_SURFACE_Y + 3; sy++) {
+      voxelMap.setVoxel('Ground', { position: { x: signX, y: sy, z: signZ }, blockId: 110 });
+    }
+    // Stone slab on top as sign board
+    voxelMap.setVoxel('Ground', { position: { x: signX, y: DOCK_SURFACE_Y + 4, z: signZ }, blockId: 8 });
+  }
+
   function getSurfaceY(x: number, z: number): number {
     return surfaceHeight.get(`${Math.round(x)},${Math.round(z)}`) ?? BASE_HEIGHT + 1;
   }
 
-  return { voxelMap, getSurfaceY, buildings: BUILDINGS, npcs: NPCS, hubSize: HUB_SIZE };
+  return { voxelMap, getSurfaceY, buildings: BUILDINGS, npcs: NPCS, docks: DOCKS, hubSize: HUB_SIZE };
 }

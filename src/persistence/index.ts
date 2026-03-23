@@ -10,6 +10,7 @@
 export { CapacitorDatabase } from './CapacitorDatabase.ts';
 export { createDatabase } from './createDatabase.ts';
 export { type DatabaseAdapter, InMemoryDatabase } from './Database.ts';
+export type { GameSave, IslandState } from './GameSave.ts';
 export {
   parseGameState,
   type SerializedEnemyState,

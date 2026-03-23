@@ -17,6 +17,7 @@ const PLAYER_FILL = '#fdf6e3';
 const PLAYER_STROKE = '#2c1e16';
 const ENEMY_COLOR = '#8b1a1a';
 const CHEST_COLOR = '#daa520';
+const SHRINE_COLOR = '#6a5acd';
 
 /**
  * Minimap — canvas-rendered top-down view centered on the player.
@@ -50,6 +51,14 @@ export function Minimap({ playerX, playerZ, markers }: Props) {
       if (marker.type === 'enemy') {
         ctx.fillStyle = ENEMY_COLOR;
         ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      } else if (marker.type === 'shrine') {
+        ctx.fillStyle = SHRINE_COLOR;
+        // Diamond shape for shrines
+        ctx.moveTo(sx, sy - 4);
+        ctx.lineTo(sx + 3, sy);
+        ctx.lineTo(sx, sy + 4);
+        ctx.lineTo(sx - 3, sy);
+        ctx.closePath();
       } else {
         ctx.fillStyle = CHEST_COLOR;
         ctx.rect(sx - 2, sy - 2, 4, 4);
@@ -75,6 +84,10 @@ export function Minimap({ playerX, playerZ, markers }: Props) {
       className="absolute top-4 right-4 card bg-base-100/85 border-2 border-secondary rounded-md overflow-hidden"
       role="img"
       aria-label={`Minimap: ${enemyCount} ${enemyCount === 1 ? 'enemy' : 'enemies'} and ${chestCount} ${chestCount === 1 ? 'chest' : 'chests'} nearby`}
+      style={{
+        marginTop: 'env(safe-area-inset-top)',
+        marginRight: 'env(safe-area-inset-right)',
+      }}
     >
       <canvas
         ref={canvasRef}

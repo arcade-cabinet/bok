@@ -40,7 +40,16 @@ async function performAutoSave(game: GameInstance, saveManager: SaveManager): Pr
  * Returns refs and state needed by other game hooks and the view.
  */
 export function useGameLifecycle(
-  config: { biome: string; seed: string; mode?: string },
+  config: {
+    biome: string;
+    seed: string;
+    mode?: string;
+    saveId?: number;
+    restoredDeltas?: Array<{ x: number; y: number; z: number; blockId: number }>;
+    restoredGoalIds?: string[];
+    /** Set to true once persistence data is loaded (delays engine init until ready) */
+    persistenceReady?: boolean;
+  },
   onEngineEvent: (event: EngineEvent) => void,
   screenWidth: number,
   screenHeight: number,
@@ -62,14 +71,18 @@ export function useGameLifecycle(
     });
   }, []);
 
-  // Initialize engine
+  // Initialize engine — waits for persistence data to load before starting
+  const persistenceReady = config.persistenceReady ?? true;
   useEffect(() => {
-    if (!canvasRef.current || gameRef.current) return;
+    if (!canvasRef.current || gameRef.current || !persistenceReady) return;
 
     initGame(canvasRef.current, {
       biome: config.biome,
       seed: config.seed,
       mode: (config.mode as 'creative' | 'survival') ?? 'survival',
+      saveId: config.saveId,
+      restoredDeltas: config.restoredDeltas,
+      restoredGoalIds: config.restoredGoalIds,
     }).then((game) => {
       gameRef.current = game;
       game.onEvent((event: EngineEvent) => onEngineEventRef.current(event));
@@ -79,7 +92,15 @@ export function useGameLifecycle(
       gameRef.current?.destroy();
       gameRef.current = null;
     };
-  }, [config.biome, config.seed, config.mode]);
+  }, [
+    config.biome,
+    config.seed,
+    config.mode,
+    config.saveId,
+    config.restoredDeltas,
+    config.restoredGoalIds,
+    persistenceReady,
+  ]);
 
   // Periodic auto-save every 60 seconds
   useEffect(() => {
