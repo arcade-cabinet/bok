@@ -13,7 +13,7 @@
  */
 
 import type { Entity, World } from 'koota';
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import { Vehicle, EntityManager as YukaEntityManager } from 'yuka';
 import { actions } from '../actions';
 import { createEnemyBrain, ENEMY_AI_TYPES } from '../ai/enemyBrain';
@@ -112,30 +112,20 @@ export function spawnEnemies(
     const enemyConfig = content.getEnemy(enemyType);
     const modelPath = ENEMY_MODELS[enemyType];
 
-    let mesh: THREE.Object3D;
-
-    if (modelPath) {
-      // Create JollyPixel actor with ModelRenderer — model loads during awake()
-      const actorResult = spawnModelActor(
-        jpWorld,
-        `enemy-${enemyType}-${i}`,
-        modelPath,
-        { x: ex + 0.5, y: ey, z: ez + 0.5 },
-        0.8,
-      );
-      actorResult.object3D.castShadow = true;
-      actors.push(actorResult);
-      mesh = actorResult.object3D;
-    } else {
-      // No model path — use fallback box (should not happen with valid content)
-      const fallbackGeom = new THREE.BoxGeometry(0.7, 1.4, 0.7);
-      const fallbackMat = new THREE.MeshLambertMaterial({ color: 0xcc2222 });
-      const box = new THREE.Mesh(fallbackGeom, fallbackMat);
-      box.position.set(ex + 0.5, ey + 0.7, ez + 0.5);
-      box.castShadow = true;
-      scene.add(box);
-      mesh = box;
+    if (!modelPath) {
+      throw new Error(`[Bok] No model mapping for enemy "${enemyType}". Add it to ENEMY_MODELS in models.ts`);
     }
+
+    const actorResult = spawnModelActor(
+      jpWorld,
+      `enemy-${enemyType}-${i}`,
+      modelPath,
+      { x: ex + 0.5, y: ey, z: ez + 0.5 },
+      0.8,
+    );
+    actorResult.object3D.castShadow = true;
+    actors.push(actorResult);
+    const mesh = actorResult.object3D;
 
     const vehicle = new Vehicle();
     vehicle.position.set(ex + 0.5, ey + 0.7, ez + 0.5);

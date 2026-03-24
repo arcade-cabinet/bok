@@ -95,14 +95,6 @@ export function createCombat(
   particles?: ParticleSystem | null,
   gameMode: 'creative' | 'survival' = 'survival',
 ): CombatSystem {
-  // Fallback geometry for loot drops while glTF models load asynchronously
-  const lootFallbackGeom = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  const lootFallbackMats: Record<string, THREE.MeshLambertMaterial> = {
-    'health-potion': new THREE.MeshLambertMaterial({ color: 0xff4444 }),
-    'tome-page': new THREE.MeshLambertMaterial({ color: 0xffdd00 }),
-    material: new THREE.MeshLambertMaterial({ color: 0x44cc44 }),
-  };
-
   // Load weapon config from content registry or use override
   const content = new ContentRegistry();
   let equippedWeapon: WeaponConfig = weaponConfigOverride ?? content.getWeapon('wooden-sword');
@@ -125,32 +117,30 @@ export function createCombat(
   let elapsedTime = 0;
 
   /**
-   * Spawn a loot drop at the given position. Places a small fallback cube
-   * immediately, then asynchronously loads the proper collectible glTF model
-   * and swaps it in once ready.
+   * Spawn a loot drop at the given position. Loads the collectible glTF model.
+   * Throws if the model fails to load — NO silent fallbacks.
    */
   function spawnLoot(pos: THREE.Vector3, type: string): void {
-    // Immediate fallback mesh so there's always something visible
-    const mat = lootFallbackMats[type] ?? lootFallbackMats['health-potion'];
-    const placeholder = new THREE.Mesh(lootFallbackGeom, mat);
-    placeholder.position.copy(pos);
-    scene.add(placeholder);
+    const modelPath = LOOT_MODELS[type];
+    if (!modelPath) {
+      throw new Error(`[Bok] No loot model mapping for type "${type}". Add it to LOOT_MODELS in combat.ts`);
+    }
 
-    const drop: LootDrop = { mesh: placeholder, type, origin: pos.clone() };
+    // Create a container positioned at the drop location
+    const container = new THREE.Group();
+    container.position.copy(pos);
+    scene.add(container);
+
+    const drop: LootDrop = { mesh: container, type, origin: pos.clone() };
     state.lootDrops.push(drop);
 
-    // Asynchronously load the proper collectible model
-    const modelPath = LOOT_MODELS[type] ?? LOOT_MODELS['health-potion'];
     loadModel(modelPath)
       .then((model) => {
-        // Only swap if the drop is still alive (hasn't been picked up)
         if (!state.lootDrops.includes(drop)) return;
 
         model.scale.setScalar(0.6);
-        model.position.copy(drop.mesh.position);
-        model.rotation.copy(drop.mesh.rotation);
 
-        // Tome page glow effect — bright emissive on all materials
+        // Tome page glow effect
         if (type === 'tome-page') {
           model.traverse((child) => {
             if ('material' in child) {
@@ -163,12 +153,10 @@ export function createCombat(
           });
         }
 
-        scene.remove(drop.mesh);
-        scene.add(model);
-        drop.mesh = model;
+        container.add(model);
       })
-      .catch(() => {
-        // Keep fallback cube on model load failure — already in scene
+      .catch((err) => {
+        throw new Error(`[Bok] Failed to load loot model "${modelPath}": ${err}`);
       });
   }
 
