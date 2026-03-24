@@ -5,6 +5,7 @@
  * @output Background music playback with volume control
  */
 import * as Tone from 'tone';
+import { resolveAssetUrl } from '../shared/constants.ts';
 
 /** Map biome IDs to music track URLs */
 const BIOME_TRACKS: Record<string, string> = {
@@ -32,7 +33,7 @@ let currentBiome: string | null = null;
  * Crossfades if already playing a different track.
  */
 export async function playBiomeMusic(biome: string): Promise<void> {
-  const url = BIOME_TRACKS[biome] ?? BIOME_TRACKS.forest;
+  const url = resolveAssetUrl(BIOME_TRACKS[biome] ?? BIOME_TRACKS.forest);
   if (currentBiome === biome && currentPlayer) return; // Already playing
 
   await stopMusic(0.5); // Fade out current
@@ -65,7 +66,7 @@ export async function playHubMusic(): Promise<void> {
   currentBiome = 'hub';
   currentGain = new Tone.Gain(0).toDestination();
   currentPlayer = new Tone.Player({
-    url: HUB_TRACK,
+    url: resolveAssetUrl(HUB_TRACK),
     loop: true,
     autostart: false,
     onload: () => {

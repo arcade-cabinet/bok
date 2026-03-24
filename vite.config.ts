@@ -5,7 +5,10 @@ import checker from 'vite-plugin-checker';
 import glsl from 'vite-plugin-glsl';
 import wasm from 'vite-plugin-wasm';
 import { VitePWA } from 'vite-plugin-pwa';
+import staticAssetsPlugin from 'vite-static-assets-plugin';
 import { resolve } from 'node:path';
+
+const base = process.env.GITHUB_ACTIONS ? '/bok/' : '/';
 
 export default defineConfig({
   plugins: [
@@ -14,6 +17,28 @@ export default defineConfig({
     checker({ typescript: true }),
     glsl(),
     wasm(),
+    staticAssetsPlugin({
+      directory: 'public',
+      outputFile: 'src/static-assets.ts',
+      ignore: ['.DS_Store'],
+      enableDirectoryTypes: true,
+      addLeadingSlash: true,
+    }),
+    // Patch the generated static-assets.ts to use Vite's BASE_URL instead of
+    // the hardcoded BASE_PATH, so paths resolve correctly on GitHub Pages.
+    {
+      name: 'patch-static-assets-base',
+      configResolved() {},
+      writeBundle() {},
+      transform(code, id) {
+        if (id.endsWith('static-assets.ts') && code.includes('const BASE_PATH')) {
+          return code.replace(
+            /const BASE_PATH = "[^"]*";/,
+            'const BASE_PATH = import.meta.env.BASE_URL;',
+          );
+        }
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
@@ -54,7 +79,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  base: process.env.GITHUB_ACTIONS ? '/bok/' : '/',
+  base,
   build: {
     target: 'es2022',
     sourcemap: true,

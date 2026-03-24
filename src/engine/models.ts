@@ -35,7 +35,7 @@
 import { ModelRenderer, Systems } from '@jolly-pixel/engine';
 import type * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+import { resolveAssetUrl as _resolveBase } from '../shared/constants.ts';
 import type { JpWorld } from './types.ts';
 
 // =============================================================================
@@ -76,9 +76,9 @@ export function spawnModelActor(
   position: { x: number; y: number; z: number },
   scale = 1,
 ): ModelActorResult {
+  const resolvedPath = _resolveBase(modelPath);
   const actor = jpWorld.createActor(name);
-  const renderer = actor.addComponentAndGet(ModelRenderer, { path: modelPath });
-  // Position via the underlying Three.js Group (Transform uses setLocalPosition)
+  const renderer = actor.addComponentAndGet(ModelRenderer, { path: resolvedPath });
   actor.object3D.position.set(position.x, position.y, position.z);
   actor.object3D.scale.setScalar(scale);
   return { actor, object3D: actor.object3D, renderer };
@@ -104,8 +104,9 @@ export async function spawnModelActorAsync(
   position: { x: number; y: number; z: number },
   scale = 1,
 ): Promise<ModelActorResult> {
+  const resolvedPath = _resolveBase(modelPath);
   const actor = jpWorld.createActor(name);
-  const renderer = actor.addComponentAndGet(ModelRenderer, { path: modelPath });
+  const renderer = actor.addComponentAndGet(ModelRenderer, { path: resolvedPath });
   actor.object3D.position.set(position.x, position.y, position.z);
   actor.object3D.scale.setScalar(scale);
 
@@ -131,16 +132,17 @@ const cache = new Map<string, THREE.Group>();
  * without AssetManager deduplication or lifecycle integration.
  */
 export async function loadModel(path: string): Promise<THREE.Group> {
-  const cached = cache.get(path);
+  const resolved = _resolveBase(path);
+  const cached = cache.get(resolved);
   if (cached) {
     return cached.clone();
   }
 
   return new Promise((resolve, reject) => {
     loader.load(
-      path,
+      resolved,
       (gltf) => {
-        cache.set(path, gltf.scene);
+        cache.set(resolved, gltf.scene);
         resolve(gltf.scene.clone());
       },
       undefined,
