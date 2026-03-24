@@ -8,15 +8,7 @@ import RAPIER from '@dimforge/rapier3d';
 import { type BlockDefinition, Face, type TileRef, VoxelRenderer } from '@jolly-pixel/voxel.renderer';
 import * as THREE from 'three';
 import { PRNG, SimplexNoise } from '../generation/index.ts';
-import {
-  CW_TILESET_COLS,
-  CW_TILESET_ROWS,
-  generateCubeWorldTileset,
-  generateTileset,
-  TILES,
-  TILESET_COLS,
-  TILESET_ROWS,
-} from '../rendering/index';
+import { CW_TILESET_COLS, CW_TILESET_ROWS, generateCubeWorldTileset, TILES } from '../rendering/index';
 import { DOCK_SURFACE_Y, DOCKS, PIER_LENGTH, PIER_WIDTH } from './hubDocks.ts';
 import type { JpWorld, SurfaceHeightFn } from './types.ts';
 
@@ -181,15 +173,7 @@ export function createHub(jpWorld: JpWorld, rapierWorld: RAPIER.World): HubResul
     },
   });
 
-  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
-  const tileset = (() => {
-    try {
-      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
-    } catch {
-      const fallback = generateTileset();
-      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
-    }
-  })();
+  const tileset = { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;

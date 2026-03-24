@@ -24,9 +24,6 @@ export interface NPCEntity {
 /** Hub size used for converting NPC content positions to world positions. */
 const HUB_HALF = 16; // HUB_SIZE / 2
 
-/** NPC model height — approximate CubeWorld character standing height. */
-const NPC_HEIGHT = 1.8;
-
 /** Map NPC IDs to CubeWorld character model paths. */
 const NPC_MODELS: Record<string, string> = {
   guide: CHARACTER_MODELS.male1,
@@ -40,24 +37,6 @@ const NPC_SCALES: Record<string, number> = {
   blacksmith: 1.0,
   scholar: 0.85,
 };
-
-/** Role-based fallback colors for placeholder boxes when model loading fails. */
-const ROLE_COLORS: Record<string, number> = {
-  merchant: 0xd4a574, // warm tan
-  crafter: 0x8b4513, // saddle brown
-  lore: 0x4a6fa5, // scholarly blue
-  navigation: 0x2e8b57, // sea green
-  guide: 0x2e8b57, // sea green
-};
-
-/**
- * Create a colored box fallback mesh for an NPC when model loading fails.
- */
-function createFallbackMesh(color: number): THREE.Mesh {
-  const geometry = new THREE.BoxGeometry(0.6, NPC_HEIGHT, 0.6);
-  const material = new THREE.MeshLambertMaterial({ color });
-  return new THREE.Mesh(geometry, material);
-}
 
 /**
  * Spawn CubeWorld character models for each NPC on the hub terrain.
@@ -83,34 +62,21 @@ export function spawnHubNPCs(scene: THREE.Scene, npcs: NPCConfig[], getSurfaceY:
     container.name = `npc-${npc.id}`;
     scene.add(container);
 
-    // Start async model load; add fallback box until it resolves
+    // Load character model — FAIL HARD if missing
     const modelPath = NPC_MODELS[npc.id];
+    if (!modelPath) {
+      throw new Error(`[Bok] No model mapping for NPC "${npc.id}". Add it to NPC_MODELS in npcEntities.ts`);
+    }
     const scale = NPC_SCALES[npc.id] ?? 0.9;
 
-    if (modelPath) {
-      loadModel(modelPath)
-        .then((model) => {
-          model.scale.setScalar(scale);
-          // Clear any fallback children
-          while (container.children.length > 0) {
-            container.remove(container.children[0]);
-          }
-          container.add(model);
-        })
-        .catch((err) => {
-          console.warn(`[Bok] Failed to load NPC model for "${npc.id}", using fallback:`, err);
-          const color = ROLE_COLORS[npc.role] ?? 0x888888;
-          const fallback = createFallbackMesh(color);
-          fallback.position.y = NPC_HEIGHT / 2;
-          container.add(fallback);
-        });
-    } else {
-      // No model mapped — use colored box
-      const color = ROLE_COLORS[npc.role] ?? 0x888888;
-      const fallback = createFallbackMesh(color);
-      fallback.position.y = NPC_HEIGHT / 2;
-      container.add(fallback);
-    }
+    loadModel(modelPath)
+      .then((model) => {
+        model.scale.setScalar(scale);
+        container.add(model);
+      })
+      .catch((err) => {
+        throw new Error(`[Bok] Failed to load NPC model for "${npc.id}" at "${modelPath}": ${err}`);
+      });
 
     entities.push({
       id: npc.id,

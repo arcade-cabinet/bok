@@ -19,10 +19,7 @@ import {
   CW_TILESET_COLS,
   CW_TILESET_ROWS,
   generateCubeWorldTileset,
-  generateTileset,
   ParticleSystem,
-  TILESET_COLS,
-  TILESET_ROWS,
   WeatherSystem,
 } from '../rendering/index';
 import { createBlockInteraction, SHAPE_DISPLAY_NAMES } from '../systems/block-interaction.ts';
@@ -106,15 +103,8 @@ export async function initGame(canvas: HTMLCanvasElement, config: GameStartConfi
     rapier: { api: RAPIER as never, world: engine.rapierWorld as never },
   });
 
-  // Register CubeWorld-palette tileset with procedural detail, falling back to bright programmatic.
-  const tileset = (() => {
-    try {
-      return { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
-    } catch {
-      const fallback = generateTileset();
-      return { ...fallback, cols: TILESET_COLS, rows: TILESET_ROWS };
-    }
-  })();
+  // Register CubeWorld-palette tileset with procedural detail
+  const tileset = { ...generateCubeWorldTileset(), cols: CW_TILESET_COLS, rows: CW_TILESET_ROWS };
   const tilesetTexture = new THREE.Texture(tileset.canvas);
   tilesetTexture.magFilter = THREE.NearestFilter;
   tilesetTexture.minFilter = THREE.NearestFilter;
