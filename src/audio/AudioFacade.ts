@@ -6,6 +6,7 @@
  */
 import * as Tone from 'tone';
 
+import { resolveAssetUrl } from '../shared/constants.ts';
 import { startAtmosphericSFX, stopAtmosphericSFX } from './AtmosphericSFX.ts';
 import { playBiomeMusic, playHubMusic, setMusicVolume, stopMusic } from './MusicManager.ts';
 import {
@@ -84,13 +85,13 @@ export function createGameAudio(): GameAudioSystem {
     },
 
     playSFXAt(name: string, x: number, y: number, z: number): void {
-      const url = SFX_URLS[name] ?? name;
+      const url = resolveAssetUrl(SFX_URLS[name] ?? name);
       const id = `sfx-${name}-${Date.now()}`;
       playSpatialSound(id, url, x, y, z, { loop: false, volume: -8 });
     },
 
     playAmbientAt(id: string, name: string, x: number, y: number, z: number): void {
-      const url = SFX_URLS[name] ?? name;
+      const url = resolveAssetUrl(SFX_URLS[name] ?? name);
       const options: SpatialSoundOptions = {
         loop: true,
         volume: -12,

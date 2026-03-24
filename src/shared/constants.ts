@@ -1,5 +1,13 @@
 /** Shared constants used across domains. */
 
+/** Prepend Vite BASE_URL so asset paths resolve on GitHub Pages (base='/bok/'). */
+export function resolveAssetUrl(path: string): string {
+  const base = import.meta.env.BASE_URL;
+  if (!base || base === '/') return path;
+  if (path.startsWith('/')) return base + path.slice(1);
+  return base + path;
+}
+
 /** Physics tick rate (Hz). */
 export const PHYSICS_TICK_RATE = 60;
 

@@ -17,6 +17,7 @@
  * to produce a richer look while staying faithful to the CubeWorld aesthetic.
  */
 import * as THREE from 'three';
+import { resolveAssetUrl } from '../shared/constants.ts';
 
 /** CubeWorld palette colors extracted from Atlas.png row 0 (16px palette strip). */
 export const CUBEWORLD_PALETTE = {
@@ -238,7 +239,7 @@ export async function loadCubeWorldAtlas(): Promise<{
   tileSize: number;
 }> {
   const loader = new THREE.TextureLoader();
-  const texture = await loader.loadAsync('/assets/models/Atlas.png');
+  const texture = await loader.loadAsync(resolveAssetUrl('/assets/models/Atlas.png'));
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
   texture.colorSpace = THREE.SRGBColorSpace;

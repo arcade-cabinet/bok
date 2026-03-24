@@ -4,6 +4,7 @@
  * @input Start/stop, context (combat, explore)
  */
 import * as Tone from 'tone';
+import { resolveAssetUrl } from '../shared/constants.ts';
 
 const SFX_POOL = [
   '/assets/audio/sfx/stalker.ogg',
@@ -30,7 +31,7 @@ export function startAtmosphericSFX(): void {
   sfxGain = new Tone.Gain(0.08).toDestination();
 
   const playRandom = () => {
-    const url = SFX_POOL[Math.floor(Math.random() * SFX_POOL.length)];
+    const url = resolveAssetUrl(SFX_POOL[Math.floor(Math.random() * SFX_POOL.length)]);
     const player = new Tone.Player({
       url,
       autostart: false,
@@ -82,7 +83,7 @@ export function stopAtmosphericSFX(): void {
 export function playUnderwaterAmbient(): Tone.Player | null {
   const gain = new Tone.Gain(0.1).toDestination();
   const player = new Tone.Player({
-    url: UNDERWATER_SFX,
+    url: resolveAssetUrl(UNDERWATER_SFX),
     loop: true,
     autostart: false,
     onload: () => {
