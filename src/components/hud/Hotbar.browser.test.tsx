@@ -51,5 +51,5 @@ test('renders 5 slot buttons', async () => {
   expect(toolbar).not.toBeNull();
 
   const buttons = toolbar?.querySelectorAll('button');
-  expect(buttons.length).toBe(5);
+  expect(buttons?.length).toBe(5);
 });
