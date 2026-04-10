@@ -66,6 +66,19 @@ src/
 - **Koota:** `/Users/jbogaty/src/reference-codebases/koota`
 - **Yuka:** `/Users/jbogaty/src/reference-codebases/yuka`
 
+## Asset Library
+
+- **Location:** `/Volumes/home/assets` (SMB share, must be mounted)
+- **3DLowPoly:** Kenney/Quaternius — modern low-poly GLBs
+- **3DPSX:** PSX-style retro assets — tools, weapons, characters
+- **MCP tools:** `search_assets`, `copy_asset`, `get_asset_info`
+
+## Testing
+
+- **Unit tests:** `pnpm test` — Vitest in Node, 1069 tests passing (88 files)
+- **Browser tests:** `pnpm test:browser` — Vitest browser project configured (MainMenuView, GameView, ContextIndicator tests exist)
+- **No node mocks for Three.js/DOM** — use browser tests instead
+- **Content validation:** Zod schemas validate all JSON at import time
 ## DO NOT
 
 - Write mock-heavy unit tests for rendering or DOM code — use browser tests.
