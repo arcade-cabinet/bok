@@ -1,3 +1,10 @@
+---
+title: Security
+updated: 2026-04-09
+status: current
+domain: ops
+---
+
 # Security — Bok
 
 ## Input Validation

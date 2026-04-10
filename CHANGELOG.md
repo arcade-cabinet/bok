@@ -1,3 +1,10 @@
+---
+title: Changelog
+updated: 2026-04-09
+status: current
+domain: ops
+---
+
 # Changelog
 
 All notable changes to Bok: The Builder's Tome will be documented in this file.
