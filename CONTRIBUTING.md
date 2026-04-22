@@ -1,3 +1,10 @@
+---
+title: Contributing
+updated: 2026-04-09
+status: current
+domain: technical
+---
+
 # Contributing to Bok
 
 ## Setup

@@ -1,38 +1,108 @@
+---
+title: AGENTS.md — Bok
+updated: 2026-04-22
+status: current
+domain: technical
+---
+
 # AGENTS.md — Bok: The Builder's Tome
 
-**Shipping scope:** See [docs/PRODUCTION_ROADMAP.md](docs/PRODUCTION_ROADMAP.md) for remaining production work.
+Extended operating protocols for AI agents working on this codebase.
 
-## For AI Agents Working on This Codebase
+## Arcade Consolidation Intake: Voxel Realms
 
-### Import Rules
-- **ALWAYS** import from barrel exports: `import { X } from '@bok/systems/combat'`
-- **NEVER** import from internal files: `import { X } from '@bok/systems/combat/DamageCalculator'`
+Bok is the destination product for useful ideas from the cabinet-only Voxel Realms implementation. Voxel Realms is being moved out of the cabinet into its own public repo at `arcade-cabinet/voxel-realms` with a local clone at `/Users/jbogaty/src/arcade-cabinet/voxel-realms`.
+
+Use Voxel Realms as reference material only. Do not import a second voxel engine, app shell, route system, or survival-sandbox product scope into Bok.
+
+Merge-worthy Voxel Realms techniques:
+
+- Staged spawn-camp onboarding that gives the player a readable first 30 seconds.
+- Deterministic telemetry fields for recent pickup, biome discovery, nearest resource, nearest landmark, and objective text.
+- Environmental framing patterns: silhouette ridges, water/shoreline dressing, block clouds, biome contrast, fog, sky, and stronger directional lighting.
+- Resource pickup feedback, survey ping language, and landmark bearing UI.
+- CI-safe rendering techniques such as startup staging, instancing fallback, and reduced visual work under browser-test constraints.
+
+Scope reductions for a shippable Bok:
+
+- Ship three biomes before expanding to the full biome set.
+- Ship three bosses and three Tome page arcs before promising all boss/content permutations.
+- Keep hub progression to one clear upgrade loop for first release.
+- Treat block interaction as quest-limited tools, not full creative building.
+- Keep target runs near 12 to 18 minutes and make mobile movement/combat first-class before complex inventory/build gestures.
+
+When implementing this merge, write a Bok design note first, then port only the specific state/rendering patterns that solve current Bok readability or onboarding problems. Preserve Bok's current React, Koota, JollyPixel, Yuka, Rapier, SQLite, and content-validation architecture.
+
+## Import Rules
+
+- **Always** import from barrel exports: `import { X } from '../systems/combat'`
+- **Never** import from internal files: `import { X } from '../systems/combat/DamageCalculator'`
 - Cross-domain imports go through barrels. Within-domain imports use relative paths.
+- A pre-edit hook (`settings.local.json`) blocks deep cross-domain imports automatically.
 
-### Adding a New File
-1. Create the file in the appropriate domain directory
-2. Add a re-export to the domain's `index.ts` barrel
-3. Write tests for the public API in `<domain>/<name>.test.ts`
-4. Run `pnpm test` to verify
+## Adding a New File
 
-### Adding Content (Biome/Enemy/Weapon/Boss)
-1. Copy an existing JSON from the same `src/content/<type>/` directory
-2. Modify the fields per the Zod schema in `src/content/types.ts`
-3. Register it in the content registry
-4. Run `pnpm test` to validate the schema
+1. Create the file in the appropriate domain directory under `src/`.
+2. Add a re-export to the domain's `index.ts` barrel.
+3. Write tests for the public API in `<domain>/<name>.test.ts`.
+4. Run `pnpm test` to verify.
 
-### Domain Boundaries
-Each domain has ONE role. Do not add cross-cutting concerns:
-- Game state → `src/traits/` and `src/relations/`
-- Game logic → `src/systems/`
-- AI decisions → `src/ai/`
-- World generation → `src/generation/`
-- Content definitions → `src/content/`
-- Rendering → `src/rendering/`
-- UI → `src/ui/`
-- Persistence → `src/persistence/`
+## Adding Content (Biome / Enemy / Weapon / Boss)
 
-### Custom Agent Roles
-- **content-author** — Creates JSON content files from templates
-- **domain-reviewer** — Reviews code for barrel export violations and SRP breaches
-- **test-enforcer** — Ensures public APIs have test coverage
+1. Copy the closest existing JSON from `src/content/<type>/`.
+2. Modify fields per the Zod schema in `src/content/types.ts`.
+3. Register in the content registry (`src/content/registry.ts`).
+4. Run `pnpm test` — Zod validates all content at import time.
+
+## Domain Boundaries
+
+Each domain has ONE responsibility. Never add cross-cutting concerns:
+
+| Domain | Responsibility |
+|--------|---------------|
+| `src/traits/` | Koota trait definitions |
+| `src/relations/` | Koota relation definitions |
+| `src/systems/` | Koota query-based game logic |
+| `src/ai/` | Yuka bridge + FSM states |
+| `src/generation/` | Procedural world generation |
+| `src/content/` | JSON game content + Zod schemas |
+| `src/rendering/` | Visual effects |
+| `src/components/` | React UI components |
+| `src/persistence/` | SQLite save/load |
+| `src/input/` | Platform-agnostic input |
+| `src/audio/` | Tone.js procedural SFX + music |
+| `src/engine/` | JollyPixel orchestration |
+
+## Module Contract
+
+Every domain `index.ts` must have this JSDoc header:
+
+```typescript
+/**
+ * @module <domain-name>
+ * @role <one sentence>
+ * @input <what it consumes>
+ * @output <what it produces>
+ * @depends <other domains imported>
+ * @tested <test file>
+ */
+```
+
+## Custom Agent Roles
+
+Three sub-agents in `.claude/agents/`:
+
+- **content-author** — Creates JSON content files from templates, validates against Zod schema
+- **domain-reviewer** — Reviews for barrel export violations, SRP breaches, missing re-exports, missing tests, missing module contract headers
+- **test-enforcer** — Ensures all barrel-exported symbols have test coverage
+
+## Testing Conventions
+
+- Unit tests (`*.test.ts`): pure logic — generation, combat math, content validation, AI transitions
+- Browser tests (`*.browser.test.tsx`): all React components and anything touching DOM/WebGL
+- No node mocks for Three.js/DOM — use browser project instead
+- `pnpm test` runs the unit project; `pnpm test:browser` runs the browser project
+
+## Hook Enforcement
+
+`.claude/settings.local.json` contains a `PreToolUse` hook on `Edit|Write` that blocks any import reaching into another domain's internals. Fix the import to use the barrel — do not modify the hook.
