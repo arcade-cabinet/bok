@@ -1,6 +1,6 @@
 ---
 title: AGENTS.md — Bok
-updated: 2026-04-09
+updated: 2026-04-22
 status: current
 domain: technical
 ---
@@ -8,6 +8,30 @@ domain: technical
 # AGENTS.md — Bok: The Builder's Tome
 
 Extended operating protocols for AI agents working on this codebase.
+
+## Arcade Consolidation Intake: Voxel Realms
+
+Bok is the destination product for useful ideas from the cabinet-only Voxel Realms implementation. Voxel Realms is being moved out of the cabinet into its own public repo at `arcade-cabinet/voxel-realms` with a local clone at `/Users/jbogaty/src/arcade-cabinet/voxel-realms`.
+
+Use Voxel Realms as reference material only. Do not import a second voxel engine, app shell, route system, or survival-sandbox product scope into Bok.
+
+Merge-worthy Voxel Realms techniques:
+
+- Staged spawn-camp onboarding that gives the player a readable first 30 seconds.
+- Deterministic telemetry fields for recent pickup, biome discovery, nearest resource, nearest landmark, and objective text.
+- Environmental framing patterns: silhouette ridges, water/shoreline dressing, block clouds, biome contrast, fog, sky, and stronger directional lighting.
+- Resource pickup feedback, survey ping language, and landmark bearing UI.
+- CI-safe rendering techniques such as startup staging, instancing fallback, and reduced visual work under browser-test constraints.
+
+Scope reductions for a shippable Bok:
+
+- Ship three biomes before expanding to the full biome set.
+- Ship three bosses and three Tome page arcs before promising all boss/content permutations.
+- Keep hub progression to one clear upgrade loop for first release.
+- Treat block interaction as quest-limited tools, not full creative building.
+- Keep target runs near 12 to 18 minutes and make mobile movement/combat first-class before complex inventory/build gestures.
+
+When implementing this merge, write a Bok design note first, then port only the specific state/rendering patterns that solve current Bok readability or onboarding problems. Preserve Bok's current React, Koota, JollyPixel, Yuka, Rapier, SQLite, and content-validation architecture.
 
 ## Import Rules
 
